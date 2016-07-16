@@ -30,6 +30,7 @@ included in this archive due to copyright and privacy concerns.
 
 ## Partial Archives
 
+* Summer 2002: No .zip or .asm for MP2.
 * Fall 2003: No MP0, MP1
 * Fall 2004: Except for MP3 and MP4, webpages only, no .zip or .asm files
 
