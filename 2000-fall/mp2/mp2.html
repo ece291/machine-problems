@@ -1,0 +1,762 @@
+<html>
+
+<head>
+<title>ECE 291</title>
+</head>
+
+<body bgcolor="#FFFFFF">
+<div align="center"><center>
+
+<table border="0" width="100%" cellspacing="0" cellpadding="0">
+  <tr>
+    <td width="33%" align="left">ECE 291</td>
+    <td width="33%" align="center">Computer Engineering II</td>
+    <td width="33%" align="right">Kalbarczyk, Fall 2000</td>
+  </tr>
+</table>
+</center></div>
+
+<h1 align="center">Machine Problem 2: Dice Game (Craps)</h1>
+<div align="center"><center>
+
+<table border=1 width=60%>
+  <tr>
+    <td align=right>Assigned</td>
+    <td>Tuesday 9/19/00</td>
+  </tr>
+  <tr>
+    <td align="right">Due Date</td>
+    <td>Thursday 10/5/00</td>
+  </tr>
+  <tr>
+    <td align="right">Purpose</td>
+    <td Roman">Deal with high levels of branching. Use input strings. Make 
+    use of arrays.</td>
+  </tr>
+  <tr>
+    <td align="right">Points</font></td>
+    <td>50</td>
+  </tr>
+</table>
+</center></div>
+
+<h2>Introduction</h2>
+
+
+<p>The game craps is one of the most well known dice games in existance. 
+The idea behind the game is to predict the number the dice will land on, 
+and bet accordingly. For this project, we will be implementing a sizeable 
+subset of the full game of craps, wherein the pass bet, don't pass bet, 
+come bet and don't come bet, are all simulated.
+</p>
+
+<CENTER><IMG SRC=mp2.gif ALIGN=CENTER width="652" height="331"></CENTER>
+
+
+<h2>Problem Description</h2>
+
+
+<p>In this machine problem, you will write seven basic functions which will 
+serve to simulate the game. As was previously stated, this game is 
+limited form of the full game of craps. </p>
+
+<p>The game uses two six-sided dice in parallel, which together will yeild 
+a number between 2 and 12, in a Gaussian distribution centered around 7. 
+Our random number generator will simulate one die at a time, giving a number 
+evenly distributed between 1 and 6. To get the full roll this function 
+must be called twice and the results added together.</p>
+
+
+<p>The game is actually played by placing wagers of varying sums in 
+different areas of the playing field. Although there is no actual playing 
+area involved in this MP, the basic types of bets (or "lines") are the same.</p>
+
+<h3>Pass and Don't Pass bets</h3>
+
+<p>To begin with, money is placed on the pass line or the don't pass 
+line. (The "don't pass" line is the proper name of one of the wagering 
+areas.) The dice are then rolled. (This is refered to as the "comeout 
+roll".) If the dice come up on 7 or 11, whatever 
+money was placed on the pass line is doubled and the player wins. if the 
+dice come up on 2, 3, or 12, the player loses whatever money is on the 
+pass line. The don't pass line is almost the exact opposite - a 2 or 3 is a 
+winning bet, and a 7 or 11 will lose the player's money. On the don't pass 
+line, a 12 is a "push", meaning no money is won or lost and the player 
+gets their money back.</p>
+
+<p>Any other number (4, 5, 6, 8, 9, 10) on a pass or don't pass bet 
+results in a "point" being set. This means that the money previously on the 
+pass or don't pass line is now dependant on the "point" being rolled 
+again. For money previously on the pass line, if the "point" is rolled a 
+second time, the money is doubled and the player wins. If a 7 is rolled, 
+the player loses their money. The don't pass line is the exact opposite - 
+if the "point" number is rolled again, the player loses their money, if a 7 
+is rolled, the money is won back double. All other numbers besides the 
+"point" or a 7 are ignored, and the dice are rolled again.</p>
+
+<h3>Pass and Don't Pass example</h3>
+<ul>
+    <li>For example, let us say Bob puts down $20 on the pass line. A four is 
+then rolled (the "comeout roll"), which becomes the point. 
+<li>Bob then continues to roll dice in 
+the following sequence: 11, 2, 8, and 6 are then rolled, which do nothing. 
+<li>Bob then rolls a second 4, and thus recieves $40. Had Bob rolled a 7 
+instead of a 4, he would have lost his money.
+<li>Encouraged by his winnings, Bob then places $40 on the don't pass line. 
+He then rolls a 12. Bob gets his $40 back, losing and gaining nothing., 
+<li>Finally, Bob places $40 on don't pass line. An 11 is then rolled, so he 
+loses his money and no point is set. 
+</ul>
+
+<h3>Come and Don't Come bets</h3>
+<p>Two additional types of bets are the come and don't come lines. These 
+are basically pass and don't pass bets made when a point is already set. 
+The come line corresponds to the pass line, and the don't come line 
+corresponds to the don't pass line. In both cases the point set with a pass 
+or don't pass bet has no effect on a come or don't come bet. These bets 
+can be made during any roll where point is already set from a pass or 
+don't pass bet. A come or don't come bet cannot be made when there is no 
+pass or don't pass point already set. Multiple come or don't come bets can 
+be made during the same roll, and across multiple rolls when a pass or 
+don't pass point is trying to be hit.  There can only be one pass or don't 
+pass point set at a time, but multiple come or don't come points set at once. 
+Obviously, however, there are only six possible point numbers and thus a 
+maximum of six possilbe come or don't come points set. The come points 
+persist even after a pass point has been hit.</p>
+
+
+<h3>Come and Don't Come example</h3>
+<ul>
+    <li>For example, let's say Jane has set a point of 5 for a $10 pass line bet. 
+At this point, Jane has $100 with $10 on the table.  
+<li>She then makes a come 
+bet of $20 and the roll lands on 11. She wins that come bet (since it was 
+the first roll and come bets pay on 7 and 11.) Now Jane has $120 with $10 
+and a pass point of 5. 
+<li>Jane puts $25 on a come bet, and rolls an 8. Jane 
+now as $35 on the table in two different bets, with a pass point set at 5, 
+and a come point set at 8. 
+<li>Jane then puts $30 on a second come bet, and 
+rolls a 7. Because of this, she loses her $10 pass bet, her $25 come bet, 
+but wins her most recent $30 come bet, giving her a grand total of $115, 
+with no  money on the table.
+</ul>
+
+<ul>
+    <li>At this point she cannot make another come or don't come bet, since no 
+pass point is set. She therefore makes a don't pass bet $15 and rolls a 5. 
+<li>She then makes a $20 don't come bet, and rolls a 6. At this point she has $35 
+on the table in two sepearate bets. 
+<li>She then makes a $20 don't come bet, 
+and rolls a 9. She now has $55 on the table in three separate bets, with a 
+don't pass point on 5, and two don't come points on 6 and 9 for $20 a 
+piece. <li>She makes a thrid don't come bet for $20, and rolls a 5. This causes 
+her to lose the original $15 don't pass bet, and sets a don't come point at 
+5. She now has $60 in three separate bets on the table. 
+<li>At this point, she 
+cannot make any more come or don't come bets, so she makes a pass bet for 
+$20, and rolls a 7. This wins her $80, $60 from her three don't come bets, 
+and $20 from her pass bet, giving her a total of $150. </ul>
+
+<h3>Finances</h3>
+
+<p>In addition to simulating the game, students must also keep rudimetary 
+track of the player's finances. The player (only one person can play the 
+game at a time, at least in the 291 version) must start off with $1000, and 
+the program should keep track of how much money they gains or loses over the 
+course of various bets. If the player has no more money, they should not 
+be allowed to make a bet. The minimum allowable bet is $5, and the maximum 
+allowable bet is $200.</p> 
+
+<H2>MP 2 Program Assignment</H2>
+
+<p>Like MP1 the program will be provided as an operational executable. It 
+is highly recommended that students spend time playing the pre-assembled 
+executable until they understand how everything ties together. The 
+students' job will be to replace 7 functions that are currently tied into 
+the executable code as library routines. One by one, the students should 
+replace these library codes with their own code that serves the same 
+function.</p>
+
+<p>The program can be run by typing <tt>mp2</tt> at the
+command prompt.
+</p>
+
+<p>The students will also have the option of writing their own random 
+number generator for bonus points. This routine will be graded according 
+to how evenly the numbers 1-6 are distributed. The maximum total number of 
+points will be 5. 
+
+<h2>Hints</h2>
+<ul>
+<li>The LIBMP2 file contains executable library functions for each of the
+routines that you need to implement.  
+This allows you to run the program and understand how it works before you 
+implment it.  You can test your program by stepping through the game and 
+making sure the display and comparison functions work correctly.  You will only receive credit, however, for
+the routines that you implement yourself. <p>
+
+<li>When debugging your code in Codeview, you will find it helpful to use
+the memory window to show you the memory location of the file and strings.
+You can also use the watch window to keep track of variables in your 
+code.<p>
+
+<li>Do not assume that the file starts at memory location 0.<p>
+
+<li>You may define new variables and function as needed.<p>
+
+<li>For the rolldice function, you may want to divide the function up into 
+multiple subfunctions becuase there are so many comparisons to be made.  
+Remember you have to check if it's the first roll of a pass / don't pass 
+line sequence and you also have to check and update many variables for the 
+come / don't come bets.  You may do this any way you like, but the TAs 
+used single dimension arrays of length 6 to implement the come and don't 
+come bets.  These are given to you in the mp2.asm file.<p>
+
+<li>Read and learn to use the different library functions specified in 
+your lab manuals for the getnumber function.  You will find it helful to 
+use binasc accordingly.<p>
+
+<li>Play the game a lot before attempting to code it.  All messages and 
+characteristics of the program not listed in this writeup should still be 
+implemented.  For example, notifying the user when different bets are won 
+or lost must be implemented.<p>
+	
+<li>Be very careful if you call another procedure not to destroy registers
+that the calling procedure uses.<p>
+
+<li>Remember to include function headers for each of your functions!<p>
+
+<li>Remember to include comments within the functions you write!<p>
+
+<li>START EARLY!  This is a very complicated MP.<p>
+
+<li>Monitor the <a href="news:uiuc.class.ece291">newsgroup</a> for 
+clarifications and help.</p>
+
+<li>FUNCTIONALITY FOR ROLLDICE:
+<li>Roll the dice, put in currentroll.
+<li>Check to see if the roll was comeout roll.
+<li>If so, evaluate the status of the player's money on the table for a 
+comeout roll.
+<li>Also make sure to set the point if a point needs to be set.
+<li>If the roll is not a comeout roll, check if the dice hit a point or a 7.
+<li>If either of these were hit, adjust money accordingly on pass or 
+dontpass bets.
+<li>Next, check the come and dontcome bets. You will have to loop through 
+all possible bets. (6 possible come and dontcome bets.) Adjust money 
+accordingly.
+<li>Remember that come and dontcome bets are still in play during comeout 
+rolls, even though these bets cannot be made during a comeout roll.
+<li>If bets are won or lost, messages should display this fact.
+</ul>
+
+<h2>Subroutines</h2>
+
+<p>This assignment has seven procedures. You will receive credit by 
+replacing
+each of these seven procedures listed below with your own code. Assume 
+these function call library routines such as dspmsg as needed.</p>
+
+
+<table BORDER=1 >
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>Betpass</font></b></td>
+
+<td><ul>
+    
+<li>Set up variables to make a bet on the passline
+<li>Inputs: money, comeoutrollflag, passflag
+<li>Outputs: money, moneyonpass, passflag
+<li>Calls: Getnumber, dspmsg, rrest, rsave
+<li>NOTE: error message should be displayed if bets cannot be made
+ </ul></td>
+</tr>
+
+
+<td><b><font SIZE=+1>Betdontpass</font></b></td>
+
+<td><ul>
+    
+<li>Set up variables to make a bet on the don't passline
+<li>Inputs: money, comeoutrollflag, dontpassflag
+<li>Outputs: money, moneyondontpass, dontpassflag
+<li>Calls: Getnumber, dspmsg rrest, rsave
+<li>NOTE: error message should be displayed if bets cannot be made
+ </ul></td>
+</tr>
+
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>Betcome</font></b></td>
+
+<td><ul>
+<li>Set up variables to make a bet on the come box
+<li>Inputs: money, comeoutrollflag, comeflag
+<li>Outputs: money, moneyoncome, comeflag
+<li>Calls: Getnumber, dspmsg rrest, rsave
+</ul></td>
+</tr>
+
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>Betdontcome</font></b></td>
+
+<td><ul>
+<li>Set up variables to make a bet on the don't come box
+<li>Inputs: money, comeoutrollflag, dontcomeflag
+<li>Outputs: money, moneyondontcome, dontcomeflag
+<li>Calls: Getnumber, dspmsg rrest, rsave
+</ul></td>
+</tr>
+
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>RollDice</font></b></td>
+
+<td><ul>
+       <li>Rolls dice, updates (many) game varibles, displays won/lost 
+       messages.
+<li>Inputs: comeoutrollflag, passflag, dontpassflag, comeflag, 
+dontcomeflag, pointforcome, pointfordontcome, point, moneyonpass, 
+moneyondontpass
+<li>Outputs: rolls, money, point, moneyonpass, moneyondontpass, 
+moneyoncome, moneyondontcome, pointforcome, pointfordontcome, currentroll, 
+passflag, dontpassflag, comeflag, dontcomeflag, comeoutrollflag
+<li>Calls: Random, rrest, rsave, dspmsg
+<li>NOTE: You might want to use multiple subroutines to implement this
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>Status</font></b></td>
+
+<td><ul>
+       <li>Prints out roll number, money in hand, current point, and 
+       current dice value, also displays money currently on table and the 
+       associated points
+<li>Inputs: rolls, money, point, currentroll, moneyonpass, moneyondontpass, 
+moneyoncome, moneyondontcome, statusbuffer, comeflag, dontcomeflag, 
+pointforcome, pointfordontcome
+<li>Outputs: none
+<li>Calls: dspmsg, binasc, rsave, rrest
+<li>NOTE: Run the executable to see the messages this uses
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>getNumber</font></b></td>
+
+<td><ul>
+       <li>Allows user to enter in number within the acceptable limits
+<li>Inputs: money, statusbuffer
+<li>Outputs: AX = selected number
+<li>Calls: ascbin, kbdine, dspmsg
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>Random</font></b></td>
+
+<td><ul>
+       <li>Gets an evenly distributed number between 1 and 6, inclusive.
+<li>Inputs: randVal
+<li>Outputs: AX = selected number
+<li>Calls: none
+<li>NOTE: This routine is provided in the library, and is optional to 
+rewrite for 
+additional bonus points. To test your random function, we have provided a 
+TestRandomness function which can be called from the menu.
+<li>The TestRandomness function is basically a histogram which will count 
+how many times a single die lands on 1, 2, 3, etc. out of 30,000 rolls. 
+Ideally each bin should be very close to 5000. The 5 bonus points will be 
+allocated according to the following system:</p>
+<ul>
+    <li>All bins within 200 count of 5000: 5 points
+     <li>All bins within 400 count of 5000: 4 points
+     <li>All bins within 600 count of 5000: 3 points (note: this is the 
+     accuracy of the provided random routine)
+     <li>All bins within 1000 count of 5000: 2 points
+     <li>A bin is past 1000 count of 5000: 1 point</p>
+</ul>
+ </ul></td>
+</tr>
+
+
+</table>
+
+<h2>Procedure</h2>
+<ul>
+<li>You will begin this MP with the following files:
+    <ul>
+    <li><tt>MP2.ASM</tt>: Program Framework
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled
+        and linked.
+    <li><tt>LIBMP2.LIB</tt>: Library functions for MP2
+    <li><tt>LIB291.LIB</tt>: General-purpose library functions
+    </ul>
+<li>You may copy these files from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s V:\ece291\mp2 W:\mp2</tt><br>
+    or download the files from this server as <a 
+href="mp2.zip">mp2.zip</a> 
+<li>Add your code to <tt>MP2.ASM</tt>.
+<li>Assemble and link your program by typing<br>
+      <tt>nmake</tt><Br>
+    This command reads <i>Makefile</i> then invokes MASM and LINK to build 
+    an executable program.  
+<li>Use CodeView (CV) to find and correct program errors. 
+<li>Verify your program operation by testing the
+    input test file.  You should alter the test file to check 
+    different scenarios with your code.
+</ul>
+
+<h2>Final Steps</h2>
+
+<ol>
+  <li>Print a copy of the MP2 grading report (<a 
+href="mp2grade.html">MP2GR</a>).
+   Double-check that your program is ready for demonstration.  You need to
+   run through the test cases on the grading sheet, you WILL NOT be allowed
+   to hand-in unless you have done this step.
+  <li>Print MP2.ASM (Use GreenPrint32 to print at 4 pages/side.) 
+  <li>Demonstrate your MP2.EXE to a TA or to the instructor.</li>
+  <li>Be prepared to answer questions about any aspect of the operation of
+   your program. The TAs will not accept an MP if you cannot fully explain
+   the operation of your code and details of your implementation. Delayed
+   MPs will be subject to late penalties as described in the course
+   syllabus (10pts/day).</li>
+  <li>The TA will copy your program to the demonstration disk.
+  <li>Take your printouts to the same TA which approved your demonstration.
+    Staple the grading sheet to the front of the MP2.ASM printout.  Be sure
+    that your name appears in your code and on the grading sheet.
+</ol>
+
+<hr>
+
+<h2>MP2.ASM (program framework)</h2>
+
+<font size=-1><pre>
+TITLE ECE291 Your Name Today's Date  
+  
+COMMENT ^       CRAPS!  
+                ECE291 - Machine Problem 2  
+                Prof. Kalbarczyk  
+                Author: Jeff Gomberg  
+                University of Illinois at Urbana Champaign  
+                Dept. of Electrical & Computer Engineering  
+                Fall 2000  
+  
+                Ver. 1.0  
+^  
+  
+;--------------------------------------------------  
+;------- Constants --  
+;--------------------------------------------------  
+        ESCKEY EQU 01Bh  
+        LF EQU 0Ah  
+        CR EQU 0Dh  
+  
+        public ESCKEY, LF, CR  
+  
+;---------------------------------------------------  
+;------- Declaring External Procedures --  
+;---------------------------------------------------  
+  
+; Functions in LIB291.LIB these functions are free to  
+; be used by you.  Complete descriptions of the LIB291  
+; functions can be found in your lab manuals.  Use these  
+; functions for displaying output on the screen.  
+  
+        extrn rsave:near, rrest:near, kbdine:near  
+        extrn dspout:near, dspmsg:near, kbdin:near
+  	  extrn ascbin:near, binasc:near
+  
+; Functions in LIBMP2.LIB  
+; You will need to write these functions for this program.  
+  
+        extrn libBetpass:near, libBetdontpass:near
+  		  extrn libBetcome:near, libBetdontcome:near, libRolldice:near
+		  extrn libStatus:near, libGetnumber:near
+
+;you are given this function, but can implement it for gold star status
+	extrn libRandom:near
+
+;this function is used to evaluate your random function if you write it
+	extrn libHist:near  
+  
+; This function terminates the program.  
+        extrn mp2xit:near  
+  
+  
+;-------------------------------------------------------  
+;--- Defining the Stack Segment --  
+;-------------------------------------------------------  
+  
+stkseg SEGMENT stack  
+        db 64 dup ('STACK ')  
+stkseg ENDS  
+  
+;--------------------------------------------------------  
+;---- Defining the Code Segment --  
+;--------------------------------------------------------  
+  
+cseg SEGMENT PUBLIC 'CODE'  
+        assume cs:cseg, ds:cseg, ss:stkseg, es:nothing  
+  
+;---------------------------------------------------------  
+;-- Declaring variables for Lib Procedures --  
+;---------------------------------------------------------  
+  
+randval	dw	233	;seed the randval, then use this in your random fnc.
+rolls db 0              ;the current number of rolls made  
+money dw 1000           ;amount of money you have in hand (do not include money on bets!)
+point db 0              ;the current 'point' (0 = no point, or 4,5,6,8,9,10)
+moneyonpass db 0        ;money on the pass line
+moneyondontpass db 0    ;money on the don't pass line  
+moneyoncome db 6 dup(0) ;money on the come line (up to 6 different bets)  
+moneyondontcome db 6 dup(0)     ;money on the don't come line (up to 6 different bets)  
+pointforcome db 6 dup(0)        ;the number your come bet is on (for each bet)
+pointfordontcome db 6 dup(0)	  ;number your don't come bet is on (for each bet)
+currentroll db 0        ;current roll (initialized w/ 0, but after always 2-12 cause 2 6 sided dice rolled)
+passflag db 0           ;is there a bet on the pass line?
+dontpassflag db 0       ;is there a bet on the don't pass line?  
+comeflag db 6 dup(0)    ;is there a bet on the come line? (6 different possible bets)
+dontcomeflag db 6 dup(0)        ;is there a bet for the don't come (6 different bets)
+comeoutrollflag db 1    ;is this roll the comeout roll? -- at first, yes!
+  
+menumessage db CR,LF,  
+        '---------------------------- MP2 menu -------------------------', CR, LF,  
+        'bets:    (P)ass Line, (D)on''t Pass Line, (C)ome, D(O)n''t Come', CR, LF,  
+        'actions: (R)oll dice, (T)est randomness, (Q)uit', CR, LF, '$'  
+  
+errormessage db CR,LF,'ERROR! You can''t make that bet now, try again!',CR,LF,'$' 
+
+;------------------------------------------------------------
+;------- other messages for use in the status function
+;-------------------------------------------------------------
+CRLF				db CR,LF,'$'
+StatusMSGroll	db	'roll #','$'
+StatusMSGmoney	db	'   money = ','$'
+StatusMSGpoint db '   point = ','$'
+StatusMSGdice  db '   dice = ','$'
+StatusMSGpass	db	'Money on Pass = ','$'
+StatusMSGdontpass	db	' -- Money on Don''t Pass = ','$'
+StatusMSGcome1	db	'A Come Bet of ','$'
+StatusMSGcome2	db	' dollars with point = ','$'
+StatusMSGdontcome1	db	'A Don''t Come Bet of ','$'
+StatusMSGdontcome2	db	' dollars with point = ','$'
+
+StatusBuffer	db	7 dup(0)	;this is a 7 byte buffer used for
+						;binasc and ascbin functions
+
+;-----------------------------------------------------------
+;--------- other messages for use in the getnumber funtion
+;----------------------------------------------------------
+GetnumberMSG	db	CR,LF, 'Bet Amount (max = 200, min = 5) = ','$'
+GetnumberErrorMSG	db CR, LF, 'You entered an incorrect value, try again! = ','$'
+GetnumberError2MSG db CR, LF, 'You don''t have enough money for that bet!',CR,LF,'$'
+
+;----------------------------------------------------------
+;--------- other messages for use in the rolldice function
+;------- where you lose, win, or tie bets
+;------------------------------------------------------------
+ComeWinMSG	db CR,LF,'A Come bet wins!','$'
+ComeLoseMSG db CR,LF,'A Come bet loses :(','$'
+DontComeWinMSG	db	CR,LF,'A Don''t Come bet wins!','$'
+DontComeLoseMSG	db	CR,LF,'A Don''t Come bet loses :(','$'
+DontComeTieMSG	db	CR,LF,'A Don''t Come bet ties :o','$'
+PassWinMSG		db	CR,LF,'Pass line wins!','$'
+PassLoseMSG		db	CR,LF,'Pass line loses :(','$'
+DontPassWinMSG	db	CR,LF,'Don''t Pass line wins!','$'
+DontPassLoseMSG	db	CR,LF,'Don''t Pass line loses :(','$'
+DontPassTieMSG	db	CR,LF,'Don''t Pass line ties :0','$'
+
+;--------------------------------------------------------------
+
+public rolls, money, point, moneyonpass, moneyondontpass, moneyoncome, moneyondontcome
+public pointforcome, currentroll, passflag, dontpassflag, comeflag
+public dontcomeflag, comeoutrollflag, menumessage, errormessage, pointfordontcome
+public randval
+
+public betpass, betdontpass, betcome, betdontcome, rolldice, status
+public getnumber, random
+  
+;-----------------------------------------  
+;-- Main Procedure --  
+;-----------------------------------------  
+  
+MAIN PROC FAR  
+  
+        mov ax, cseg    ;use common code and data segment  
+        mov ds, ax  
+  
+MainLoop:  
+        mov dx, offset menumessage  
+        call dspmsg             ;display menu
+MainLoop2:
+	  call status  
+  
+MainRead:  
+        call kbdin              ;read input  
+        cmp al, 'P'  
+        jne @f  
+        call betpass  
+        jmp MainLoop2  
+  
+@@:  
+        cmp al, 'D'  
+        jne @f  
+        call betdontpass  
+        jmp MainLoop2  
+  
+@@:  
+        cmp al, 'C'  
+        jne @f  
+        call betcome  
+        jmp MainLoop2  
+  
+@@:  
+        cmp al, 'O'  
+        jne @f  
+        call betdontcome  
+        jmp MainLoop2  
+  
+@@:  
+        cmp al, 'R'  
+        jne @f  
+        call rolldice  
+        jmp MainLoop
+
+@@:
+	cmp al, 'T'
+	jne @f
+	call libHist
+	jmp MainLoop  
+  
+@@:  
+        cmp al, 'Q'  
+        jne MainRead            ;ignore other characters  
+        call Mp2xit             ;exit to dos  
+  
+main ENDP  
+  
+;--------------------------------------------------------
+;-- Replace Library Calls with your CODE! --
+;-- (Save all reg values that you modify) --
+;-- Do not forget to add Function Headers! --
+;---------------------------------------------------------
+
+;----------------------------------------------------------
+;-- betpass() --
+;--------------------------------------------------------
+betpass PROC NEAR
+
+	call libBetpass
+	ret
+
+betpass ENDP
+
+;---------------------------------------------------------
+;-- betdontpass() --
+;----------------------------------------------------------
+betdontpass PROC NEAR
+
+	call libBetdontpass
+	ret
+
+betdontpass ENDP
+
+;----------------------------------------------------
+;-- betcome() --
+;-------------------------------------------------
+betcome PROC NEAR
+
+	call libBetcome
+	ret
+
+betcome ENDP
+
+;----------------------------------------------
+;-- betdontcome() --
+;--------------------------------------------------
+betdontcome PROC NEAR
+
+	call libBetdontcome
+	ret
+
+betdontcome ENDP
+
+;-------------------------------------------------------
+;-- rolldice() --
+;-------------------------------------------------------
+rolldice PROC NEAR
+
+	call libRolldice
+	ret
+
+rolldice ENDP
+
+;---------------------------------------------------------
+;-- status() --
+;-------------------------------------------------------
+status PROC NEAR
+
+	call libStatus
+	ret
+
+status ENDP
+
+;--------------------------------------------------------
+;-- getnumber() --
+;-----------------------------------------------------------
+getnumber PROC NEAR
+
+	call libGetnumber
+	ret
+
+getnumber ENDP
+
+;--------------------------------------------------------
+;-- random()--
+;-------------------------------------------
+random PROC NEAR
+
+	call libRandom
+	ret
+
+random ENDP
+
+CSEG ends  
+        END     MAIN  
+ 
+ 
+
+
+</body>
+
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

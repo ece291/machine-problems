@@ -1,0 +1,505 @@
+<html>
+
+<head>
+<title>ECE 291</title>
+</head>
+
+<body bgcolor="#FFFFFF">
+<div align="center"><center>
+
+<table border="0" width="100%" cellspacing="0" cellpadding="0">
+  <tr>
+    <td width="33%" align="left">ECE 291</td>
+    <td width="33%" align="center">Computer Engineering II</td>
+    <td width="33%" align="right">Polychronopoulos, Spring 2000</td>
+  </tr>
+</table>
+</center></div>
+
+<h1 align="center">Machine Problem 1: Gradebook Database</h1>
+<div align="center"><center>
+
+<table border=1 width=60%>
+  <tr>
+    <td align=right>Assigned</td>
+    <td>Tuesday 2/1/00</td>
+  </tr>
+  <tr>
+    <td align="right">Due Date</td>
+    <td>Tuesday 2/15/00</td>
+  </tr>
+  <tr>
+    <td align="right">Purpose</td>
+    <td Roman">Learn to write assembler code. Use looping
+               and branching.  Perform basic string and
+               file manipulations.</td>
+  </tr>
+  <tr>
+    <td align="right">Points</font></td>
+    <td>50</td>
+  </tr>
+</table>
+</center></div>
+
+<h2>Introduction</h2>
+
+
+<p>Database systems play an integral part in the world of business.  As engineers, we play the part of designing and implementing the functionalities of a real world database system.  A simple example is the
+gradebook database for ECE291.  It stores the records of the students and their performance on homeworks, exams, and projects.
+This data is useful in assigning letter grades to students based on their
+rankings within the total distribution.&nbsp;
+</p>
+
+<h2>Problem Description</h2>
+
+<p>In this machine problem, you will deal with a fictitious database which contains a set of data records.  Your program will calculate the total score for each record.  Next, you will sort the score into one of the defined ranges.  Once sorted, the range array is updated accordingly to show that a student finished in that range.  You will then build a string of stars for each range.  Each star represents a student whose final score fell into a certain region.  Finally, you will display to screen a histogram that depicts the class score distribution.
+</p> 
+
+<p>This table depicts how the database records are stored in the data file.</p>
+
+<TABLE BORDER="1" CELLSPACING=1 CELLPADDING=7 WIDTH=535>
+<TR><TD WIDTH="57" VALIGN="TOP">
+<P>Field</TD>
+<TD WIDTH="57" VALIGN="TOP">
+<P>ID</TD>
+<TD WIDTH="40" VALIGN="TOP">
+<P>HWs</TD>
+<TD WIDTH="51" VALIGN="TOP">
+<P>MPs</TD>
+<TD WIDTH="72" VALIGN="TOP">
+<P>Exams</TD>
+<TD WIDTH="56" VALIGN="TOP">
+<P>Project</TD>
+<TR><TD WIDTH="57" VALIGN="TOP">
+<P>Data</TD>
+<TD WIDTH="57" VALIGN="TOP">
+<P>AAAAA</TD>
+<TD WIDTH="40" VALIGN="TOP">
+<P>BBBBBB</TD>
+<TD WIDTH="51" VALIGN="TOP">
+<P>BBBBBB</TD>
+<TD WIDTH="72" VALIGN="TOP">
+<P>BBB</TD>
+<TD WIDTH="56" VALIGN="TOP">
+<P>B</TD>
+</TR>
+<TR><TD WIDTH="57" VALIGN="TOP">
+<P>Offset</TD>
+<TD WIDTH="57" VALIGN="TOP">
+<P>0</TD>
+<TD WIDTH="40" VALIGN="TOP">
+<P>5-10</TD>
+<TD WIDTH="51" VALIGN="TOP">
+11-16</TD>
+<TD WIDTH="72" VALIGN="TOP">
+17-19</TD>
+<TD WIDTH="56" VALIGN="TOP">
+20</TD>
+</TR>
+</TABLE>
+
+<p> Where:</P>
+
+<ul>
+<li>ID 	  		AAAAA  -	represents an ID of a student : 5 ASCII characters (5-bytes)<P>
+<li>HW 	  		BBBBBB -	represents the hw scores of a student (1-byte)<P>
+<li>MP	  		BBBBBB -	represents the mp scores of a student (1-byte)<P>
+<li>Exam1, Exam2, Final BBB    -  	represents the exam scores of a student (1-byte)<P>
+<li>Project 		B      -  	represents the project score (1-byte)<P>
+
+<li>An example input from the time data base looks like:
+  <p>'TA001',25,75,75,75,75,75,25,50,50,50,50,50,150,150,200,125
+</ul>
+<P>&nbsp;</P>
+<P>You compute the total score based on the equations in the course syllabus:</P>
+
+<OL>
+
+<LI>Total&nbsp; = (HW0+HW1+HW2+HW3+HW4+HW5)/4 +
+  MP0+MP1+MP2+MP3+MP4+MP5+Exam1+Exam2+Final+Project</LI>
+</OL>
+
+
+
+<H2>Screen Dump</H2>
+<P>The following screen capture depicts the program as it is first executed.  It prints to the screen
+a histogram of the database records.&nbsp;</P>
+<center><img border="0" src="http://www.ece.uiuc.edu/ece291/mp/mp1/mp1.jpg" width="652" height="331"></center>
+
+<H2>MP1 Program Assignment</H2>
+
+<p>The database file to be used in the calculations and printed out is read into memory for manipulation using the INCLUDE directive. This data will start at the location pointed to by the variable:
+<u><b>gradebook</b></u>.  This can be used as the
+offset for the beginning of the database manipulation.  Each data record will be printed out and used to determine the values
+for total score.&nbsp; This total score will be used to update the <b>Range </b>field
+which will be used to construct the string of asterisks.&nbsp; The string of
+stars will be stored in <b>star_string</b>.&nbsp; You will need to terminate the
+string with a <b>'$'</b>.</p>
+
+<p>The database can be thought of as a large array where characters and values
+are stored in continuous bytes in memory.
+What is important is that you demonstrate your knowledge of looping, branching, and simple math operations with respect to addressing in assembly.
+The procedures to print to screen and certain loops are given to you.  They can be used freely without penalty.  These are
+very straightforward routines.  If you have questions, ask a TA.</p>
+
+<p>In this machine problem, the main procedure is provided for you; however,
+you must write the code to replace the library routines.
+You will replace these procedures from the LIBMP1
+library by commenting out the statements calling the Lib routine
+and adding your code.  Each routine that you write
+should match the output of the library code exactly.  Each of the function calls and their functionality is described below in the
+<b>Subroutines</b> section.
+The best way to get a feel for the program is to run it
+to see how it is supposed to operate.  You can also edit the test
+file to see how various changes will affect the program execution.</p>
+
+<p>Your program is required to:
+<ul>
+<li>Calculate the total score for each record. 
+<li>Sort the total into its corresponding range.
+<li>Build the a string of stars to represent the number of students who achieve
+  a certain score.
+<li>Display a histogram of the database distribution.
+
+</ul>
+
+
+
+<p>The program can be run by typing <tt>mp1</tt> at the
+command prompt.  The data file to be used is named <tt>GRADE.DTA</tt>.
+</p>
+
+<h2>Hints</h2>
+<ul>
+<li>The LIBMP1 file contains executable library functions for each of the
+routines that you need to implement.  
+This allows you to run the program and understand how it works before you implement it.  You can test your program with any combinations of your own
+code and library functions.  You will only receive credit, however, for
+the routines that you implement yourself. <p>
+
+<li>When debugging your code in Codeview, you will find it helpful to use
+the memory window to show you the memory location of the file and strings.
+You can also use the watch window to keep track of variables in your code.<p>
+
+<li>Do not assume that the file starts at memory location 0.<p>
+
+<li>You may define new variables as needed.<p>
+
+<li>You might find it very helpful to write your own helper functions.
+For instance a routine to print the value of the current line to the
+screen might be helpful to use in a few routines.<p>
+
+<li>Be very careful if you call another procedure not to destroy registers
+that the calling procedure uses.<p>
+
+<li>START EARLY!  This is the first MP that requires you to write your
+own program.  Composition is much more difficult than comprehension.<p>
+
+<li>Monitor the <a href="news:uiuc.class.ece291">newsgroup</a> for clarifications and help.</p>
+</ul>
+
+<h2>Subroutines</h2>
+
+<p>This assignment has seven procedures. You will receive credit by replacing
+each of these seven procedures listed below with your own code. </p>
+
+
+<table BORDER=1 >
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>Calculate_total</font></b></td>
+
+<td><ul>
+<li>Calculates the total score for a record.
+<li>Total&nbsp; = (HW0+HW1+HW2+HW3+HW4+HW5)/4 +
+  MP0+MP1+MP2+MP3+MP4+MP5+Exam1+Exam2+Final+Project.
+<li>Inputs:
+        <ul>
+	<li>DI = OFFSET of gradebook.
+        </ul>
+<li>Outputs:
+        <ul><li>Output:       AX = total score of a record.</ul>
+<li>Calls: none
+<li>Note: You need to save the registers you alter.&nbsp; To do this, push them
+  all onto the stack in the beginning of the subroutine, and pop them all off
+  the stack at the end.&nbsp; Also, document your functions with descriptive
+  function headers.&nbsp; Look in your lab book for examples or ask a TA.&nbsp;
+  YOU WILL LOSE POINTS IF YOU DON'T WRITE CLEAR, CONCISE FUNCTION HEADERS!!!!
+ </ul></td>
+</tr>
+
+
+<td><b><font size="+1">Store_score</font></b></td>
+
+<td><ul>
+
+<li>Stores the score in the corresponding region.&nbsp;&nbsp;
+<li>Inputs:
+	<ul>
+	<li> AX = Total score.</ul>
+<li>Outputs:
+	<ul><li>Range[0-6] incremented.</ul>
+
+<li>Calls: none
+<li>Note: Always save your registers in every procedure from here on out.  (We're not going to tell you
+again!)
+</ul></td>
+
+<tr VALIGN=TOP>
+<td><b><font size="+1">Construct_stars</font></b></td>
+
+<td><ul>
+       <li>Procedure to construct star_string.
+<li>Inputs:
+        <ul>
+<li>Input:        SI =  # of Range.
+               </ul>
+<li>Outputs:
+        <ul><li>star_string = string array to hold # of stars, where each star
+            represents a student within that range. </ul>
+<li>Calls: none
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font size="+1">Display_histogram</font></b></td>
+
+<td><ul>
+<li>Prints the score_head with its corresponding star_string.&nbsp; The finished
+  product is a histogram of the class scores.
+<li>Inputs:
+        <ul>
+	<li>SI is the index into the <b>Range</b> array.
+        </ul>
+<li>Outputs:
+        <ul>
+        <li>Prints&nbsp;the header information along with the score distribution
+          as represented by stars.
+</ul>
+<li>Calls: dspmsg
+</ul></td>
+</tr>
+                   
+</table>
+
+<h2>Procedure</h2>
+<ul>
+<li>You will begin this MP with the following files:
+    <ul>
+    <li><tt>MP1.ASM</tt>: Program Framework
+    <li><tt>GRADE.DTA</tt>: Database record file
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled
+        and linked.
+    <li><tt>LIBMP1.LIB</tt>: Library functions for MP1
+    <li><tt>LIB291.LIB</tt>: General-purpose library functions
+    </ul>
+<li>You may copy these files from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s V:\ece291\mp1 W:\mp1</tt><br>
+    or download the files from this server as <a href="mp1.zip">mp1.zip</a> 
+<li>Add your code to <tt>MP1.ASM</tt>.
+<li>Assemble and link your program by typing<br>
+      <tt>nmake</tt><Br>
+    This command reads <i>Makefile</i> then invokes MASM and LINK to build 
+    an executable program.  
+<li>Use CodeView (CV) to find and correct program errors. 
+<li>Verify your program operation by testing the
+    input test file.  You should alter the test file to check 
+    different scenarios with your code.
+</ul>
+
+<h2>Final Steps</h2>
+
+<ol>
+  <li>Print a copy of the MP1 grading report (<a href="mp1grade.html">MP1GR</a>).
+   Double-check that your program is ready for demonstration.  You need to
+   run through the test cases on the grading sheet, you WILL NOT be allowed
+   to hand-in unless you have done this step.
+  <li>Print MP1.ASM (Use GreenPrint32 to print at 4 pages/side.) 
+  <li>Demonstrate your MP1.EXE to a TA or to the instructor. You may
+   be asked to recompile and demonstrate MP1 with different input files.
+   Your program must work with all given input. </li>
+  <li>Be prepared to answer questions about any aspect of the operation of
+   your program. The TAs will not accept an MP if you cannot fully explain
+   the operation of your code and details of your implementation. Delayed
+   MPs will be subject to late penalties as described in the course
+   syllabus (10pts/day).</li>
+  <li>The TA will copy your program to the demonstration disk.
+  <li>Take your printouts to the same TA which approved your demonstration.
+    Staple the grading sheet to the front of the MP1.ASM printout.  Be sure
+    that your name appears in your code and on the grading sheet.
+</ol>
+
+<hr>
+
+<h2>MP1.ASM (program framework)</h2>
+
+<font size=-1><pre>
+
+
+PAGE    70, 140
+TITLE   MP1.ASM         Your Name       Today's Date
+
+COMMENT #
+        This program computes the grade of students in a gradebook database.
+        The output is a histogram that describes the distribution of the class.
+        #
+
+;********** SECTION 1:  Define Constants ****************************
+
+        CR              EQU     0Dh
+        LF              EQU     0Ah
+        TAB             EQU     09h
+        REC_LEN         EQU     21      ; Length of each record is constant
+        NUM_REGIONS     EQU     7
+
+;********** SECTION 2:  Declare External Procedures *****************
+
+;       Functions in LIB291.LIB
+;       These functions are free to be used by you.
+
+        extrn dspmsg:near, dosxit:near, rrest:near, rsave:near
+
+;       Complete descriptions of the LIB291 functions can be
+;       found in your lab manuals.  Use these functions for
+;       displaying output on the screen.
+
+        extrn mp1xit:near            ; Terminates program
+
+;       Functions in LIBMP1.LIB
+;       You will need to write these functions for this program.
+
+        extrn LIBCalculate_total:near
+        extrn LIBDisplay_histogram:near
+        extrn LIBConstruct_stars:near
+        extrn LIBStore_score:near
+
+        PUBLIC CR, LF, TAB, REC_LEN      ; Make the constants PUBLIC to the library       
+        PUBLIC Range, star_string, tab_space, score_head
+
+;********* SECTION 3:  Define Stack Segment **************************
+
+stkseg  segment stack           ; STACK SEGMENT
+        db      64 dup ('STACK  ')
+stkseg  ends
+
+;********* SECTION 4:  Define Code Segment **************************
+
+cseg segment public 'CODE'
+        assume cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;********* SECTION 5:  Declare Variables for Main Procedure **********
+;  The format for the gradebook database:
+;  Each record is 21 bytes long.
+;      Student_ID:      5 ASCII letters or numbers       = 5 bytes
+;      HW0-HW5:         1-byte unsigned integer          = 6 bytes
+;      MP0-MP5:         1-byte unsigned integer          = 6 bytes
+;      Exam1-Final:     1-byte unsigned integer          = 3 bytes
+;      Project:         1-byte unsigned integer          = 1 byte
+;
+;      ID,HW0,HW1,HW2,HW3,HW4,HW5,MP0,MP1,MP2,MP3,MP4,MP5,Exam1,Exam2,Final,Project
+   
+INCLUDE grade.dta
+
+;  INCLUDE places contents of file grade.dta here.
+;  This file has two variables defined:  gradebook and num_rec.
+;
+;  gradebook is an array of 21-byte records.
+;  num_rec is defined as a 16-bit integer that stores the number of records in the database.
+
+
+; Range header to printed to the screen.
+score_head      db '000-500','$'
+                db '501-599','$'
+                db '600-699','$'
+                db '700-799','$'
+                db '800-899','$'
+                db '900-999','$'
+                db ' = 1000','$'
+
+enter           db CR,LF,'$'              ;   Mimics hitting the enter key
+tab_space       db TAB,'$'              
+
+Range           db 7 dup(0)                ;   Seven ranges to store star string
+star_string     db 150 dup(0)              ;   Max number defined to be 150
+
+
+;********** SECTION 6:  Main Procedure ****************************
+
+MAIN    PROC    FAR
+        mov     ax, cseg                 
+        mov     ds, ax                   ; Initialize ds = cs
+      
+        mov     di, offset gradebook    ; DI holds the offset address of gradebook
+        mov     cx, num_rec
+        
+go_thru:
+        call    Calculate_total
+        call    Store_score
+        
+        add     di, REC_LEN      ; Move DI to point to the next entry in the gradebook
+        loop    go_thru
+
+        mov     cx, NUM_REGIONS
+        mov     si, 0            ; Construct_stars uses SI to index into Range array
+        
+draw:
+        call    Construct_stars   
+        call    Display_histogram
+        
+        mov     dx, OFFSET enter
+        call    dspmsg
+        
+        inc     si
+        loop    draw
+
+        call mp1xit
+MAIN    ENDP
+
+
+;******************************************************************
+;***************  You need to code these functions ****************
+;******************************************************************
+
+Calculate_total PROC NEAR
+        
+        call    LIBCalculate_total      ;  Comment this function call out.
+                                        ;  Insert your code here.
+        ret
+Calculate_total ENDP
+
+Store_score PROC NEAR
+        
+        call    LIBStore_score          ;  Comment this function call out.
+                                        ;  Insert your code here.
+        ret
+Store_score ENDP
+
+Construct_stars PROC NEAR
+        
+        call    LIBConstruct_stars      ;  Comment this function call out.
+                                        ;  Insert your code here.
+        
+        ret
+Construct_stars ENDP
+
+Display_histogram PROC NEAR
+       
+        call    LIBDisplay_histogram    ; Comment this function call out.
+                                        ; Insert your code here.
+             
+        ret
+Display_histogram       ENDP
+
+cseg    ends
+        end     main
+
+
+
+
+
+
+
+
+
+
+

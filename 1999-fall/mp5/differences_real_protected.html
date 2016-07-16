@@ -1,0 +1,637 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>Differences Between Real Mode and Protected Mode</title>
+</head>
+
+<body>
+
+<P><FONT size=+2><U> Differences Between Real Mode and Protected Mode</U></FONT></P>
+<P><b>Addresses are 32-bit<br>
+</b>Think of the address space as one, big, flat 32-bit space. When you access
+memory, you need to access it with 32-bit addresses.&nbsp; [di] is as
+meaningless as [dl] was in real mode. </P>
+
+<P><b>You Can Use Any Register to Access Memory<br>
+</b>You can access memory like this [segment : any_32-bit_register +
+any_other_32-bit_register*(1/2/4/8) + constant]&nbsp; This means that this is
+all legal: </P>
+
+<table border="1" width="100%">
+  <tr>
+    <td width="100%"><samp>mov al, byte [eax+4*ebx+12]&nbsp; ; ds is the assumed
+      segment<br>
+      mov ax, word [gs:ecx-99]&nbsp;&nbsp;&nbsp;&nbsp; ; ds, es, fs, and gs are ALL
+      segment
+      registers.<br>
+      mov edx, dword [myarray + ebx*4]</samp></td>
+  </tr>
+</table>
+<P><b>Segments are <i>Completely</i> Different.&nbsp; They're now Selectors.<br>
+</b>If you have a picture in your head of how segments work in real mode,
+great.&nbsp; If you know about how to calculate a linear address by multiplying
+the segment by 16 and adding the offset, great.&nbsp; You'll need this for the
+exam.&nbsp; You won't need this for protected mode.&nbsp; The segment registers in protected
+mode are now the selector registers. A <b><i>selector</i></b> is an index into a
+descriptor table.&nbsp; In the case of a single application program, it's an
+index into the Local Descriptor
+Table.&nbsp; The Local Descriptor Table is a table of (you guessed it) <b><i>descriptors</i></b>.&nbsp;&nbsp;
+Descriptors hold information about a sub-region of the 4 Gigabyte
+32-bit physical address space.&nbsp; Enough of me trying to throw BS theory on
+you like a CS class.&nbsp; Let's look at some stuff. </P>
+
+<ul>
+  <li>Open some program in cv32.</li>
+  <li>The help (Alt-H) tells me that to look at the local descriptor table, you
+    type Alt-L, so I did.</li>
+  <li>I looked at my Code Selector and saw that it was Local Descriptor Table
+    entry number EFh, so I scrolled down to this offset.</li>
+  <li>Sure enough, it said that it was a code selector that was read only.&nbsp;
+    It started at some huge linear starting address (0x837e5000) and was pretty
+    big (0x0001ffff).</li>
+  <li>Then I looked at my Default/Data Slector and it was LDT entry number FFh.</li>
+  <li>Looking two lines down, you can see it's 32-bit data which is both
+    readable and writeable.&nbsp; It starts at the same address and is the same
+    size as the Code Selector, strangly enough.&nbsp; Of course in our past MPs,
+    we've set DS to point to the same place as CS.&nbsp; Here these things mean
+    something different.</li>
+</ul>
+<p align="center"><img border="0" src="selector_screen.gif" width="493" height="299"></p>
+<P>To get the linear address for <samp>mov eax, dword [ds:ebx]</samp>, the processor
+will look in the Local Descriptor Table for ds's linear start address.&nbsp; It
+then adds the offset (in this case the value in ebx) to get the linear
+address.&nbsp; While it's doing this, it checks to see
+if you tried to access memory that was beyond the allowed length.&nbsp; Once it
+has the linear address, it looks in the processor's Virtual Memory Page Table to
+get the physical address, which is what actually gets sent out on the bus.&nbsp;
+If the Page table says that the particular page you need is not in physical
+memory, it will throw a Page Fault and the Operating System will have to load it
+off of disk.&nbsp; (Call swaping.)&nbsp; As you can see, there are a few more
+levels of abstraction here.&nbsp; We didn't talk anything about Virtual Memory
+or swapping, so this paragraph might go way over some of your heads.&nbsp; Just
+wait until 312 (Architecture) and CS 323 (the OS class) to learn all this fun
+stuff. </P>
+
+<P>If you did try to access memory &quot;out of range,&quot; when it preformed
+that check, the processor will throw a General Protection Fault
+and call interrupt 13h.&nbsp; This interrupt goes to the operating system which promptly terminated your program for trying to access memory that it
+doesn't own. (This is how memory is <i>protected</i> in protected
+mode.&nbsp; Ahhhh!)&nbsp; &quot;So why can't I just go into the Local Descriptor
+Table and give my segment a huge length?&quot;&nbsp; You're never allowed to deal with the
+Local Descriptor Table directly.&nbsp; You kindly <i>ask</i> the operating
+system to find you some free memory and set up your descriptor table. </P>
+
+<P><b>Protected Mode Interrupts<br>
+</b>If you want to call a interrupt, you can't just do it.&nbsp; This isn't
+16-bit DOS.&nbsp; When an interrupt is called, it does it's processing on the
+registers and returns it's values in the registers.&nbsp; To make it so you can
+still call real-mode interrupts, DPMI has it set up so you can write the values
+of the registers you want to pass to the interrupt in an array, call the
+&quot;Simulate Real Mode Interrupt&quot; DPMI call, and get your return
+values in your array.&nbsp; The DPMI interrupt is 33h, and the &quot;Simulate
+Real Mode Interrupt&quot; subfunction is 300h.&nbsp; (Note that here, the subfunction
+number goes in all of AX rather than just AH like the DOS int 21h subfunctions
+did.&nbsp; This is completely arbitrary, of course, and up to the
+interrupt.)&nbsp; I took this out of <a href="http://www.ece.uiuc.edu/ece291/class-resources/pmode/dpmi/index.html">http://www.ece.uiuc.edu/ece291/class-resources/pmode/dpmi/index.html</a>
+/ <a href="http://www.ece.uiuc.edu/ece291/class-resources/pmode/dpmi/ch5.n.html">DPMI
+Functions by Number</a> / <a href="http://www.ece.uiuc.edu/ece291/class-resources/pmode/dpmi/api/310300.html"><tt>31
+0300</tt> - Simulate Real Mode Interrupt</a>, so if you have a question, get
+your answer there and then e-mail me to let me know that my write-up was unclear
+at <a href="mailto:gallicch@uiuc.edu">gallicch@uiuc.edu</a>&nbsp; (For those losers
+out there who printed this out, just TRY clicking on that e-mail address!) </P>
+
+<div align="center">
+  <center>
+
+<table border="1">
+  <tr>
+    <td width="100%">
+      <p align="center"><b>INT 31h, 0300h - Simulate Real Mode Interrupt</b>
+      <p><b>Inputs:</b><br>
+      AX:&nbsp; 0300h&nbsp; (Simulate Real Mode Interrupt Subfunction)<br>
+      BL:&nbsp; Real Mode Interrupt Number<br>
+      BH:&nbsp; Flags<br>
+      CX:&nbsp; Number of words to copy from protected mode to real mode stack.<br>
+      ES:&nbsp; Selector of DPMI_Regs structure<br>
+      EDI:&nbsp; Offset of DPMI_Regs structure<br>
+      <br>
+      Where&nbsp; you rill in your real-mode interrupt inputs in DPMI_Regs which
+      looks like:</p>
+      <p><samp>&nbsp;&nbsp; DPMI_Regs&nbsp;&nbsp;&nbsp; ; No memory is reserved,
+      but it's still an offset.<br>
+      &nbsp;&nbsp; DPMI_EDI&nbsp;&nbsp;&nbsp;&nbsp;		resd&nbsp;&nbsp;&nbsp;	1<br>
+      &nbsp;&nbsp; DPMI_ESI&nbsp;&nbsp;&nbsp;&nbsp;		resd&nbsp;&nbsp;&nbsp;	1<br>
+      &nbsp;&nbsp; DPMI_EBP&nbsp;&nbsp;&nbsp;&nbsp;		resd&nbsp;&nbsp;&nbsp;	1<br>
+      &nbsp;&nbsp;   DPMI_RES0&nbsp;&nbsp;&nbsp;	resd&nbsp;&nbsp;&nbsp;	1<br>
+      &nbsp;&nbsp; DPMI_EBX&nbsp;&nbsp;&nbsp;&nbsp;		resd&nbsp;&nbsp;&nbsp;	1<br>
+      &nbsp;&nbsp; DPMI_EDX&nbsp;&nbsp;&nbsp;&nbsp;		resd&nbsp;&nbsp;&nbsp;	1<br>
+      &nbsp;&nbsp; DPMI_ECX&nbsp;&nbsp;&nbsp;&nbsp;		resd&nbsp;&nbsp;&nbsp;	1<br>
+      &nbsp;&nbsp; DPMI_EAX&nbsp;&nbsp;&nbsp;&nbsp;		resd&nbsp;&nbsp;&nbsp;	1<br>
+      &nbsp;&nbsp; DPMI_FLAGS&nbsp;&nbsp;	resw&nbsp;&nbsp;&nbsp;	1<br>
+      &nbsp;&nbsp; DPMI_ES&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;		resw&nbsp;&nbsp;&nbsp;	1<br>
+      &nbsp;&nbsp; DPMI_DS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;		resw&nbsp;&nbsp;&nbsp;	1<br>
+      &nbsp;&nbsp; DPMI_FS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;		resw&nbsp;&nbsp;&nbsp;	1<br>
+      &nbsp;&nbsp; DPMI_GS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;		resw&nbsp;&nbsp;&nbsp;	1<br>
+      &nbsp;&nbsp; DPMI_IP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;		resw&nbsp;&nbsp;&nbsp;	1<br>
+      &nbsp;&nbsp; DPMI_CS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;		resw&nbsp;&nbsp;&nbsp;	1<br>
+      &nbsp;&nbsp; DPMI_SP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;		resw&nbsp;&nbsp;&nbsp;	1<br>
+      &nbsp;&nbsp; DPMI_SS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;		resw&nbsp;&nbsp;&nbsp;	1</samp><br>
+      <br>
+      <b>
+      Outputs:</b><br>
+ DPMI_Regs structure gets filled with the status of the registers after the real
+      mode interrupt.</td>
+  </tr>
+</table>
+
+  </center>
+</div>
+
+<P>The Simulate Real Mode Interrupt service that DPMI provides to you is really
+complicated, but basically it drops back to 16-bit mode and sets the registers
+to the ones you give it in the array, then calls the 16-bit interrupt, then it
+goes back to protected mode and copies the interrupt's return values back into
+your array. </P>
+
+<P>This all works nicely when you're just calling something like &quot;get
+time&quot; which does thing to the registers, but what about the interrupts like
+&quot;Print String&quot; which takes the address of the
+string as an input?&nbsp; For this you need to copy your string into a special
+buffer you've allocated in DOS's 16-bit memory space (below 1MB) before you call &quot;Simulate Real
+Mode Interrupt.&quot;&nbsp; How do you allocate such memory? </P>
+
+<div align="center">
+  <center>
+
+<table border="1">
+  <tr>
+    <td valign="top">
+      <p align="center"><b>INT 31h, 0100h - Allocate DOS Memory Block</b>
+      <p><b>Inputs:</b><br>
+      AX = 0100H&nbsp; (The Allocate DOS Memory Block subfunction)<br>
+      BX = number of (16-byte) paragraphs desired<br>
+      <br>
+      <b>Outputs:</b><br>
+      Carry flag = clear if call was successful<br>
+      AX = real mode segment base address of allocated block<br>
+      DX = protected mode selector for allocated block</p>
+    </td>
+    <td valign="top">
+      <p align="center"><b>INT 31h, 0101h - Free DOS Memory Block</b>
+      <p><b>Inputs:</b><br>
+      AX = 0101H (The Free DOS Memory Block subfunction)<br>
+      DX = protected mode selector of block to be freed<br>
+      <br>
+      <b>Outputs:</b><br>
+      Carry flag = clear if call was successful</p>
+    </td>
+  </tr>
+</table>
+
+  </center>
+</div>
+<P>This call is a good way to see the differences between real-mode segments and
+selectors.&nbsp; Later, you'll want to copy your string into the memory you
+allocated with this call.&nbsp; To do that, set one of the protected-mode
+selector registers to the DX that INT 31h, 0100h returned.&nbsp; For example, <b>mov
+gs, dx.</b>&nbsp; To access the fifth byte of the string, you can do <b>[gs:5]</b>.&nbsp;
+Eventually you'll give the real-mode segment (what was returned in AX) to the
+&quot;DOS Print String interrupt&quot; as DS.&nbsp; To do this, you'll <b>mov
+DPMI_DS, ax</b> before you do the &quot;Simulate Real Mode Interrupt&quot;
+call.&nbsp; DOS will access the fifth byte as <b>[ds:5]</b>.&nbsp; While this
+looks similar, keep in mind that the method for obtaining the actual physical
+address is COMPLETELY different in both cases and Allocated DOS Memory Block had
+to do quite a bit of work: </P>
+
+<ul>
+  <li>Switch&nbsp; to real-mode</li>
+  <li>Do a DOS call to allocate the memory that DOS is in charge of (below 1MB)</li>
+  <li>Calculate the physical address that DOS returned.</li>
+  <li>Set up a new entry in the LDT for this base address and the appropriate
+    length.</li>
+  <li>Return the index of this LDT entry in DX.</li>
+</ul>
+
+<P><b>Protected Mode Handlers<br>
+</b>What about your keyboard handler?&nbsp; What about your mouse handler?&nbsp;
+What about networking or sound where when something happens on the card, an
+interrupt is called?&nbsp; For these situations, your protected mode CODE must
+be executed when a real-mode interrupt is fired.&nbsp; This is worth looking
+into if you're doing a game, and is talked about in the &quot;Interrupt
+Management Services&quot; section of <a href="http://www.ece.uiuc.edu/ece291/class-resources/pmode/dpmi/ch5.g.html">DPMI
+Functions by Functional Group</a>. </P>
+
+<P><b>Microsoft-Centric<br>
+</b>Keep in mind that this is all very DOS and DPMI specific.&nbsp; Most of what
+we've said so far applies to general Intel protected mode programming (Linux
+kernel hacking, for example.)&nbsp; The only exceptions are really the stub
+stuff and this DOS interrupt stuff through DPMI. </P>
+
+<P><font size="+2"><u>Task 4:&nbsp; Generalizing your Makefile</u></font> </P>
+
+<P><b><i>Another File</i></b>: Call it &quot;<b><samp>interrupt.asm</samp></b>&quot;
+because we'll play with the DPMI interrupts.&nbsp; You're going to need the
+&quot;BITS 32&quot; &quot;GLOBAL _main&quot; &quot;.bss .data .text
+sections&quot; and &quot;_main&quot;&nbsp; If you want to be lazy, just copy <b><samp>variable.asm</samp></b>
+and rip out the guts leaving just the framework.&nbsp; Declare the memory for
+the register structure that the simulate interrupt will be passed -- Add that <samp>   DPMI_Regs
+</samp>definition into your <samp>.bss</samp> section. </P>
+
+<P><b><i>Makefile</i></b>:&nbsp; Change your make file to be able to make the
+interrupt.exe executable. A good thing to do would be to change the &quot;<b><samp>variable.exe</samp></b>&quot;
+rule into a general &quot;<b><samp>%.exe:</samp></b>&quot; rule that's dependent
+on a generic &quot;<b><samp>%.o</samp></b>&quot; object file.&nbsp; You can
+model it after your &quot;<b><samp>%.o:</samp></b>&quot; rule, remembering that
+&quot;<b><samp>$*</samp></b>&quot; means &quot;the name of the first dependency
+without it's file extension.&quot;&nbsp; The second thing to do would be to add
+&quot;<b><samp>interrupt.exe</samp></b>&quot; as a dependency in the &quot;<b><samp>all:</samp></b>&quot;
+rule so that it too gets made when you type just plain &quot;<b><samp>make</samp></b>&quot;.&nbsp;
+If this makes no sense, re-read the section on Makefiles.&nbsp; If this still
+makes no sense, e-mail me so I can improve the section on Makefiles so that it
+will make sense.&nbsp; This is one of the few places here where you actually
+have to think.&nbsp; Remember, it's either this or another Parse. </P>
+
+<P><font size="+2"><u>Task 5:&nbsp; Get the Time</u></font> </P>
+
+<P> A quick look in the interrup.txt from the
+class resources says that the real-mode interrupt to get the time is: </P>
+
+<div align="center">
+  <center>
+
+<table border="1">
+  <tr>
+    <td width="100%"><samp><b>INT 21h, 2Ch - Get DOS Time</b></samp>
+      <p><samp><b>Inputs:</b><br>
+      AH = 2Ch</samp></p>
+      <p><samp><b>Outputs:</b><br>
+      CH = hour (0-23)&nbsp;<br>
+      CL = minutes (0-59)&nbsp;<br>
+      DH = seconds (0-59)&nbsp;<br>
+      DL = hundredths (0-99)&nbsp;</samp></td>
+  </tr>
+</table>
+  </center>
+</div>
+<ul>
+  <li>In your _main, add the code that sets the <samp>   DPMI_Regs</samp>
+    structure (only AH needs to be set to 2Ch here)</li>
+  <li>Sets up the registers to do the
+&quot;Simulate Real Mode Interrupt&quot; DPMI call:
+    <ul>
+      <li>Interrupt Number (BL)&nbsp; must be 21h</li>
+      <li>Flags (BH) don't matter for Get Time.</li>
+      <li>Get Time doesn't mess with the stack, so don't copy any bytes of the
+        stack (CX=0)</li>
+      <li>&quot;Selector&quot; is protected mode for &quot;Segment,&quot; and
+        since your <samp>   DPMI_Regs</samp> structure is declared under the
+        Default Selector, set EX to be DS.</li>
+      <li>EDI is the offset of the <samp>   DPMI_Regs</samp> structure, but
+        remember NASM doesn't have an &quot;offset&quot; keyword.</li>
+    </ul>
+  </li>
+  <li>Then do &quot;<samp>int 31h</samp>&quot; to do the call.</li>
+  <li>Move some of the results from the <samp>   DPMI_Regs</samp> structure back
+    into registers so you can look at them in cv32 to make sure it worked.</li>
+</ul>
+<P>This is the first time you'll be doing your own protected mode coding, so
+remember: </P>
+
+<ul>
+  <li><b>All memory references must have []'s</b>&nbsp;</li>
+  <li><b>All memory references must be given a size like byte, word, or dword</b></li>
+  <li><b>All offsets are the variable name with no []'s</b></li>
+</ul>
+<P>Make it and run it and make sure it did return the correct time by looking at
+CH and CL, converting them to decimal, and looking at the clock at the bottom of
+your screen to see if they're reasonable. </P>
+
+<P><font size="+2"><u>Task 6:&nbsp; Output a String to the Screen&nbsp;</u></font> </P>
+
+<P> We don't have a dispout, but all dispout
+really does is call DOS subfunction 9h.&nbsp; Again out of interrup.txt: </P>
+
+<div align="center">
+  <center>
+
+<table border="1">
+  <tr>
+    <td width="100%">
+      <p align="center"><samp><b>INT 21h, 9h - Print String&nbsp;</b></samp>
+      <p><samp><b>Inputs:</b><br>
+      AH = 09&nbsp;<br>
+      DS:DX = pointer to string ending in &quot;$&quot;&nbsp;</samp></p>
+      <p><samp><b>Outputs:</b><br>
+      returns nothing - outputs character string to STDOUT up to
+      &quot;$&quot;</samp></td>
+  </tr>
+</table>
+
+  </center>
+</div>
+<P>Notice that this interrupt doesn't just manipulate registers, it accesses
+memory you tell it to.&nbsp; You can't just give it a 32-bit address to work
+with because it doesn't know about those.&nbsp; You have to ask DPMI to allocate
+you some DOS memory that Print String can access. </P>
+
+<ul>
+  <li>Add a string variable in your .data section that ends with a CR (0Dh), LF
+    (0Ah), and '$'.</li>
+  <li>Add new code after your Get Time stuff.&nbsp; Be sure to comment your code
+    and leave lots of space between these different sections.</li>
+  <li>&nbsp;Allocate a DOS memory block using INT 31h, 0100h
+    <ul>
+      <li>Allocate enough space for your string.&nbsp; (BX &gt; String Length /
+        16)</li>
+      <li>Do the INT 31h, 0100h to get your memory.</li>
+    </ul>
+  </li>
+  <li>Copy the string into the Memory Block.
+    <ul>
+      <li>Move the protected-mode segment the call gave you into a proteced-mode
+        segment register:&nbsp; <b>mov es, dx</b> or <b>mov fs, dx</b> or <b>mov
+        gs, dx</b> but probably not <b>mov ds, dx</b> because then you won't be
+        able to access your own variables.</li>
+      <li>Make your loop label a local label by beginning it with a dot.&nbsp;
+        You should always do this, but you'll look at an objdump in a bit, so be
+        <i>sure</i> to do it this time.</li>
+      <li>Remember that in NASM, you have to write <b>mystring[ebx] </b>as <b>[mystring
+        + ebx]</b>.&nbsp; This is, of course, legal in MASM since that's exactly
+        what the array-like notation gets translated into.&nbsp; Remember the
+        mode byte?&nbsp; <b>[bx + 16-bit-constant]</b> where the constant is the
+        offset of the start of the array.</li>
+    </ul>
+  </li>
+  <li>Do the &quot;Simulate Real-Mode Interrupt&quot; Stuff
+    <ul>
+      <li>Set up the registers that Print String needs in the DPMI_Regs
+        structure</li>
+      <li>Remember that DS needs to the real-mode segment returned by
+        &quot;Allocate DOS Memory&quot; in AX.</li>
+      <li>DX is the offset in this real-mode segment.&nbsp; If you copied your
+        string to the beginning of your protected-mode selector's memory, it
+        will be at the beginning of the real-mode segment.</li>
+      <li>Call &quot;Simulate Real-Mode Interrupt&quot;</li>
+    </ul>
+  </li>
+  <li>Free the Memory Block using the &quot;Free DOS Memory Block&quot; call.
+    <ul>
+      <li>You need to pass in the protected mode selector in DX.&nbsp; (You've
+        probably got this sitting in es, fs,or gs from when you moved it there.)</li>
+    </ul>
+  </li>
+</ul>
+<p>Make it again, run it.</p>
+<p>&quot;<b><samp>cv32</samp></b>&quot; it.&nbsp; When you get to the point
+where get your protected-mode segment for the Memory block, find it in the LDT
+(Alt-L)&nbsp; It's 16-bit data.&nbsp; It's linear address is under 1MB.&nbsp;
+It's size is the size you told it to be, almost.&nbsp; <a href="questions.html">Question
+2:</a>&nbsp; How does the &quot;size&quot; column relate to the size you asked
+for? It's readable and writeable.&nbsp; Hey, this stuff really works!</p>
+<p><b><samp>&quot;objdump --disassemble-all interrupt.o&quot;</samp></b> and
+look for your loop label.&nbsp; What is it called there?&nbsp; <a href="questions.html">Question
+3</a>:&nbsp; How does NASM treat labels with a dot before them to keep those
+local names form interfering with each other?</p>
+<P><font size="+2"><u>Task 7:&nbsp; Get a </u></font><font size="+2"><u>Key Press</u></font> </P>
+
+<p>The relevant interrupts here are BIOS functions.</p>
+<table border="1">
+  <tr>
+    <td valign="top" width="50%">
+      <p align="center"><samp><b>INT 16h, 0h - Wait for Key&nbsp;</b></samp>
+      <p><samp><b>Inputs:</b><br>
+      AH = 00h&nbsp;</samp></p>
+      <p><samp><b>Outputs:</b><br>
+      AL = ASCII Code of key press<br>
+      AH = Scan Code of key press.</samp></td>
+    <td valign="top" width="50%">
+      <p align="center"><samp><b>INT 16h, 1h - Determine Buffer Status&nbsp;</b></samp>
+      <p><samp><b>Inputs:</b><br>
+      AH = 01h&nbsp;</samp></p>
+      <p><samp><b>Outputs:</b><br>
+      ZF = 0 if a character is available.<br>
+      AL = ASCII Code of key press<br>
+      AH = Scan Code of key press.</samp><p><samp><b>Note:</b><br>
+      This does not take the character out of the keyboard buffer if there was a
+      character.&nbsp; To do that, call Wait for Key, which will return right
+      away after taking the character out of the buffer.</samp></td>
+  </tr>
+</table>
+<P>Determine Buffer Status is useful for things like games where you don't want
+to stop to wait for a key.&nbsp; You want to move your JarJar around the
+mine-field only when a key is pressed, but you still want everyone else to shoot
+at him while you wait. </P>
+
+<P>One cool thing about DPMI is that it sets things up so you can do BIOS
+interrupts without having to &quot;Simulate Real Mode Interrupt.&quot;&nbsp; Why
+it does this and not the DOS interrupts, I don't know. </P>
+
+<P>Make your program print out your string until a key is pressed.&nbsp; Then
+put the ASCII value for the key press into the first character of the string
+before you print it out one last time. </P>
+
+<ul>
+  <li>Move your &quot;Allocate DOS Memory Block&quot; code to the top, and your
+    &quot;Free DOS Memory Block&quot; to the bottom since you only want to do
+    this once even though you'll be using the block a lot.</li>
+  <li>Put the protected-mode selector and real-mode segment that &quot;Allocate
+    DOS Memory Block&quot; returns into variables so you don't have to worry
+    about blowing registers away.</li>
+  <li>Make a local loop label before your &quot;Display String&quot; code.</li>
+  <li>After the display String code, do the &quot;Determine Buffer Status&quot;
+    BIOS call.
+    <ul>
+      <li><b><samp>mov ah, 01h</samp></b></li>
+      <li><b><samp>int 16h</samp></b></li>
+    </ul>
+  </li>
+  <li>Jump if the zero flag is 1 to your loop label:&nbsp; <b><samp>jz .display_loop</samp></b></li>
+  <li>Now actually get they key press from the buffer with <b><samp>int 16h, 00h
+    </samp></b>because if you don't take the key out of the buffer, when you
+    actually WANT to wait for a key, it will grab the key from here.</li>
+  <li>Change the first byte of the string in your DOS Memory Block to be the
+    ASCII value of the key (returned in AL)</li>
+  <li>Do the &quot;Display String&quot; one more time.</li>
+</ul>
+
+<P><font size="+2"><u>Task 8:&nbsp; Set up a Jump Table</u></font> </P>
+
+<P>If you recall, the final program sat around and waited for you to press a
+key.&nbsp; Then it did some function and came back to waiting for a key.&nbsp;
+This is best done with a jump table whose index is the scan code of the key
+press.&nbsp; Here.&nbsp; I'll just give you a table so you don't have to look at
+all the scan codes: </P>
+
+<table border="1">
+  <tr>
+    <td width="100%"><samp>KeyJumpTable<br>
+      &nbsp;&nbsp; dd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      JustReturn&nbsp;&nbsp; ; Nothing (0)<br>
+      &nbsp;&nbsp; dd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Quit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; ESC (1)<br>
+      &nbsp;&nbsp; times 55 dd&nbsp;&nbsp;&nbsp; JustReturn&nbsp;&nbsp; ; 1-Alt (2-56)<br>
+      &nbsp;&nbsp; dd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      JustReturn&nbsp;&nbsp; ; SpaceBar (57)<br>
+      &nbsp;&nbsp; dd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      JustReturn&nbsp;&nbsp; ; CAPSLOCK (58)<br>
+      &nbsp;&nbsp; dd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Disp_String&nbsp; ; F1 (59)<br>
+      &nbsp;&nbsp; dd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      Disp_Loop&nbsp;&nbsp;&nbsp; ; F2 (60)<br>
+      &nbsp;&nbsp; dd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      JustReturn&nbsp;&nbsp; ; F3 (61)<br>
+      &nbsp;&nbsp; dd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      JustReturn&nbsp;&nbsp; ; F4 (62)<br>
+      &nbsp;&nbsp; times 8 dd&nbsp;&nbsp;&nbsp;&nbsp; JustReturn&nbsp;&nbsp; ;
+      F5-SCRLOCK (63-70)<br>
+      &nbsp;&nbsp; dd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      JustReturn&nbsp;&nbsp; ; HOME (71)<br>
+      &nbsp;&nbsp; dd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      JustReturn&nbsp;&nbsp; ; UP (72)<br>
+      &nbsp;&nbsp; dd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      JustReturn&nbsp;&nbsp; ; PGUP (73)<br>
+      &nbsp;&nbsp; dd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      JustReturn&nbsp;&nbsp; ; Keypad Minus (74)<br>
+      &nbsp;&nbsp; dd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      JustReturn&nbsp;&nbsp; ; LEFT (75)<br>
+      &nbsp;&nbsp; dd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      JustReturn&nbsp;&nbsp; ; Keypad 5 (76)<br>
+      &nbsp;&nbsp; dd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      JustReturn&nbsp;&nbsp; ; RIGHT (77)<br>
+      &nbsp;&nbsp; dd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      JustReturn&nbsp;&nbsp; ; Keypad Plus (78)<br>
+      &nbsp;&nbsp; dd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      JustReturn&nbsp;&nbsp; ; END (79)<br>
+      &nbsp;&nbsp; dd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      JustReturn&nbsp;&nbsp; ; DOWN (80)<br>
+      &nbsp;&nbsp; dd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      JustReturn&nbsp;&nbsp; ; PGDN (81)<br>
+      &nbsp;&nbsp; times 175 dd&nbsp;&nbsp; JustReturn&nbsp;&nbsp; ; (82-255)</samp></td>
+  </tr>
+</table>
+<P>All you've done so far is displaying stings and reading time.&nbsp; Set it up
+so that: </P>
+
+<ul>
+  <li>F1 Displays your string</li>
+  <li>F2 Displays your string until you hit a key</li>
+</ul>
+<p>It might be helpful to put this skeleton into your .text section and just
+paste in the bits and pieces that you've written.&nbsp; This will allow you to
+&quot;start fresh.&quot;</p>
+<table border="1">
+  <tr>
+    <td width="100%"><samp>_main:<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; ; Some time stuff from before<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; ; Allocate DOS Block&nbsp;<br>
+      <br>
+      &nbsp; JustReturn:<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; ; Print out the menu<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; mov ah, 00h<br>
+      &nbsp;&nbsp;&nbsp; int 16h<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; mov ecx, 0   ; We'll use ECX as the index into the jump table.<br>
+      &nbsp;&nbsp;&nbsp; mov cl, ah ; Moves the Key Code into ecx<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; jmp [KeyJumpTable+ 4*ecx]&nbsp;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; We used ECX as an index, and multiplied it by four because  the<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; JumpTable is an array of addresses, which are 32-bit (4 bytes)<br>
+      <br>
+      <br>
+      &nbsp; Disp_String:<br>
+      &nbsp;&nbsp;&nbsp; ; Display String Code Here<br>
+      &nbsp;&nbsp;&nbsp; jmp JustReturn<br>
+      <br>
+      <br>
+      &nbsp; Disp_Loop:<br>
+      &nbsp;&nbsp;&nbsp; ; Display Loop Code Here (Show a different string from
+      before.)<br>
+      &nbsp;&nbsp;&nbsp; ; Does a int 16h, 01h to wait for a key and loops if
+      there is none<br>
+      &nbsp;&nbsp;&nbsp; ; Does a int 16h, 00h to get that key out of the buffer<br>
+      &nbsp;&nbsp;&nbsp; jmp JustReturn&nbsp;<br>
+      <br>
+      <br>
+      &nbsp; Quit:<br>
+      &nbsp;&nbsp;&nbsp; ; Free DOS Block<br>
+      &nbsp;&nbsp;&nbsp; ret&nbsp;&nbsp; ; Return to DJGPP's crt0 library startup code</samp></td>
+  </tr>
+</table>
+
+<p>You need a menu.&nbsp; Just make a big string and print it out.&nbsp; You've
+got to make sure you're allocating enough memory in your buffer for the large
+menu string.&nbsp; Actually, on second hand, try the program without allocating
+enough memory and see what happens.&nbsp; <a href="questions.html">Question 4:</a>&nbsp;
+What happened when you didn't allocate enough memory in your buffer?&nbsp; The
+memory was protected!&nbsp; (Thus the name of the mode.)</p>
+
+<P><font size="+2"><u>Task 9:&nbsp; Draw Pixels in 320x200 </u></font> </P>
+
+<p>One last thing before we get into the good stuff.&nbsp; You know about this
+mode.&nbsp; Let's see how we can use it in protected mode. To get into the mode
+is pretty straight forward.&nbsp; Make a new jump table entry for DrawPixels and
+put the mode switching code there:</p>
+<table border="1">
+  <tr>
+    <td width="100%"><samp>&nbsp;&nbsp;&nbsp; ; Switch to 320x200x256 Mode</samp><samp><br>
+      &nbsp;&nbsp;&nbsp; mov ah, 0&nbsp;&nbsp;&nbsp; ; Subfunction to set the
+      mode<br>
+      &nbsp;&nbsp;&nbsp; mov al, 13h&nbsp; ; Mode 13h is 320x200x256<br>
+      &nbsp;&nbsp;&nbsp; int 10h&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; Video BIOS call<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; ; Do the pixel stuff.&nbsp;&nbsp;&nbsp;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; ; Switch back to text Mode<br>
+      &nbsp;&nbsp;&nbsp; mov ah, 0<br>
+      &nbsp;&nbsp;&nbsp; mov al, 03h&nbsp; ; Mode 03h is text mode.<br>
+      &nbsp;&nbsp;&nbsp; int 10h</samp></td>
+  </tr>
+</table>
+<p>The hard part here is that in protected mode, you can't just blindly write to
+segment 0A000h.&nbsp; First of all, segments are meaningless. Like you allocated
+a block of DOS memory before and got a selector for it, you're going to have to
+get a selector for the real-mode memory for the screen.&nbsp; A look at the <a href="http://www.ece.uiuc.edu/ece291/class-resources/pmode/dpmi/ch5.g.html">DPMI
+Functions by Functional Group</a> we find <a href="http://www.ece.uiuc.edu/ece291/class-resources/pmode/dpmi/api/310002.html"><tt>31
+0002</tt> - Segment to Descriptor</a>.&nbsp;&nbsp;</p>
+<div align="center">
+  <center>
+  <table border="1">
+    <tr>
+      <td width="100%">
+      <p align="center"><b>INT 31h, 0002h - Segment to Descriptor</b>
+      <p><b>Inputs:</b><br>
+      AX = 0002H (The Segment to Descriptor subfunction)<br>
+      BX = real mode segment address<br>
+      <br>
+      <b>Outputs:</b><br>
+      Carry flag = clear if call was successful<br>
+      AX = protected mode selector for real mode segment</p>
+      </td>
+    </tr>
+  </table>
+  </center>
+</div>
+<ul>
+  <li>Get a selector for 0A000h.</li>
+  <li>Go into video mode.</li>
+  <li>Draw a bunch of pixels into video memory using the selector you got.&nbsp;
+    Some loop with different colors would be nice.</li>
+  <li>Wait for a Key Press.&nbsp; (Be sure to read in the key off the buffer
+    with <b><samp>int 16h, 00h</samp></b> when you <i>do</i> get a key press.)</li>
+  <li>Return to text mode.</li>
+</ul>
+
+<p>Make it, run it, look in the Local Descriptor Table (Alt-L) at selector it
+gave you.&nbsp; This is the best example of how this selector/descriptor stuff
+works because you can actually see a real, meaningful physical address!</p>
+
+</body>
+
+</html>

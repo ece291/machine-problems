@@ -1,0 +1,434 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 2</title>
+</head>
+
+<body bgcolor=ffffff>
+<p>
+<table cellpadding=3 width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Lockwood, Spring 1998</td></tr></table>
+<h2> </h2>
+
+
+<center><h1>Machine Problem 2: Huffman Compression </h1></center>
+<p>
+<center><table border=1 cellpadding=3 width=60%>
+  <tr><td align=right><b>Due Date</b></td><td>Friday 2/20/98</td></tr>
+  <tr><td align=right><b>Purpose</b></td><td>
+     Subroutines, User I/O, Compression algorithms 
+     </td></tr>
+   <tr><td align=right><b>Points</b></td><td>50</td></tr>
+</table>
+</center>
+
+<!--
+<p><img src="../../icon/construct.gif">This MP is under construction <p>
+-->
+
+<h2>Introduction</h2>
+   Compression is extremely useful
+   for data such as text, images, sound, and video.
+  Compression allows audio files (such as MP3s) to be compressed 
+  to a fraction of their original size, permits hundreds of channels 
+  of video to be transmitted through a single digital satellite system (DSS);
+  enables a modem to achieve higher throughput, and can increase the
+  storage capacity of a disk or tape drive.
+  <p>
+   Non-lossy compression algorithms, such as the one studied in this MP,
+   completely preserve the data they compress.
+   By representing the most frequently recurring data patterns 
+   using the smallest bit sequence, the total size of the data can 
+   be greatly reduced.
+  <p> 
+  In this MP, we will write an interactive assembly program
+  encodes and decodes text messages using Huffman compression.
+  The text message will consist of symbols that include:
+  the 26 letters ('A'..'Z'), the space (' '), and the asterisk.  
+  Each symbol will be represented using a veriable-bit-length encoding.
+
+<h2>Huffman Encoding</h2>
+  In general, the generation of an optimal Huffman encoding table
+  is data dependent.
+  The first step requires scanning the document 
+  to determine each symbol's frequency of occurance.
+  Next, each symbol is represented as a node in a graph,
+  with a weight equal to its probability of occurance.  
+  <p>
+  The main body of the algorithm involves sequentially combining  
+  the least frequenctly occuring pairs of nodes into a tree-structured
+  supernode.  The parent of a supernode is given a weight equal 
+  to the sum of the weighs of the children.  The algorithm continues
+  combining nodes and supernodes until all nodes have been combined 
+  into a single tree.  Once finished, all 
+  of the symbols appear as leaves in the tree.
+  <p>
+  The encoding of the symbols is determined by assigning '0' and '1' values
+  to the branches of the tree.  The encoded value is determined by
+  following the branches of the tree, starting at the root.
+  The symbol is formed by combining the 0's and 1's 
+  found along the branches of the tree.
+  The number of bits required
+  to represent a symbol is equal to the depth of the leaf.  Frequent
+  letters are represented with few bits, while infrequent letters are
+  represented with more. 
+  <p>
+  For this MP, you are given the Huffman encoding table.  This table
+  was generated using Prof. Lockwood's PhD dissertation 
+  as a representative sample of standard writing.  
+  <i>(The question of whether or not Prof. Lockwood's writing actually 
+  reflects standard writing is an entirely different question...)</i>. 
+  A script was run that scanned the entire file and counted
+  the frequency of each letter in the document.  The results of this
+  are shown below:<p>
+
+  <table border=1><tr><Td><tt>
+ e 0.121 t 0.105 i 0.081 o 0.072 a 0.068 n 0.065 s 0.062 r 0.061 c 0.046<br>
+ h 0.044 l 0.043 u 0.033 d 0.033 p 0.030 m 0.028 f 0.024 g 0.019 b 0.017<br>
+ w 0.014 v 0.012 y 0.009 k 0.005 q 0.004 x 0.003 z 0.001 j 0.001</td></tr>
+</table><p>
+
+  As expected, vowels and common letters such as 'E', 'T', 'I', and 'O' 
+  appeared most often.
+  The letters 'Z' and 'J' appeared least frequently.
+ Using the algorithm described above, 
+ the following encoding tree was generated:
+  <i>(The space and asterisk symbols were added 
+later by splitting the nodes for nodes for S and V)</i>
+
+  <p><img src="huffman-tree.gif"><p>
+
+  In this tree, the letter 'E' can be found by following the right-left-right 
+branches.  By assigning '0' and and '1' values to the left 
+and right branches, respectively, this corresponds to an encoding
+pattern of <tt>101</tt>.  Likewise, the letter 'Z' has an encoding of:
+<tt>110000110</tt>.  Note that decoding of Huffman codes is somewhat
+tricky due to the fact that symbols can be represented with
+a differing number of bits.  
+
+
+<p>
+  Messages and documents can be formed by appending symbols together.
+The message 'HELLO', for example, can be compactly represented 
+with only 22 bits as: <tt>00101 101 00100 00100 0001</tt>.  To clearify
+the encoding, spaces were shown between the symbols.  In memory, however,
+adjacent symbols would occupy adjacent bit positions.  In general, 
+we will be treating memory as an array of bits.  Because the
+symbols do not fall on even boundries, it is up to the decoding algorithm
+to decide where one symbol stops and the next begins.
+<p>
+
+<h2>User Interface</h2>
+  <ul>
+  <li>You are given the framework of a program which provides
+      a menu-driven interface. <p>
+
+  <li>By selecting an option from the menu, the user can:
+      <ul>
+      <li>Enter text message or binary data
+      <li>Print the contents of the message or buffer
+      <li>Encode a message or decode the buffer
+      </ul><p>
+
+  <li>All binary data is entered and displayed from left-to-right with
+      the <i>Least Significant Bit (LSB)</i> first.
+
+     <p>      
+  <li>Your input routines must be robust to all types
+      of user input including backspace, invalid input, buffer underflow, 
+      and overflow.
+  </ul>
+
+<h2>Sample Input & Output</h2>
+<ul>
+
+<li>Results from a sample run of the program are shown below:<br>
+    (<b>Boldface</b> letters are were provided as input)<p>
+<table border=1><tr><td><tt>---------- MP2 Menu -----------<br>
+  Enter   (T)ext    (B)inary<br>
+  Print   (M)essage (R)buffeR<br>
+  Huffman (E)ncode  (D)ecode<br>
+-------- [ESC] = exit ---------<br>
+<br>
+</tt><b>B</b><tt> Enter Binary Data (LSBit .. MSBit): </tt><b>101</b><br>
+<b>D</b><tt> Text Message= E</tt><br><br>
+<b>T</b><tt> Enter Text Message: </tt><b>Z</b><br>
+<b>E</b><tt> Compressed Size = 9 bits ~= 1 bytes.  (LSBit .. MSBit)<br>
+11000011 0</tt><br><br>
+<b>T</b><tt> Enter Text Message: </tt><b>HELLO</b><br>
+<b>E</b><tt> Compressed Size = 22 bits ~= 2 bytes.  (LSBit .. MSBit)<br>
+00101101 00100001 000001</tt> </pre></td></tr></table>
+    <p>
+
+<li>An understanding of the program is best obtained by 
+    running the program interactively.  <br>
+    Try running the library-based MP2.EXE program to
+    compress and decompress your own data.
+<p>
+
+<li>A sample input data, <tt>test1.in</tt>, is included with this MP.  <br>
+    Use the following command to pipes this file into MP2: <br>
+    <tt>mp2 &lt test1.in</tt><br>
+    Your results should match <tt>test1.out</tt>. 
+<p>
+
+<li>Your program should work for all types of data.  <Br>
+    TAs will provide you with additional test cases when you demo your MP.
+</ul>
+
+
+<h2>Data Structures</h2>
+  <ul>
+  <li>A few variables have already been defined for you in the program
+      framework.  <p>
+     <ul>
+     <li><b>TextMsg</b>: String of ASCII bytes holding un-encoded text.<br>
+          The end of this string should be always be marked with 
+          the '$' character.  <p>
+     <li><b>Buffer</b>: A <i>packed</i> array of bytes that hold the
+         Huffman-encoded data. <br> 
+         The first huffman code begins with the least 
+         significant bit (LSBit) of the first byte (Buffer[0]) in the array.
+         The next huffman code begins at the next bit location in the buffer.
+         Note that one variable-length symbol may overlap multiple 
+         byte locations, and that no bits are wasted between symbols.<p>
+     <li><b>BufferLength</b>: A word which indicates how many
+         bits are stored in buffer.<p>
+     <li><b>HuffCodes</b>: An array of structures that 
+         that define how symbols are encoded.<br>
+         This table is defined in the file HUFFCODE.INC
+         and is <tt>Include</tt>'d into MP2.ASM.
+         For each of the 28 symbols (letters+space+asterisk), 
+         this array contains: the 
+         ASCII letter, the Huffman-encoded bit pattern (in two formats),
+         and the number of bits in the symbol.
+         The DownEncoding specifies the symbol with the most significant
+         bit listed first.  The UpEncoding specifies the same symbol 
+         in reverse bit order (i.e., with the Least significant bit first).
+         Both formats are given for your convenience. 
+         It is easy to confuse the bit ordering.
+         Recall that MASM and CodeView both present data 
+         with the most significant bit listed first. 
+        
+     </ul> <p>
+   <li>A few constants have also been defined:<p>
+     <ul>
+     <li><b>TextMsgMaxLength</b> == 70 <i>bytes</i></b>,<br>
+        i.e., Just less than one line of full-screen text.<p>
+     <li><b>BufferMaxLengthBits</b> == 9*TextMsgMaxLength <i>bits</i>,<br>
+        i.e., the longest encoding times the longest Buffer length.<p>
+     <li><b>BufferMaxLength</b> == 1+BufferMaxLengthBits/8 <i>bytes</i>,<br>
+        Number of bytes required to hold Buffer, rounded up to next byte.
+     </ul>
+  </ul>
+
+<h2>Procedures</h2>
+
+  <ul>
+  <li>This assignment has eight procedures.  
+      You will receive credit for this
+      assignment by replacing each of the eight
+      procedures listed below with your own code.  
+  <li>You need to experiment with the working code 
+      to gain a full understanding of how the programs works,
+      what the procedures do, and how the procedures interact with each other.
+  <li>Your program should exactly match the functionality of the library 
+      subroutines.
+  <li>All subroutines should be <i>modular</i>.  They should use the stack to
+      <i>preserve</i> the value of any registers they may modify.  
+  </ul>
+
+<ul>
+
+
+<li><font size=+1><b>PrintTextMsg</b></font>
+  <ul>
+  <li><b>Purpose</b>: Prints the contents of the <tt>TextMsg</tt>
+       variable.
+  <li><b>Inputs:</b> TextMsg variable
+  <li><b>Outputs:</b> Writes to screen
+  <li><b>Hints:</b> Use LIB291 Functions where appropriate.
+  <li><b>Points</b>: 5
+  </ul><p>
+
+<li><font size=+1><b>ReadTextMsg</b></font>
+  <ul>
+  <li><b>Purpose</b>: Read TextMsg from the keyboard.  
+     <ul>
+     <li>Converts lowercase letters to uppercase letters
+     <li>Rejects all invalid input (and beeps)
+     <li>Allows backspacing (BS = ASCII 8)
+     <li>Prevents Underflow and Overflow of variable <br>
+         (i.e., writing past the beginning or end of TextMsg)
+     <li>Terminates with a carriage return  (CR = ASCII 13)
+     <li>Rejects line feeds (LF = ASCII 10) 
+     <li>Marks end of TextMsg with the '$'.
+     </ul>
+  <li><b>Inputs:</b> Keyboard
+  <li><b>Outputs:</b> TextMsg variable
+  <li><b>Hint:</b> To erase a character from the screen, print 
+   a backspace, then whitespace, then backspace.
+  <li><b>Points</b>: 5
+  </ul><p>
+
+<li><font size=+1><b>PrintBuffer</b></font>
+  <ul>
+  <li><b>Purpose</b>: Prints the size contents of the binary 
+       <tt>Buffer</tt> array
+     <ul>
+     <li>Prints 8 bits at a time
+     <li>Prints least significant bit of each symbol first.
+     <li>Prints 5 bytes (40 bits) per line
+     </ul>
+  <li><b>Inputs:</b> Buffer & BufferLength variables
+  <li><b>Outputs:</b> Writes to screen
+  <li><b>Hint:</b> Review your shifting techniques and modulo arithmetic!
+  <li><b>Points</b>: 5
+  </ul><p>
+
+
+<li><font size=+1><b>ReadBuffer</b></font>
+  <ul>
+  <li><b>Purpose</b>: Read binary Buffer from the keyboard.  
+     <ul>
+     <li>Accepts only 0's and 1's
+     <li>Rejects all input (and beeps)
+     <li>Allows backspacing
+     <li>Prevents Underflow and Overflow of variable
+     <li>Terminates with a carriage return  (CR = ASCII 13)
+     <li>Ignores line feeds (LF = ASCII 10) 
+     <li>Sets BufferLength = number of bits read
+     </ul>
+  <li><b>Inputs:</b> Keyboard
+  <li><b>Outputs:</b> Buffer and BufferLength variable
+  <li><b>Points</b>: 5
+  </ul><p>
+
+<li><font size=+1><b>Encode</b></font>
+  <ul>
+  <li><b>Purpose</b>: Encodes a single ASCII character into a 
+         huffman symbol, as defined above.
+  <li><b>Input:</b> AL = ASCII character
+  <li><b>Outputs:</b>
+     <ul>
+     <li>AX = Symbol 
+     <li>DH = Symbol-size (Number of bits)
+     </ul>
+  <li><b>Points</b>: 5
+  </ul><p>
+
+
+<li><font size=+1><b>AppendBufferN</b></font>
+  <ul>
+  <li><b>Purpose</b>: Appends a variable-length symbol to the end of 
+      the Buffer array.
+  <li><b>Inputs</b>: 
+     <ul>
+     <li>AX = Symbol 
+     <li>DH = Symbol-size (Number of bits)
+     </ul>
+  <li><b>Output</b>: Appends symbol-size bits to <i>Buffer</i> then 
+     adds symbol-size to <i>BufferLength</i> 
+  <li><b>Notes</b>: This function calls <i>Encode</i>
+  <li><b>Points</b>: 5
+  </ul><p>
+<li><font size=+1><b>DecodeHuff</b></font>
+  <ul>
+  <li><b>Purpose</b>: Decodes Buffer to TextBuf as described above
+  <li><b>Inputs</b>: Buffer & BufferLength Variables
+  <li><b>Output</b>: TextMsg
+  <li><b>Hints</b>: Create a suitable data stucture to assist in decoding.
+  <li><b>Points</b>: 10
+  </ul><p>
+
+<li><font size=+1><b>EncodeHuff</b></font>
+  <ul>
+  <li><b>Purpose</b>: Encodes TextBuf to Buffer as described above
+  <li><b>Input</b>: TextMsg
+  <li><b>Output</b>: Buffer & BufferLength Variables
+  <li><b>Notes</b>: Calls AppendBufferN
+  <li><b>Points</b>: 5
+  </ul><p>
+
+<li><font size=+1><b>Performance</b></font>
+  <ul>
+  <li><b>Purpose</b>: You are encouraged to write efficient code.
+      The 'P' function allows you to measure the performance of your code.
+      For any given message in TextMsg, the <tt>PerformanceTest</tt> routine
+      will count how many iterations of 
+      <tt>DecodeHuff</tt> and <tt>EncodeHuff</tt> your program can 
+      execute within 1/18th of a second.  The higher the number, the better.
+  <li>You can <i>only</i> get performance points if you complete the 
+      <tt>Encode</tt>, <tt>AppendBufferN</tt>, <tt>DecodeHuff</tt>,
+      and <tt>EncodeHuff</tt> routines.
+  <li><b>Points</b>
+    <ul>
+    <li>10% or more faster than crippled library code: 5 points
+    <li>As fast as library code: 4 points
+    <li>Within 90% as fast as library code: 3 point
+    <li>Within 50% as fast as library code: 2 point
+    <li>Within 10% as fast as library code: 1 point
+    <li>Incomplete or non-functional routine: 0 points 
+    </ul>
+  </ul>
+</ul>
+
+<h2>Preliminary Procedure</h2>
+<ul>
+<li>Copy the 
+    empty MP2 program (<tt>MP2.ASM</tt>), 
+    huffman encoding table (<tt>HUFFCODE.INC</tt>),
+    sample input file (<tt>test1.in</tt>),
+    corresponding output files (<tt>test1.out</tt>),
+    libraries (<tt>libmp2.lib</tt>, <tt>lib291.lib</tt>), and 
+    <tt>Makefile</tt> from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s I:\ece291\mp2 F:\mp2</tt><br>
+    Alternatively, from home, you can download the same files as 
+    <a href="mp2.zip">mp2.zip</a>.
+<li>As with MP0 and MP1, run <tt>NMake</tt> to build an executable program 
+    using the given ECE291 library functions.
+<li>As with MP0 and MP1, use a text editor to modify the program.
+    As given, the program uses LIBMP2 routines 
+    to implement all
+    functionality.  To receive full credit for the assignment,
+    you will need to implement each of the subroutines described above with
+    your own code.
+<li>As with MP0 and MP1, use CodeView (<tt>CV</tt>) to debug and test your 
+    program.
+    Because you only receive credit for procedures that function completely
+    as specified, it is best to debug each routine individually.  
+<li>By modifying a few comments, you can mix and match usage of your 
+    own code and Library routines.  You may notice that the LIBMP2
+    routines contain extraneous and difficult-to-read code.  They 
+    are not meant to be unassembled!
+</ul>
+
+
+
+<h2>Final Steps</h2>
+<ol>
+<li>Print a copy of the <a href="mp2grade.html">MP2 grading sheet</a>.
+<li>Demonstrate MP2.EXE to a TA or to the instructor.  
+  <ul>
+   <li>Be prepared to answer questions about any aspect of the operation 
+       of your program.  The TAs will not accept an MP if you cannot fully
+       explain all operations of your code.
+  <li>Your program must work for all possible data patterns.
+      Additional test patterns will be listed on the grade sheet.
+  <li>The TA will determine performance points using a sample message
+  </ul>
+<li>Handin in your program by running: <br>
+    <tt>A:\Handin </tt> <i>YourWindowsLogin</i>
+<li>Print <font color="red">MP2.ASM </font>
+<li>Staple the MP2 grading sheet to the front of your MP2.ASM file
+    and give both to the same TA that approved your demonstration.
+</ol>
+
+<hr>
+
+<h2>MP2.ASM (Program framework)</h2>
+<font size=-1> <xmp> 
+</xmp>
+</body>

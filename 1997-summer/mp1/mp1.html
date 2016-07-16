@@ -1,0 +1,334 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>ECE291 Machine Problem 1</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.01Gold (Win95; I) [Netscape]">
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<TABLE CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TD align=left   width=33%>ECE291</TD>
+
+<TD align=center width=34%>Computer Engineering II</TD>
+
+<TD align=right  width=33%>Plavcan, Summer 1997</TD>
+</TR>
+</TABLE>
+
+<H1 ALIGN=CENTER>Machine Problem 1: </H1>
+
+<CENTER><TABLE BORDER=1 CELLPADDING=3 WIDTH="60%" >
+<TR>
+<TD align=right><B>Assigned</B></TD>
+
+<TD>Thursday 6/19/97</TD>
+</TR>
+
+<TR>
+<TD align=right><B>Due Date</B></TD>
+
+<TD>Thursday 6/26/97</TD>
+</TR>
+
+<TR>
+<TD align=right><B>Purpose</B></TD>
+
+<TD>Learn to write assembler code. Use looping and branching. Perform simple
+math operations. </TD>
+</TR>
+
+<TR>
+<TD align=right><B>Points</B></TD>
+
+<TD>50</TD>
+</TR>
+</TABLE></CENTER>
+
+<H2>Introduction</H2>
+
+<P>I don't know about you, but I like having properly formatted assembly
+programs, because they're so easy to read and debug. But I hate typing
+in all the tabs and spaces to make my code look pretty. (Actually, my development
+environment does it for me!) Since many of you will no doubt be using MS-Notepad
+and EDIT to create your programs, I thought it might be helpful to have
+a program which can create a new source file, replete with proper tabs
+and spacings. </P>
+
+<H2>Problem Description</H2>
+
+<P>This program will run through a text file, screening out excess and
+insufficient whitespace (spaces, tabs, etc.) The new text is reformatted
+so that all text is lowercase, all assembly statements are indented equally.
+Comments are tabbed out to an appropriate distance, though any new lines
+beginning with a ';' should be left justified.<BR>
+<FONT SIZE=+0>The general algorithm for this MP&nbsp;is as follows:</FONT></P>
+
+<UL>
+<P><FONT SIZE=+0>1. Open a file to read from ('input file') using OPENFILE<BR>
+2. Open a file to write to ('output file') using CREATEFILE<BR>
+3. Until end of file/file error:</FONT></P>
+
+<UL>
+<P><FONT SIZE=+0>3a. Read a character from the input file<BR>
+3b. If character is a newline, write a newline, then check read the next
+character:</FONT></P>
+
+<UL>
+<P><FONT SIZE=+0>3b1. If it's a semicolon, write a semicolon, goto 3a<BR>
+3b2. If it's not, write INDENT1 spaces, goto 3b to check what the character
+is</FONT></P>
+</UL>
+
+<P><FONT SIZE=+0>3c. If the character is a space or a tab, write a space
+for the first one (ignore successive ones), goto 3a<BR>
+3d. If the character is a semicolon, write INDENT2 tabs, followed by a
+semicolon, goto 3a<BR>
+3e. Last case: write the lowercase version of the character, goto 3a</FONT></P>
+</UL>
+
+<P><FONT SIZE=+0>4. Close both files using CLOSEFILES.<BR>
+5. Print the total words in the input file.<BR>
+6. Calculate and print the average word length, to the nearest 1/100 of
+a letter.<BR>
+7. Call DOSXIT to end the program.</FONT></P>
+</UL>
+
+<P>Notes:</P>
+
+<UL>
+<P>1. You should use a register or a memory variable to keep track of whether
+a whitespace character is the first one.<BR>
+2. A newline in a text file is actually TWO characters, a carriage return
+(0Dh) followed by a linefeed (0A). Once you read a carrage return, you
+can assume the next character is automatically a linefeed. Neither character
+should normally appear in a text file by itself.</P>
+</UL>
+
+<P>Your program is required to: </P>
+
+<UL>
+<LI>Output data in the same format as the <I>sample output</I> given later
+in this assignment. </LI>
+
+<LI>Reformat several different test cases the TAs might present. </LI>
+
+<LI>Count and display the number of words in the file </LI>
+
+<LI>Count and display the average word length </LI>
+
+<LI>Run efficiently. Points will be deducted for inefficient algorithms
+and excessive coding. </LI>
+</UL>
+
+<H2>Sample Reformat:</H2>
+
+<H4><TT>Before (partial file):</TT></H4>
+
+<PRE><TT>;============= Define global variables ================
+
+filein            db 'TEST1.ASM',0                  ; NULL-terminated filenames
+fileout   db               'FORMAT1.ASM',0
+errormsg  db 'There                    has been a file error.',CR,LF,'$'      ; various messages
+wordmsg                 db 'Total number of                words in input file: $'</TT>
+</PRE>
+
+<P><TT>F:\MP1&gt;mp1sol<BR>
+Total number of words in input file: 178<BR>
+Average word length: 6.54 </TT></P>
+
+<H4><TT>After:</TT></H4>
+
+<PRE><TT>;============= define global variables ================
+   
+   filein db 'test1.asm',0                              ; null-terminated filenames
+   fileout db 'format1.asm',0
+   errormsg db 'there has been a file error.',cr,lf,'$'                                 ; various messages
+   wordmsg db 'total number of words in input file: $'</TT>
+</PRE>
+
+<H2>Procedure</H2>
+
+<UL>
+<LI>You will begin this MP with the following files: </LI>
+
+<UL>
+<LI><TT>MP1.ASM</TT>: Program Framework </LI>
+
+<LI><TT>TEST1.ASM</TT>: Test assembly file </LI>
+
+<LI><TT>Makefile</TT>: Specifies how and when programs are assembled and
+linked. </LI>
+
+<LI><TT>MP1.LIB</TT>: Library functions for MP1 </LI>
+</UL>
+
+<LI>You may copy these files from the network drive to your home directory
+with the following command: <BR>
+<TT>xcopy /s G:\ece291\mp1 F:\mp1<BR>
+</TT>or download the files from this server as <A HREF="http://www.ece.uiuc.edu/~ece291/mp/mp1/mp1.zip">mp1.zip</A>
+</LI>
+
+<LI>Add your code to <TT>MP1.ASM</TT>. </LI>
+
+<LI>Assemble and link your program by typing<BR>
+<TT>nmake<BR>
+</TT>This command reads <I>Makefile</I> then invokes MASM and LINK to build
+an executable program. </LI>
+
+<LI>Use DEBUG or CodeView (CV) to find and correct program errors. </LI>
+
+<LI>Verify your program operation by testing with different input files.
+</LI>
+
+<LI><B><I><U><BLINK><FONT COLOR="#FF0000">Do NOT try to use your program
+on its own source!!! </FONT></BLINK></U></I></B></LI>
+</UL>
+
+<H2>Free Subroutines</H2>
+
+<UL>
+<P>The following routines are included in MP1.LIB for your use. They may
+be included in your program without penalty, in fact, you can't write the
+MP without them!:</P>
+
+<TABLE BORDER=1 >
+<TR VALIGN=TOP>
+<TD><B><FONT SIZE=+1>openfile</FONT></B></TD>
+
+<TD>Open an existing file for read operations 
+<P>Inputs: DS:DX - pointer to NULL-terminated filename<BR>
+Outputs: AX - (-1) on error </P>
+</TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD><B><FONT SIZE=+1>createfile</FONT></B></TD>
+
+<TD>Create a new file for write operations 
+<P>Inputs: DS:DX - pointer to NULL-terminated filename <BR>
+Outputs: AX- (-1) on error </P>
+</TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD><B><FONT SIZE=+1>readchar </FONT></B></TD>
+
+<TD>Read a character from a file 
+<P>Inputs: None<BR>
+Outputs: AL - character read, AH - 0 on success, -1 on fail </P>
+</TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD><B><FONT SIZE=+1>writechar</FONT></B></TD>
+
+<TD>Write a character to a file 
+<P>Inputs: AL - character to write<BR>
+Outputs: AH - 0 on success, -1 on fail </P>
+</TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD><B><FONT SIZE=+1>closefiles </FONT></B></TD>
+
+<TD>close both files opened by openfile and createfile 
+<P>Inputs: None<BR>
+Outputs: None </P>
+</TD>
+</TR>
+</TABLE>
+</UL>
+
+<H2>Final Steps</H2>
+
+<OL>
+<LI>Test you code with multiple test cases, which will be provided.</LI>
+
+<LI>Demonstrate MP1.EXE to a TA or to the instructor. You will be asked
+to recompile and demonstrate MP1. Successful completion of your program
+with different inputs will ensure that you followed directions and that
+your program has no hard-coded operations. </LI>
+
+<LI>Be sure that your name and date appears in the first line of MP1.ASM.
+</LI>
+
+<LI>Copy your programs to a floppy using the following command: <BR>
+<TT>xcopy /s F:\mp1 a:\mp1</TT> </LI>
+
+<LI>Print MP1.ASM and the <A HREF="http://www.ece.uiuc.edu/~ece291/mp/mp1/mp1r.html">grade
+sheet</A>. </LI>
+
+<LI>Take your printout and disk with MP1 to the same TA which approved
+your demonstration. </LI>
+</OL>
+
+<P>
+<HR></P>
+
+<H2>MP1.ASM</H2>
+
+<PRE>;
+; MP1.ASM
+;
+; A text-formatter for ASM programs!
+;
+; Your Name Here
+; ECE291 Summer 1997
+; The Date Here
+;
+
+
+;============= Declare external references ===========
+
+EXTRN dosxit:near, openfile:near,createfile:near   ; from MP1.LIB
+EXTRN readchar:near,writechar:near,closefiles:near ; free use!
+
+
+;============= Define stack segment ==================
+
+stackseg SEGMENT STACK
+   db 64 dup ('STACK123')   ; 512 bytes of stack space
+stackseg ends
+
+
+;============= Define constants ======================
+
+CR      EQU 0Dh             ; carriage return
+LF      EQU 0Ah             ; linefeed
+INDENT1 EQU 3               ; 3 space indent at beginning of the line
+INDENT2 EQU 4               ; 4 tabs between code and comments
+
+;============= Code segment begins ====================
+
+cseg SEGMENT PUBLIC
+ASSUME cs:cseg, ds:cseg, es:nothing, ss:stackseg
+
+;============= Define global variables ================
+
+filein    db 'TEST1.ASM',0                  ; NULL-terminated filenames
+fileout   db 'FORMAT1.ASM',0
+errormsg  db 'There has been a file error.',CR,LF,'$'      ; various messages
+wordmsg   db 'Total number of words in input file: $'
+ratiomsg  db 'Average word length: $'
+wordcount dw ?               ; total number of words
+charcount dw ?               ; total number of non-whitespace characters
+
+
+;============= Procedures go here =====================
+
+main PROC near
+   mov ax,cs
+   mov ds,ax                 ; set up data segment
+
+                             ; your program here!!!
+ 
+   call dosxit               ; terminate program
+main endp
+
+cseg ENDS                    ; end code segment
+END main                     ; program starts with main
+</PRE>
+
+</BODY>
+</HTML>

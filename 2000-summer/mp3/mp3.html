@@ -1,0 +1,710 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+   <title>MP3</title>
+</head>
+<body bgcolor="#FFFFFF">
+&nbsp;
+<table BORDER=0 CELLPADDING=3 WIDTH="100%" >
+<tr>
+<td ALIGN=LEFT WIDTH="33%">ECE291</td>
+
+<td ALIGN=CENTER WIDTH="34%">
+<center>Computer Engineering II</center>
+</td>
+
+<td ALIGN=RIGHT WIDTH="33%">Potts, Summer 2000</td>
+</tr>
+</table>
+
+<center>
+<h1>
+Machine Problem 3: Text-Mode Mines</h1></center>
+
+<center><table BORDER="1" CELLPADDING=3 WIDTH="60%" >
+<caption>
+<center></caption>
+<TBODY>
+</TBODY></center>
+
+<tr>
+<td ALIGN=RIGHT><b>Assigned</b></td>
+
+<td>Thursday, July 6, 2000</td>
+</tr>
+
+<tr>
+<td ALIGN=RIGHT><b>Purpose</b></td>
+
+<td>Text-Mode Graphics, Timer and Mouse Interrupts</td>
+</tr>
+
+<tr>
+<td ALIGN=RIGHT><b>Points</b></td>
+
+<td>50</td>
+</tr>
+
+<tr>
+<td ALIGN=RIGHT><b>Checkpoint Date</b></td>
+
+<td>July 12 - 5:00pm</td>
+</tr>
+
+<tr>
+<td ALIGN=RIGHT><b>Due Date</b></td>
+
+<td>July 20 - 5:00pm</td>
+</tr>
+</table>
+<!--<Center><IMG SRC="../../icon/construct.gif" >This MP is under construction</Center>-->
+<h2>
+Introduction</h2>
+<blockquote>
+<p>
+Who says you need windows to play a good game of Mines?&nbsp; Whoever it was,
+they're wrong.&nbsp; Here we will implement a game of Mines, much like the
+Windows MineSweeper. It will have two modes: Beginner and Advanced, defined as
+10x10 and 30x30 playfields. To support this on the same text screen, the
+Beginner field must be stretched so each Mine square is 3x3 screen characters.</p>
+</blockquote>
+<center></center>
+
+<h2>
+Problem Description</h2>
+
+<center><img SRC="mp3.gif" BORDER=0 width="652" height="459"></center>
+
+<blockquote>
+  <p>Hopefully you already know how Mines is played.&nbsp; If not, take an
+  opportunity to try out MineSweeper, in
+  Start&gt;Programs&gt;Accessories&gt;Games. The playfield is full of occasional
+  mines, which you have to locate. Your only clue is when you are next to one or
+  more mines, you know how many are in adjacent squares. Using only this information, you
+  can locate all mines in virtually any randomly generated minefield.<p><font size="3">For
+  this MP, you will be implementing a version of this game in text mode video.
+  You will also support the mouse: right-clicking a location will cycle between
+  No Idea, Mine, and Not Sure; left-clicking will check the spot for an actual
+  mine -- if there is, then you lose.</font>
+</blockquote>
+<h2>
+Implementation</h2>
+<blockquote>
+  <h3>Callbacks and Interrupt Service Routines</h3>
+  <p>Hardware Interrupts are generated when various hardware events occur.&nbsp;
+  Examples include the timer, which triggers 18.2 times per second, the
+  keyboard, which triggers for every key press and release, and the mouse which
+  triggers for any movement or button press or release. These interrupts are the
+  hardware's way of saying &quot;I need attention,&quot; so that the rest of the
+  time the CPU can completely ignore such devices, and just execute code.</p>
+  <p>When the interrupt happens, the CPU is informed.&nbsp; The current opcode
+  finishes execution, and then the current program is interrupted. This is when
+  your Interrupt Service Routine (ISR) is executed. As it happens inbetween
+  effectively random lines of your program, it needs to save all registers,
+  including the flags. The hardware takes care of half of this (thus pushing of
+  the flags); the other half
+  you must take care of by using IRET instead of RET (to pop the flags).</p>
+  <p>But watch out - this wonderful piece of advice is only necessarily useful
+  when you are directly writing the ISR. In the case of the mouse, you are
+  writing a callback routine (<a href="http://www.ece.uiuc.edu/ece291/class-resources/helppc/interrup.txt.html">http://www.ece.uiuc.edu/ece291/class-resources/helppc/interrup.txt.html</a>
+  has some good information on this, if you search for mouse, or interrupt 33h)
+  so you only need to preserve your registers.&nbsp; The actual ISR which is
+  calling your callback will preserve the flags, and call your procedure as a
+  FAR procedure.</p>
+  <h3>The Timer</h3>
+  <p>The timer will be used to keep track of how long the player has been
+  playing. This is generally used to then form a high score table, but we'll
+  just use it to report back to the user. Every time your timer ISR is called,
+  increment the tick counter, and then use it to calculate the total time. Once
+  calculated, display it to the screen using <code>BINASC</code> and a custom
+  implementation of <code>DSPMSG</code> that draws directly to the screen (in <code>DrawScreen</code>,
+  not <code>TimerISR</code>). While technically incrementing the second counter
+  for every 18 ticks will yield an incorrect time, implementing this truly
+  correctly is optional.</p>
+  <h3>The Mouse</h3>
+  <p>When your mouse handler is called, some important information will be in
+  the registers. Unfortunately, it's not quite in the format you want. While you
+  can take the mouse button status <code>MouseClick</code> directly from <code>AL</code>,
+  the <code>MouseX</code> and <code>MouseY</code> from <code>CX</code> and <code>DX</code>
+  need to be changed. The ISR will supply you with the pixel positions of the
+  mouse cursor, but it only draws the cursor in increments of text characters,
+  which are 8x8 pixels in the 80x50 character mode we are using. Not only that, <code>HandleInput</code>
+  routine expects the X and Y coordinates to be relative to the upper-left
+  corner of the board, which is not the same as the screen's upper-left corner.</p>
+  <h3>The Field (Internal)</h3>
+  <p>To keep track of the data in this game of mines, we have created two
+  arrays. The first, called <code>PlayField</code>, is a series of spaces,
+  words, and lines that represent everything on the screen except the actual
+  mines - think of it as equivalent the window border. Since we carefully do not
+  modify any of this area during the remainder of the program, we can display
+  this once and be done with it. Display it with the attributes as defined as <kbd>PLAYFIELD_ATTR</kbd>.</p>
+  <p>The second array is a 30x30 array, called <code>MineField</code>, defined
+  as <code>EMPTY</code>. What is <code>EMPTY</code> though? If you look at the
+  Constants section, we have declared quite a lot of them this time:</p>
+  <blockquote>
+    <p><code>        EMPTY&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; EQU 0<br>
+        REALMINE&nbsp;&nbsp;&nbsp; EQU 16<br>
+        VISIBLE&nbsp;&nbsp;&nbsp;&nbsp; EQU 32<br>
+    GUESS_MINE&nbsp; EQU 64<br>
+        GUESS_MAYBE     EQU 128</code></p>
+  </blockquote>
+  <p>If you consider this as a bitfield within the byte, we have several
+  separate options:</p>
+  <table border="1">
+    <tr>
+      <td width="12%" align="center"><code>GUESS_MAYBE</code></td>
+      <td width="12%" align="center"><code>GUESS_MINE</code></td>
+      <td width="12%" align="center"><code>VISIBLE</code></td>
+      <td width="12%" align="center"><code>REALMINE</code></td>
+      <td width="13%" align="center"><code>2**3</code></td>
+      <td width="13%" align="center"><code>2**2</code></td>
+      <td width="13%" align="center"><code>2**1</code></td>
+      <td width="13%" align="center"><code>2**0</code></td>
+    </tr>
+  </table>
+  <p>You need all of these because a given location can be a mine, or not, can
+  be visible or not, and if invisible, it can have one of three attributes set:
+  no guess, guess of a mine or unknown. The lower four bits are used to make
+  our life easier later on - when displaying the number of mines, or recursing
+  to display the entire empty area - by holding a nybble sized number.&nbsp;
+  Beware before you start adding this number to '0' that you have limited it to
+  0-15 by somehow chopping off the high bits.</p>
+  <p>For example, an undisplayed mine that hasn't been guessed at will hold <code>0001xxxx</code>b;
+  a displayed non-mine with 3 adjacent mines will hold <code>xx100011</code>b;
+  and an undisplayed non-mine with 5 adjacent mines, guessed as a mine will hold
+  <code>01000101</code>b.</p>
+  <h3>The Field (External)</h3>
+  <p>The player will not want to read the memory locations directly. Not only
+  would it be a pain, he could see from the beginning where the mines were, and
+  the game would no longer be a game. To make it actually entertaining, the
+  board must be drawn to the screen. Drawing it properly, you will find, is a
+  complicated procedure. These are the steps you must implicitly follow.
+  although turning this into code is for you to do:</p>
+  <ul>
+    <li>If the <code>VISIBLE</code> bit is set
+      <ul>
+        <li>If it is a mine
+          <ul>
+            <li>Use attributes <code>DEAD_ATTR</code> and <code>MINE_ATTR</code>
+              as the background and foreground attributes</li>
+            <li>Use character <code>MINE_CHAR</code></li>
+          </ul>
+        </li>
+        <li>If&nbsp; it is not a mine
+          <ul>
+            <li>Use attribute <code>UNCOVERED_ATTR</code> as the background
+              attribute</li>
+            <li>If it has no neighboring mines
+              <ul>
+                <li>Use a space as the character</li>
+              </ul>
+            </li>
+            <li>If it has neighboring mines
+              <ul>
+                <li>Use attribute <code>NUMBER_ATTR</code> as the foreground
+                  attribute</li>
+                <li>Use the number of mines as the character</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </li>
+    <li>If the <code>VISIBLE</code> bit is not set
+      <ul>
+        <li>Use attribute <code>COVERED_ATTR</code> as the background attribute</li>
+        <li>Use the corresponding <code>FLAG</code> or <code>GUESS</code> <code>_ATTR</code>
+          and <code>_CHAR</code> for the foreground attribute and character, or
+          space if neither apply</li>
+      </ul>
+    </li>
+    <li>If it is not the center of the 3x3 mine-block in Beginner mode, use
+      spaces for the character, and use the corresponding background attribute.</li>
+  </ul>
+  <p>One suggestion for later debugging is to override the visible bit in your
+  DrawField routine, thus enabling you to verify your map was properly
+  generated.&nbsp; It has limited use, however, so you are encouraged to find
+  more methods for debugging your errors.&nbsp; Codeview can be used, but you
+  must invoke it with the <code>/m</code> argument to tell it not to use the
+  mouse since your program needs it: <code>CV /50 /m mp3</code>.</p>
+</blockquote>
+
+<h2>
+Procedures</h2>
+
+<ul>
+<li>
+This assignment has TODO procedures. You will receive credit for this
+assignment by replacing each of the twelve procedures listed below with
+your own code.</li>
+
+<li>
+Experiment with the working code to gain a full understanding of how the
+program works.</li>
+
+<li>
+Use defined constants/variables where appropriate.</li>
+
+<li>
+Comment ALL the functions and make sure that they preserve all register
+values.&nbsp; Be sure to include function headers for ALL functions that
+you write.</li>
+
+<li>
+Optionally, for a gold star, implement the sweeping functionality (ask Mike if
+you need more details).</li>
+</ul>
+
+<ul>
+<li>
+<b><font size="+1">MakeField</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose :</b>  Create a minefield by taking a random number modulus the
+number of available squares and placing a mine at that location in <code>MineField</code></li>
+
+<li>
+<b>Inputs :</b> None</li>
+
+<li>
+<b>Outputs : </b>mines in <code>MineField</code></li>
+
+<li>
+<b>Calls :</b> <code>SeedRand</code>, <code>GetRand</code></li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+<li>The number of mines depends on <code>playmode</code> - use the appropriate
+  constant</li>
+<li>If you want to test the same board several times in a row, set <code>rand</code>
+  to a chosen value and do not call <code>SeedRand</code></li>
+
+<li>
+Test the location before setting a mine there, as you can only place a mine in
+an unoccupied location.</li>
+
+<li>Don't forget to increment the adjacent locations in the array so the lower
+  nybble of <code>MineField</code> accurately reflects the number of adjacent
+  mines. This is the hardest (or at least the most annoying) part of this
+  procedure.</li>
+</ul>
+
+<li>
+<b>Points : 5</b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">SeedRand</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose :</b>  Seed the pseudo-random number generator so it creates a
+different <code>MineField</code> each time</li>
+
+<li>
+<b>Inputs : </b>Read the clock tick count with interrupt 1Ah function 0h</li>
+
+<li>
+<b>Outputs : </b><code>rand</code> set to the current tick count</li>
+
+<li>
+<b>Calls : </b>interrupt 1Ah</li>
+
+<li>
+<b>Notes :</b> Again, use BIOS interrupt 1Ah, documented in QuickHelp: qh&gt;categories&gt;language&gt;bios
+calls&gt;clock services</li>
+
+<li>
+<b>Points : 3</b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">ResetScreen</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose :</b>  Clears the screen to a set attribute copy of the <code>PlayField</code>
+&quot;skin.&quot;</li>
+
+<li>
+<b>Inputs : </b><code>Playfield</code> array</li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls : </b>None</li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+<li>Set a segment register to use to address the screen.&nbsp; Don't use <code>DS</code>
+  for this as it just makes things complicated.</li>
+<li>Use the <code>PLAYFIELD_ATTR</code> constant as your attribute</li>
+<li>Make sure to set the entire screen, remembering that each character takes
+  two bytes to describe. What are these bytes?</li>
+</ul>
+
+<li>
+<b>Points : 3 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">InstallTimer, RemoveTimer</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose : </b>These procedures Install and Remove the Timer ISR</li>
+
+<li>
+<b>Inputs : </b>location of <code>TimerISR</code></li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls : </b>Interrupt 21h</li>
+
+<li>
+<b>Notes :</b> See <a href="http://www.ece.uiuc.edu/ece291/class-resources/helppc/interrup.txt.html">http://www.ece.uiuc.edu/ece291/class-resources/helppc/interrup.txt.html</a></li>
+
+</ul>
+
+<ul>
+
+<li>
+<b>Points : 3 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">TimerISR</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose : </b>Increment counters and set update to track player's time</li>
+
+<li>
+<b>Inputs : </b>None</li>
+
+<li>
+<b>Outputs : </b><code>TimerTick</code>, <code>TimerSec,</code>
+<b> </b><code>update</code></li>
+
+<li>
+<b>Calls : </b>Original Timer ISR</li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+<li>Don't forget to call the original handler (this is called chaining) to
+  ensure the functionality that is dependant on the timer</li>
+<li>See <a href="http://www.ece.uiuc.edu/ece291/lecture/l14.html">Lecture 14</a>
+  for more information on writing and installing ISRs</li>
+<li>Set <code>update</code> to 1 if the <code>TimerSec</code> was incremented;
+  do not increment <code>TimerSec</code> past <code>MAX_TIMER</code></li>
+</ul>
+
+<li>
+<b>Points : 4 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">InstallMouse, RemoveMouse</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose : </b>These procedures Install and Remove the mouse callback routine</li>
+
+<li>
+<b>Inputs : </b>location of MouseCallback</li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls : </b>Interrupt 33h</li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+<li>See <a href="http://www.ece.uiuc.edu/ece291/class-resources/helppc/interrup.txt.html">http://www.ece.uiuc.edu/ece291/class-resources/helppc/interrup.txt.html</a></li>
+<li>We are concerned only with left and right button releases</li>
+</ul>
+
+<li>
+<b>Points : 3 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">MouseCallback</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose : </b>Sets variables such that the main loop will know what the mouse
+has done</li>
+
+<li>
+<b>Inputs : </b>from the Mouse ISR:
+<ul>
+  <li>AX = mask of what caused the handler to be called</li>
+  <li>CX = X location (in pixels)</li>
+  <li>DX = Y location (in pixels)</li>
+</ul>
+</li>
+
+<li>
+<b>Outputs :</b>
+<ul>
+  <li><code>MouseClick</code> (just a copy of the relevant byte)</li>
+  <li><code>MouseX</code> (in characters from the upper-left of the board)</li>
+  <li><code>MouseY</code> (in characters)</li>
+</ul>
+</li>
+
+<li>
+<b>Calls : </b>None</li>
+
+<li>
+<b>Notes :</b>
+<ul>
+  <li>Each character is 8x8 pixels.</li>
+  <li>The board is located at character location (25, 10)</li>
+</ul>
+</li>
+
+<li><b>Points : 4 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>DrawScreen</b></font>
+    <ul>
+      <li><font size="3"><b>Purpose : </b>Draws the <code>MineField</code> to
+        the screen so the player can see it.</font></li>
+      <li><font size="3"><b>Inputs : </b><code>MineField, Update</code></font>
+      </li>
+      <li><font size="3"><b>Outputs : </b>Screen output</font></li>
+      <li><font size="3"><b>Calls : </b>None</font></li>
+      <li><b><font size="3">Notes :&nbsp;</font></b>
+        <ul>
+          <li><font size="3">Follow the notes earlier in the writeup, and use
+            the constants</font></li>
+          <li><font size="3">Set a segment register appropriately</font></li>
+          <li><font size="3">Loop along the data, drawing either 1 or 9
+            characters per square, determined by <code>playmode</code></font></li>
+          <li><font size="3">Draw the Time (as stored in <code>TimerSec</code>)
+            and Mines remaining (as stored in <code>Mines</code>) to the screen</font></li>
+          <li><font size="3">Only draw the screen if <code>update</code> is 1 to
+            avoid flicker</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 8 </b></font></li>
+    </ul>
+  </li>
+</ul>
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>HandleInput</b></font>
+    <ul>
+      <li><font size="3"><b>Purpose :</b> Update the field based upon user input</font></li>
+      <li><font size="3"><b>Inputs : </b><code>MouseClick, MouseX, MouseY,
+        MineField</code></font>
+      </li>
+      <li><font size="3"><b>Outputs : </b><code>MineField, MineCount, MouseClick=0,
+        AX</code>=<i>GameStatus</i></font></li>
+      <li><font size="3"><b>Calls : </b><code>RevealSquares</code></font></li>
+      <li><b><font size="3">Notes :&nbsp;</font></b>
+        <ul>
+          <li>Make sure <code>MouseX</code> and <code>MouseY</code> are valid in
+            the given <code>playmode</code>, as <code>MouseCallback</code>
+            doesn't check if you are within the <code>MineField</code></li>
+          <li>If playing in Beginner mode, the mouse coordinate must be divided
+            by three to make it the X and Y of the <code>MineField</code></li>
+          <li>Ignore Left Clicks if <code>GUESS_MINE</code> is set; ignore Right
+            Clicks if <code>VISIBLE</code> is set</li>
+          <li><font size="3">If the player left clicked, a mine means death,
+            otherwise <code>RevealSquares</code> should be called</font></li>
+          <li><font size="3">If the player right clicked, cycle through [no
+            guess, <code>GUESS_MINE</code>, <code>GUESS_MAYBE</code>] in that order, updating <code>MineCount</code>
+            appropriately (decrement <code>MineCount</code> if it changes to <code>GUESS_MINE</code>;
+            increment when changing from <code>GUESS_MINE</code>)</font></li>
+          <li><font size="3">GameStatus is one of the following:</font>
+            <ul>
+              <li><font size="3">-1 = Player Lost</font></li>
+              <li><font size="3">0 = Player Won</font></li>
+              <li><font size="3">1 (or any positive number) = Game in progress</font></li>
+            </ul>
+          </li>
+          <li><font size="3">Winning is defined as <code>UncoveredCount</code> +
+            <code><i>TotalMines</i></code>&nbsp; = <code><i>TotalSquares</i></code>;
+            no other condition is correct or necessary, but note that if
+            MineCount is not 0, you must go through your array and mark all <code>REALMINE</code>
+            as <code>GUESS_MINE</code> in the <code>WinLose</code> procedure.</font></li>
+          <li><font size="3">Don't forget to reset <code>MouseClick</code></font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 7 </b></font></li>
+    </ul>
+  </li>
+</ul>
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>RevealSquares</b></font>
+    <ul>
+      <li><font size="3"><b>Purpose : </b>Recursively display all squares next
+        to a blank left-clicked square</font></li>
+      <li><font size="3"><b>Inputs : </b><code>MineField, AX=MouseY, BX=MouseX</code></font>
+      </li>
+      <li><font size="3"><b>Outputs : </b><code>MineField, Update,
+        UncoveredCount</code></font></li>
+      <li><font size="3"><b>Calls : </b>None</font></li>
+      <li><b><font size="3">Notes :&nbsp;</font></b>
+        <ul>
+          <li>Make sure AX and BX are valid under the given <code>playmode</code></li>
+          <li><font size="3">If the chosen square is not already visible, Reveal
+            it (set the <code>VISIBLE</code> flag), increment <code>UncoveredCount</code>,
+            and set <code>Update</code>
+            to 1</font></li>
+          <li><font size="3">If the chosen square <b>both</b> was not previously
+            visible, <b>and</b> has no adjacent mines, recursively call <code>RevealSquares</code>
+            on the eight adjacent squares</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 6 </b></font></li>
+    </ul>
+  </li>
+</ul>
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>WinLose</b></font>
+    <ul>
+      <li><font size="3"><b>Purpose : </b>Display either the winning or losing
+        message and wait for a click (as reported in <code>MouseClick</code>) or
+        ESC</font></li>
+      <li><font size="3"><b>Inputs : </b><code>MineField, AX</code> (as returned
+        by HandleInput)<code>, etc.</code></font>
+      </li>
+      <li><font size="3"><b>Outputs : </b>Screen output</font></li>
+      <li><font size="3"><b>Calls : </b><code>DrawScreen</code></font></li>
+      <li><b><font size="3">Notes :&nbsp;</font></b>
+        <ul>
+          <li>Set <code>GUESS_MINE</code> bit on each <code>REAL_MINE</code>
+            location and set <code>MineCount</code> to 0 before calling <code>DrawScreen</code>
+            if the player won</li>
+          <li>Set <code>VISIBLE</code> bit on each <code>REAL_MINE</code>
+            location before calling <code>DrawScreen</code> if the player lost</li>
+          <li><font size="3">Writing a helper function to draw strings of a
+            given attribute to the screen may be useful</font></li>
+          <li><font size="3">Use <code>STATUS_POS</code> and <code>STATUS_ATTR</code>
+            for the <code>WinString</code> or <code>LoseString</code> message</font></li>
+          <li><font size="3">Wait for a click or ESC by polling <code>MouseClick</code>
+            in a loop that also uses the construct in <code>MAIN</code> to poll
+            for ESC</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 4 </b></font></li>
+    </ul>
+  </li>
+</ul>
+<b><font size=+2>Preliminary Procedure</font></b>
+<ul>
+<li>
+Copy the given MP3 files from the network drive to your home directory
+with the following command:</li>
+
+<br><tt>xcopy /s V:\ece291\mp3 W:\mp3</tt>
+<br>Alternatively, from home you can download the same files as <a href="mp3.zip">mp3.zip</a>.
+<li>
+As with previous MP's, run <tt>NMake</tt> to build an executable program
+using the given ECE291 library functions.</li>
+
+<li>
+As with previous MP's, use a text editor to modify the program. As given,
+the program uses LIBMP3 routines to implement all functionality. To receive
+full credit for the assignment, you will need to implement each of the
+subroutines described above with your own code.</li>
+
+<li>
+By modifying a few comments, you can mix and match usage of your own code
+and Library routines. You may notice that the LIBMP3 routines contain extraneous
+and difficult-to-read code. They are not meant to be easily unassembled!</li>
+</ul>
+<i>Monitor the newsgroup and this on-line section for revisions to the
+MP or to the write-up</i>
+<h2>
+Final Steps</h2>
+
+<ol>
+<li>
+Verify that your program meets all requirements for handin.</li>
+
+<li>
+Print a copy of the <a href="mp3grade.html">MP3
+grading sheet</a>.</li>
+
+<li>
+Demonstrate MP3.EXE to a TA or to the instructor.</li>
+
+<li>
+Note that there are two due-dates.&nbsp; If everything is working at the first,
+you may turn it all in.&nbsp; Similarly, late points for the first checkpoint's
+procedures apply even if everything is ready by the final due date.</li>
+
+<li>
+Be prepared to answer questions about any aspect of the operation of your
+program. The TAs will not accept an MP if you cannot fully explain all
+operations of your code.</li>
+
+<li>
+Handin in your program with a TA at <a href="../index.html">http://www.ece.uiuc.edu/ece291/mp/index.html</a>.</li>
+
+<li>
+Print MP3.ASM.
+Make sure that you print out your code 4 pages per page and double sided.
+If you don't know how to do this ask a TA for assistance.</li>
+
+<li>
+Staple the MP3 grading sheet to the front of your MP3.ASM file and give
+both to the same TA that approved your demonstration.</li>
+</ol>
+
+<hr>
+
+<h2><a href="mp3.asm"><b>mp3.asm</b></a></h2>
+
+</body>
+</html>

@@ -1,0 +1,21 @@
+Input this into the recieving side 
+R
+R
+K 23 257
+Recieve - this should not cause an error
+R
+Error
+K 23 7759
+R
+K 254 6619
+R
+K 12 8447
+R
+K 343 13063
+R
+K 23 5555
+K NAN 23
+K 23 NAN
+X
+
+

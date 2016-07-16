@@ -1,0 +1,57 @@
+150     ; First Number [base 10 by default] pushed to stack
+Result: 150
+50      ; Second Number pushed to stack
+Result: 50
+-       ; Calculate: 150-50=100 , Leave Result on stack
+Result: 100
+8
+Result: 8
+2
+Result: 2
+5
+Result: 5
+*       
+Result: 10
++       ; Calculate: (2*5)+8=18 , Leave Result on stack
+Result: 18
+/       ; Calculate: 100/18=5 (Integer Arithmetic)
+Result: 5
+N       ; Calculate: Negate(5)=-5
+Result: -5
+12      ; Enter 12
+Result: 12
++       ; Calculate: -5+12=7
+Result: 7
+!       ; Calculate: Factorial(7)=7*6*5*4*3*2*1=5040
+Result: 5040
+MH      ; Switch to Hex Mode (Enter/Display format): 5040d = 13B0h
+Result: 13B0
+FFF     ; Enter FFF (hex)
+Result: 0FFF
++       ; Calculate: 13B0h+0FFFh=23AFh
+Result: 23AF
+2300    ; Enter 2300 (hex)
+Result: 2300
+-       ; Calculate: 23AFh-2300h=00AFh (hex)
+Result: 00AF
+MB      ; Switch to Binary Mode: 00AFh=0000000010101111b
+Result: 0000000010101111
+111111  ; Enter 111111 (binary)
+Result: 0000000000111111
+&       ; Calculate: Logical AND = 0000000000101111
+Result: 0000000000101111
+000111  ; Enter 000111 (binary) (note that preceding zeros ignored)
+Result: 0000000000000111
+^       ; Calculate: Locical XOR = 0000000000101000
+Result: 0000000000101000
+11      ; Enter 11 (binary)
+Result: 0000000000000011
+|       : Calculate: Logical  OR = 0000000000101011
+Result: 0000000000101011
+~       ; Calculate: Logical NOT = 1111111111010100
+Result: 1111111111010100
+MH      ; Switch to Hex Mode: Final Result == FFD4h
+Result: FFD4
+Q       ; Escape to exit
+
+DOSXIT: Exit to DOS

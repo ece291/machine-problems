@@ -1,0 +1,56 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>Protected Mode</title>
+</head>
+
+<body>
+
+<h1>Protected Mode</h1>
+<p>Protected Mode is a powerful way of gaining access to as much memory as the
+computer has to offer. With this power comes some limitations, and 
+<a href="http://courses.engr.illinois.edu/ece291/archive/archive-f2000/mp/mp3b/real_protected.html">differences</a>.
+You are encouraged to read through a <a href="http://courses.engr.illinois.edu/ece291/archive/archive-f2000/mp/mp3b/tutorial.html">protected
+mode tutorial</a> given in a previous semester. Be forewarned, however, this
+tutorial is out of date in some respects, as the protected mode library has
+changed (so ignore its library reference).  An updated one is in the
+works. For more about the development
+environment (and how to install it at home), see <a href="http://courses.engr.illinois.edu/ece291/archive/archive-f2000/mp/mp3b/dev_env.html">this
+page</a> from the tutorial.</p>
+<p>Be sure to read carefully through the preliminary procedure as some things
+have changed from previous MPs.  The most important thing you'll notice is that
+the debugger has changed; it's now called <b>cv32</b>, and you run it by typing
+<tt>cv32 mp4</tt>.  F8 steps, F7 traces, Tab switches between the windows, and
+Alt-H brings up a help screen detailing more functions.
+<p>To help make the transition to protected mode easier, a large library has
+been provided to you. The <a href="library.html">documentation</a> for all the
+library functions is online, and even the <em>entire</em> source code is
+available on the <tt>V:</tt> drive at <tt>V:\ece291\pmodelib</tt>! Please notice that all functions the
+library provides and some of the functions you will be writing for this MP
+conform to the C calling convention. This means the arguments are passed on the
+stack in reverse order, you are free to modify (without saving) eax, ebx, ecx,
+and edx (this also means that you should not expect these registers to be
+preserved when calling a library function), and the return value is in eax/ax/al
+(depending on its size). <a href="procinvoke.html">A
+few macros</a> have been provided to make coding C procedures easier.
+<p>Also remember that you now have full usage of the <em>entire</em> Intel
+instruction set, including all 32-bit registers and extended addressing modes.
+This means that you are free to address with any register, and even have an
+index register multiplied by a power of two, e.g.: mov eax, [edx+ecx*4+5]. You
+can use this to your definite advantage when you need to multiply by 3, 5, or 9:
+just look up the LEA instruction and think about the advanced addressing modes.
+Don't forget that you can't access the high 16 bits of the 32 bit registers
+directly, you either need to clear, shift, or load out of memory to set those
+bits. Feel free to look at the library source code for ideas and examples of how
+to use the extended registers and addressing modes!</p>
+
+<p>To get a copy of the protected mode library for home use, download and upzip <a href="/ece291/class-resources/pmodelib.zip">pmodelib.zip</a>.&nbsp;
+Note that MP4 will not run on your machine at home unless you are running
+Windows 2000.</p>
+
+</body>
+
+</html>

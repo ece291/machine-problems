@@ -1,0 +1,134 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 2</title>
+</head>
+
+<body>
+<font size=-1>
+<p>
+<table cellpadding=3 width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Lockwood, Fall 1997</td></tr></table>
+
+<center><h1>Machine Problem 4: Grading Report</h1></center>
+<p>
+<center><i>Please print this page and provide it to the TA when you
+demonstrate your machine problem. <br>
+The TA should verify each functionality
+item, initial the 'Demo' box, assign functionality and bonus points,<br>
+then copy your files to the HANDIN floppy.  
+This page should be stapled to the front of your printed .ASM program.
+</i>
+<p>
+
+<form>
+<table border=0 cellpadding=7><tr><td>
+<table border=0 cellpadding=1>
+<tr><td align=right>Name: </td><td><input name="name" size=30>
+<tr><td align=right>Date Submitted: </td><td><input name="submitted" size=20>
+<tr><td align=right>Demo To: </td><td><input name="demoto" size=6>
+ Graded By: <input name="gradedby" size=6>
+</td></tr></table>
+</td><td>
+<table border=1>
+<tr><Td><input type=checkbox name="gradebook">Handin to floppy 
+<tr><Td><input type=checkbox name="gradebook">Score recorded
+<tr><Td><input type=checkbox name="gold_star">Gold Star<br>
+        <i>Programming Excellence</i></td></tr>
+</td></tr>
+</table>
+</td></tr></table>
+</form>
+</center>
+
+<h3>General Notes</h3>
+  <ul>
+  <li>All procedures should preserve required registers <br>
+      (C Calls must preserve DS, SS, SI, DI)<Br>
+      (ASM Calls should preserve all registers)
+  <li>Results should exactly match those for the library-based code.
+  <li>Use of MASM dot commands (.if .else .while ..) is prohibited.
+  <li>Points are only awarded for routines that work completely.
+  </ul>
+
+<table border=1 cellpadding=3 width=100%>
+<tr><Th>Category</th><th>Points</th><th>Min</th><th>Max</th></tr>
+
+<tr><td><b>DrawPoly</b>  <ul>
+    <li>Reads X1,Y1,Y3,X2,Y2,Y4,Color as C-style arguments
+    <li>Written using logical, modular code w/multiple subroutines. 
+    <li>Implements Bresenham's algorithm
+    <li>Works Completely for 'MP4 1'
+    <li>Properly Draws all 8 trianges in 4 polygons of 'MP4 2' <br>
+         <i>( -2.5 points / bad triangle in 'MP4 2' (8 total) )</i>
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>20</td></tr>
+
+<tr><td><b>LoadPCX</b>  <ul>
+    <li>Writes data to segment specified by argument <br>
+        (not necessarily video memory nor a hardcoded value)
+    <li>Reads data from filename specified by argument (not hardcoded)
+    <li>Loads VGA Palette registers with image colors
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>10</td></tr>
+
+<tr><td><b>MoveScreen</b>  <ul>
+    <li>Moves 320*200=64,000 pixels between segments 
+    <li>Uses most efficient opcodes for routine.<Br>
+      (-2 for implementations that use bytes or words)
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>5</td></tr>
+
+<tr><td><b>AnimateScreen</b>  <ul>
+    <li>Transfers 320*200=64,000 pixels between segments
+    <li>Horizontally shifts image by specified amount<br>
+        (-3 if image is vertically shifted by a line)
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>5</td></tr>
+
+<tr><td><b>InstKey/KeyInterrupt/DeInstallKey</b>  <ul> 
+    <li>Replaces then restores keyboard ISR (Int 9) 
+    <li>Updates variables cs:ExitFlag, cs:Xoffset, cs:Yoffset
+    <li>Interpretes keystrokes to allow movement to 
+        all 9 regions in 'MP4 4'.
+   </ul> </td><td><pre> </pre></td>  <td>0</td><td>10</td></tr>
+
+<tr><td><b>Functionality SubTotal</b>  
+  </td><td><pre> </pre></td>  <td>0</td><td>50</td></tr>
+
+<tr><td><b>Comments</b> <i>(* percentage of code written)</i> <br>
+  <ul>
+  <li>Clear and precise line & procedure comments <Br>
+      (describes all major routines): -0
+  <li>Sports Announcer comments (line-by-line): -1
+  <li>Unclear comments: -1
+  <li>Sparse comments: -3
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>Technique & Style</b>  <i>(* percentage of code written)</i><br>
+  <ul>
+  <li>Compact and Efficient code: -0 <Br>
+       <i>Really bad code in DrawPoly: -3 </i>
+  <li>Contains repeated code (lacks loops): -3 
+  <li>Makes poor use of registers and/or variables: -2 <Br>
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>I/O Specs & Modularity</b> <i>(* percentage of code written)</i> <br>
+  <ul>
+  <li>Violates specifications for given subroutines: -5 (all points)
+  <li>Preserves valus of registers: -5 (all points)
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>Penalty/Bonus</b> <br>
+    <i>Before 5pm, Fri 11/14/97: +1 pt/weekday</i><br>
+    <i>After 5pm, Fri 11/14/97: -5 pts/weekday</i>
+    </td><td><pre> </pre></td><td>-50</td><td>5</td></tr>
+
+<tr><td><b>Total</b> </td><td><pre> </pre></td>  <td>0</td><td>55</td></tr>
+
+</table>
+</font>
+<p>
+</center>
+</body>
+

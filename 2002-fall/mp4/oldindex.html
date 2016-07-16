@@ -1,0 +1,612 @@
+<%
+title = "ECE 291 - MP4"
+subtitle = "MP4"
+%>
+
+<!--#include file="headvb.asp"-->
+
+<H1 align=center>Machine Problem 4: 3D Z-Buffer</H1>
+<DIV align=center>
+<CENTER>
+<TABLE width="60%" border=1>
+  <TBODY>
+  <TR>
+    <TD align=right>Assigned</TD>
+    <TD>Monday, March 25</TD></TR>
+  <TR>
+    <TD align=right valign="top">Due Date</TD>
+    <TD>Monday, April 8
+    </TD></TR>
+  <TR>
+    <TD align=right>Purpose</TD>
+    <TD>Protected Mode, High Resolution Graphics, SSE/MMX Instructions, Mouse</TD></TR>
+  <TR>
+    <TD align=right>Points</FONT></TD>
+    <TD>75</TD></TR></TBODY></TABLE></CENTER></DIV>
+<H2>Introduction</H2>
+<P>In this MP, you will be developing a 3D rendering engine that uses a
+Z-buffer, or depth buffer, to determine which parts of an object the user will
+be able to see.&nbsp; You'll also investigate camera models in order to
+&quot;walk around&quot; the world and perspective projection which will enable
+you to see things as in real life - far away objects appear smaller, and
+nearer objects appear larger.
+ </P>
+<p align=center><img border="0" src="mp4.png" width="645" height="504"></p>
+<H2>Problem Description</H2>
+<p>You will be implementing the MP by doing the following:</p>
+<ul>
+  <li>Writing code for <a href="pmode.html">protected mode</a></li>
+  <li>Displaying the MP in <a href="hiresgraph.html">high resolution graphics</a></li>
+  <li>Drawing <a href="text.html">anti-aliased text</a> and <a href="triangles.html">filled triangles</a>
+    using optimized algorithms</li>
+  <li>Writing <a href="vectormath.html">vector math functions</a> to implement
+    camera movement and perspective projection using SSE instructions</li>
+  <li>Using the <a href="input.html">keyboard and mouse</a> as input</li>
+</ul>
+<H2>Functions</H2>
+<P>This assignment has 17 functions. You will receive credit by 
+replacing each of the functions with your own code.&nbsp;All the functions are C-style functions (parameters on stack, return value in
+eax/ax/al, all general purpose registers other than esi and edi may be
+clobbered). A function that does not take any parameters will be denoted as <b>void</b>
+within the parentheses. A parameter name prefixed with an asterisk (*) means it is a
+pointer, otherwise the parameter is an actual value.&nbsp; The size of the parameters will be denoted as
+<b>word</b> or <b>dword</b>.&nbsp; A function that does not return a value will be declared as <b>void</b>,
+otherwise the size of return value will be specified using the previously
+mentioned scheme.
+<a name=point></a>
+<h3><b>void _CrossProduct(dword *VectorA, dword *VectorB)</b></h3>
+<ul>
+  <li>Calculates the cross product A x B, storing the result to vector A</li>
+  <li>Inputs:
+    <ul>
+      <li>VectorA - pointer to vector structure</li>
+      <li>VectorB - pointer to vector structure</li>
+    </ul>
+  </li>
+  <li>Outputs:
+    <ul>
+      <li>Overwrites the vector pointed to by VectorA with the value of the
+        cross product A x B</li>
+    </ul>
+  </li>
+  <li>Calls: None</li>
+  <li>Points: 8</li>
+  <li>Notes:
+    <ul>
+      <li>Refer to the vector math section of the writeup for the cross product
+        formula</li>
+    </ul>
+  </li>
+</ul>
+<a name=get></a><a>
+<h3>void _MulVectorMatrix(dword *Vector, dword *Matrix)</h3>
+<ul>
+  <li>Multiplies a vector by the source matrix, storing the result to the vector</li>
+  <li>Inputs:
+    <ul>
+      <li>Vector - pointer to vector structure</li>
+      <li>Matrix - pointer to matrix structure</li>
+    </ul>
+  </li>
+  <li>Outputs:
+    <ul>
+      <li>Overwrites the vector pointed to by Vector with the
+        product Matrix * Vector</li>
+    </ul>
+  </li>
+  <li>Calls: None</li>
+  <li>Points: 6</li>
+  <li>Notes:
+    <ul>
+      <li>Refer to the vector math section of the writeup for the multiplication
+        formula</li>
+    </ul>
+  </li>
+</ul>
+<h3>void _CreateCamera(void)</h3>
+<ul>
+  <li>Creates a matrix that will transform a point from world space to camera
+    space</li>
+  <li>Inputs:
+    <ul>
+      <li>[_CameraEye] - vector containing location of camera</li>
+      <li>[_CameraLookAt] - vector containing the direction in which the camera
+        is pointing</li>
+      <li>[_CameraUp] - vector containing the camera's angle of rotation about
+        the z-axis</li>
+      <li>[_RealOne] - The floating point representation of 1</li>
+    </ul>
+  </li>
+  <li>Outputs: [_CameraMatrix]</li>
+  <li>Calls: _NormalizeVector, _CrossProduct</li>
+  <li>Returns: None</li>
+  <li>Points: 6</li>
+  <li>Notes:
+    <ul>
+      <li>Refer to the vector math section of the writeup for the camera matrix formulae</li>
+      <li>Use the _TempVector* variables to hold temporary calculations, and
+        declare more if you need them</li>
+    </ul>
+  </li>
+</ul>
+<h3>dword _MoveCamera(void)</h3>
+<ul>
+  <li>Moves the camera around the scene by either changing its location,
+    switching to a new default position, or returning to the current default
+    position</li>
+  <li>Inputs:
+    <ul>
+      <li>[_MPFlags] - flags variable for the MP</li>
+      <li>[_CameraEye] - vector containing location of camera</li>
+      <li>[_CameraLookAt] - vector containing the direction in which the camera
+        is pointing</li>
+      <li>[_CameraPos] - current default camera position</li>
+      <li>[_CameraPositions] - table containing the values of the four default
+        camera positions</li>
+      <li>[_RealOne] - The floating point representation of 1</li>
+    </ul>
+  </li>
+  <li>Outputs: [_CameraEye], [_CameraLookAt], [_MPFlags], [_CameraPos]</li>
+  <li>Calls: _NormalizeVector, _CrossProduct</li>
+  <li>Returns: zero if none of the three actions was taken, non-zero otherwise</li>
+  <li>Points: 10</li>
+  <li>Notes:
+    <ul>
+      <li>Refer to the vector math section of the writeup for info on moving the
+        camera</li>
+      <li>The default positions are circular, so switching on the fourth default
+        position should bring you back to the first</li>
+      <li>Clear <b>all</b> of the movement flags (move camera, switch default
+        position, return to current default position) if one of the actions is
+        taken</li>
+      <li>You may assume that only one action will occur at a given time, i.e.
+        you don't have to worry about moving backward and to the left in the
+        same function call</li>
+      <li>Use the _TempVector* variables to hold temporary calculations, and
+        declare more if you need them</li>
+    </ul>
+  </li>
+</ul>
+<h3>void _ConvertPoint(dword *Point, dword *Vector)</h3>
+<ul>
+  <li>Transforms a point represented as a floating point vector from world space to camera space to screen space and then converts it to an integer (x,y,z) point
+  </li>
+  <li>Inputs:
+    <ul>
+      <li>Point - pointer to point structure</li>
+      <li>Vector - pointer to vector structure</li>
+      <li>[_RealOne] - The floating point representation of 1</li>
+    </ul>
+  </li>
+  <li>Outputs: Writes converted point to the point structure pointed to by Point</li>
+  <li>Calls: _MulVectorMatrix, _CreateCamera</li>
+  <li>Returns: None</li>
+  <li>Points: 10</li>
+  <li>Notes:
+    <ul>
+      <li>Refer to the vector math section of the writeup for info on converting
+        the point</li>
+      <li>Remember to use the emms instruction at the end of the function to
+        clear the mmx state after using mmx registers</li>
+    </ul>
+  </li>
+</ul>
+<h3>void _CalcNextPoint(dword *Bresenham)</h3>
+<ul>
+  <li>Calculates the next point of a line according to Bresenham's line
+    algorithm</li>
+  <li>Inputs:
+    <ul>
+      <li>Bresenham - pointer to Bresenham's line algorithm variable structure</li>
+    </ul>
+  </li>
+  <li>Outputs: Writes to Bresenham structure pointed to by Bresenham</li>
+  <li>Returns: None</li>
+  <li>Calls: None</li>
+  <li>Points: 3</li>
+  <li>Notes:
+    <ul>
+      <li>Refer to the triangle section of the writeup for the pseudocode for
+        this function</li>
+    </ul>
+  </li>
+</ul>
+</a>
+<a name=pixel></a>
+<h3>void _DrawPixel(dword *DestOff, dword *ZBufferOff, word X, word Y,
+word Z, dword Color)</h3>
+<ul>
+  <li>Draws a pixel with color Color at point (X,Y) with depth Z in the buffer pointed to by
+    DestOff&nbsp;</li>
+  <li>Inputs:
+    <ul>
+      <li>DestOff - offset of a screen image buffer in memory</li>
+      <li>ZBufferOff&nbsp; - offset of Z-Buffer in memory</li>
+      <li>X - x coordinate of point</li>
+      <li>Y - y coordinate of point</li>
+      <li>Z - z coordinate of point</li>
+      <li>Color - color of pixel to draw</li>
+    </ul>
+  </li>
+  <li>Outputs: Pixel drawn to buffer</li>
+  <li>Calls: None</li>
+  <li>Notes:
+    <ul>
+      <li>Do not draw the pixel if it is outside the boundaries of the
+        screen.&nbsp; Acceptable values are 0-639 inclusive for x and 0-479
+        inclusive for y.</li>
+      <li>If the depth of the pixel is greater than the current depth at that
+        point, do not draw the pixel</li>
+      <li>All entries in the Z-Buffer are positive</li>
+      <li>Each point in the screen image buffer takes up 4 bytes</li>
+      <li>Each point in the Z-Buffer takes up 2 bytes</li>
+    </ul>
+  </li>
+  <li>Points: 5</li>
+</ul>
+<a name=line></a>
+<h3>void _DrawLine(dword *DestOff, dword *PointA, dword *PointB, dword Color)</h3>
+<ul>
+  <li>Draws a line with color Color from PointA to PointB in the buffer
+    pointed to by DestOff&nbsp;</li>
+  <li>Inputs:
+    <ul>
+      <li>DestOff - offset of a screen image buffer in memory</li>
+      <li>PointA - pointer to point structure</li>
+      <li>PointB - pointer to point structure</li>
+      <li>Color - color of line to draw</li>
+    </ul>
+  </li>
+  <li>Outputs: Line drawn to buffer</li>
+  <li>Calls: _CreateBresenham3D, _DrawPixel, _CalcNextPoint</li>
+  <li>Returns: None</li>
+  <li>Notes:
+    <ul>
+      <li>Follow the algorithm given in the writeup</li>
+      <li>Use the _LineBres variable to hold the necessary values for the
+        algorithm</li>
+    </ul>
+  </li>
+  <li>Points: 3</li>
+</ul>
+<h3>void _DrawTriangle(dword *DestOff, dword *PointA, dword *PointB, dword *PointC,
+dword Color)</h3>
+<ul>
+  <li>Draws a filled triangle of color Color with endpoints PointA, PointB, and
+    PointC in the buffer
+    pointed to by DestOff&nbsp;</li>
+  <li>Inputs:
+    <ul>
+      <li>DestOff - offset of a screen image buffer in memory</li>
+      <li>PointA - pointer to vector structure</li>
+      <li>PointB - pointer to vector structure</li>
+      <li>PointC - pointer to vector structure</li>
+      <li>Color - color of line to draw</li>
+    </ul>
+  </li>
+  <li>Outputs: Triangle drawn to buffer</li>
+  <li>Calls: _ConvertPoint, _CreateBresenham3D, _DrawLine, _CalcNextPoint</li>
+  <li>Returns: None</li>
+  <li>Notes:
+    <ul>
+      <li>Follow the algorithm given in the writeup</li>
+      <li>Convert the three endpoints from (x,y,z,h) floating point vectors to (x,y,z)
+        integer points at the beginning of the function</li>
+      <li><a>Use the _TempPoint* variables to hold temporary calculations, and
+        declare more if you need them
+</a>
+      </li>
+      <li>Use the _TriangleBres variable to hold the necessary values for the
+        algorithm.&nbsp; You can overwrite this variable for each of the three
+        triangles you draw.</li>
+    </ul>
+  </li>
+  <li>Points: 3</li>
+</ul>
+<h3>dword _AlphaCompose(dword Pixel)</h3>
+<ul>
+  <li>Alpha composes a pixel onto a black background</li>
+  <li>Inputs:
+    <ul>
+      <li>Pixel - RGBA pixel value</li>
+    </ul>
+  </li>
+  <li>Outputs: None</li>
+  <li>Returns: value of alpha composed pixel</li>
+  <li>Calls: None</li>
+  <li>Points: 3</li>
+  <li>Notes:
+    <ul>
+      <li>Refer to anti-aliased text section of the writeup for the algorithm to
+        perform the alpha composition</li>
+    </ul>
+  </li>
+</ul>
+<a name=rect></a><a name=text></a>
+<h3>void _DrawText(dword *StringOff, dword *DestOff, word X, word Y, dword Color)</h3>
+<ul>
+  <li>Draws a text string pointed to by StringOff with color Color beginning at point
+    (X,Y)
+    in the buffer pointed to by DestOff
+  <li>Inputs:
+    <ul>
+      <li>StringOff - offset of string to draw
+      <li>DestOff - offset of a screen image buffer in memory</li>
+      <li>X - x coordinate of start point</li>
+      <li>Y - y coordinate of start point</li>
+      <li>Color - color of the string to draw
+      <li>[_FontOff] - offset of font image data
+    </ul>
+  </li>
+  <li>Outputs: String drawn to buffer
+  <li>Calls: _AlphaCompose
+  <li>Notes:
+    <ul>
+      <li>Strings are terminated with a 0 (null zero)
+      <li>Refer to the anti-aliased text section of the writeup for a description on how to do this
+        function
+      <li>Remember to give each pixel its color and alpha compose it before drawing it to the
+        buffer</li>
+      <li>You may assume that text strings will always appear on the screen - do
+        not worry about boundary conditions</li>
+      <li><a>
+Remember to use the emms instruction at the end of the function to clear the mmx
+state after using mmx registers
+</a>
+      </li>
+      <li><a>This function does </a><b><a>not</a></b><a> deal with the Z-Buffer</a></li>
+    </ul>
+  </li>
+  <li>Points: 8</li>
+</ul>
+<a name=clear></a><a name=copy></a><a name=ikey></a>
+<h3>dword _InstallKeyboard(void)</h3>
+<ul>
+  <li>Installs the keyboard ISR
+  <li>Inputs:&nbsp;
+    <ul>
+      <li>[_kbINT] - interrupt number for keyboard given by EX291 environment
+        variable</li>
+    </ul>
+  <li>Outputs: None
+  <li>Calls: _LockArea, _Install_Int</li>
+  <li>Returns: 1 on error, 0 otherwise</li>
+  <li>Notes:
+    <ul>
+      <li>You may use a <a href="/ece291/books/labmanual/pmodelib-ref-int.html">library</a> function to install
+        this interrupt for you</li>
+      <li>Use _ LockArea to lock the variables the callback will access in
+        addition to locking the callback function itself</li>
+      <li>To get the length of the handler, subtract the start of the handler
+        from the label at the end of the handler (remember, labels are just
+        addresses)</li>
+    </ul>
+  </li>
+  <li>Points: 1</li>
+</ul>
+<a name=rkey></a>
+<h3>
+void _RemoveKeyboard(void)</h3>
+<ul>
+  <li>Uninstalls the keyboard ISR
+  <li>Inputs:&nbsp;
+    <ul>
+      <li>[_kbINT] - interrupt number for keyboard given by EX291 environment
+        variable</li>
+    </ul>
+  <li>Outputs: None
+  <li>Calls: _Remove_Int
+  <li>Notes:
+    <ul>
+      <li>You may use a <a href="/ece291/books/labmanual/pmodelib-ref-int.html">library</a> function to remove
+        this interrupt for you</li>
+    </ul>
+  </li>
+  <li>Points: 1</li>
+</ul>
+<a name=kisr></a>
+<h3>dword&nbsp; _KeyboardISR(void)</h3>
+<ul>
+  <li>Handles keyboard input from the user
+  <li>Inputs:&nbsp;
+    <ul>
+      <li> Keypress waiting at port [_kbPort]</li>
+      <li>[_kbIRQ]</li>
+    </ul>
+  <li>Outputs: [_MPFlags]
+  <li>Calls: None
+  <li>Returns: zero, indicating you do not want to chain the original handler
+  <li>Notes:
+    <ul>
+      <li>ESC key will end the program
+      <li>Up arrow key will move you forward
+      <li>Down arrow key will move you backward
+      <li>Left arrow key will move you to the left
+      <li>Right arrow key will move you to the right
+      <li>Do not chain the original handler</li>
+      <li>You need to save/restore the temporary registers you use as this is an
+        ISR (not eax though!)</li>
+      <li>Remember to send an end-of-interrupt signal (write 20h to port 20h) at
+        the end of the ISR - if [_kbIRQ] &gt;= 8, you also need to ACK with
+        the slave PIC (write 20h to port A0h)</li>
+    </ul>
+  </li>
+  <li>Points: 2</li>
+</ul>
+<a name=imouse></a>
+<h3>dword _InstallMouse(void)</h3>
+<ul>
+  <li>Installs the mouse callback
+  <li>Inputs: None
+  <li>Outputs: [_MouseSeg], [_MouseOff]
+  <li>Returns: 1 on error, 0 otherwise
+  <li>Calls: _LockArea, _Get_RMCB, DPMI_Int
+  <li>Notes:
+    <ul>
+      <li>You cannot call <tt>int 33h</tt> directly - you need to simulate a
+        real mode interrupt by calling DPMI_Int with the appropriate values in
+        the DPMI registers (ex. DPMI_EAX)
+      <li>Use _Get_RMCB to get a real mode segment and offset that you pass to <tt>int
+        33h</tt>
+      <li>Do not try to pass cs and the offset of MouseCallback directly to <tt>int
+        33h</tt>: selectors are not the same as segments!
+      <li>Use _LockArea to lock the variables the callback will access in
+        addition to locking the callback function itself
+      <li>To get the length of the handler, subtract the start of the handler
+        from the label at the end of the handler (remember, labels are just
+        addresses)
+      <li>For reference on <tt>int 33h</tt>, function <tt>000Ch</tt>, visit this
+        page: <a href="http://www.delorie.com/djgpp/doc/rbinter/id/87/59.html">http://www.delorie.com/djgpp/doc/rbinter/id/87/59.html</a>
+        (also look at the linked tables)
+      <li>You want the callback to be called on left mouse button press and
+        right mouse button press</li>
+    </ul>
+  </li>
+  <li>Points: 2</li>
+</ul>
+<a name=rmouse></a>
+<h3>void _RemoveMouse(void)</h3>
+<ul>
+  <li>Removes the mouse callback
+  <li>Inputs: [_MouseSeg], [_MouseOff]
+  <li>Outputs: None
+  <li>Calls: _Free_RMCB, DPMI_Int
+  <li>Notes
+    <ul class="innerul">
+      <li>Use segment:offset 0000:0000 for &quot;no callback&quot;
+      <li>Uninstall the mouse callback using before you free the real mode
+        callback.
+      <li>For reference on <tt>int 33h</tt>, function <tt>000Ch</tt>, visit this
+        page: <a href="http://www.delorie.com/djgpp/doc/rbinter/id/87/59.html">http://www.delorie.com/djgpp/doc/rbinter/id/87/59.html</a>
+        (also look at the linked tables)
+    </ul>
+  </li>
+  <li>Points: 2</li>
+</ul>
+<a name=misr></a>
+<h3>void _MouseCallback(dword *DPMIRegsPtr)</h3>
+<ul>
+  <li>Handles mouse input from the user
+  <li>Inputs:
+    <ul>
+      <li>DPMIRegsPtr - pointer to DPMI register structure</li>
+      <li>[_MPFlags] - flags variable for the MP</li>
+    </ul>
+  <li>Outputs: [_MPFlags]
+  <li>Calls: None
+  <li>Notes:
+    <ul>
+      <li>Use the <tt>es </tt>selector to retrieve mouse data, not <tt>ds</tt>
+    </ul>
+    <ul>
+      <li>Use DPMI_&lt;REGISTERNAME&gt;_off to access DPMI register structure
+        values (ex. DPMI_EAX_off)
+      <li> Fields in condition mask register (see table 3172 linked from URL in
+        InstallMouse function) that you will need:
+        <ul>
+          <li>Bit 1 - left mouse button press generated interrupt
+          <li>Bit 3 - right mouse button press generated interrupt
+        </ul>
+      <li>Left mouse button press will switch the default position of the camera</li>
+      <li>Right mouse button press will return the camera to its current default
+        position</li>
+      <li>You need to save/restore the temporary registers you use as this is a
+        callback</li>
+    </ul>
+  </li>
+  <li>Points: 2</li>
+</ul>
+<H2>Given Code</H2>
+<h3>void _MP4Main(void)</h3>
+<ul>
+  <li>Runs the main loop
+  <li>Inputs: None
+  <li>Outputs: None
+  <li>Calls: _DrawScene, _MoveCamera
+</ul>
+<h3>void _DrawScene(void)</h3>
+<ul>
+  <li>Draws the scene of triangles
+  <li>Inputs: None
+  <li>Outputs: None
+  <li>Calls: _DrawTriangle, _DrawText, _CopyToScreen
+</ul>
+<h3>void _NormalizeVector(dword *Vector)</h3>
+<ul>
+  <li>Normalizes the vector pointed to by Vector
+  <li>Inputs:
+    <ul>
+      <li>Vector - pointer to vector structure</li>
+    </ul>
+  <li>Outputs: Overwrites the vector pointed to by Vector with its normalized
+    value
+  <li>Calls: None
+  <li>Notes:
+    <ul>
+      <li>Refer to the vector math section of the writeup for the normalization
+        formula</li>
+    </ul>
+</ul>
+<h3>void _CreateBresenham3D(dword *Bresenham, dword *PointA, dword *PointB)</h3>
+<ul>
+  <li>Sets up a Bresenham's line algorithm variable structure to draw a line
+    between PointA and PointB</li>
+  <li>Inputs:
+    <ul>
+      <li>Bresenham - pointer to Bresenham's line algorithm variable structure</li>
+      <li>PointA - pointer to point structure</li>
+      <li>PointB - pointer to point structure</li>
+    </ul>
+  </li>
+  <li>Outputs: Writes values to Bresenham structure pointed to by Bresenham</li>
+  <li>Calls: None</li>
+  <li>Notes:
+    <ul>
+      <li>You're welcome!</li>
+    </ul>
+  </li>
+</ul>
+<H2>Procedure</H2>
+<ul>
+  <li>Copy the given MP4 files from the network drive to your home directory
+    with the following command:<br>
+    <tt>xcopy /s V:\ece291\mp4 W:\mp4</tt><br>
+    Alternatively, from home you can download the same files as <a href="http://courses.engr.illinois.edu/ece291/mp/mp4/mp4.zip">mp4.zip</a>.
+</ul>
+<ul>
+  <li><b>Unlike previous MPs</b>, you will need to run 'ex291' to set up the
+    graphics display.&nbsp; You can do this in a command prompt window, and you
+    only need to do this once per DOS session.&nbsp; One issue with 'ex291' is
+    that it seems to disrupt the 'make' command.&nbsp; To get around this, <b>have
+    two windows open - one in which you DO NOT run 'ex291' and use to make your
+    program, and the other you use to run your program.<br>
+    </b>
+  <li>Note that MP4 will not run on your machine at home unless you have a
+    Pentium III chip or better <b>and</b> Windows 2000 or Windows XP.<br>
+  <li>As with previous MPs, use a text editor to modify the program. As given,
+    the program uses LIBMP4 routines to implement all functionality. To receive
+    full credit for the assignment, you will need to implement each of the
+    subroutines described above with your own code.<br>
+  <li>By modifying a few comments, you can mix and match usage of your own code
+    and Library routines. You may notice that the LIBMP4 routines contain
+    extraneous and difficult-to-read code. They are not meant to be easily
+    unassembled!</li>
+</ul>
+<H2>Final Steps</H2>
+<p>1. Demonstrate your MP4.EXE to a TA. You may be asked to recompile and demo
+the program.</p>
+<p>2. Be prepared to answer questions about any aspect of the operation of your
+program. The TAs will not accept an MP if you cannot fully explain your code and
+your implementation. Delayed MPs will be subject to late penalties as described
+in the course syllabus (7 pts per day up to 5 days).</p>
+<p>3. The TA will complete the code submission procedure.</p>
+<HR>
+
+<H2>MP4.ASM (program framework)</H2><FONT size=-1></FONT>
+<h1><a href="mp4.asm">mp4.asm</a></h1>
+
+<!--#include file="foot.asp"-->
+
+
+
+

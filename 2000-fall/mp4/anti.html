@@ -1,0 +1,470 @@
+<html>
+<head>
+<title>Anti-Aliased Line Drawing</title>
+<style type="text/css"><!--
+body{ background:white; color:black; }
+P{ text-indent: -0.5em; margin-left: 3em; }
+H1{ margin-left: 0em; clear: right; }
+H2{ margin-left: 1em; clear: right; }
+H3{ margin-left: 2em; clear: right; }
+pre{ margin-left: 3em; clear: all }
+ol,ul{ margin-left: 5em; }
+sub{ font-style: italic; }
+.eqn { margin-left: 5em; font-family: times; }
+.decl{ font-weight: bold; }
+.int{ color: maroon; }
+.intv{ color: blue; }
+.func{ color: red; }
+.float{ color: maroon; }
+.floatv{ color: purple; }
+.keyw{ color: green; font-weight: bold; }
+.comment{ color: green; font-style: italic; }
+.innerul{ margin-left: 1em; }
+@media print {
+ //.noprint{ display:none; }
+}
+@media screen {
+ //.print{ display: none;}
+}
+--></style>
+</head>
+<body>
+<!--
+<h1 class="print">Muhahaha...</h1>
+<big class="print" style="font-size:xx-large; font-style: italic;">
+This document has been rendered <strong>unprintable</strong>.</big>
+-->
+<!-- Comments: Yellow on White == BAD
+             - Captions fuzzy.   (check in lab)
+	     - Choose one: square or round pixels
+	     - Mention zoom of figures, as well as what the grid is
+	       and mention to blur vision to see Fig C and D as lines
+	     - explain what (4,2) means
+	     + rematch distance**-2 vs distance**2 -> go to all k / d**2 (3
+	       times)
+	     + remove the bribe comment
+	     + mention math as reason for 0-1.5 when introduced.
+	     - ALT tags
+	     - don't circular link to ablit.html
+-->
+
+<h1>Anti-Aliased Line Drawing</h1>
+
+<p>First, let's start with an example to show why we want to use
+anti-aliased lines.  The lines on the left are drawn with something like
+Bresenham's line algorithm.  The lines on the right are drawn with an
+extended form of Bresenham's which anti-aliases.  They are shown both at
+normal size and 4x zoom. Which do you think looks better?</p>
+
+<div align="center" align="middle">
+<img src="bresenhams.png" width="22" height="56" align="middle"
+alt="bresenhams drawn line">
+<img src="bresenhams.png" width="88" height="224" align="middle"
+alt="bresenhams drawn line at 4x zoom">
+<img src="antialiased.png" width="88" height="224" align="middle"
+alt="antialiased line at 4x zoom">
+<img src="antialiased.png" width="22" height="56" align="middle"
+alt="antialiased line">
+</div>
+
+<p>For MP4, you need to implement the one on the right.  This tape will
+self-destruct in five seconds.  ...four... ...three...</p>
+
+<p>Just take me to the <a href="#algo">algorithm</a>!  I don't care if I
+understand it!  Or scroll on for an explanation.</p>
+
+<h1>Theory Behind Anti-Aliasing</h1>
+
+<div style="float:right">
+<img src="solidfill.png" width="360" height="270"
+alt="Figure A: Ideal Unit-width Line on pixel grid">
+</div>
+<p>There are several models one can use to draw anti-aliased lines, with
+differing quality results. Let's say I want to draw a line with a
+thickness of 1, from (1,1) to (8,4).  Also, the ends should be
+rectangular, rather than capped with a circle.  My "ideal" line would
+look something like Figure A.</p>
+
+
+<p>But when I want to display that on a screen, and my units above are
+individual pixels, I simply cannot draw that.  Although Pixels are
+arguably circles of light, because they go in a rectangular pattern, it
+is easiest to represent them as squares.  (It also makes most of the
+math nicer, if you ask me.)</p>
+
+<h2>Rasterization</h2>
+<div style="float:right">
+<img src="firstrast.png" width="360" height="270"
+alt="Figure B: y=round(f(x)) Approximation">
+</div>
+<p>So what should I do?  The first way I can think of to do this follows
+the pseudocode based on the idea y=f(x):</p>
+<ul class="eqn"><li>For x = x0 to x1
+    <ul class="innerul"><li>y = (y1-y0) * (x - x0) / (x1 - x0) + y0</li>
+    <li>DrawPixel (x, y)</li>
+    </ul>
+    <li>End For
+</ul>
+<p>And would result in something like Figure B.</p>
+
+
+<p>Now, this algorithm has several downfalls:</p>
+<ol>
+ <li>There is a multiplication and a divide for every pixel.  Since they
+ are integer mul/divs, they cannot be precalculated to save one of them.
+ <li>There is also a multiply when converting from (x,y) to address.
+ <li>This line is severely aliased.  It's jaggy.  It looks like a
+ shallow staircase.  (These all mean the same thing.)
+</ol>
+
+<h2>What can I do about it?</h2>
+<p>There are two main categories of problems we want to address now:
+Speed and Appearance.  First let's look at a type of line drawing
+algorithm called a Digital Differential Analyzer (DDA), and then we'll
+actually get on to how we anti-alias a line.</p>
+
+<h2>Digital Differential Analyzer</h2>
+
+<p>It's easy to come up with:</p>
+<div class="eqn">
+y<sub>i</sub> = f(x<sub>i</sub>)<br>
+y<sub>i</sub> = m * (x<sub>i</sub>-x0) + y0<br>
+y<sub>i</sub> = (y1-y0) * (x<sub>i</sub>-x0) / (x1-x0) + y0
+</div>
+
+<p>You can greatly improve this algorithm, however, by realizing that you
+draw these lines sequentially:</p>
+<div class="eqn">
+y<sub>i+1</sub> = m * x<sub>i+1</sub>+B<br>
+y<sub>i+1</sub> = m * (x<sub>i</sub> + &Delta;x) + B<br>
+y<sub>i+1</sub> = y<sub>i</sub> + m * &Delta;x
+</div>
+
+<p>Now all you need to do is keep track of y<sub>i</sub>, and round to
+the nearest integer when you want to draw.  So now we've got an initial
+calculation of m = (y1-y0) / (x1-x0), stored in some non-integer format,
+which we can then just add to our y for each subsequent pixel.
+
+<h2>Bresenham's Line Algorithm</h2>
+
+<p>Bresenham found a way to turn the above non-integer calculations into
+entirely integer calculations.  By tracking an integer y and an integer
+d (distance from the ideal line), his algorithm allows you to draw a
+line using only integer math.  For more information on actually
+implementing Bresenham's Line Algorithm, see <a
+href="http://www.ece.uiuc.edu/ece291/lecture/l19.html#Bline">Lecture
+19</a>.</p>
+
+<p>The other thing you should notice about these two algorithms is this:
+since they iterate across the line (think of the across x in the above
+example), adding to the drawn Y if we've crossed some threshold, we
+don't really have to store just X and Y anymore.  We can store an
+address, to which we add 1 whenever X increases, and add WIDTH whenever
+Y increases.  This eliminates the last multiply-per-pixel.</p>
+
+<p>Okay.  So the DDA and, better yet, Bresenham's Line Algorithm have
+really sped up our line drawing.  That's problem 1.  Now we can draw an
+ugly line really quickly.  So onward to problem 2--we want our lines to
+look better.</p>
+
+<h2>Anti-Aliasing</h2>
+<p>If you look closely back at the Figure B,  you'll probably start to
+notice a few more problems.  For instance:</p>
+<ul>
+ <li>Pixel (4,2) has less coverage than Pixel (3,2), yet they're both
+ drawn fully black.
+ <li>Pixel (2,2) has almost as much coverage as (4,2), and yet it's
+ drawn fully white.
+</ul>
+
+<p>How can we know how much of a given pixel the line will cover?  Well,
+we could go through a whole bunch of geometry, drawing the perpendicular
+from the center of the pixel to the edge of the line, and then derive
+some easy ways to find this.</p>
+
+<div style="float:right">
+<img src="outline.png" width="360" height="270"
+alt="Figure C: Pixel Color by Coverage or Alpha">
+</div>
+<p>But this is ECE291, so we'll just jump to the answer.</p>
+
+<p>Remember how Bresenham's Line Algorithm stored d, the distance from
+the line to the center of the pixel, multiplied by some constant to make
+it usable?  Well, we're about to use a variant of that to calculate
+distance.  Once we're done, we'll get something that looks a lot like
+Figure C.</p>
+
+<p>One word of caution: remember how I said pixels could be considered
+circles of light?  That's going to play an important role in our
+calculation of coverage as a function of distance.  Specifically, we
+want to have a relationship that looks like: coverage = k /
+distance<sup>2</sup>.</p> 
+
+<p>Why?  To be honest, I haven't worked out the math to be completely
+sure.  The Gupta-Sproull algorithm, which is the pseudocode I based this
+on, does a table lookup on distance to find coverage. My source didn't
+have the table.  So I played with it, and found that using the inverse
+of distance squared result looks much better than the linear result.
+Feel free to experiment a little in your code and see what you like
+best.  If you use something other than my values, though, know what they
+are and be prepared to defend them.</p>
+
+<a name="algo"><h1>The Actual Algorithm</h1></a>
+<p>The Gupta-Sproull algorithm looks a lot like Bresenham's, with some
+additional fun thrown in.  Like Bresenham's, we do an integer DDA, with
+error function d.  But then we use d as part of the distance
+calculation.</p>
+
+<p>Here's the pseudocode, shamelessly copied and slightly modified from
+<span class="cite">Computer Graphics: Principles and Practice, Second
+Edition in C</span>.  It's on page 141 in my edition (section 3.18), if
+you happen to have the book and prefer a physical copy.  Just be careful
+to note the changes!</p>
+
+<pre>
+
+<span class="decl">void</span> <span
+class="func">AALine</span>(<span
+class="decl">int</span> <span class="intv">x0</span>, <span
+class="decl">int</span> <span class="intv">y0</span>, <span
+class="decl">int</span> <span class="intv">x1</span>, <span
+class="decl">int</span> <span class="intv">y1</span>)
+{
+    <span
+class="decl">int</span> <span class="intv">addr</span> = (<span
+class="intv">y0</span>*<span class="int">640</span>+<span
+class="intv">x0</span>)*<span class="int">4</span>;
+    <span
+class="decl">int</span> <span class="intv">dx</span> = <span
+class="intv">x1</span>-<span class="intv">x0</span>;
+    <span
+class="decl">int</span> <span class="intv">dy</span> = <span
+class="intv">y1</span>-<span class="intv">y0</span>;
+    <span class="comment"
+    >/* By switching to (u,v), we combine all eight octants */</span>
+    <span
+class="keyw">if</span> (<span class="func">abs</span>(<span
+class="intv">dx</span>) &gt; <span class="func">abs</span>(<span 
+class="intv">dy</span>))
+    {
+	<span
+class="comment">/* Note: If this were actual C, these integers would be lost
+	 * at the closing brace.  That's not what I mean to do.  Do what
+	 * I mean. */</span>
+	<span
+class="decl">int</span> <span class="intv">du</span> = <span
+class="func">abs</span>(<span class="intv">dx</span>);
+	<span
+class="decl">int</span> <span class="intv">dv</span> = <span
+class="func">abs</span>(<span class="intv">dy</span>);
+	<span
+class="decl">int</span> <span class="intv">u</span> = <span
+class="intv">x1</span>;
+	<span
+class="decl">int</span> <span class="intv">v</span> = <span
+class="intv">y1</span>;
+	<span
+class="decl">int</span> <span class="intv">uincr</span> = <span
+class="int">4</span>;
+	<span
+class="decl">int</span> <span class="intv">vincr</span> = <span
+class="int">640</span>*<span class="int">4</span>;
+	<span
+class="keyw">if</span> (<span class="intv">dx</span> &lt; <span
+class="int">0</span>) <span
+class="intv">uincr</span> = -<span class="intv">uincr</span>;
+	<span
+class="keyw">if</span> (<span class="intv">dy</span> &lt; <span
+class="int">0</span>) <span
+class="intv">vincr</span> = -<span class="intv">vincr</span>;
+    }
+    <span class="keyw">else</span>
+    {
+	<span
+class="decl">int</span> <span class="intv">du</span> = <span
+class="func">abs</span>(<span class="intv">dy</span>);
+	<span
+class="decl">int</span> <span class="intv">dv</span> = <span
+class="func">abs</span>(<span class="intv">dx</span>);
+	<span
+class="decl">int</span> <span class="intv">u</span> = <span
+class="intv">y1</span>;
+	<span
+class="decl">int</span> <span class="intv">v</span> = <span
+class="intv">x1</span>;
+	<span
+class="decl">int</span> <span class="intv">uincr</span> = <span
+class="int">640</span>*<span class="int">4</span>;
+	<span
+class="decl">int</span> <span class="intv">vincr</span> = <span
+class="int">4</span>;
+	<span
+class="keyw">if</span> (<span class="intv">dy</span> &lt; <span
+class="int">0</span>) <span
+class="intv">uincr</span> = -<span class="intv">uincr</span>;
+	<span
+class="keyw">if</span> (<span class="intv">dx</span> &lt; <span
+class="int">0</span>) <span
+class="intv">vincr</span> = -<span class="intv">vincr</span>;
+    }
+    <span
+class="decl">int</span> <span class="intv">uend</span> = <span
+class="intv">u</span> + <span class="int">2</span> * <span
+class="intv">du</span>;
+    <span
+class="decl">int</span> <span class="intv">d</span> = (<span
+class="int">2</span> * <span class="intv">dv</span>) - <span
+class="intv">du</span>;	    <span
+class="comment">/* Initial value as in Bresenham's */</span>
+    <span
+class="decl">int</span> <span class="intv">incrS</span> = <span
+class="int">2</span> * <span class="intv">dv</span>;	<span
+class="comment">/* &#916;d for straight increments */</span>
+    <span
+class="decl">int</span> <span class="intv">incrD</span> = <span
+class="int">2</span> * (<span class="intv">dv</span> - <span
+class="intv">du</span>);	<span
+class="comment">/* &#916;d for diagonal increments */</span>
+    <span
+class="decl">int</span> <span class="intv">twovdu</span> = <span
+class="int">0</span>;	<span
+class="comment">/* Numerator of distance; starts at 0 */</span>
+    <span
+class="decl">double</span> <span class="floatv">invD</span> = <span
+class="float">1.0</span> / (<span class="float">2.0</span>*<span
+class="func">sqrt</span>(<span class="intv">du</span>*<span
+class="intv">du</span> + <span class="intv">dv</span>*<span
+class="intv">dv</span>));   <span
+class="comment">/* Precomputed inverse denominator */</span>
+    <span
+class="decl">double</span> <span class="floatv">invD2du</span> = <span
+class="float">2.0</span> * (<span class="intv">du</span>*<span
+class="floatv">invD</span>);   <span
+class="comment">/* Precomputed constant */</span>
+    <span class="keyw">do</span>
+    {
+	<span
+class="comment">/* Note: this pseudocode doesn't ensure that the address is
+	 * valid, or that it even represents a pixel on the same side of
+	 * the screen as the adjacent pixel */</span>
+	<span class="func">DrawPixelD</span>(<span
+	class="intv">addr</span>, <span class="intv">twovdu</span
+	>*<span class="floatv">invD</span>);
+	<span class="func">DrawPixelD</span>(<span
+	class="intv">addr</span> + <span class="intv">vincr</span
+	>, <span class="floatv">invD2du</span> - <span
+	class="intv">twovdu</span>*<span class="floatv">invD</span>);
+	<span class="func">DrawPixelD</span>(<span
+	class="intv">addr</span> - <span class="intv">vincr</span
+	>, <span class="floatv">invD2du</span> + <span
+	class="intv">twovdu</span>*<span class="floatv">invD</span>);
+
+	<span class="keyw">if</span> (<span class="intv">d</span
+	> &lt; <span class="int">0</span>)
+	{
+	    <span class="comment">/* choose straight (u direction) */</span>
+	    <span class="intv">twovdu</span> = <span
+	    class="intv">d</span> + <span class="intv">du</span>;
+	    <span class="intv">d</span> = <span
+	    class="intv">d</span> + <span class="intv">incrS</span>;
+	}
+	<span class="keyw">else</span>
+	{
+	    <span class="comment">/* choose diagonal (u+v direction) */</span>
+	    <span class="intv">twovdu</span> = <span
+	    class="intv">d</span> - <span class="intv">du</span>;
+	    <span class="intv">d</span> = <span
+	    class="intv">d</span> + <span class="intv">incrD</span>;
+	    <span class="intv">v</span> = <span
+	    class="intv">v</span>+<span class="int">1</span>;
+	    <span class="intv">addr</span> = <span
+	    class="intv">addr</span> + <span class="intv">vincr</span>;
+	}
+	<span class="intv">u</span> = <span class="intv">u</span>+<span
+	class="int">1</span>;
+	<span class="intv">addr</span> = <span
+	class="intv">addr</span>+<span class="intv">uincr</span>;
+    } <span
+class="keyw">while</span> (<span class="intv">u</span> &lt; <span
+class="intv">uend</span>);
+}
+</pre>
+
+<p>So, what does this do?  Well, in addition to the normal Bresenham's
+style algorithm, it calls <span class="func">DrawPixelD</span> three
+times - one for the pixel Bresenham's would draw, and then for one each
+on either side (y±1 for a line in x).  These three pixels are all the
+pixels the line may cover.</p>
+
+<div style="float:right">
+<img src="zoomline.png" width="360" height="270"
+alt="Figure D: The Final Line">
+</div>
+<p>It passes <span class="func">DrawPixelD</span> another parameter,
+which we shall call <span class="floatv">distance</span>.  To find <span
+class="floatv">distance</span>, it sets <span class="intv">twovdu</span>
+to <span class="intv">d</span>±<span class="intv">du</span>, and
+multiplies it by the precomputed constant <span
+class="floatv">invD</span>.  Then, depending on which pixel we need the
+distance for, it either passes it verbatim, or takes <span
+class="floatv">invD2du</span>, another precomputed constant, and either
+adds or subtracts it from this constant.  Making a long process short,
+<span class="func">DrawPixelD</span> sees distances ranging from <span
+class="float">0.0</span> to <span class="float">1.5</span>.</p>
+
+<p>And if you've been a good student and just generally gotten very
+lucky by getting everything to work, You'll have something that looks
+like a zoomed out Figure D.</p>
+
+<h2>DrawPixelD</h2>
+
+<p>Remember a few paragraphs back when I said something about
+considering the inverse of distance squared instead of just a linear
+distance?  Here's where I explain how you are to do that.</p>
+
+<p>DrawPixelD gets passed a distance.  Since there isn't any convenient
+way to pass double-precision floating point numbers (qwords) on the
+parameter stack, I suggest passing them in on the FPU stack, as the top
+element.  You can break it down into two dwords on the stack, but it's
+not fun.  (It also requires you write both functions at once, as
+libDrawPixelD() expects to find it in st0, and correspondingly
+libAALine() puts it there.  Yes, this is not standard C procedure
+calling.)</p>
+
+<p>This distance ranges from 0.0 to 1.5, thanks to some nice geometrical
+math (I'm willing to try to explain the full reasoning to you if you
+catch me with the book).  At 0.0, the line is fully centered around the
+pixel.  at 1.5 it's fully centered around the far pixel.  But what about
+in-between?  What we want to do is somehow find an alpha such that:</p>
+
+<div class="eqn">&alpha; = f(distance)</div>
+
+<p>So what's our function?</p>
+
+<p>Simple. First we normalize the 0.0--1.5 to 0.0--1.0 (the normal range
+on alpha values).  Then we subtract it from 1 to reverse the meaning to
+our normal meaning of alpha. (Normally an alpha of 1.0 means fully
+opaque, while an alpha of 0.0 means fully transparent.  Our normalized
+distance was the reverse of that.)  Next, we apply the magic step of
+squaring this value, which lessens almost all of the possible values
+(just consider the graph of x<sup>2</sup> from 0 to 1).  Finally we
+multiply by 255 to make it an integer, and we've got our alpha.</p>
+
+<p>To summarize that paragraph as an equation:</p> <div
+class="eqn">&alpha; = 255 * (1 - (distance * 2/3))<sup>2</sup></div>
+<p>Which is a number from 0 to 255.  Apply this to each of your channels
+just like you did in <a href="ablit.html">AlphaBlit</a> (only don't use
+MMX!) and plot your pixel.  Don't forget the first parameter, addr, was
+the address in the VideoBuf selector.</p>
+
+<h2>No MMX in DrawPixelD</h2>
+<p>Why not use MMX?  Due to the design choices of Intel, it's extremely
+slow to switch between floating point and MMX instructions.  Since we
+need floating point for most of this algorithm, it's faster to composite
+the four channels individually than to switch into MMX, use MMX
+operations on all four channels at once, and switch back to floating
+point.</p>
+
+<p>And we've only got one pixel anyway, not two.</p>
+
+</body>

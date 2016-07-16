@@ -1,0 +1,177 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD><%
+title = "ECE291 Machine Problem 4 : Variable-width Fonts"
+subtitle = "Variable-width Fonts"
+%>
+<!--#include file="headvb.asp"-->
+
+<p><em>For those interested in the workings of a modern font engine, be
+aware that this is a simplified model.  As such you should probably see
+<a href="http://freetype.sourceforge.net/freetype2/docs/glyphs/index.html">Freetype's
+documentation on glyphs</a>.  The information there does not apply to
+how we are using fonts in this MP.</em></p>
+
+<h1 align="center">Fonts of Variable Width</h1>
+
+<p>Variable width fonts are one of many things that make a graphical
+interface more pleasant to use.  Instead of taking as much horizontal
+space for an "i" or a "w", each character takes a width corresponding to
+its shape.  Additionally, specific character combinations can be further
+adjusted by a process called <a
+    href="http://freetype.sourceforge.net/freetype2/docs/glyphs/glyphs-4.html#section-1">kerning</a>.
+Kerning allows a "V" to come close to an "A", but sit further away from
+a "Y".</p>
+
+<h2>Corner, Left, Width, and Advance</h2>
+
+<p>Our font image stores a bunch of consecutive letters, all squished
+together.  It looks like this, if you zoom in:</p>
+
+<img align=center src="font-a-m.png">
+
+<p>To get to the beginning (upper-left corner) of each character, we
+have to look up a pixel offset, which we call <tt>Corner</tt>.</p>
+
+<p>Each character in one of our fonts has three more numbers describing
+it and it alone.  It has a width which describes the size of the
+character in our source image.  It has a left margin, which tells us how
+far from the previous character's right margin we need to move.  And it
+has a distance from the left margin which we should advance to get to
+the right margin.<p>
+
+<img width=360 height=100 align=left src="font-lwa.png">
+
+<table border align=right>
+    <caption>Left, Width, Advance values for ArialBD
+	<tt>'c'</tt> through <tt>'m'</tt></caption>
+    <tr><th>Letter</th><th>Left</th><th>Width</th><th>Advance</th></tr>
+    <tr><td>c</td><td>1</td><td>7</td><td>9</td></tr>
+    <tr><td>d</td><td>1</td><td>8</td><td>10</td></tr>
+    <tr><td>e</td><td>1</td><td>8</td><td>9</td></tr>
+    <tr><td>f</td><td>0</td><td>6</td><td>5</td></tr>
+    <tr><td>g</td><td>0</td><td>9</td><td>10</td></tr>
+    <tr><td>h</td><td>1</td><td>8</td><td>10</td></tr>
+    <tr><td>i</td><td>1</td><td>2</td><td>4</td></tr>
+    <tr><td>j</td><td>-1</td><td>4</td><td>4</td></tr>
+    <tr><td>k</td><td>1</td><td>8</td><td>9</td></tr>
+    <tr><td>l</td><td>1</td><td>2</td><td>4</td></tr>
+    <tr><td>m</td><td>1</td><td>12</td><td>14</td></tr>
+</table>
+
+<p>[Zoom by <a href="font-lwa2.html">2x</a>
+    or <a href="font-lwa4.html">4x</a>]</p>
+
+<p style="clear:left">This rendering of the string
+<tt>"cdefghijklm"</tt> shows what these values really mean.  Each
+vertical red line represents a base position of a letter. The distance
+from it to the next blue line is the left margin of a letter.  The left
+margin is indicated with green arrows.  Each pair of vertical blue lines
+represents a width of a letter.  The width is indicated with purple
+arrows.  Each pair of red vertical lines also represents the advance for
+the letter they surround.  The advance is indicated with light-blue
+arrows.</p>
+
+<p>Note that the left margins of <tt>'f'</tt> and <tt>'g'</tt> are zero,
+(light green arrows) and <tt>'j'</tt> is negative (orange arrows).  This
+does indicate no movement, and leftwards movement, respectively.
+Further note that in all cases, the advance value is applied from the
+base position (red lines), even in the case of <tt>'j'</tt> and its
+negative left margin.</p>
+
+<p>Width tells you the size of the rectangle to copy from the source
+image but Advance tells you how big the rectangle it takes in the
+destination image.  For example, <tt>'l'</tt> has a width of 2 pixels,
+which allows you to pull the <tt>'l'</tt> out but not grab the
+<tt>'k'</tt> or the <tt>'m'</tt>.  Then its Advance of 4 pixels gives it
+some breathing room.</p>
+
+<p>The Width of <tt>'f'</tt> is greater than its Advance, and thus the
+rectangles for <tt>'f'</tt> and <tt>'g'</tt> overlap (<tt>'g'</tt> has a
+Left of 0).  This has the opposite effect, effectively taking away some
+room on the right side of the <tt>'f'</tt>.  None of these special cases
+listed here require special casing in the code.  Instead they make good
+cases to check to verify a properly working implementation.</p>
+
+<p>All this information is stored in the font data file, discussed below</p>
+
+<h2>Kerning</h2>
+
+<p>Kerning is a method of fine-tuning character positions.  While the
+above use of Left, Width, and Advance will allow you to draw a perfectly
+usable string, there are often cases where considerable improvement is
+possible.  Within a given letter's Width-wide rectangle, there is often
+unused space.  For example, the upper-left and upper-right corners of an
+<tt>'A'</tt>, the lower-left and lower-right corners of a <tt>'V'</tt>
+or a <tt>'T'</tt>, or the upper area of most lowercase characters.</p>
+
+<p>When corresponding unused space exists in adjacent letters, the
+second letter can be brought in towards the first.  The characters
+<tt>"AV"</tt> can be drawn closer together than the characters
+<tt>"AA"</tt> in many fonts.  In this case the entry for <tt>"AV"</tt>
+might hold a value like <tt>-2</tt>, and when drawing a <tt>'V'</tt>
+after an <tt>'A'</tt>, this <tt>-2</tt> should be added to the starting
+location for <tt>'V'</tt>.  Unlike the Left-margin, this moves the
+entire character and all subsequent characters over.</p>
+
+<p>Since this information is also font-specific, it is also stored in
+the font data file.</p>
+
+<h2>Anti-aliasing</h2>
+
+<p>Now that characters are being positioned as ideally as possible,
+there is one last thing to address: sub-pixel outlines.  The above
+images have a lot of grey pixels.  At such a large size, they look ugly,
+but at their original size, they help maintain the readibility of each
+letter.</p>
+
+<p>This information is stored in the alpha channel of the font image.
+When the alpha channel is 255, the pixel is at full intensity.  When
+it's 0, the pixel is transparent, and the original destination pixel
+should be used.  When it's anywhere inbetween, the color is linearly
+interpolated between the full intensity pixel of our desired font color
+and the original destination pixel, just like alpha compositing.</p>
+
+<p>The trick here is to run an alpha composition of the font's alpha
+channel and the desired RGB for this character or string, with the
+destination pixel's RGB (destination alpha is always ignored).</p>
+
+<h2>Font Data</h2>
+
+<p>The information necessary to implement all the above kerning is
+stored in a companion file.  For this MP the files <tt>arialbd.png</tt>
+and <tt>arialbd.dat</tt> hold the font image, and font data
+respectively.  The image is a horizontal juxtaposition of all
+characters, like the subset above.  The data file has three
+sections:</p>
+
+<ul>
+    <li>Width and Height of corresponding font imagefile; both are
+    dwords,</li>
+    <li>256 position values, where each position value has structure:
+    <ul>
+	<li>xpos    resd 1  ; pixel offset of upper-left corner of
+	letter</li>
+	<li>left    resb 1  ; left margin in pixels</li>
+	<li>width   resb 1  ; width of source character in pixels</li>
+	<li>advance resb 1  ; width of destination in pixels</li>
+	<li>dummy   resb 1  ; pads out to 8 bytes per letter</li>
+    </ul>
+    and are thus addressed as <tt>[[_FDatOff]+8+character*8]</tt></li>
+    <li>256*256 kerning values, where each value is a byte representing
+    kerning width for the corresponding character pair.  They are
+    addressed as
+    <tt>[[_FDatOff]+8+256*8+<em>prev_char</em>*256+<em>cur_char</em>]</tt></li>
+</ul>
+
+<p>The image itself is a series of dwords, each holding an RGBA value
+(R[ed] in the lowest byte, A[lpha] in the highest byte), organized with
+consecutive rows following eachother like the graphics screen is
+organized.  The equation
+Offset=<tt>[_FontOff]</tt>+(Row*Width+Column)*DataSize will be used
+often.</p>
+
+<p>The above position values are all signed, and assume that the font
+data file has been loaded into memory at offset <tt>[_FDatOff]</tt>, and
+the font image file has been loaded at offset <tt>[_FontOff]</tt>.</p>
+
+<!--#include file="foot.asp"-->

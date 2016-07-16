@@ -1,0 +1,203 @@
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+(41)
+Verifying and parsing the string...
+(41)
+41
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+(40)
+Verifying and parsing the string...
+(40)
+40
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+(36)
+Verifying and parsing the string...
+(36)
+36
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+{123}
+Verifying and parsing the string...
+(123)
+123
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+{125}
+Verifying and parsing the string...
+(125)
+125
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+{36}
+Verifying and parsing the string...
+(36)
+36
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+[91]
+Verifying and parsing the string...
+(91)
+91
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+[93]
+Verifying and parsing the string...
+(93)
+93
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+[36]
+Verifying and parsing the string...
+(36)
+36
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+1 + {2 + [3 +(4 + {5 + [ 6 + ( 7 - 7 ) + 6 ] - 5 } - 4 ) - 3 ] - 2 } - 1
+Verifying and parsing the string...
+1 + (2 + (3 + (4 + (5 + (6 + (7 - 7) + 6) - 5) - 4) - 3) - 2) - 1
+1 + (2 + (3 + (4 + (5 + (6 + (0) + 6) - 5) - 4) - 3) - 2) - 1
+1 + (2 + (3 + (4 + (5 + (6 + 0 + 6) - 5) - 4) - 3) - 2) - 1
+1 + (2 + (3 + (4 + (5 + (6 + 6) - 5) - 4) - 3) - 2) - 1
+1 + (2 + (3 + (4 + (5 + (12) - 5) - 4) - 3) - 2) - 1
+1 + (2 + (3 + (4 + (5 + 12 - 5) - 4) - 3) - 2) - 1
+1 + (2 + (3 + (4 + (17 - 5) - 4) - 3) - 2) - 1
+1 + (2 + (3 + (4 + (12) - 4) - 3) - 2) - 1
+1 + (2 + (3 + (4 + 12 - 4) - 3) - 2) - 1
+1 + (2 + (3 + (16 - 4) - 3) - 2) - 1
+1 + (2 + (3 + (12) - 3) - 2) - 1
+1 + (2 + (3 + 12 - 3) - 2) - 1
+1 + (2 + (15 - 3) - 2) - 1
+1 + (2 + (12) - 2) - 1
+1 + (2 + 12 - 2) - 1
+1 + (14 - 2) - 1
+1 + (12) - 1
+1 + 12 - 1
+13 - 1
+12
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+({[({[({[({[({[({[({[({[({[({[({[({[({0})]})]})]})]})]})]})]})]})]})]})]})]})
+Verifying and parsing the string...
+((((((((((((((((((((((((((((((((((((((0))))))))))))))))))))))))))))))))))))))
+(((((((((((((((((((((((((((((((((((((0)))))))))))))))))))))))))))))))))))))
+((((((((((((((((((((((((((((((((((((0))))))))))))))))))))))))))))))))))))
+(((((((((((((((((((((((((((((((((((0)))))))))))))))))))))))))))))))))))
+((((((((((((((((((((((((((((((((((0))))))))))))))))))))))))))))))))))
+(((((((((((((((((((((((((((((((((0)))))))))))))))))))))))))))))))))
+((((((((((((((((((((((((((((((((0))))))))))))))))))))))))))))))))
+(((((((((((((((((((((((((((((((0)))))))))))))))))))))))))))))))
+((((((((((((((((((((((((((((((0))))))))))))))))))))))))))))))
+(((((((((((((((((((((((((((((0)))))))))))))))))))))))))))))
+((((((((((((((((((((((((((((0))))))))))))))))))))))))))))
+(((((((((((((((((((((((((((0)))))))))))))))))))))))))))
+((((((((((((((((((((((((((0))))))))))))))))))))))))))
+(((((((((((((((((((((((((0)))))))))))))))))))))))))
+((((((((((((((((((((((((0))))))))))))))))))))))))
+(((((((((((((((((((((((0)))))))))))))))))))))))
+((((((((((((((((((((((0))))))))))))))))))))))
+(((((((((((((((((((((0)))))))))))))))))))))
+((((((((((((((((((((0))))))))))))))))))))
+(((((((((((((((((((0)))))))))))))))))))
+((((((((((((((((((0))))))))))))))))))
+(((((((((((((((((0)))))))))))))))))
+((((((((((((((((0))))))))))))))))
+(((((((((((((((0)))))))))))))))
+((((((((((((((0))))))))))))))
+(((((((((((((0)))))))))))))
+((((((((((((0))))))))))))
+(((((((((((0)))))))))))
+((((((((((0))))))))))
+(((((((((0)))))))))
+((((((((0))))))))
+(((((((0)))))))
+((((((0))))))
+(((((0)))))
+((((0))))
+(((0)))
+((0))
+(0)
+0
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+(0]
+Verifying and parsing the string...
+Type 1 error: Parenthesis mismatch.
+The equation was not fully simplified due to an error.
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+(0}
+Verifying and parsing the string...
+Type 1 error: Parenthesis mismatch.
+The equation was not fully simplified due to an error.
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+[0)
+Verifying and parsing the string...
+Type 1 error: Parenthesis mismatch.
+The equation was not fully simplified due to an error.
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+[0}
+Verifying and parsing the string...
+Type 1 error: Parenthesis mismatch.
+The equation was not fully simplified due to an error.
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+{0)
+Verifying and parsing the string...
+Type 1 error: Parenthesis mismatch.
+The equation was not fully simplified due to an error.
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+{0]
+Verifying and parsing the string...
+Type 1 error: Parenthesis mismatch.
+The equation was not fully simplified due to an error.
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+([0)]
+Verifying and parsing the string...
+Type 1 error: Parenthesis mismatch.
+The equation was not fully simplified due to an error.
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+)0(
+Verifying and parsing the string...
+Type 1 error: Parenthesis mismatch.
+The equation was not fully simplified due to an error.
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+
+
+LIBMP2 Ver 1.0 Calls
+-LibInput
+-LibCheckParens
+-LibParse
+-LibCheckDone
+-LibFindInner
+-LibFindOne
+-LibSolveOne
+-LibGetOp1
+-LibGetOp2

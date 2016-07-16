@@ -1,0 +1,800 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>Library Function Reference</title>
+</head>
+
+<body>
+
+<P><FONT size=+2><U>Library Function Reference (By Module)</U></FONT></P>
+<P>All functions declared in C-style use the C calling convention (parameters on stack, return value
+in AX, all registers other than esi and edi may be clobbered).  Parameters and return values
+specified in C format obey the following size conventions: short, 16 bit integer (default signed);
+int, 32-bit integer (default signed); pointer (of any type), 32-bit.  The source code to all of these
+functions is in the lib/ directory.</P>
+
+<P><B>DPMI_INT</B>
+
+<BR>DPMI_Int
+<TABLE border=0><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Simulate a real-mode interrupt with the ability to set</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>ALL registers, including segments, without faulting</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>DPMI_Regs filled with RM interrupt inputs</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>BX=the interrupt number</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>DPMI_Regs filled with RM interrupt outputs</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>CF=1 if error, AX=error code (see DPMI ref for codes)</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Notes:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Clobbers CX, DX</TD>
+</TR></TABLE>
+
+<P>bool AllocTransferBuf(void);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Allocates transfer buffer for transferring data from real to</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>protected mode and vice-versa.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None (Size is constant)</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>CF = 1 on error, 0 otherwise</TD>
+</TR></TABLE>
+
+<P>void FreeTransferBuf(void);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Frees transfer buffer allocated by AllocTransferBuf().</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Notes:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>No error checking.</TD>
+</TR></TABLE>
+
+<P><B>DPMI_MEM</B>
+
+<BR>unsigned short AllocMem(unsigned int Size);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Allocates a memory block of Size bytes.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Size, the size of the memory block to allocate.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>A library handle to the memory block.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Notes:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Can only allocate a maximum of MAXMEMHANDLES (16) blocks.</TD>
+</TR></TABLE>
+
+<P>void FreeMem(unsigned short Handle);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Frees a memory block allocated by AllocMem().</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Handle, the library handle of the memory block to free.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Notes:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>No error checking.</TD>
+</TR></TABLE>
+
+<P>char *LockMem(unsigned short Handle);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Get a selector to an allocated memory block.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Handle, the library handle of the memory block to lock.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>AX=selector</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Notes:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Not actually C-callable as such, as it doesn't return a valid</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>C pointer, but conforms to C calling convention.</TD>
+</TR></TABLE>
+
+<P>void UnlockMem(unsigned short Handle);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Unlocks memory locked by LockMem().</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Handle, the library handle of the block to unlock.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Notes:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>After this function is called, the selector originally returned</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>by LockMem will be invalid (and will cause an exception if used).</TD>
+</TR></TABLE>
+
+<P>bool GetPhysicalMapping(unsigned int *LinearAddress,	short *Selector, unsigned long PhysicalAddress, int Size);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Maps a physical memory region into linear memory space.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>PhysicalAddress, the starting physical address to map.</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>Size, the size of the region to map.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>LinearAddress, the linear address of the mapped region.</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>Selector, a selector that can be used to access the region.</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>AX=1 if an error occurred, 0 otherwise.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Notes:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>This function is used by the library to map the physical address</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>returned by VESA into a linear address/selector so it can be used</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>to draw directly into the framebuffer.</TD>
+</TR></TABLE>
+
+<P>void FreePhysicalMapping(unsigned int *LinearAddress, short *Selector);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Frees the resources allocated by GetPhysicalMapping().</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>LinearAddress, the linear address of the mapping to free.</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>Selector, the selector used to point to the mapped memory block.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Notes:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>LinearAddress and Selector are cleared to 0.</TD>
+</TR></TABLE>
+
+<P><B>FILEFUNC</B>
+
+<BR>int OpenFile(char *Filename, short LenFilename, short WriteTo);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Opens a file for reading or writing.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Filename, (path)name of the file to read</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>LenFilename, length of Filename string (in bytes)</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>WriteTo, 1 if create &amp; open for writing, 0 for open to read</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>DOS handle to file</TD>
+</TR></TABLE>
+
+<P>void CloseFile(int Handle);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Closes an open file.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Handle, DOS handle of the file to close.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR></TABLE>
+
+<P>int ReadFile(int Handle, short BufSeg, void *Buffer, unsigned int Count);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Reads from a file.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Handle, DOS handle of the file to read from</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>BufSeg, selector in which Buffer resides</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>Buffer, pointer (into BufSeg) of buffer to read into</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>Count, number of bytes to read into buffer</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Number of bytes actually read</TD>
+</TR></TABLE>
+
+<P>int WriteFile(int Handle, short BufSeg, void *Buffer, unsigned int Count);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Writes to a file.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Handle, DOS handle of the file to write to</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>BufSeg, selector in which Buffer resides</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>Buffer, pointer (in BufSeg) of buffer to read from</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>Count, number of bytes to write out to the file</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Number of bytes actually written</TD>
+</TR></TABLE>
+
+<P><B>FILELOAD</B>
+
+<BR>bool LoadBMP8(char *Name, short NameLen, short Whereseg, void *Where);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Reads a 8-bit BMP file into a 32-bit buffer.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Name, (path)name of the BMP file</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>NameLen, length of the Name string (in bytes)</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>Whereseg, selector in which Where resides</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>Where, pointer (in Whereseg) of data area</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>-1 on error, otherwise 0</TD>
+</TR></TABLE>
+
+<P>void ScreenShot(void);</TD>
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Saves the backbuffer as a raw graphics file.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Notes:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Uses local variable ScreenShot_fn to determine filename to write to.</TD>
+</TR></TABLE>
+
+<P><B>TEXTMODE</B>
+
+<BR>void SetModeC80(void);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Sets 80x25 16-color text mode.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR></TABLE>
+
+<P>void TextSetPage(short PageNum);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Sets current visible textmode page.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>PageNum, the page number to switch to (0-7)</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR></TABLE>
+
+<P>void TextClearScreen(void);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Clears the textmode screen (first page only)</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Notes:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Assumes es=[_textdescriptor]</TD>
+</TR></TABLE>
+
+<P>void TextWriteChar(short X, short Y, short Char, short Attrib);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Writes a single character (with attribute) to the textmode screen.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>X, column at which to write the character (0-79)</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>Y, row at which to write the character (0-24)</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>Char, character to write to the screen (0-255)</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>Attrib, attribute with which to draw the character</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Notes:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Assumes es=[_textdescriptor]</TD>
+</TR></TABLE>
+
+<P>void TextWriteString(short X, short Y, char *String, short Attrib);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Writes a string (with attribute) to the textmode screen.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>X, column at which to write the first character (0-79)</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>Y, row at which to write the first character (0-24)</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>String, string to write to the screen</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>Attrib, attribute with which to draw the string</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Notes:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Assumes es=[_textdescriptor], String in ds</TD>
+</TR></TABLE>
+
+<P><B>VESA</B>
+
+<BR>bool CheckVESA(void);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Checks to see if VESA is available and if the desired mode is</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>available.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>VESAInfo and ModeInfo structures filled (if successful)</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>VESA_BytesPerScanLine set to proper value (if VESA 3 installed)</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>Returns 1 on error, otherwise 0</TD>
+</TR></TABLE>
+
+<P>bool SetVESA(void);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Sets the graphics mode.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>VESAInfo and ModeInfo structures</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>1 on error, 0 otherwise</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>ES = VESA selector</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Notes:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Assumes CheckVESA() has been called to determine if VESA is</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>available and to fill the various structures necessary for</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>this function to work.</TD>
+</TR></TABLE>
+
+<P>void UnsetVESA(void);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Gets out of VESA mode.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Notes:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>If es is still set to VESA selector, it will become invalid.</TD>
+</TR></TABLE>
+
+<P>void RefreshVideoBuffer(void);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Copies the backbuffer to the display memory.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>_VideoBlock filled with new screen data.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Notes:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Assumes es = VESA selector</TD>
+</TR></TABLE>
+
+<P><I>Note: the following functions act directly on the display memory, NOT to the backbuffer.</I></TD>
+
+<P>void WritePixelVESA(short X, short Y, unsigned int Color);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Draws a pixel on the screen.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>X, the x coordinate of the point to draw</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>Y, the y coordinate of the point to draw</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>Color, the 32-bit color value to draw</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Notes:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Assumes es = VESA selector</TD>
+</TR></TABLE>
+
+<P>unsigned int ReadPixelVESA(short X, short Y);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Reads the color value of a pixel on the screen.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>X, the x coordinate of the point to read</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>Y, the y coordinate of the point to read</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>The 32-bit color value of the pixel</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Notes:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Assumes es = VESA selector</TD>
+</TR></TABLE>
+
+<P>void CopySystemToScreenVESA(short SourceStartX, short SourceStartY,
+short SourceEndX, short SourceEndY, short DestStartX,
+short DestStartY, short SourceBitmapWidth, char *SourcePtr);
+<TABLE><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Purpose:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Copies an area of a source bitmap to the screen.</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Inputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>SourceStartX, X coordinate of upper left corner of source</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>SourceStartY, Y coordinate of upper left corner of source</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>SourceEndX, X coordinate of lower right corner of source (exclusive)</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>SourceEndY, Y coordinate of lower right corner of source (exclusive)</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>DestStartX, X coordinate of upper left corner of dest</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>DestStartY, Y coordinate of upper left corner of dest</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>SourceBitmapWidth, # of pixels across source bitmap</TD>
+</TR><TR>
+<TD colspan=3>&nbsp;</TD>
+<TD>SourcePtr, pointer in GS to start of source bitmap</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Outputs:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>None</TD>
+</TR><TR>
+<TD width=10>&nbsp;</TD>
+<TD>Notes:</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Assumes es = VESA selector, SourcePtr in gs.</TD>
+</TR></TABLE>
+
+<P><FONT SIZE=+2><U>Library Global Variables</U></FONT></P>
+
+<TABLE border=0><TR>
+<TH align=left>Name</TH>
+<TH width=25>&nbsp;</TH>
+<TH align=left>Description</TH>
+<TH width=25>&nbsp;</TH>
+<TH align=left>Module</TH>
+</TR><TR>
+<TD>DPMI_*</TD>
+<TD width=25>&nbsp;</TD>
+<TD>DPMI Registers Structure</TD>
+<TD width=25>&nbsp;</TD>
+<TD>DPMI_INT</TD>
+</TR><TR>
+<TD>_Transfer_Buf</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Real Mode Transfer Buffer PM Selector</TD>
+<TD width=25>&nbsp;</TD>
+<TD>DPMI_INT</TD>
+</TR><TR>
+<TD>_Transfer_Buf_Seg</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Real Mode Transfer Buffer RM Segment</TD>
+<TD width=25>&nbsp;</TD>
+<TD>DPMI_INT</TD>
+</TR><TR>
+<TD>_Transfer_Buf_Size</TD>
+<TD width=25>&nbsp;</TD>
+<TD>Size of Real Mode Transfer Buffer</TD>
+<TD width=25>&nbsp;</TD>
+<TD>DPMI_INT</TD>
+</TR><TR>
+<TD>_VideoBlock</TD>
+<TD width=25>&nbsp;</TD>
+<TD>PM Selector of 32-bit video backbuffer</TD>
+<TD width=25>&nbsp;</TD>
+<TD>MYLOADER</TD>
+</TR><TR>
+<TD>_ScratchBlock</TD>
+<TD width=25>&nbsp;</TD>
+<TD>PM Selector of 1 MB scratch buffer (used by lib routines)</TD>
+<TD width=25>&nbsp;</TD>
+<TD>MYLOADER</TD>
+</TR><TR>
+<TD>_textdescriptor</TD>
+<TD width=25>&nbsp;</TD>
+<TD>PM Selector of text-mode video memory</TD>
+<TD width=25>&nbsp;</TD>
+<TD>MYLOADER</TD>
+</TR></TABLE>
+
+</body>
+
+</html>

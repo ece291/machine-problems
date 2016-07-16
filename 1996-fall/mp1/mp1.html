@@ -1,0 +1,288 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 1</title>
+</head>
+
+<body>
+<p>
+<table cellpadding=3 width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Lockwood, Fall 1996</td></tr></table>
+<h2> </h2>
+<center><h1>Machine Problem 1</h1></center>
+<p>
+<center><table border=1 cellpadding=3 width=60%>
+  <tr><td align=right><b>Assigned</b></td>      <td>Tuesday 9/17/96</td></tr>
+  <tr><td align=right><b>Due Date</b></td>      <td>Friday 9/27/96</td></tr>
+  <tr><td align=right><b>Purpose</b></td><td>
+     Learn to write assembler code.  Use looping and branching.
+     Perform simple math operations.
+     </td></tr>
+   <tr><td align=right><b>Points</b></td><td>50</td></tr>
+</table>
+</center>
+
+<h2>Introduction</h2>
+
+As mentioned in the 
+<a href="../../class-information/overview.html">Course Syllabus</a>,
+an ECE291 grade is determined by the following components: 
+machine problems (40%), homeworks (10%), examination 1 (15%), 
+examination 2 (15%), and the final examination (20%).
+<p>
+The computation of ECE291 scores are based on a 1000-point system.
+A student's <i>total score</i> is computed 
+as the sum of the raw points
+earned on the machine problems, exams, and final plus 
+one-fourth (1/4) of the sum of the raw points earned on the homework.
+<p>
+The breakdown of points for each assignment is
+shown in the table below.  MP6 refers to the final group project at
+the end of the semester.
+<p>
+<center><table border=1 cellpadding=3>
+<tr><th></th>
+    <th>Homework</th>
+    <th>Machine<br>Problem</th>
+    <th>Exam</th>
+    <th>Final</th></tr>
+<tr><th>0</th><td>24<td>25<td>   <td>   </tr>
+<tr><th>1</th><td>75<td>50<td>150<td>200</tr>
+<tr><th>2</th><td>75<td>50<td>150<td>   </tr>
+<tr><th>3</th><td>75<td>50<td>   <td>   </tr>
+<tr><th>4</th><td>75<td>50<td>   <td>   </tr>
+<tr><th>5</th><td>76<td>75<td>   <td>   </tr>
+<tr><th>6</th><td>  <td>100<td>  <td>   </tr>
+<tr><th>Subtotal</th><td>400<td>400<td>300<td>200</tr>
+<tr><th>HW/4    </th><td>100<td>400<td>300<td>200</tr>
+<tr><th>Total   </th><td colspan=4><center>1000 points</center></td></tr>
+</table></center>
+<p>
+<h2>Problem Description</h2>
+For this machine problem, you will write a program which converts
+a list of raw scores from ECE291 homeworks, machine problems, exams, and
+final exam into a sorted list of class standings.  
+<p>
+The list of raw scores will be given to you in the form of a <i>database</i>.
+For ECE291, our database is collection
+of records that each hold a student ID and individual raw scores.  
+The ID is an alpha-numeric string stored as 5 ASCII characters
+and terminated with a '$' symbol.  Each of the 16 individual raw scores is
+stored as a 1-byte unsigned integer.  The <i>total score</i> is
+represented as a 2-byte unsigned integer.  In total, each ECE291 record
+occupies 24 bytes.  
+<h2>Record Format</h2>
+The record format of the ECE291 database is
+summarized below.  In this table 'A' represents an ASCII character,
+'$' represents the ASCII character used to mark the end of a string,
+'B' represents a 1-byte unsigned integer, and 'WW' represents a 2-byte
+unsigned integer.  The <i>offset</i> refers to the starting 
+location of each field in each 24-byte array.
+<p>
+<pre> 
+</pre>
+<center><table border=1 cellpadding=3>
+<tr>
+  <th>Field</th>
+  <th colspan=1>ID</th>
+  <th colspan=6>Homework</th>
+  <th colspan=7>Machine Problems</th>
+  <th colspan=2>Exams</th>
+  <th colspan=1>Final</th>
+  <th colspan=1>Total</th></tr>
+<tr>
+  <th>Data</th>
+  <td>AAAAA$</td>
+  <td>B<td>B<td>B<td>B<td>B<td>B
+  <td>B<td>B<td>B<td>B<td>B<td>B<td>B
+  <td>B<td>B
+  <td>B
+  <td>WW</tr>
+<tr>
+  <th>Offset</th>
+  <td>0<td>6<td>7<td>8<td>9 
+  <td>10<td>11<td>12<td>13<td>14<td>15
+  <td>16<td>17<td>18<td>19<td>20<td>21<td>22
+</tr>
+</table></center>
+<p>
+For this machine problem, you will use the INCLUDE directive to read
+a database of fictitious ECE291 scores into your program.  
+This directive will insert the contents of the file called 
+<tt>gbk.dta</tt> into your .ASM program at the time you run MASM.
+The <tt>gbk.dta</tt> file defines a variable called <tt>gbk</tt> which holds 
+the entire database as well as a variable called <tt>numrec</tt> which 
+stores the number of records in the database.  The contents of
+<tt>gbk.dta</tt> is shown below:
+<p>
+<center><table border=1 cellpadding=3><tr><td><pre>
+gbk db 'PERFT','$',24,75,75,75,75,76, 25,50,50,50,50,75,100, 150,150, 200,0,0
+    db '12345','$',24,75,70,65,70,65, 25,50,40,45,40,75, 80, 125,125, 133,0,0
+    db 'MEETO','$',20,60,75,70,65,76, 25,45,45,50,45,70, 90, 110,140, 140,0,0
+    db 'YOUTO','$', 0,75,65,75,75,72,  0,50,45,50,45,75, 95, 130,135, 150,0,0
+    db 'HLPME','$', 2, 4, 4, 8, 6, 8,  5,10,10,15,10, 5, 10,  50, 50,  75,0,0
+
+numrec dw 5 ; Number of records (5 in this case)
+</pre></table></center>
+<p>
+Notice that the record with id=<tt>MEETO</tt> begins at a byte offset of
+24x2=48 in the array.  
+The homework zero score for this record is located at offset 
+24x2+6=54.  The total score (which you will need to compute) for this
+record is defined at offset 24x2+22=70.
+<p>
+
+<h2>Sample Output</h2>
+<ul>
+<li>Desired output for the example database given in this assignment:
+</ul>
+<center><table border=1 cellpadding=3>
+<tr><td><pre>-ID-- hw0 hw1 hw2 hw3 hw4 hw5 mp0 mp1 mp2 mp3 mp4 mp5 mp6 Ex1 Ex2 Fin Total
+PERFT  24  75  75  75  75  76  25  50  50  50  50  75 100 150 150 200  1000
+YOUTO   0  75  65  75  75  72   0  50  45  50  45  75  95 130 135 150   865
+MEETO  20  60  75  70  65  76  25  45  45  50  45  70  90 110 140 140   851
+12345  24  75  70  65  70  65  25  50  40  45  40  75  80 125 125 133   830
+HLPME   2   4   4   8   6   8   5  10  10  15  10   5  10  50  50  75   248
+
+
+DOSXIT: Exit to DOS 
+</pre></td></tr>
+</table></center>
+<p>
+<h2>Preliminary Procedure</h2>
+<ul>
+<li>You may copy the empty MP1.ASM assignment and example database
+    file (GBK.DTA) from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s E:\ece291\mp1 F:\mp1</tt>
+</ul>
+
+<h2>Program Assignment</h2>
+<ol>
+<li>Calculate the <i>total score</i> for each record in the database.  <br>
+    <ul>
+    <li>Write a main loop that 
+        computes the <i>total score</i> for each record in the database
+        using the method described in the introduction.
+    <li>Note that scores are stored in the array as 8-bit integers,
+        but that 16-bit addition is needed to compute the sum.
+        (8-bit addition would not allow students to score more than 255 points!)
+    <li>Recall that division by powers of 2 
+        can be accomplished by shift operations
+    <li>Note that an inner loop can be used to perform the addition 
+        of fields within each record.
+    </ul>
+<li>Write another loop which prints out each record, sorted in order of
+    decreasing scores.
+    <ul>
+    <li>Hint: A simple (though inefficient) way to sort this database
+        scans the <i>total score</i> of each record 1000 times.
+        On each iteration, print the record if the 
+        <i>total score</i> equals the value of the iteration. 
+        Begin at 1000.
+     <li>I have provided a library function called <tt>printrec</tt>
+        in the file <tt>LIBMP1.LIB</tt>.
+        This subroutine prints all fields of the record starting at
+        the location specified by register DX.  You may use this
+        library subroutine by issuing the following command 
+        to link your program <br>
+        <tt>LINK MP1,,,LIB291/MAP+LIBMP1/MAP;</tt>
+    </ul>
+</ol>
+
+<ul>
+<li>NOTE: Your program must work for a database with
+    arbitrary content and number of records.  
+    When you turn in your program,
+    it will be recompiled using a database file
+    different from the example provided in the assignment.
+</ul>
+
+<h2>Final Steps</h2>
+<ol>
+<li>Demonstrate MP1.EXE to a TA or to the instructor.  
+    You will
+    then be asked to recompile and demonstrate 
+    MP1 with a different database file.
+    Once approved, you are ready to turn in your program.
+<li>Copy your programs to a floppy: <br>
+    <tt>xcopy /s F:\mp1 a:\mp1</tt>
+<li>Print MP1.ASM 
+<li>Take your printout and disk with MP1 to the same TA which approved your 
+    demonstration.  Be sure that your name is on the disk and on the printout.  
+</ol>
+
+<hr>
+<h2>MP1.ASM</h2>
+<pre>
+        PAGE 75, 132
+        TITLE   MP1    your name       current date
+
+COMMENT *
+        This program computes class standings (grades) based on
+        the raw scores for homeworks, machine problems, exams,
+        and the final.  
+	*
+
+;====== SECTION 1: Define constants =======================================
+
+	CR	EQU	0Dh
+	LF	EQU	0Ah
+
+;====== SECTION 2: Declare external procedures ============================
+
+        extrn   binasc:near, dspmsg:near, dosxit:near  ; From lib291.lib
+        extrn   printrec:near                          ; From libmp1.lib
+
+;====== SECTION 3: Define stack segment ===================================
+
+stkseg  segment stack                   ; *** STACK SEGMENT ***
+        db      64 dup ('STACK   ')
+stkseg  ends
+
+;====== SECTION 4: Define code segment ====================================
+
+cseg    segment public                  ; *** CODE SEGMENT ***
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== SECTION 5: Declare variables for main procedure ===================
+; Format of the gradebook database:
+;   [Note that each record is 24 bytes long]
+;
+;            ID: 5 ASCII letters or numbers
+;    hw0..final: 1-byte unsigned integers (array of 16 elements)
+;           tot: 2-byte unsigned integer (calculated as per instructions)
+;
+;   ID,'$',hw0,hw1,hw2,hw3,hw4,hw5,mp0,mp1,mp2,mp4,mp5,mp6,e1,e1,final,tot
+
+INCLUDE gbk.dta
+
+; This directive inserts the contents of the file gbk.dta here.
+; In this file, two variables are defined: gbk and numrec
+;
+; gbk is an array of 24-byte records holding raw scores
+; numrec is defined as a 16-bit integer which stores the number of records
+
+; This header should be the first line printed 
+hdr db '-ID-- '
+    db 'hw0 hw1 hw2 hw3 hw4 hw5 '
+    db 'mp0 mp1 mp2 mp3 mp4 mp5 mp6 '
+    db 'Ex1 Ex2 Fin Total',CR,LF,'$'
+
+;====== SECTION 6: Main procedure =========================================
+
+main    proc    far
+        mov     ax, cseg                ; Initialize DS register
+        mov     ds, ax
+
+        ; Your code
+
+        call    dosxit
+main    endp
+
+
+cseg    ends
+        end     main
+</pre>
+</body>

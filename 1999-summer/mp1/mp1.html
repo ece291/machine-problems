@@ -1,0 +1,801 @@
+<html>
+
+<head>
+<title>ECE 291</title>
+</head>
+
+<body bgcolor="#FFFFFF">
+<div align="center"><center>
+
+<table border="0" width="100%" cellspacing="0" cellpadding="0">
+  <tr>
+    <td width="33%" align="left">ECE 291</td>
+    <td width="33%" align="center">Computer Engineering II</td>
+    <td width="33%" align="right">Moorman, Summer 1999</td>
+  </tr>
+</table>
+</center></div>
+
+<h1 align="center">Machine Problem 1: Script291</h1>
+<div align="center"><center>
+
+<table border=1 width=60%>
+  <tr>
+    <td align=right>Assigned</td>
+    <td>Thursday 6/17/99</td>
+  </tr>
+  <tr>
+    <td align="right">Due Date</td>
+    <td>Friday 6/25/99</td>
+  </tr>
+  <tr>
+    <td align="right">Purpose</td>
+    <td Roman">Learn to write assembler code. Use looping
+               and branching.  Perform basic string and
+               file manipulations.</td>
+  </tr>
+  <tr>
+    <td align="right">Points</font></td>
+    <td>50</td>
+  </tr>
+</table>
+</center></div>
+
+<h2>Introduction</h2>
+
+<p>
+Script languages are often used as quick shell programs to automate
+jobs or make some tasks easier.  These have traditionally been Unix
+based shell programs, with some containing additional features for
+programming.  In recent years, the more popular script languages have
+been general purpose programming languages like Perl.  These languages
+can be used on multiple platforms for many purposes including web
+based cgi scripts.
+
+In this machine problem you will develop a basic interpreter for a
+very simple scripting language, <i>Script291</i>.  Your program will
+take an input file, parse through the file, and perform the various
+scripting commands.
+
+</p>
+
+<h2>Problem Description</h2>
+
+<p>The file to be parsed will be opened and read into a section
+of memory for manipulation.  This data will start at the location
+pointed to by the variable: <u>FileData</u>.  This can be used as the
+offset for the beginning of the file manipulation.  Each line
+in the file will be parsed to determine what script command to
+execute. </p>
+
+<p>The file can be thought of as a large array where characters
+are stored in contiguous bytes in memory.  You will be parsing
+this file with a number of procedures depending on the script command.
+The procedures to open the file, read the file, and close the file
+are already given and can be used freely without penalty.  These are
+very straightforward routines but will be discussed in more detail
+later in the course.</p>
+
+<p>In this machine problem the main procedure is provided for you, however,
+you must write the code to replace the library routines.
+You will replace these procedures from the LIBMP1
+library by commenting out the statements calling the Lib routine
+and adding your code.  Each routine that you write
+should match the output of the library code exactly.  Each of the script
+commands and their functionality is described below in the
+<b><i>Script291</i> Commands</b> section.
+The best way to get a feel for the program is to run it
+to see how it is supposed to operate.  You can also edit the script
+file to see how various changes will affect the program execution.</p>
+
+<p>Your program is required to:
+<ul>
+<li>Parse the script file and execute the <i>Script291</i> commands.
+<li>Display normal text to the screen.
+<li>Display the value of registers to the screen.
+<li>Pause parsing the file until a key is hit.
+<li>Ignore comment lines (lines beginning with a '#').
+<li>Ignore leading spaces for any commands.
+<li>Determine invalid commands.
+        <ul>
+        <li>Report the error.
+        <li>Report the line number on which the error occurred.
+        </ul>
+    The variable <u>Line</u> is used to keep track of the current
+    line being parsed.
+<li>Properly terminate parsing the file.
+</ul>
+
+<h2><i>Script291</i> Commands</h2>
+<p>All commands for <i>Script291</i> must be the first item on a line.
+Each command must end with a colon (':').
+A summary of the command set is shown below:</p>
+                               
+<p>
+<center><table border="1" cellspacing="1">
+  <!--<td><strong><i>Script291</i> Command Options</strong></td> -->
+
+  <tr>
+    <td>Command</td>
+    <td>Description</td>
+    <td>Example</td>
+    <td>Notes</td></tr>
+  <tr>
+    <td><b>printtext:</b></td>
+    <td>Output to the screen the text following the command.</td>
+    <td><xmp>printtext:This is a test.$</xmp></td>
+    <td>All text strings should end with the '$' for easy use with
+        <i>lib291</i> procedures.</td></tr>
+  <tr>
+    <td><b>printreg:</b></td>
+    <td>Output to the screen the value of the specified register.</td>
+    <td><xmp>printreg:ax</xmp></td>
+    <td>Upper or LowerCase should work for
+        AX, BX, CX, DX, SI, and DI</td></tr>
+  <tr>
+    <td><b>newline:</b></td>
+    <td>Output a newline (carriage return, line feed) to the screen.</td>
+    <td><xmp>newline:</xmp></td>
+    <td>--</td></tr>
+  <tr>
+    <td><b>pause:</b></td>
+    <td>Pause the parsing of the file until a key is hit.
+        Output pause message to screen.</td>
+    <td><xmp>pause:</xmp></td>
+    <td>--</td></tr>
+  <tr>
+    <td><b>end:</b></td>
+    <td>Finish parsing the input file.</td>
+    <td><xmp>end:</xmp></td>
+    <td>--</td></tr>
+  
+</table>
+</center></p>
+
+
+<p>The program can be run by typing <tt>mp1</tt> at the
+command prompt.  The script file to be parsed is named
+<tt>SCRIPT.DAT</tt>.
+</p>
+
+<h2>Hints</h2>
+<ul>
+<li>The LIBMP1 file contains executable library functions for each of the
+routines that you need to implement.  
+This allows you to run the program and understand how it works before you 
+implment it.  You can test your program with any combinations of your own
+code and library functions.  You will only receive credit, however, for
+the routines that you implement yourself. <p>
+
+<li>When debugging your code in Codeview, you will find it helpful to use
+the memory window to show you the memory location of the file and strings.
+You can also use the watch window to keep track of variables in your code.<p>
+
+<li>Do not assume that the file starts at memory location 0.<p>
+
+<li>You may define new variables as needed.<p>
+
+<li>You might find it very helpful to write your own helper functions.
+For instance a routine to print the value of the current line to the
+screen might be helpful to use in a few routines.<p>
+
+<li>Be very careful if you call another procedure not to destroy registers
+that the calling procedure uses.<p>
+
+<li>START EARLY!  This is the first MP that requires you to write your
+own program.  Composition is much more difficult than comprehension.<p>
+
+<li>Monitor the <a href="news:uiuc.class.ece291">newsgroup</a> for clarifications and help.</p>
+</ul>
+
+<h2>Subroutines</h2>
+
+<p>This assignment has seven procedures. You will receive credit by replacing
+each of these seven procedures listed below with your own code. </p>
+
+<table BORDER=1 >
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>NextLine</font></b></td>
+
+<td><ul>
+<li>Moves file data pointer to the next line.  Searches file until a
+line feed (lf) is found.  This signifies a new line to parse.
+<li>Inputs:
+        <ul>
+        <li>DS:SI = Address in file of current place in line
+        <li><tt>Line</tt>  = Variable with current line number
+        </ul>
+<li>Outputs:
+        <ul>
+        <li>DS:SI = Address in file of next line
+        <li><tt>Line</tt>  = Updated to reflect new line
+        </ul>
+<li>Calls: none
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><B><font SIZE=+1>ParseError</font></b></td>
+
+<td><ul>
+<li>Output error message for invalid commands.
+<li>Inputs:
+        <ul>
+        <li>DS:SI = Address in file of current place in line
+        <li><tt>Line</tt>  = Variable with current line number
+        </ul>
+<li>Outputs:
+        <ul>
+        <li>DS:SI = Address in file of next line
+        <li>Error message displayed.
+        </ul>
+<li>Calls: NextLine
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>PrintReg</font></b></td>
+
+<td><ul>
+<li>Print the value of a register (AX,BX,CX,DX,SI,DI). <br>
+    Works for upper case or lower case values.
+    Outputs an error message if an incorrect register is specified.
+<li>Inputs:
+        <ul>
+        <li>DS:SI = Address in file of the register to print
+        <li><tt>Line</tt>  = Variable with current line number
+        </ul>
+<li>Outputs:
+        <ul>
+        <li>DS:SI = Address in file of next line
+        <li>Register value to display screen.
+        </ul>
+<li>Calls: NextLine
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>NewLine</font></b></td>
+
+<td><ul>
+<li>Output a new line (cr,lf).
+<li>Inputs:
+        <ul>
+        <li>DS:SI = Address in file of current place in line
+        <li><tt>Line</tt>  = Variable with current line number
+        </ul>
+<li>Outputs:
+        <ul>
+        <li>DS:SI = Address in file of next line
+        <li>Carriage return and line feed to display screen
+        </ul>
+<li>Calls: NextLine
+</ul></td>
+</tr>
+                   
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>Pause</font></b></td>
+
+<td><ul>
+<li>Pause parsing the file until a key is hit.
+<li>Inputs:
+        <ul>
+        <li>DS:SI = Address in file of current place in line
+        <li><tt>Line</tt>  = Variable with current line number
+        </ul>
+<li>Outputs:
+        <ul>
+        <li>DS:SI = Address in file of next line
+        <li>Pause message is output to display screen
+        </ul>
+<li>Calls: NextLine
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>PrintText</font></b></td>
+
+<td><ul>
+<li>Output text to the screen.  The text message must end with a '$'.
+<li>Inputs:
+        <ul>
+        <li>DS:SI = Address in file of text to print.
+        <li><tt>Line</tt>  = Variable with current line number
+        </ul>
+<li>Outputs:
+        <ul>
+        <li>DS:SI = Address in file of next line
+        <li>Output text to display screen.
+        </ul>
+<li>Calls: NextLine
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>GetCommand</font></b></td>
+
+<td><ul>
+<li>Determines the current command in the script file.  Comment lines
+beginning with a '#' are ignored, but the <tt>Line</tt> count is correctly
+updated.  Leading spaces are also ignored.
+<li>Inputs:
+        <ul>
+        <li>DS:SI = Address in file of start of line
+        <li><tt>Line</tt>  = Variable with current line number
+        </ul>
+<li>Outputs:
+        <ul>
+        <li>DS:SI = Address in file at end of command after the colon (':')
+        <li>AX = 0 for 'end' <br>
+               = 1 for 'printtext' <br>
+               = 2 for 'newline' <br>
+               = 3 for 'printreg' <br>
+               = 4 for 'pause' <br>
+               = -1 for invalid command (parse error)
+        </ul>
+<li>Calls: NextLine
+</ul></td>
+</tr>
+
+</table>
+
+<h2>Procedure</h2>
+<ul>
+<li>You will begin this MP with the following files:
+    <ul>
+    <li><tt>MP1.ASM</tt>: Program Framework
+    <li><tt>SCRIPT.DAT</tt>: Script file to parse
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled
+        and linked.
+    <li><tt>LIBMP1.LIB</tt>: Library functions for MP1
+    <li><tt>LIB291.LIB</tt>: General-purpose library functions
+    </ul>
+<li>You may copy these files from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s V:\ece291\mp1 W:\mp1</tt><br>
+    or download the files from this server as <a href="mp1.zip">mp1.zip</a> 
+<li>Add your code to <tt>MP1.ASM</tt>.
+<li>Assemble and link your program by typing<br>
+      <tt>nmake</tt><Br>
+    This command reads <i>Makefile</i> then invokes MASM and LINK to build 
+    an executable program.  
+<li>Use CodeView (CV) to find and correct program errors. 
+<li>Verify your program operation by testing the
+    input script file.  You should alter the script file to test
+    different scenarios with your code.
+</ul>
+
+<h2>Final Steps</h2>
+
+<ol>
+  <li>Print a copy of the MP1 grading report (<a href="mp1grade.html">MP1GR</a>).
+   Double-check that your program is ready for demonstration.  You need to
+   run through the test cases on the grading sheet, you WILL NOT be allowed
+   to hand-in unless you have done this step.
+  <li>Print MP1.ASM (Use GreenPrint32 to print at 4 pages/side.) 
+  <li>Demonstrate your MP1.EXE to a TA or to the instructor. You may
+   be asked to recompile and demonstrate MP1 with different input files.
+   Your program must work with all given input. </li>
+  <li>Be prepared to answer questions about any aspect of the operation of
+   your program. The TAs will not accept an MP if you cannot fully explain
+   the operation of your code and details of your implementation. Delayed
+   MPs will be subject to late penalties as described in the course
+   syllabus (10pts/day).</li>
+  <li>The TA will copy your program to the demonstration disk.
+  <li>Take your printouts to the same TA which approved your demonstration.
+    Staple the grading sheet to the front of the MP1.ASM printout.  Be sure
+    that your name appears in your code and on the grading sheet.
+</ol>
+
+<hr>
+
+<h2>MP1.ASM (program framework)</h2>
+
+<font size=-1><pre>
+
+        TITLE ECE291: Script291 - Your Name - Current Date
+
+COMMENT %
+        Script291
+        --------------------
+        ECE291: MP1
+        Jay R. Moorman
+        University of Illinois,
+        Dept. of Electrical & Computer Engineering
+        Summer 1999
+        Revision 1.0
+        %
+
+;====== Constants =========================================================
+
+CR            EQU 13
+LF            EQU 10
+MaxFileLength EQU 60000
+
+
+;====== Externals =========================================================
+
+; -- LIB291 Routines (free) --
+
+  extrn binasc:near   ; From lib291.lib (You can use these functions freely)
+  extrn dspout:near   ; See your lab manual for a full description
+  extrn dspmsg:near   ; of each function
+  extrn kbdin:near    
+
+; -- LIBMP1 Routines (replace these with your own code) --
+
+
+  extrn LibNextLine:near
+  extrn LibGetCommand:near
+  extrn LibParseError:near       
+  extrn LibPrintText:near
+  extrn LibNewLine:near
+  extrn LibPause:near
+  extrn LibPrintReg:near
+  extrn mp1xit:near            ; Terminates program
+
+;====== Stack Segment ================================================
+stkseg  segment stack
+
+        ; The stack segment is used for stack operations.
+        ; This will be discussed in more detail in later
+        ; lectures.
+
+        db 64 dup ('STACK  ')
+stkseg  ends
+
+;====== Data Segment =================================================
+dseg    segment public 'DATA'
+
+        ; The data segment is used to reserve a section of memory
+        ; to hold the data variables
+  
+;====== Variables ======
+
+; Input file
+ScriptFile db 'SCRIPT.DAT',0
+
+; Messages
+ParseMessage    db      CR,LF,'Parse Error occurred on Line:','$'
+RegMessage      db      CR,LF,'Register unknown on Line:','$'
+FileMessage     db      'An error occurred accessing the file.','$'
+PauseMessage    db      CR,LF,'Hit any <key> to continue','$',CR,LF
+
+crlf            db      CR,LF,'$'  ; Carriage Return / Line Feed String
+
+; Buffers
+PBuf     db 7  dup(?)   ; Used for library routine binasc
+
+; Script Commands: This is the current list of accepted commands
+Command0 db 'end'
+Command1 db 'printtext'
+Command2 db 'newline'
+Command3 db 'printreg'
+Command4 db 'pause'
+
+
+; Variables
+Line        dw 1        ; Variable to keep track of current line
+FileHandle  dw 0        ; Variable to hold file handle
+
+FileData    db MaxFileLength dup ('?')  ; Space to hold file data
+
+PUBLIC Line             ; Make variable available to library routines
+
+
+dseg    ends
+
+;====== Code segment =================================================
+cseg    segment public 'CODE' 
+        assume  cs:cseg, ds:dseg, ss:stkseg, es:nothing
+
+
+
+; ======== Given Code ======================================================
+
+; This code is used to open, close, and read from a file.
+; You may use this without penalty
+
+;----------------------------------------------------------------------------
+; Procedure to open a file
+; Input: DS:DX = filename address
+; Output: AX= File Handle on Success
+;             Error Code on Failure (Carry bit set)
+;             02h = File not found
+;             03h = Path not found
+;             04h = No handles available
+;             05h = Access denied
+;             0Ch = Invalid access code
+; Destroys: AX
+; Calls:
+;----------------------------------------------------------------------------
+
+openfile proc near
+        mov     al,0
+        mov     ah,3Dh
+        int     21h     ;Open file handle     
+        ret
+openfile endp
+
+;--------------------------------------------------------
+; Procedure to read from a file
+; Input:  BX = File handle
+;         CX = Bytes to read
+;         DS:DX = Buffer to put Data
+; Output: AX= Bytes read on Success
+;             Error Code on failure (Carry Bit Set)
+;             05h = Access denied
+;             06h = Invalid handle
+; Destroys: AX
+; Calls:
+;--------------------------------------------------------
+
+readfile proc near
+        mov     al,0
+        mov     ah,3Fh
+        int     21h     ;Read file
+        ret
+readfile endp
+
+
+;--------------------------------------------------------
+; Procedure to close a file
+; Input:  BX = File handle
+; Output: AX= Error Code on failure (Carry Bit Set)
+;             06h = Invalid handle
+; Destroys: AX
+; Calls:
+;--------------------------------------------------------
+
+closefile proc near
+        mov     al,0
+        mov     ah,3Eh
+        int     21h     ;Close file
+        ret
+closefile endp
+
+
+; ======== Your Code ======================================================
+
+; -- Write the code for your subroutines below --
+; To use your own code,
+; comment out the call to the library routine
+
+
+;--------------------------------------------------------
+; Procedure to traverse to end of line
+; Input:  SI = Address in file of current place in line
+;         Line = Variable with current line number
+; Output: SI = Address of next line
+;         Line = Update to reflect correct line count
+;         
+; Destroys:
+; Calls:
+;--------------------------------------------------------
+
+NextLine Proc NEAR
+
+        Call LibNextLine ; Comment this out and replace with your own code
+
+        ret
+
+NextLine ENDP
+
+
+
+;--------------------------------------------------------
+; Procedure to output message when a parse error occurs
+; Input:  SI = Address in file of current place in line
+;         Line = Variable with line number
+; Output: SI = Address of next line
+;
+;                 
+; Destroys: DX, Pbuf
+; Calls:  dspmsg, nextline, (printline)
+;--------------------------------------------------------
+
+ParseError Proc NEAR
+
+        Call LibParseError ; Comment this out and replace with your own code
+
+        ret
+
+ParseError ENDP
+
+
+;--------------------------------------------------------
+; Procedure to print the value of a register (AX,BX,CX,DX,SI,DI)
+;       If the register is invalid then
+;       output error message and line number.
+; Input:  SI = Address in file of register
+;         Line = Variable with line number
+; Output: SI = Address of next line
+;         Register value to standard out                 
+;
+; Destroys: AX, BX, CX, DX, Pbuf
+; Calls:  binasc, dspmsg, nextline, (printline)
+;--------------------------------------------------------
+
+PrintReg Proc NEAR    
+
+
+        Call LibPrintReg ; Comment this out and replace with your own code
+
+        ret
+
+PrintReg ENDP
+
+;--------------------------------------------------------
+; Procedure to pause file parsing.  Wait until key is hit.
+; Input:  SI = Address in file of current place in line
+;         Line = Variable with line number
+; Output: SI = Address of next line
+;         Pause message to screen.
+;                 
+; Destroys: DX
+; Calls:  dspmsg or dspout, nextline
+;--------------------------------------------------------
+
+Pause Proc NEAR
+
+        Call LibPause ; Comment this out and replace with your own code
+
+        ret
+
+Pause ENDP
+
+;--------------------------------------------------------
+; Procedure to output a new line
+; Input:  SI = Address in file of current place in line
+;         Line = Variable with line number
+; Output: SI = Address of next line
+;         Carriage return and line feed to standard out
+;                 
+; Destroys: DX
+; Calls:  dspmsg or dspout, nextline
+;--------------------------------------------------------
+
+NewLine Proc NEAR
+
+        Call LibNewLine ; Comment this out and replace with your own code
+
+        ret
+
+Newline ENDP
+
+
+;--------------------------------------------------------
+; Procedure to output text
+; Input:  SI = Address in file of start of text
+;         Line = Variable with line number
+; Output: SI = Address of next line
+;         Text to standard out
+;                 
+; Destroys: DX
+; Calls:  dspmsg or dspout, nextline
+;--------------------------------------------------------
+
+PrintText Proc NEAR
+        
+        Call LibPrintText ; Comment this out and replace with your own code
+        
+        ret
+
+PrintText ENDP
+
+
+;--------------------------------------------------------
+; Procedure to find the next command
+;       If comment is found then ignore the line
+;       and check next line for command.
+;       Ignore leading spaces.
+; Input:  SI = Address in file of start of line
+;         Line = Variable with line number
+; Output: SI = Address in file at end of command
+;              or next line if comment
+;         AX = 0 for 'end' command
+;              1 for 'printtext' command
+;              2 for 'newline' command
+;              3 for 'printreg' command
+;              4 for 'pause' command
+;             -1 if parse error (command not recognized)
+;                 
+; Destroys: DX, AX, DI
+; Calls:  nextline 
+;--------------------------------------------------------
+
+GetCommand Proc NEAR
+        
+
+        Call LibGetCommand ; Comment this out and replace with your own code
+
+        ret
+
+GetCommand ENDP
+
+
+;====== Main procedure ====================================================
+
+main    proc    far
+
+        ; The Main body of the program opens the file
+        ; and copies it into memory.  The data is then
+        ; parsed one command at a time until complete.
+
+        mov  ax, dseg
+        mov  ds, ax                     ; set DS=dseg
+
+        mov  dx, offset ScriptFile      ; Offset of file
+        call openfile                   ; Open the file
+        jc   FileError                  ; Exit on error
+        mov  FileHandle,ax              ; Save file handle for later
+
+        mov  bx, FileHandle             ; Prepare to read file
+        mov  dx, offset FileData        ; Location to put data
+        mov  cx, MaxFileLength          ; Read file for MaxFileLength
+        call readfile                   ;  bytes or until EOF reached
+        jc   FileClose                  ; Exit on error
+
+
+
+        mov  si,offset FileData         ; si = address of beginning of file
+NextCommand:
+        Call GetCommand                 ; Get next command
+
+        cmp  ax,0                       ; Exit if 'end' 
+        je   FileClose
+
+        cmp  ax,1                       ; Check 'printtext'
+        jne  @F                         ; jne forward to label
+        call PrintText
+        jmp  NextCommand
+@@:
+        cmp  ax,2
+        jne  @F
+        call NewLine
+        jmp  NextCommand
+
+@@:
+        cmp  ax,3
+        jne  @F
+        call PrintReg
+        jmp  NextCommand
+@@:
+        cmp  ax,4
+        jne  @F
+        call Pause
+        jmp  NextCommand
+@@:
+
+
+error:  call ParseError
+
+        jmp NextCommand
+
+
+
+
+FileClose:
+        mov  bx, FileHandle
+        call CloseFile
+        jmp  Exit
+
+FileError:
+        mov  dx,offset FileMessage
+        call dspmsg
+        jmp  Exit
+
+
+Exit:
+        call  mp1xit                    ; Exit program
+
+main    endp
+
+cseg    ends
+        end     main
+
+
+
+</pre></font>
+</body>
+</html>

@@ -1,0 +1,505 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <title>MP4: High Quality Graphics: Problem Description</title>
+</head>
+<body bgcolor="#FFFFFF">
+&nbsp;
+<table BORDER=0 CELLPADDING=3 WIDTH="100%" >
+<tr>
+<td ALIGN=LEFT WIDTH="33%">ECE291</td>
+
+<td ALIGN=CENTER WIDTH="34%">
+<center>Computer Engineering II</center>
+</td>
+
+<td ALIGN=RIGHT WIDTH="33%">Kalbarczyk, Fall 2000</td>
+</tr>
+</table>
+
+<h1 align='center'>
+<a href='index.html'>Machine Problem 4</a>: High Quality Graphics</h1>
+<h2><a href='index.html#intro'>Introduction</a></h2>
+<h2>Problem Description</h2>
+
+<p>You are to create, through the course of this MP, a tile-based game
+that takes place in a world sized 40 by 20 tiles.  On the screen at any
+one time you can see 19 by 11 of these tiles - roughly one fourth of the
+world.  You will move your character by pressing the arrow or numeric
+pad keys in the four or eight directions.  You will fire arrows by
+positioning your mouse in the direction you wish to fire and clicking.
+You will see other people in the same world appropriately on your
+screen.  When your arrow strikes another person, your counter
+increments.
+
+<p>&quot;How do I do all this?&quot; will likely be one of the first
+things going through your mind, accompanied by &quot;Cool!&quot; and
+&quot;Those sadistic TAs . .&quot;.  But your first question is not in
+vain: here are the pieces which you need to create to form your working
+MP.  The order you code them shouldn't matter, as long as you duplicate
+successfully the functionality of the library code.  
+
+<ul>
+ <li><a href='#screen'>Screen Handling</a>
+ <li><a href='#image'>Image Loading</a>
+ <li><a href='#input'>Input Handling</a>
+ <li><a href='#logic'>Game Logic</a>
+ <li><a href='#net'>Network Communication</a>
+</ul>
+
+<p>You are suggested to follow something like the order in this writeup,
+for maximum coding before incompatibility problems, however.
+
+<a name='screen'><h3>Screen Handling</h3></a>
+
+<p>Graphics Mode 13h is a 320x200, 256 color mode, which is very
+convenient to use.  See <a
+href='http://www.ece.uiuc.edu/ece291/lecture/l17.html'>Lecture 17</a>
+for more information (a refresher perhaps?) on Mode 13h.  Simply write a
+value from 0 to 255 in the appropriate offset, and your color appears on
+the screen in the chosen palette color.  There are three things we have
+to take into account here:
+<ul>
+ <li>Mode 13h is paletted!</li>
+ <p>This means that despite being able to put a palette entry for any of
+ 2^18 available colors, we have to choose 256 of them for any given
+ time.  When would this be a problem?  Imagine two pictures - one of a
+ blue room and one of a pink room.  Each could easily take hundreds of
+ colors to describe faithfully.  Either alone could have a great palette
+ for screen representation.  However, with both on screen, they have to
+ share the same entries.
+
+ <p><em>If entry 1 in image A is a bright green, it had better be a
+ bright green in image B!</em>
+
+ <p>What this comes down to is you have to choose one palette that can
+ suit all images on the screen.  We've done this for you, but if you
+ want to replace the "artwork" of our game, keep this in mind.  In
+ professional games that use Mode 13h, they can switch palettes for
+ different scenes in the game, so the 256 color limit does not seem very
+ limiting.
+
+ <br><br>
+ <li>Performance of  Memory-mapped I/O</li>
+ <p>If you thought memory access is slow (which, compared to register
+ access, it is!), you should see how slow the Memory-mapped I/O is!
+ It's not awful, but you have to be careful how you do it, or there are
+ some nasty screen side-effects.
+
+ <p>Flicker.  If you've ever played a Nintendo game, and seen your
+ characters flashing on and off the screen (when they weren't supposed
+ to) this is flicker.  It occurs because the monitor scans between when
+ you have refreshed the background and when you draw the foreground.
+ Then it scans again after everything is fully drawn.  Ugly.
+
+ <p>Double Buffering is a technique which handily allows you to deal
+ with these two worst problems.  Since video memory appears as a 64k
+ block of memory, you just allocate your own 64k block of buffer memory.
+ You do all your work there - re<a href='procedures.html#drawmap'>draw
+ your background</a>, re<a href='procedures.html#drawplayers'>draw all
+ characters</a>, re<a href='procedures.html#drawarrows'>draw all
+ arrows</a>, re<a href='procedures.html#drawmouse'>draw the mouse
+ cursor</a> - and then you <a href='procedures.html#refreshscreen'>copy
+ it all at once</a> to actual video memory.
+
+ <p>Oddly enough, this is actually faster - as batch writes to video
+ memory can be sped up, and you only do it once per frame.  And it stops
+ the nasty flicker, as there are no frames in video memory that have the
+ background and not the foreground.
+
+ <br><br>
+
+ <li>Accessing Segments in Protected Mode</li>
+ <p>What is a segment? In segmented (real-mode) memory access, it's
+ something you shift to the left by 4 bits, and add to your offset to
+ find a linear address.  In P-Mode, it's not quite that simple. 
+
+ <p>In P-Mode where you had Segment Registers before (cs, ds, es), you
+ now have Selectors.  They hold an index which instead of shifting by
+ four, you perform a lookup to find the number you can add to your
+ offset to form a linear address.
+
+ <p>Once you have this magic number the addition of your offset
+ functions identically, so to write to Memory-mapped I/O segment 0A000h,
+ you need to get an index which looks up to this value.  And then it's
+ visually identical to how you'd do this in real-mode.
+
+ <p>To get this selector set up, just use the correct <a href='link to
+ selector for segment'><em>software</em> interrupt</a>.  And you're
+ done.
+
+ <br><br>
+</ul>
+
+<p>Okay, I lied.  There's one more piece: getting <a
+href='procedures.html#setmode13'>in</a> and <a
+href='procedures.html#setmodec80'>out</a> of Mode 13h.  The program
+won't start in Mode 13h, and similarly, it shouldn't end in Mode 13h.
+These are just <em>software</em> interrupt calls, so there is no further
+documentation here.
+
+<a name='image'><h3>Image Loading</h3></a>
+
+<p>Before you can draw all these images to the screen, you have to get
+them from somewhere.  Some games include them in the executable, some in
+a large single data file, and some as easily-tampered-with individual
+standard-format data files.
+
+<p>We're using the last, as it's simplest: a PCX file of tiles for an
+individual element.  Take a look at arrows.pcx, font.pcx, mouse.pcx and
+players.pcx to see what they hold..
+
+<p>The things you have to know for implementing this are:
+
+<ul>
+ <li>Opening, Reading from, and Closing a file</li>
+
+ <p>The four steps you must follow to get an image into memory from a
+ PCX data file are:
+ <ol>
+  <li>Open the file</li>
+  <li>Read the file into a buffer</li>
+  <li>Close the file (release the filehandle)</li>
+  <li>Decode the data into desired location</li>
+ </ol>
+
+ <p>File handling in protected mode is rather complex, as it's necessary to
+ copy the file data through a buffer in the lower 640KB of RAM.  Because of
+ this added complexity of protected mode, we have provided library functions
+ that open, read, and close files for you.  See the <a href="library.html">
+ Library Reference</a> for details.
+
+ <br><br>
+ <li>Decoding PCX RLE compression</li>
+
+ <p>Once you have the PCX file data in the scratch buffer, you want to
+ decode the image into the appropriate, allocated, graphic data blocks.
+ Specifically, the tiles for the map go into TileImages, The mouse
+ cursor image goes into MouseImage, the player pictures into
+ PlayerImages, and the arrow images into ArrowImages.
+
+ <p>There are many references available for decoding PCX files.  The lab
+ manual has Real-Mode assembly source code to decode and display a
+ 320x200 image to the screen.  You are welcome to adapt that code to the
+ purposes needed in this MP.  Be warned, however, that as a general rule
+ translating code from Real Mode to Protected Mode can be more effort
+ than it is worth, and sometimes it is better to write code from scratch
+ rather than trying to translate it. For more information on PCX
+ encoding (as well as BMP), see <a
+ href='http://www.ece.uiuc.edu./ece291/lecture/l22.html#pcx'>Lecture
+ 22</a>
+
+</ul>
+
+Just load the appropriate pictures into memory, and make sure the rest
+of the program knows where they are.  And that's it.
+
+<a name='input'><h3>Input Handling</h3></a>
+
+<p>Now things start to get more complicated.  Because we must write
+Interrupt Service Routines (ISRs) which are called automatically, we
+have to make sure they are available at all times.  Thus we must Lock
+the ISR, and all memory it depends on (variables it reads or modifies),
+in active memory.  If we don't, the operating system may choose to swap
+them out, and things get ugly if the interrupt is called at such a time.
+
+<p>After that, an interrupt handler seems much like the one you wrote
+for MP3.  The installation is easier, thanks to the <a href="library.html">
+library routines</a>. So
+ensure your memory is locked, and you're practically done.  Use the
+<a href="library.html#LockArea">LockArea</a> library function to lock memory.
+
+<ul>
+ <li>Keyboard Input</li>
+
+ <p>As in MP3 you need an <a
+ href='procedures.html#installkeyboard'>installation</a>, <a
+ href='procedures.html#removekeyboard'>removal</a>, and <a
+ href='procedures.html#keyboardisr'>handling</a> procedure to render
+ the keyboard usable in the fashion we desire. 
+ 
+ <p>The installation and removal procedures are extremely short.  If
+ you have more than a handful of lines for either, you're probably going
+ about it incorrectly.  The actual handler is surprisingly not much more
+ complicated, as all processing of non-exit keys is done in the main
+ loop.  Toss the scancode of the pressed key in the variable CurrentKey.
+
+ <p>(Just a quick note: that last bit about tossing the scancode into
+ CurrentKey has one advantage/disadvantage combination.  When you
+ release a key, the scancode is the same as the scancode for the pressed
+ key, or'd with 80h (first bit set).  Thus in the main loop, you know
+ when the key has been released.  Unfortunately, if you for instance
+ press left then up, then release left, this simple scheme acts as if
+ you have no keys down.  A more robust scheme might track this and still
+ report the up key as being pressed, but you don't have to do this for
+ this MP.)
+
+ <br><br>
+ <li>Mouse Input</li>
+
+ <p>Again, for handling the mouse you need procedures for <a
+ href='procedures.html#installmouse'>installation</a>, <a
+ href='procedures.html#removemouse'>removal</a>, and <a
+ href='procedures.html#mousecallback'>handling</a> the mouse data.
+
+ <p><strong>But!</strong></p>
+
+ <p>The mouse handler isn't truly a handler at all.  It's a callback.  A
+ callback is the best of both worlds: it gets called like a normal
+ procedure, getting all data in standard places instead of having to
+ perform odd I/O to get it; yet it is also called in interrupt fashion -
+ only, and immediately, when data is available.
+
+ <p>Or to look at it slightly less positive way, it's still called from
+ an interrupt, so you have to be careful about what you call -
+ particularly no DOS interrupts.
+
+ <p>Luckily for you, the library does have a function available that gets
+ a real-mode callback address for your protected mode callback:
+ <a href="library.html#Get_RMCB">Get_RMCB</a>.  However, you will still need
+ to tell the mouse driver to call the callback, and where the callback is.
+
+ <ul>
+  <li>Use Get_RMCB to get a real-mode callback address for MouseCallback.
+  Save the segment and offset in MouseSeg and MouseOff</li>
+  <li>Call the Mouse interrupt (33h), function 0Ch to have the mouse
+  driver call your callback on left mouse button press/release and mouse
+  movement</li>
+ </ul>
+
+ <p>Removing the mouse callback is a matter of reversing your steps.
+ <ul>
+  <li>Again use the mouse interrupt, this time to tell the mouse not to
+  call your callback - use segment:offset of 0000:0000 for "no callback"</li>
+  <li>Then, use <a href='library.html#Free_RMCB'>Free_RMCB</a> to
+  release the real-mode callback</li>
+ </ul>
+
+ <p>Now that you've got the callback installing, and removing, what does
+ your actual callback have to do?  Again, very little - we're doing the
+ actual processing of the data in the main loop.  So all the handler
+ does is toss the data into the appropriate variables.
+</ul>
+
+<p>Voil&agrave; - you've got input.  Now you are controlling how the
+game is told what you want to do.  Next step - make the game interpret
+this data, and act upon it.
+
+<a name='logic'><h3>Game Logic</h3></a>
+
+<p>This is the part of the MP that starts to really make it the game
+that it is.  Up until now, there was graphical handling, and getting
+input from the user.  Now it has to all come together under some central
+control.  Because this is a networked game, it has to follow some
+stringent rules in order to be reasonably fair to all players (the
+discussion of these rules comes in the <a href='#net'>Network
+Communication</a> section).  
+
+<p>The players have to move about the map.  The arrows also traverse the
+map, but at a much faster rate (ever tried to outrun an arrow?).  The
+game has to award points when a player's arrow collides with another
+player.  And, very importantly, each computer involved in the game must
+run at the same speed.
+
+
+<ul>
+ <li>Timing</li>
+
+ <p>The speed issue may be less noticeable in our lab, because all
+ computers in there are virtually identical.  But in a more diverse
+ environment, different machines will have different amounts of power
+ and loads, and thus would run the game at different rates if executing
+ "as fast as possible."
+
+ <p>The solution to this problem is to make use of the internal timer.
+
+ <p>Do this by <a href='procedures.html#installtimer'>installing</a>, <a
+ href='procedures.html#removetimer'>removing</a>, and <a
+ href='procedures.html#timerisr'>handling</a> the timer interrupt, which
+ naturally occurs 18.2 times a second.  Many games in the past required
+ speeding up this timer to allow sub 18th-of-a-second precision in event
+ timing, but our network game doesn't need this.  You are welcome to
+ refer to the information in the lab manual or in <a
+ href='http://www.ece.uiuc.edu./ece291/lecture/l14.html#TIMEDEMO'>Lecture
+ 14</a> for more information.
+
+ <p>The handler is another extremely short one.  Increment CurrentTime
+ so we can find the current relative time immediately.  And then The One
+ Most Important Consideration for the handler: the original handler must
+ execute - many necessary OS activities hinge off the 18.2 times a
+ second interrupt handler.  If you in another program speed up the
+ timer, make sure to have the original timer execute only at the standard 18.2
+ times a second.  Check the <a href='procedures.html#timerisr'>procedure
+ information</a> for more on how exactly you get the original handler to
+ execute - a process called "chaining."
+
+ <p>This next part is handled in the main loop.  As this is given to
+ you, you won't need to code this.  Make sure you understand it,
+ as questions about this are fair game at handin time.
+
+ <p>(As we are arbitrarily defining our game universe, we can afford to
+ be "sloppy" - at least to the extent that in the next few given values,
+ we're considering the timer interrupt to occur 18 times a second.
+ This is incorrect, but just bear with it - the values are much easier
+ to deal with this way.)
+
+ <p>That said, the values we're concerned with are as follows:
+ <ul>
+  <li>The player can move (up to) 6 times a second</li>
+  <li>The player may fire an arrow (up to) 2 times a second</li>
+  <li>The arrows must be moved at a rate of 18 times a second</li>
+ </ul>
+
+ <p>To do this, keep track of the previous CurrentTime value that each
+ operation was performed in the variables LastPlayerMoveTime,
+ LastFireTime, and LastArrowMoveTime.  If it has been at least 3 timer
+ ticks since the last player movement and the player is requesting to
+ move, move the player.  If it has been at least 9 timer ticks since the
+ player fired an arrow and the player is requesting to do so, fire an
+ arrow.  If it's been at least one tick since the arrows were moved,
+ move the arrows (and only update LastArrowMoveTime according to the
+ number of times you move the arrows).
+
+ <p>(In this unlikely case of being more than one clock tick since
+ LastArrowMoveTime, you will probably want to move the arrows one
+ position at a time, checking for collisions at each update, and
+ incrementing the LastArrowMoveTime each time you update it.  Written
+ properly this takes no extra logic.  This is only so extremely
+ important because of the network nature of this game - see if you can
+ explain why.)
+
+ <br><br>
+ <li>Firing the arrows</li>
+
+ <p><a href='procedures.html#firearrowlocal'>Firing an arrow</a> is a 4
+ step procedure:
+
+ <ol>
+  <li>Test MouseButtons to make sure the button has been pressed</li>
+  <li>Find the first available arrow descriptor</li>
+  <li>Insert the appropriate information (location, heading)</li>
+  <li>Set the arrow to active</li>
+ </ol>
+
+ <p>Iterate through the Arrow structure testing the high bit of the
+ Flags element.  Our setup guarantees that there will be one, as you can
+ fire two arrows a second, and they extinguish after a maximum of
+ START_ARROW_DISTLEFT (5) units, and fewer if they hit an opposing
+ player.  Regardless, it is a good coding practice to put in the
+ necessary checks to handle being called without an available arrow
+ descriptor.
+
+ <p>Now that we've got an arrow descriptor, figure out the direction the
+ arrow needs to travel.  We do this by performing math on the mouse
+ cursor's location as stored in MouseX and MouseY.  Ideally we would
+ want to shoot directly at the mouse cursor.  In our program, however,
+ we are avoiding the trouble of this by quantizing the directions to 8
+ - the four horizontal and vertical directions, and the 45&deg; angles
+ inbetween: the directions shown in solid black in Fig. A.
+
+ <div align='center'><img src='figa.gif' width='320' height='200'><br>Figure A</div>
+
+ <p>To make this feasible for the player, we'll allow anywhere between
+ the blue lines to count as the closest solid black direction.  While
+ ideally these would be on the 22.5&deg; separations halfway between the
+ 90&deg; and 45&deg; black lines (shown as red lines in Fig. A), that
+ requires trigonometry to calculate.  We'd rather be more efficient, if
+ a little less precise, and instead use the lines X=2*Y and 2*X=Y as our
+ boundaries (shown as blue lines in Fig.  A).  As this creates a smaller
+ diagonal zone than the perfect 22.5&deg; angles, we'll consider the
+ boundary to be part of the diagonal zone.
+
+ <p>As this is symmetric, let's look at the quadrant 1 cases.  (Hint:
+ one way to structure your code is to only consider this case, after
+ already figuring the sign of your X and Y coordinates.)
+ 
+ <ul>
+  <li>First we center the coordinates around our player by subtracting
+  160 from MouseX, and 100 from MouseY.</li>
+  <li>Then, if abs(X) &gt; abs(2*Y), use the horizontal trajectory (Red
+  in Fig. B).</li>
+  <li>Else, if abs(Y) &gt; abs(2*X), use the vertical trajectory (Blue
+  in Fig. B).</li>
+  <li>Else, use the diagonal trajectory (Green in Fig. B)</li>
+ </ul>
+
+ <div align='center'><img src='figb.gif' width='320' height='200'><br>Figure B</div>
+
+ <p>Finally, update LastFireTime.
+
+ <br><br>
+ <li>Moving the arrows</li>
+
+ <p>To <a href='procedures.html#movearrows'>move the arrows</a>, the
+ following 5 steps must be followed for each of the arrows in the
+ structure.
+
+ <ol>
+  <li>Test if the arrow is active.  If not, skip to the next arrow.</li>
+  <li>Add the arrow's deltaX and deltaY to it's MapX and MapY</li>
+  <li>Check for "Map Collision" - if the arrow is now on an impassable
+  location, deactivate it.</li>
+  <li>Check for "Player Collision" - if the arrow hits a player, the
+  player who fired it gets a point. (The point only needs to be added for your
+  arrows striking other players.)</li>
+  <li>Update the distance remaining - if the arrow's DistLeft becomes
+  zero on the decrement, deactivate it.</li>
+ </ol>
+
+ <p>To perform these checks and updates, the appropriate information
+ must be extracted from (and repackaged into) the arrow structure.
+ [Pete: want to elaborate?]
+
+ <p>End by updating LastArrowMoveTime.
+
+ <br><br>
+ <li>Hit detection</li>
+
+ <p>Hit detection is very straightforward.  If the arrow, on update, is
+ in the same location as a player, that player has been hit.  The person
+ who fired the arrow receives a point. [Pete: please update this to
+ match whether you are iterating, or doing a secondary map lookup.]
+
+ <br><br>
+ <li>Moving the players</li>
+
+ <p><a href='procedures.html#moveplayerlocal'>Moving the players</a> is
+ much like moving the arrows.  For the local player, take the current
+ location, and add the appropriate X and Y changes according to the
+ keypress.  If this location is occupied by another player, cancel the
+ movement.  If this location is an impassable tile on the map, cancel
+ the movement.  Otherwise, update the Player's location.  Finally,
+ update LastPlayerMoveTime.
+
+</ul>
+
+
+<a name='net'><h3>Network Communication</h3></a>
+
+<ul>
+ <li>Starting or joining a game</li>
+
+ <br><br>
+ <li>Sending updates</li>
+ [Pete: if you could handle this and receiving or rather all of this,
+ that'd be great.  The skeleton that seems obvious is listing what
+ information needs to be sent, and how to "add" it to the main loop.
+ Ideally they'll code it all at once, as it'll be hard to test without
+ the net anyway, but assuming it's described correctly, it should be
+ feasible either to do it at once or add net after main stands ready.  I
+ think.]
+
+ <br><br>
+ <li>Receiving updates</li>
+
+ <br><br>
+ <li>Leaving a game</li>
+</ul>
+
+
+
+<h2><a href='procedures.html'>The Procedures</a></h2>
+<h2><a href='index.html#prelim'>Preliminary Procedure</a></h2>
+</body>
+</html>

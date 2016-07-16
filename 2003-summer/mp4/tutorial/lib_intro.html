@@ -1,0 +1,587 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>291 Protected Mode Library Intro</title>
+</head>
+
+<body>
+
+<h1 align="center"><font size="+2"><b><i>Intro to the 291 Protected Mode Library</i></b></font></h1>
+<div class="SECT1">
+  <h1 class="SECT1"><a name="PMODELIB-INTRO-PROC-INVOKE">The <tt class="LITERAL">
+  proc</tt> and <tt class="LITERAL">invoke</tt> Macros</a></h1>
+  <p>PModeLib uses the 32-bit C calling convention. See the first page of the 
+  PModeLib Reference (<a href="tmp/pmodelib-ref.html">Appendix A</a>) for a 
+  quick overview, or <a href="tmp/c-prog.html">Chapter 8</a> for a more detailed 
+  look at how this calling convention works.</p>
+  <p>Because some of the functions in PModeLib can take many parameters, a set 
+  of macros which implement the C calling convention has been provided to make 
+  it easier to both write and use these functions.</p>
+  <div class="SECT2">
+    <h2 class="SECT2"><a name="PMODELIB-INTRO-PROC-INVOKE-INVOKE">Using
+    <tt class="LITERAL">invoke</tt></a></h2>
+    <p>We highly recommend using the <tt class="LITERAL">invoke</tt> macro to 
+    call the library functions, as this example demonstrates.</p>
+    <div class="EXAMPLE">
+      <b>Using the <tt class="LITERAL">invoke</tt> macro</b><pre class="PROGRAMLISTING">        invoke  <a href="tmp/pmodelib-ref-vbeaf.html#PMODELIB-REF-FINDGRAPHICSMODE">_FindGraphicsMode</a>, word 640, word 480, word 32, dword 1
+        invoke  <a href="tmp/pmodelib-ref-vbeaf.html#PMODELIB-REF-SETGRAPHICSMODE">_SetGraphicsMode</a>, ax
+        invoke  <a href="tmp/pmodelib-ref-vbeaf.html#PMODELIB-REF-COPYTOSCREEN">_CopyToScreen</a>, dword Image, dword 320*4, dword 0, \
+                               dword 0, dword 320, dword 240, dword 160, dword 120
+        invoke  <a href="tmp/pmodelib-ref-vbeaf.html#PMODELIB-REF-UNSETGRAPHICSMODE">_UnsetGraphicsMode</a>
+</pre>
+    </div>
+  </div>
+  <div class="SECT2">
+    <h2 class="SECT2"><a name="PMODELIB-INTRO-PROC-INVOKE-PROC">Writing 
+    Functions using <tt class="LITERAL">proc</tt></a></h2>
+    <p>Using <tt class="LITERAL">invoke</tt> makes <span class="emphasis">
+    <i class="EMPHASIS">calling</i></span> functions using the C calling 
+    convention a lot easier, but what about the other side: what facility makes
+    <span class="emphasis"><i class="EMPHASIS">writing</i></span> functions that 
+    use the C calling convention easier? The answer is <tt class="LITERAL">proc</tt> 
+    (and its companion <tt class="LITERAL">endproc</tt>). PModeLib itself uses 
+    the <tt class="LITERAL">proc</tt> and <tt class="LITERAL">endproc</tt> 
+    macros, so its source code (located in the <tt class="FILENAME">src</tt> 
+    directory in <tt class="FILENAME">V:\ece291\pmodelib</tt>) contains many 
+    examples of the use of these two macros.</p>
+    <div class="TIP">
+      <blockquote class="TIP">
+        <p><b>Tip:</b> Look at the PModeLib source as a guide on writing code in 
+        protected mode, as well as a guide on how to write functions using the C 
+        calling convention!</p>
+      </blockquote>
+    </div>
+    <p>Let's examine a very simple function that takes two parameters. We'll 
+    examine three versions: one uses registers to pass in the parameters, one 
+    uses the C calling convention but doesn't use the <tt class="LITERAL">proc</tt> 
+    macro, and the last uses the C calling convention along with the
+    <tt class="LITERAL">proc</tt> and <tt class="LITERAL">endproc</tt> macros.</p>
+    <div class="SECT3">
+      <h3 class="SECT3"><a name="PMODELIB-INTRO-PROC-INVOKE-PROC-DIFF-REGISTER">
+      <tt class="FUNCTION">Diff</tt> with Register Inputs</a></h3>
+      <pre class="PROGRAMLISTING">GLOBAL _main
+
+SECTION .text
+
+_main:
+        mov     eax, 5
+        mov     ebx, 3
+        call    Diff
+        ; Result in eax (should be 2)
+        ret
+
+; Purpose: Subtracts ebx from eax.
+; Inputs:  eax, number to be subtracted from
+;          ebx, amount to subtract
+; Outputs: eax, result of subtraction
+Diff
+        sub     eax, ebx
+        ret
+</pre>
+    </div>
+    <div class="SECT3">
+      <h3 class="SECT3"><a name="PMODELIB-INTRO-PROC-INVOKE-PROC-DIFF-NOPROC">
+      18.2.2.2 <tt class="FUNCTION">Diff</tt> with C Calling Convention (but 
+      without <tt class="LITERAL">proc</tt>)</a></h3>
+      <p>Suppose for a moment that <tt class="FUNCTION">Diff</tt> was a much 
+      more complex function with more arguments. Or that it needs to be called 
+      from some C source code. Or that it just needs to use the C calling 
+      convention because every other function in the program uses the C calling 
+      convention. No matter the reason, let's rewrite <tt class="FUNCTION">Diff</tt> 
+      so that it uses the C calling convention instead of registers to get its 
+      parameters. Let's assume for the moment that we don't have the
+      <tt class="LITERAL">proc</tt> or <tt class="LITERAL">invoke</tt> macros, 
+      and see what the code looks like.</p>
+      <pre class="PROGRAMLISTING">GLOBAL _main
+
+SECTION .text
+
+_main:
+        ; Parameters pushed in reverse order
+        push    dword 3
+        push    dword 5
+        call    _Diff
+        add     esp, 8          ; Throw away parameters (still on stack)
+        ; Result in eax (should be 2)
+        ret
+
+; int Diff(int a, b);
+; Purpose: Subtracts b from a.
+; Inputs:  a, number to be subtracted from
+;          b, amount to subtract
+; Outputs: Returns a-b.
+_Diff                           ; Prepended underscore to function name
+        push    ebp             ; Save caller's stack frame
+        mov     ebp, esp        ; Establish new stack frame
+        mov     eax, [ebp+8]    ; Get the first parameter
+        sub     eax, [ebp+12]   ; Subtract the second parameter
+        pop     ebp             ; Restore the base pointer
+        ret                     ; Return to caller, with result in eax
+</pre>
+    </div>
+    <div class="SECT3">
+      <h3 class="SECT3"><a name="PMODELIB-INTRO-PROC-INVOKE-PROC-DIFF-PROC">
+      18.2.2.3 <tt class="FUNCTION">Diff</tt> Using <tt class="LITERAL">proc</tt></a></h3>
+      <p>Whew! That's quite a mess of code, and there's a lot for us to keep 
+      track of and remember, even for a function that just takes two parameters: 
+      the arguments have to be passed in reverse order, 8 needs to be added to
+      <tt class="REGISTER">ESP</tt> after the call, <tt class="REGISTER">EBP</tt> 
+      needs to be played with inside the function (pushed, modified, and 
+      popped), and the <span class="QUOTE">&quot;magic&quot;</span> constants 8 and 12 
+      need to be used to get the parameters off the stack! Let's use the
+      <tt class="LITERAL">proc</tt>, <tt class="LITERAL">endproc</tt>, and
+      <tt class="LITERAL">invoke</tt> macros to clean this code up, and make it 
+      easier to read, maintain, and write correctly in the first place!</p>
+      <pre class="PROGRAMLISTING">%include &quot;lib291.inc&quot;   ; Defines proc, endproc, invoke
+
+GLOBAL _main
+
+SECTION .text
+
+_main:
+        invoke  _Diff, dword 5, dword 3
+        ; Result in eax (should be 2)
+        ret
+
+; int Diff(int a, b);
+; Purpose: Subtracts b from a.
+; Inputs:  a, number to be subtracted from
+;          b, amount to subtract
+; Outputs: Returns a-b.
+proc _Diff      ; &quot;proc&quot; followed by name prepended with underscore
+
+.a      arg     4        ; First parameter, dword (4 bytes)
+.b      arg     4        ; Second parameter, dword (4 bytes)
+
+        mov     eax, [ebp+.a]    ; Get the first parameter
+        sub     eax, [ebp+.b]    ; Subtract the second parameter
+        ret                      ; Return to caller, with result in eax
+
+endproc
+_Diff_arglen    equ      8       ; Sum of all parameter sizes
+</pre>
+      <p>That <span class="emphasis"><i class="EMPHASIS">is</i></span> a lot 
+      easier to read! Comparing it to the non-<tt class="LITERAL">proc</tt> 
+      version, it's easy to see exactly what <tt class="LITERAL">proc</tt>,
+      <tt class="LITERAL">endproc</tt>, and <tt class="LITERAL">invoke</tt> do, 
+      and to a certain extent how they work. For example, the
+      <tt class="LITERAL">invoke</tt> macro knows how much to add to
+      <tt class="REGISTER">ESP</tt> after the call by looking for
+      <tt class="LITERAL">_Diff_arglen</tt>, which is why it must be present and 
+      be equal to the sum of all parameter sizes.</div>
+  </div>
+  <div class="SECT2">
+    <h2 class="SECT2"><a name="PMODELIB-INTRO-PROC-INVOKE-POINTER">18.2.3 
+    Pointer Parameters</a></h2>
+    <p>Several of the PModeLib functions take <b><i class="FIRSTTERM">pointer</i></b> 
+    parameters. A pointer paramter is simply a parameter that takes the
+    <span class="emphasis"><i class="EMPHASIS">address</i></span> of a value 
+    rather than the value itself. Let's rewrite <tt class="FUNCTION">Diff</tt> 
+    one more time, with a few changes:</p>
+    <ul>
+      <li>It subtracts two 16-bit integers, not two 32-bit integers (in C 
+      parlance that means they're <span class="QUOTE">&quot;short&quot;</span> instead of
+      <span class="QUOTE">&quot;int&quot;</span>).</li>
+      <li>The two parameters are passed as pointers.</li>
+      <li>The output is also passed as a pointer.</li>
+    </ul>
+    <p>Wait a second! The <span class="emphasis"><i class="EMPHASIS">output</i></span> 
+    is passed as a pointer!? Yes, and in fact this is a common way for a 
+    function to return multiple values, or return a value as well as an error 
+    code. As a pointer (or address) of the output is passed, the function knows
+    <span class="emphasis"><i class="EMPHASIS">where</i></span> to store the 
+    result, and thus just stores the result to that address before returning. 
+    Let's take a look at the new <tt class="FUNCTION">Diff</tt>!</p>
+    <pre class="PROGRAMLISTING">%include &quot;lib291.inc&quot;   ; Defines proc, endproc, invoke
+
+GLOBAL _main
+
+SECTION .data
+
+; As we're passing addresses, the values (and result) have to be in memory.
+val1    dw 5
+val2    dw 3
+
+SECTION .bss
+
+result  resw 1          ; The result is unknown, so put it in .bss
+
+SECTION .text
+
+_main:
+        ; Pass addresses of memory variables.  Even though the values are
+        ;  words, their *addresses* are dwords!
+        invoke  _Diff, dword result, dword val1, dword val2
+        ; Result in result variable (should be 2)
+        ; As it's a &quot;void&quot; function, disregard eax value
+        ret
+
+; void Diff(short *r, short *a, short *b);
+; Purpose: Subtracts b from a.
+; Inputs:  a, number to be subtracted from
+;          b, amount to subtract
+; Outputs: r, result of subtraction (a-b)
+proc _Diff
+
+.r      arg     4        ; Note that even though the parameters being
+.a      arg     4        ;  pointed to are words (2 bytes), the pointers
+.b      arg     4        ;  themselves (the parameters) are dwords!
+
+        push    esi              ; We have to save esi and edi.
+        push    edi              ; Yes, this function could be coded without
+                                 ;  using them, but just as an example...
+
+        ; Load values of a and b, and do subtraction.
+        mov     esi, [ebp+.a]    ; Get &quot;a&quot; *offset*
+        mov     cx, [esi]        ; Get &quot;a&quot; *value*
+        mov     ebx, [ebp+.b]    ; Get &quot;b&quot; *offset*
+        sub     cx, [ebx]        ; Subtract &quot;b&quot; *value* from &quot;a&quot; value
+
+        ; Store result into variable pointed to by r.
+        mov     edi, [ebp+.r]    ; Get &quot;r&quot; *offset*
+        mov     [edi], cx        ; Store result
+
+        pop     edi      ; Restore saved registers before ret
+        pop     esi
+        ret              ; Return to caller, eax can be anything
+
+endproc
+_Diff_arglen    equ      12      ; Sum of all parameter sizes
+</pre>
+    <p>Passing pointers is inefficient for such a simple function, but is 
+    invaluable for functions that need to return more than one value (eg, return 
+    a value into one of the pointed-to parameters as well as return a value in 
+    the <span class="QUOTE">&quot;normal&quot;</span> fashion in <tt class="REGISTER">EAX</tt>) 
+    or that take entire structures as parameters (just the starting offset of 
+    the structure can be passed on the stack, rather than every variable in the 
+    structure). Pointers/offsets/addresses can be used in very powerful ways.</p>
+    <div class="TIP">
+      <blockquote class="TIP">
+        <p><b>Tip:</b> For practice using and writing functions using
+        <tt class="LITERAL">proc</tt> and pointer parameters, rewrite the
+        <span class="QUOTE">&quot;dspmsg&quot;</span> example program (the one rewritten 
+        using PModeLib in <a href="tmp/pmodelib-intro-using-interrupts.html">
+        Section 18.4</a>) to split the <span class="QUOTE">&quot;dspmsg&quot;</span> 
+        functionality into a separate function that uses the C calling 
+        convention:</p>
+        <div class="FUNCSYNOPSIS">
+          <code><code class="FUNCDEF">void dspmsg</code>(char *string);</code></div>
+        <p>and then call the <tt class="FUNCTION">dspmsg</tt> function, using 
+        the <tt class="LITERAL">invoke</tt> macro, from the main program.</p>
+      </blockquote>
+    </div>
+  </div>
+</div>
+<p>&nbsp;<P><font size="+2"><a name="Task 11:  Set up a Jump Table">Task 9:&nbsp; Set Up a Jump Table</a></font> </P>
+
+<P>We want our code to be nice and neat again, so I'll ask you
+to start over with a new skeleton and a new <b><samp>jmptable.asm</samp></b>
+assembly file.&nbsp; In fact, why don't you put everything you have so far into
+a folder called &quot;<b><samp>simple stuff</samp></b>&quot; to get it out of the
+way. </P>
+
+<P>We want the program to sit around and waited for you to press a
+key.&nbsp; Then we want it to perform some function and came back to waiting for a key.&nbsp;
+This is best done with a jump table whose index is the scan code of the key
+press. </P>
+
+<table border="1">
+  <tr>
+    <td width="100%"><font size="2"><samp><font color="#FF0000">BITS</font> 32 <font color="#808080">          ; Tell NASM we're using 32-bit protected mode.</font><br>
+      <br>
+      <b>
+      GLOBAL _main <font color="#808080">     ; Tells the linker about the label called
+      _main</font></b><br>
+      <br>
+      <b>
+      %include "lib291.inc"&nbsp; <font color="#808080">; Includes everything, including proc
+      MASCOs.</font></b><br>
+      <br>
+      <font color="#FF0000">
+      SECTION</font> .bss <font color="#808080">            ; Uninitialized Data Section</font><br>
+      <br>
+      <font color="#FF0000">
+      SECTION</font> .data <font color="#808080">           ; Data Section</font><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; KeyJumpTable<br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; Nothing (0)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Quit <font color="#808080">          ; ESC (1)</font><br>
+      &nbsp;&nbsp;&nbsp; times 55 dd    Just_Return <font color="#808080">   ; 1-Alt (2-56)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; SpaceBar (57)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; CAPSLOCK (58)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             String_Loop <font color="#808080">   ; F1  (59)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Draw_Pixels <font color="#808080">   ; F2  (60)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; F3  (61)</font><br>
+      &nbsp;&nbsp;&nbsp; dd Just_Return <font color="#808080">; F4 (62)&nbsp;</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; F5  (63)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; F6  (64)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; F7  (65)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; F8  (66)&nbsp;</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; F9  (67)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; F10 (68)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; F11 (69)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; F12 (70)</font>&nbsp;<br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; HOME (71)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; UP (72)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; PGUP (73)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; Keypad Minus (74)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; LEFT (75)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; Keypad 5 (76)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; RIGHT (77)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; Keypad Plus (78)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; END (79)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; DOWN (80)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; PGDN (81)</font><br>
+      &nbsp;&nbsp;&nbsp; times 175 dd   Just_Return <font color="#808080">   ; (82-255)</font><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; Menu_str db 0dh, 0ah, 0dh, 0ah,&nbsp; <font color="#808080">;
+      Two blank lines</font><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; db "F1  - Display String Loop", 0dh, 0ah,<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      db "F2  - Draw some 320x200 pixels", 0dh, 0ah<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; db  "ESC - Quit",  0dh, 0ah, '$'<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; Loop_str    db  "We are in a loop until you hit a key.  Weeee!", 0dh, 0ah,'$'&nbsp;<br>
+      <br>
+      <font color="#FF0000">
+      SECTION</font> .text <font color="#808080">    ; Says that this is the start of the code section.</font><br>
+      <br>
+      _main:&nbsp;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; call _LibInit  ; Initialize the library
+      <br><br>
+      &nbsp; Just_Return:<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; invoke _print_string, dword Menu_str<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; mov ah, 00h <font color="#808080"> ; Wait for a key to be pressed.</font><br>
+      &nbsp;&nbsp;&nbsp; int 16h<br>
+      &nbsp;&nbsp;&nbsp; mov ecx, 0 <font color="#808080">  ; We'll use ECX as the index into the jump table.</font><br>
+      &nbsp;&nbsp;&nbsp; mov cl, ah <font color="#808080">  ; Moves the Key Code into ECX</font><br>
+      <br>
+      <b>
+      &nbsp;&nbsp;&nbsp; jmp [KeyJumpTable + 4*ecx]&nbsp;</b><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#808080">; We used ECX as an index, and multiplied it by four.</font><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#808080">; <a href="questions.html">Question
+      11</a>: Why do we multiply ECX by four?</font><br>
+      <br>
+      &nbsp; String_Loop:<br>
+      &nbsp;&nbsp;&nbsp; invoke _print_string, dword Loop_str<br>
+      &nbsp;&nbsp;&nbsp; <font color="#808080">; Loop until a key is pressed.</font><br>
+      &nbsp;&nbsp;&nbsp; jmp Just_Return&nbsp;<br>
+      <br>
+      &nbsp; Draw_Pixels:<br>
+      &nbsp;&nbsp;&nbsp; invoke _draw_pixels<br>
+      &nbsp;&nbsp;&nbsp; jmp Just_Return<br>
+      <br>
+      &nbsp; Quit:&nbsp;<br>
+      &nbsp;&nbsp;&nbsp; call _LibExit   ; Free library resources
+      &nbsp;&nbsp;&nbsp; ret<br>
+      <br>
+ <font color="#808080">; void print_string(char* The_String)</font>
+      <br>
+      proc _print_string<br>
+      &nbsp;&nbsp;&nbsp; %$The_String          arg   4<br>
+      &nbsp;&nbsp;&nbsp; _print_string_arglen  equ   4<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; <font color="#808080">; Copy string to global transfer buffer<br>
+      &nbsp;&nbsp;&nbsp; ; Set up global DPMI_Regs structure<br>
+      &nbsp;&nbsp;&nbsp; ; Call library DPMI_Int</font><br>
+      endproc<br>
+      <br>
+      proc _draw_pixels<br>
+      &nbsp;&nbsp;&nbsp; <font color="#808080">; Draw Stuff</font><br>
+      endproc<br>
+      <br>
+      <font color="#808080">
+      ; The rest of the procedures from here on out...</font></samp></font></td>
+  </tr>
+</table>
+<ul>
+  <li>Take a look at <a href="lib_reference.html">Library Function
+    Reference</a> to see what I'm getting you into.</li>
+  <li>Take a look at <samp><b>V:\ece291\pmodelib\src\dpmi_int.asm</samp></b>
+    &nbsp;
+    <ul>
+      <li>Notice that <b><samp>DPMI_Regs</samp></b> is now a global variable.</li>
+      <li>Notice that the DOS <b><samp>_Transfer_Buf</samp></b> is also
+        global.</li>
+    </ul>
+  </li>
+  <li> Take a look at what <b><samp>_LibInit</samp></b> does in <b><samp>V:\ece291\pmodelib\src\lib_load.asm</samp></b> 
+    <ul>
+      <li>It allocates some memory</li>
+      <li>It allocates a DOS Transfer Buffer and saves the selectors and
+        segments in <i> global</i> variables.</li>
+    </ul>
+  </li>
+  <li>You don't know what something does or how it does it, look at the code.&nbsp; That's how real engineering works!</li>
+</ul>
+<p>Did you miss Question 11:&nbsp; Could this be because you just blindly copied
+and pasted without reading it first!?&nbsp; Come on!&nbsp; Let's go!&nbsp; You
+and me! Outside, right now!</p>
+<p><font size="+2"><a name="Task 12:  Linking to the Library">Task 10:&nbsp;
+Linking to the Library</a></font></p>
+<p>We need to link this new <b><samp>jmptable.asm</samp></b> to the library
+code.  A library is just a archive of .o files.
+You can link the library into your <b><samp>jmptable.exe</samp></b>
+as if it were just another <b><samp>.o</samp></b> file.</p>
+<ul>
+  <li> <b><samp>V:/ece291/pmodelib/lib291.a</samp></b>  goes on your <b><samp>gcc</samp> </b>line so it gets linked
+    into to all of your applications.</li>
+  <li>Dependencies get updated:
+    <ul>
+      <li> <samp> <b> jmptable.exe</b></samp>  goes onto the <b><samp>all:</samp></b> 
+        rule.</li>
+    </ul>
+  </li>
+</ul>
+<p>Here's an updated Makefile that does all that stuff:</p>
+<table border="1" width="100%">
+  <tr>
+    <td width="100%"><samp>all: jmptable.exe<br>
+      <br>
+      clean:<br>
+      &nbsp;&nbsp;&nbsp;&nbsp; rm -f *.o jmptable.exe *.lst *.map<br>
+      <br>
+      jmptable.exe: jmptable.o<br>
+      &nbsp;&nbsp;&nbsp;&nbsp; gcc -o final jmptable.o v:/ece291/pmodelib/lib291.a<br>
+      <br>
+      .asm.o:<br>
+      &nbsp;&nbsp;&nbsp;&nbsp; nasm -f coff -iv:/ece291/pmodelib/include/ $&lt; -l $*.lst</samp></td>
+  </tr>
+</table>
+&nbsp;
+<p>Only after you get everything to build, fill in the functionality into <b><samp>
+jmptable.asm</samp></b>&nbsp;
+I want you to use the library functions to do all the stuff you did
+    yourself before:</p>
+Implement the <b><samp>print_string(char* The_String)</samp></b>
+<ul>
+  <li>Be careful about the arguments here:
+    <ul>
+      <li>What gets pushed onto the stack as a parameter when <b><samp>print_string(char*
+        The_String)</samp></b> is invoked is the <i>address</i> of a
+        string.&nbsp; (The address of the first character in the string.)</li>
+      <li>To get the <i>value</i> of this parameter on the stack (the parameter's
+        value is an address in this case), you do <samp><b>dword [ebp + %$The_String]</b> </samp></li>
+      <li>What you get is the <i>address</i> of the first byte of the string,
+        which you have to dereference again with another set of []'s to get the
+        actual bytes.</li>
+    </ul>
+  </li>
+      <li>Use the global transfer buffer that was allocated in <b><samp>_main</samp></b>
+        to transfer the string data into an area of memory that DOS can access.</li>
+      <li>Put values into the global <b><samp>DPMI_Regs</samp></b> structure like
+        did when you had your own structure.</li>
+      <li>Call the library's <samp><font size="2"><b>DPMI_Int</b></font></samp>
+        with the appropriate arguments.</li>
+</ul>
+<p><font size="+2"><a name="File Handling Routines">File Handling Routines</a></font></p>
+<p>Reading files is very important.
+File handling is something you definitely
+call library functions for, so we'll use the library file routines.&nbsp; Basic
+operations on a file:&nbsp; Open, Read, Write, Close.&nbsp; Not too hard.&nbsp;
+We won't be doing any writing, so I'll only talk about the first three.</p>
+<p>Look at the library's <b><samp>filefunc.asm</samp></b> file.&nbsp; The file defines
+the file handling routines as C-style, invokable procedures.&nbsp; Look at the <a href="lib_reference.html">Library
+Function Reference</a>:</p>
+<table border="1" width="100%">
+  <tr>
+    <td width="100%">
+      <p align="center"><b><samp><a href="lib_reference.html#OpenFile">OpenFile</a></samp></b></p>
+      <p align="left"><samp><br>
+      int OpenFile(char *Filename, short WriteTo);<br>
+      &nbsp;&nbsp; Purpose: Opens a file for reading or writing.<br>
+      &nbsp;&nbsp; Inputs:  Filename, (path)name of the file to read<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WriteTo, 1 if create &amp; open for writing, 0 for open to read<br>
+      &nbsp;&nbsp; Outputs: DOS handle to file&nbsp; (-1 if error)</samp></td>
+  </tr>
+  <tr>
+    <td width="100%">
+      <p align="center"><b><samp><a href="lib_reference.html#ReadFile">ReadFile</a></samp></b></p>
+      <p><samp> int ReadFile(int Handle, short BufSeg, void *Buffer, unsigned int Count);<br>
+      &nbsp;&nbsp; Purpose: Reads from a file.<br>
+      &nbsp;&nbsp; Inputs:  Handle, DOS handle of the file to read from<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; BufSeg, selector in which Buffer resides<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	    Buffer, pointer (into BufSeg) of buffer to read into<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	    Count, number of bytes to read into buffer<br>
+      &nbsp;&nbsp; Outputs: Number of bytes actually read</samp></td>
+  </tr>
+  <tr>
+    <td width="100%">
+      <p align="center"><b><samp><a href="lib_reference.html#CloseFile">CloseFile</a></samp></b></p>
+      <p><samp> void CloseFile(int Handle);<br>
+      &nbsp;&nbsp; Purpose: Closes an open file.<br>
+      &nbsp;&nbsp; Inputs:  Handle, DOS handle of the file to close.<br>
+      &nbsp;&nbsp; Outputs: None</samp></td>
+  </tr>
+</table>
+<p>What is a Filehandle?&nbsp; Well, a handle is something that a library or an
+operating system gives you which is usually pretty meaningless outside it's
+intended context.&nbsp; The OS has a big table of which files are open and who
+has them open.&nbsp; When your program opens a file, it puts information about
+the file you want into the table and returns something like an index into the
+table.&nbsp; When you tell it &quot;read from the file whose handle I gave
+you,&quot; it looks in it's table and knows where the file is on disk and how
+much of it you've already read, etc.</p>
+<p><a href="questions.html#Question11">Question 11:</a>&nbsp; What interrupts are the library routines calling?&nbsp; What do they do?&nbsp; Give me
+numbers and names.</p>
+<p><font size="+2"><a name="Task 13:  Read a Text File">Task 11:&nbsp; Read a Text
+File</a></font></p>
+<p>Another little thing to add to the list off stuff you can now do in protected
+mode:</p>
+
+<ul>
+  <li>Make a new text file called &quot;<b><samp>readme.txt</samp></b>&quot; in
+    your directory.</li>
+  <li>Write some funny stuff in it.</li>
+  <li>Create a variable called <b><samp>text_file_name</samp></b> as a
+    null-terminated C-style string.&nbsp; (Last character is byte 0, not ASCII
+    zero.)</li>
+</ul>
+<p>Make another KeyJumpTable entry for this functionality which just calls a
+procedure for printing out the file.&nbsp; When you write <i>and</i> call routines, be
+<i>very</i> careful about the length of the arguments because the macros do no type
+checking and you <i>will</i> corrupt your stack!</p>
+<ul>
+  <li>Open the file by invoking <b><samp>OpenFile(...)</samp></b> with the
+    appropriate parameters.
+    <ul>
+      <li>Remember that <samp><b>char *Filename</b></samp> is <i>address</i> of
+        the string you want to pass in (a <b><samp>dword</samp></b>).</li>
+    </ul>
+  </li>
+  <li>Define a new buffer to hold the file contents.</li>
+  <li>Read the file directly into your buffer by invoking <b><samp>ReadFile(...)</samp></b>
+    with:
+    <ul>
+      <li>Handle = the filehandle that <b><samp>OpenFile(...)</samp></b> returned in eax.</li>
+      <li>BufSeg = the selector of your buffer:&nbsp; ds if you allocated it in
+        the .bss section.</li>
+      <li>Buffer = 0h, since you want to write to the beginning of your buffer.</li>
+      <li>Count = The length of the buffer minus three (since we still need to
+	add the CR, LF, and '$' so it doesn't print forever.)</li>
+    </ul>
+  </li>
+  <li><b><samp>ReadFile(...)</samp></b> will return the number of bytes it actually
+    read in eax.&nbsp; Put a CR, LF, and '$' in the Buffer starting at this
+    offset.
+    <ul>
+      <li>If the file was bigger than the buffer, it will only read up to three before the end of the buffer because that's the count we gave it.</li>
+      <li>If it's smaller, it will read until the end of the file.</li>
+    </ul>
+  </li>
+  <li>Display the buffer using your <b><samp>print_string</samp></b> code.</li>
+  <li>Invoke <b><samp>CloseFile(...)</samp></b> with the filehandle returned by <b><samp>OpenFile(...)</samp></b>
+  </li>
+</ul>
+<p>Make it, run it, and trace through the library code once to see what it's
+doing.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,584 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <TITLE>Machine Problem 2: Sorting Efficiency</TITLE>
+</HEAD>
+<BODY bgcolor=ffffff>
+&nbsp;
+<TABLE COLS=3 WIDTH="100%" >
+<TR>
+<TD width=33%>ECE 291</TD>
+<TD width=34%><CENTER>Computer Engineering II</CENTER> </TD>
+<TD width=33%><DIV ALIGN=right>Polychronopoulos, Spring 2000</DIV></TD>
+</TR>
+</TABLE>
+
+<CENTER>
+<H1>
+&nbsp;Machine Problem 2: Sorting Efficiency</H1></CENTER>
+
+<CENTER>&nbsp;</CENTER>
+
+<CENTER><TABLE BORDER WIDTH="60%" >
+<TR>
+<TD> <DIV ALIGN=right><B>Assigned:</B></DIV> </TD>
+<TD>February 18, 2000</TD> </TR>
+
+<TR>
+<TD> <DIV ALIGN=right><B>Due Date:</B></DIV> </TD>
+<TD>March 9, 2000</TD> 
+</TR>
+
+<TR>
+<TD> <DIV ALIGN=right><B>Purpose:</B></DIV> </TD>
+<TD>Subroutines, Recursive algorithms, User I/O.</TD>
+</TR>
+
+<TR>
+<TD> <DIV ALIGN=right><B>Points:</B></DIV> </TD>
+<TD>50</TD>
+</TR>
+</TABLE></CENTER>
+
+<CENTER>&nbsp;</CENTER>
+
+<!-- Copyright 1996-1999, John W Lockwood, All rights reserved
+     For usage information: contact lockwood@ipoint.vlsi.uiuc.edu or visit
+     http://ipoint.vlsi.uiuc.edu/~lockwood/
+-->
+
+<H2>Introduction</H2>
+In this MP we will investigate two sorting algorithms: The heap sort
+and an implementation of the recursive quick sort.  We will then track
+these sorting algorithms by outputting textual information to the user
+so he can verify that not only does our sort finish correctly, it does
+so by performing the proper steps.
+
+<p>
+Imagine looking up a telephone number in an unsorted telephone book.
+Without having the data sorted, it would be necessary to scan though all
+of the names in the book just to find an individual listing.  Searches
+and queries for data can be performed far more quickly when the data set
+we are searching through is in a known order.
+<p>
+
+Now imagine having the task of sorting all the names in the telephone
+book.  Each step of the process involves comparing a pair of names and
+determining which name should be listed before the other.  In the
+algorithms like the heap sort and the quick sort, the running time of
+the sort increases proportional to n * log(n), where n is the number of
+items being sorted.  However, the proportionalities depend on both the
+implementation of the algorithm and the data upon which the algorithm is
+being performed.
+
+<P>
+<H2>
+Sorting Algorithms: Heap Sort</H2>
+The heap sort is a good choice in many situations, as it always performs
+in O(n * log(n)) comparisons. It is based on the idea of partially
+ordering a binary tree in O(n) comparisons, and then retrieving the top
+element n times in an O(log(n)) operation.  Thus its best, worst, and
+average running times are proportional to n * log(n).
+
+<P>
+To perform the heapsort, one must first have a representation of the
+heap.  The most convenient representation for our purposes is that of a
+linear array, as shown in Figure 1.  This has the advantages of being
+able to always find a node's parent and children via simple math
+applications on the indices. In our case, for a given node i, its children
+are indexed as 2 * i and 2 * i + 1. <i>Note that array[0] is left unused</i>.
+
+<div align='center'><img src='heap-tree.jpg' alt='Pictorial: Binary-Tree interpretation of an Array' width="378" height="270"></div>
+
+<P>
+The rules of a Heap dictate that a parent must always be of a larger
+value than its children. Since our initial array is not guaranteed to
+follow this rule, we must first turn the array into a valid heap. To do
+this, we follow these pseudocode operations:
+
+<div align='center'><table border><tr><td>
+for <tt>i</tt> = <tt>heapsize</tt>/<tt>2</tt> downto <tt>1</tt><br>
+&nbsp;&nbsp;PercolateDown(<tt>i</tt>,<tt>heapsize</tt>)<br>
+end for
+</td></tr></table></div>
+
+<p>
+Then we must iterate through, removing the top element and placing it at
+the endmost available position in our list, in the following manner:
+
+<div align='center'><table border><tr><td>
+for <tt>i</tt> = <tt>heapsize</tt>-<tt>1</tt> downto <tt>1</tt><br>
+<font color='blue'>; place largest unsorted element in
+                     sorted position</font><br>
+&nbsp;&nbsp;SWAP(Node(<tt>1</tt>), Node(<tt>i</tt>+<tt>1</tt>))<br>
+&nbsp;&nbsp;PercolateDown(<tt>1</tt>,<tt>i</tt>)<br>
+end for
+</td></tr></table></div>
+
+<p>
+These are only valid with the proper PercolateDown function. It is used
+to fix a heap with a known abberancy to the rules.  In our case, it will
+always be a smaller value as a parent to a larger value. To return the
+structure to a valid heap, merely compare with its children, swap as
+necessary, and follow it down the tree. Note that the heapsize gets smaller
+with every iteration. Pseudocode follows:
+
+<div align='center'><table border>
+<caption>PercolateDown(<tt>k</tt>,<tt>heapsize</tt>)</caption><tr><td>
+<font color='blue'>; <tt>heapsize</tt> is the current heapsize,<br>
+; which <strong>changes</strong> during the sorting iterations.</font><br>
+while <tt>k</tt> &lt;= <tt>heapsize</tt>/<tt>2</tt><br>
+&nbsp;&nbsp;<font color='blue'>; we have to also make sure if child2 exists or not</font><br>
+&nbsp;&nbsp;if child1(<tt>k</tt>) &gt;= child2(<tt>k</tt>) <tt>or</tt> (<tt>k</tt>*<tt>2</tt> = <tt>heapsize</tt>) then<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<tt>c</tt> = <tt>k</tt>*<tt>2</tt><br>
+&nbsp;&nbsp;else<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<tt>c</tt> = <tt>k</tt>*<tt>2</tt>+<tt>1</tt><br>
+&nbsp;&nbsp;end if<br>
+&nbsp;&nbsp;if node(<tt>k</tt>) &lt; node(<tt>c</tt>) then<br>
+&nbsp;&nbsp;&nbsp;&nbsp;SWAP(Node(<tt>k</tt>), Node(<tt>c</tt>))<br>
+&nbsp;&nbsp;&nbsp;&nbsp;k = c<br>
+&nbsp;&nbsp;else<br>
+&nbsp;&nbsp;&nbsp;&nbsp;break<br>
+&nbsp;&nbsp;end if<br>
+end while<br>
+</td></tr></table></div>
+
+<H2>
+Sorting Algorithms: Quick Sort</H2>
+We now look at a recursive sorting technique called Quick Sort.
+The basic algorithm for an array of integers is as follows:
+<OL>
+<LI>
+
+<I>Partitioning Step:</I>&nbsp; Choose an element of the original array
+of values (call it the <i>pivot</i>) and determine its final location in
+the sorted array.  This is done by moving all values which are less than
+the pivot to the left side of the array, and all values which are
+greater than the pivot to the right side of the array. We now have one
+element in its proper location and two unsorted sub arrays.</LI>
+
+<LI>
+<I>Recursive Step:</I> Perform step 1 on each unsorted array.</LI>
+</OL>
+Each time step 1 is performed on a sub array, another element is placed
+in its final location of the sorted array, and two unsorted sub arrays
+are created. When a sub array consists of one element, it must be
+sorted, therefore that element is in its final location. 
+
+<P>The basic algorithm seems simple enough, but there are two things we
+must decide how to do first:
+<ul>
+<li><i>Choose a Pivot</i>
+The choice of a pivot is important.  The optimal choice is the element
+which is sorted to the middle of the array, as this leads to an n * log(n)
+running time.  A bad choice for the pivot is an element which is placed
+at one end of the array, as that leads to an n<sup>2</sup> running time.
+See if you can visualize why, or ask a TA.</li>
+<li><i>Find the final position of the pivot in the array</i>
+How do we do this? As an example, consider the following set of values
+(the element in bold is the pivot -- it will be placed in its final
+position in the sorted array):
+</ul>
+
+<TABLE BORDER>
+<TR>
+<TD><TT><B>37</B></TT></TD>
+<TD><TT>&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp; 6&nbsp;&nbsp;&nbsp;
+4&nbsp;&nbsp; <font color='blue'>89</font>&nbsp;&nbsp;&nbsp; 8&nbsp;&nbsp; 10&nbsp;&nbsp; <font color='red'>12</font>&nbsp;&nbsp;
+68&nbsp;&nbsp; 45&nbsp;</TT></TD>
+</TR>
+</TABLE>
+
+Starting from the rightmost element of the array, compare each element
+to <B>37</B> until an element less than <B>37</B> is found, then
+starting from the left, compare each element to 37 until an element
+greater than <b>37</b> is found. Make sure the elements you are
+comparing do not cross.  Then swap both of these elements.  The first
+element from the right less then <B>37</B> is <font
+color='red'>12</font>, and the first element from the left greater than
+<B>37</B> is <font color='blue'>89</font>.  Thus <font
+color='red'>12</font> and <font color='blue'>89</font> are swapped. The
+new array is:
+
+<BR>&nbsp;
+<TABLE BORDER>
+<TR>
+<TD><TT><B>37</B></TT></TD>
+<TD><TT>&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp; 6&nbsp;&nbsp;&nbsp;
+4&nbsp;&nbsp; <font color='red'>12</font>&nbsp;&nbsp;&nbsp;
+8&nbsp;&nbsp; 10&nbsp;&nbsp; <font color='blue'>89</font>&nbsp;&nbsp;
+68&nbsp;&nbsp; 45&nbsp;</TT></TD>
+</TR>
+</TABLE>
+
+Then, repeat this step, starting with the elements inward from those you
+just swapped.  In this case, the first element less than <b>37</b> is
+<font color='red'>10</font>, and the first element greater than <b>37</b>
+does not occur before your indices cross.  Because your indices
+crossed, it means your array is partitioned.  Now you must insert
+<b>37</b> in its sorted position, and recurse on each of the two
+subarrays.
+
+<BR>&nbsp;
+<TABLE BORDER>
+<TR>
+<TD><TT>&nbsp; 2&nbsp;&nbsp;&nbsp; 6&nbsp;&nbsp;&nbsp;
+4&nbsp;&nbsp; 12&nbsp;&nbsp;&nbsp;
+8&nbsp;&nbsp; <font color='red'>10</font>&nbsp;&nbsp; </TT></TD>
+<TD><TT><B>37</B></TT></TD>
+<TD><TT>&nbsp;&nbsp;89</font>&nbsp;&nbsp;
+68&nbsp;&nbsp; 45&nbsp;</TT></TD>
+</TR>
+</TABLE>
+
+Now we will examine how to choose the pivot, and recurse into the left
+partition of the array.
+
+<p>
+While finding the median element makes for the best case of QuickSort,
+finding the median element takes more comparisons than is desirable.
+Similarly, just choosing the first element will cause a sorted list to
+take O(n<sup>2</sup>) comparisons to change nothing - merely verifying
+the list is already sorted.
+
+<p>
+What we will do is take the median of three elements - the first, the
+last and the middle (rounded to the front) element.  This is a
+convenient merging of the ideals in keeping the QuickSort efficient.
+Now we will descend into the left partition of the previous array:
+
+<BR>&nbsp;
+<TABLE BORDER>
+<TR><TD>
+ <TABLE BORDER><TR><TD><TT>&nbsp; <font
+ color='blue'>2</font>&nbsp;&nbsp;&nbsp; 6&nbsp;&nbsp;&nbsp; <font
+ color='blue'>4</font>&nbsp;&nbsp; 12&nbsp;&nbsp;&nbsp; 8&nbsp;&nbsp;
+ <font color='blue'>10</font>&nbsp;&nbsp; </TT></TD></TR></TABLE>
+</TD><TD><TT><B>37</B></TT></TD>
+<TD><TT>&nbsp;&nbsp;89</font>&nbsp;&nbsp; 68&nbsp;&nbsp;
+45&nbsp;</TT></TD></TR></TABLE>
+
+The median of <font color='blue'>2</font>, <font color='blue'>4</font>,
+and <font color='blue'>10</font> is <font color='blue'>4</font> so we
+use <b>4</b> as our pivot.
+
+<BR>&nbsp;
+<TABLE BORDER>
+<TR><TD>
+ <TABLE BORDER><TR><TD><TT><b>4</b></TT></TD><TD><TT>&nbsp; <font
+ color='red'>2</font>&nbsp;&nbsp;&nbsp; <font
+ color='blue'>6</font>&nbsp;&nbsp;&nbsp; 12&nbsp;&nbsp;&nbsp;
+ 8&nbsp;&nbsp; 10&nbsp;&nbsp; </TT></TD></TR></TABLE>
+</TD><TD><TT><B>37</B></TT></TD>
+<TD><TT>&nbsp;&nbsp;89</font>&nbsp;&nbsp; 68&nbsp;&nbsp;
+45&nbsp;</TT></TD></TR></TABLE>
+
+Comparing from the right, we find <font color='red'>2</font> as the
+first element less than <b>4</b>.  From the left we find <font
+color='blue'>6</font> as the first element less than <b>4</b>.  But
+since our indices crossed, we know that the partitions are sorted, and
+we are ready to place <b>4</b> in its sorted position, and recurse
+again.
+
+<BR>&nbsp;
+<TABLE BORDER>
+<TR><TD>
+ <TABLE BORDER><TR><TD><TT> &nbsp; 2 &nbsp;
+ </TT></TD><TD><TT><b>4</b></TT></TD><TD><TT>&nbsp; 6&nbsp;&nbsp;&nbsp;
+ 12&nbsp;&nbsp;&nbsp; 8&nbsp;&nbsp; 10&nbsp;&nbsp;
+ </TT></TD></TR></TABLE>
+</TD><TD><TT><B>37</B></TT></TD>
+<TD><TT>&nbsp;&nbsp;89</font>&nbsp;&nbsp; 68&nbsp;&nbsp;
+45&nbsp;</TT></TD></TR></TABLE>
+
+Recursing once again we find an array of one element, which is by
+definition sorted.  Thus the recursion on this side is done.
+
+<BR>&nbsp;
+<TABLE BORDER>
+<TR><TD>
+ <TABLE BORDER><TR><TD><TABLE BORDER><TR><TD><TT><B>2</B></TT></TD><TR></TABLE></TD>
+ <TD><TT><b>4</b></TT></TD><TD><TT>&nbsp; 6&nbsp;&nbsp;&nbsp;
+ 12&nbsp;&nbsp;&nbsp; 8&nbsp;&nbsp; 10&nbsp;&nbsp;
+ </TT></TD></TR></TABLE>
+</TD><TD><TT><B>37</B></TT></TD>
+<TD><TT>&nbsp;&nbsp;89</font>&nbsp;&nbsp; 68&nbsp;&nbsp;
+45&nbsp;</TT></TD></TR></TABLE>
+
+<h3>QuickSort Pseudocode</h3>
+For this MP, we shall choose the first element as our pivot. Thus, implementation will
+require only one step. This is as follows, in pseudocode:
+
+<!--
+<div align='center'><table border><caption>Find Pivot</caption>
+<tr><td>
+<tt>middle</tt> = <tt>1</tt>+<tt>size</tt>/<tt>2</tt><br>
+if Element(<tt>1</tt>) &gt; Element(<tt>size</tt>) then<br>
+&nbsp;&nbsp;&nbsp;Swap (Element(<tt>1</tt>)), Element(<tt>size</tt>))<br>
+End if<br>
+if Element(<tt>middle</tt>) &gt; Element(<tt>size</tt>) then<br>
+&nbsp;&nbsp;&nbsp;Swap (Element(<tt>middle</tt>), Element(<tt>size</tt>))<br>
+&nbsp;&nbsp;&nbsp;Swap (Element(<tt>middle</tt>), Element(<tt>size</tt> - <tt>1</tt>))<br>
+else if Element(<tt>size</tt>) &lt; Element(<tt>1</tt>) then<br>
+&nbsp;&nbsp;&nbsp;Swap (Element(<tt>middle</tt>), Element(<tt>1</tt>))<br>
+&nbsp;&nbsp;&nbsp;Swap (Element(<tt>middle</tt>), Element(<tt>size</tt> - <tt>1</tt>))<br>
+else<br>
+&nbsp;&nbsp;&nbsp;Swap (Element(<tt>middle</tt>), Element(<tt>size</tt> - <tt>1</tt>))<br>
+End if
+</td></tr></table></div>
+This algorithm accomplishes two things - it sorts the three elements it
+compares, and places the pivot in the <tt>size</tt>-<tt>1</tt> location.
+-->
+
+<div align='center'><table border><caption>Partition(<tt>left</tt>,<tt>right</tt>)</caption>
+<tr><td>
+if <tt>left</tt> &lt <tt>right</tt> then<br>
+&nbsp;&nbsp;&nbsp;<tt>front</tt> = <tt>left</tt><br>
+&nbsp;&nbsp;&nbsp;<tt>end</tt> = <tt>right</tt>+<tt>1</tt><br>
+&nbsp;&nbsp;&nbsp;<tt>pivot</tt> = value (<tt>left</tt>)<br>
+&nbsp;&nbsp;&nbsp;do<br> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;do<br> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<tt>front</tt> = <tt>front</tt> + <tt>1</tt><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;while value (<tt>front</tt>) &lt; <tt>pivot</tt><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;do<br> 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<tt>end</tt> = <tt>end</tt> - <tt>1</tt><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;while value (<tt>end</tt>) &gt; <tt>pivot</tt><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if <tt>front</tt> &lt; <tt>end</tt> then<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SWAP (<tt>front</tt>, <tt>end</tt>)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;end if<br>
+&nbsp;&nbsp;&nbsp;while <tt>front</tt> &lt; <tt>end</tt><br> 
+&nbsp;&nbsp;&nbsp;SWAP (<tt>left</tt>, <tt>end</tt>)<br>
+&nbsp;&nbsp;&nbsp;Quicksort (<tt>left</tt>, <tt>end</tt>-<tt>1</tt>)<br>
+&nbsp;&nbsp;&nbsp;Quicksort (<tt>end</tt>+<tt>1</tt>, <tt>right</tt>)<br>
+end if
+</td></tr></table></div>
+
+This partitions the two halves, and recursively calls quicksort on each
+half.  Note that they halves are not always even, and that a partition
+of size one is by definition sorted.
+
+<H1>Problem Description</H1>
+
+<div align='center'><img src='screen-shot.jpg' alt='Pictorial: MP4 - Sorting Efficiency' width="651" height="331"></div>
+
+<br>You must implement the two sorts described above.  This will allow you to verify for
+yourself the efficiency differences between HeapSort and QuickSort.
+
+<P>
+The simple quicksort assumes the first element in the list as the pivot.  It's biggest downfall
+is the case of an already sorted list.  This is acceptable for our purposes.  Rather than finding
+the median of three as your pivot, just perform the comparisons and swaps as described above, but
+with the pivot in the first position.  When it completes, swap the pivot with the last of the elements
+less than or equal to it.  Then recurse.
+
+<H2>The Procedures</H2>
+You will implement the following procedures:
+<H3>
+TakeInput</H3>
+
+<UL><B>Inputs:</B> none
+<BR><B>Outputs:</B> input string written to <tt>Input</tt>, with '$' after last
+<UL><LI>CF = 1 if ESC was pressed</LI></UL>
+input character
+<BR><B>Purpose:</B>
+<BR>Handle user input with calls to KBDIN and DSPOUT.  Make sure you
+handle the following:
+<UL>
+<LI>Backspacing, but only to the beginning of the line.
+<LI>Don't overfill the buffer, but make sure to allow Backspacing.
+<LI><tt>INPUT_SIZE</tt> holds the size of the buffer.</UL>
+Return when either ESC or RETURN is pressed.
+</UL>
+
+
+<H3>
+GetArray</H3>
+
+<UL><B>Inputs:</b> input string
+<UL><LI>BX = offset of first letter (in <tt>Input</tt>) to be part of the array)</UL>
+<B>Outputs: </B>
+<ul><li>unsorted array in <tt>list</tt>
+<li><tt>list_size</tt> set to the number of elements
+<li>comparison, swap counters zeroed</ul>
+<B>Purpose:</B>
+<BR>Copies the user-input characters into <tt>list</tt> starting from index <tt>1</tt> and sets
+<tt>list_size</tt> accordingly.  Ignore all spaces.  The string ends with '$'.
+</UL>
+
+<H3>
+Percolate</H3>
+
+<UL><B>Inputs: </B>unsorted array, list_size
+<UL><LI>[BP+4] = index of the root of the Heap (assuming a push BP like in the lecture notes)
+    <LI>[BP+6] = Size of Heap. (assuming a push BP like in the lecture notes)
+</UL>
+<B>Outputs:</B> heapified array, number of swaps and comparisons
+<BR><B>Purpose:</B>
+<BR>Performs a percolate down, used both to form a heap, and reheapify
+the heap after each element is pulled off.
+following the guidelines illustrated in the pseudocode above.
+<BR><B>Hints:</B> Children of n are at (2n) and (2n+1)
+</UL>
+
+<H3>
+SortHeap</H3>
+
+<UL><B>Inputs: </B>heap array, list_size
+<BR><B>Outputs: </B>sorted array, number of swaps and comparisons
+<BR><B>Purpose:</B>
+<BR>
+First, iterate backwards through your array to perform a BuildHeap operation.
+Then iterate through the heap, removing the largest element and placing
+at the end of the array, as in the pseudocode above.  This results in a
+sorted list.  Then call Percolate to fix your heap.
+</UL>
+
+<H3>
+QuickSort</H3>
+
+<UL><B>Inputs:</B> unsorted array, size
+<UL><LI>[BP+4] = index of left side of partition (assuming a push BP like in the lecture notes)
+    <LI>[BP+6] = index of right side of partition (assuming a push BP like in the lecture notes)
+</UL>
+<B>Outputs:</B> sorted array, number of swaps and comparisons
+<BR><B>Purpose:</B>
+<BR>Use the first element as a pivot and perform a quicksort iteration,
+recursively calling QuickSort unless the partition is verified as sorted.
+Use the method in main for calling QuickSort recursively.  When your left index is above or equal
+to your right index, QuickSort is done.
+<BR><B>Hints:</B> SI and DI are your friends.
+</UL>
+
+<H3>
+PrintList</H3>
+<UL><B>Inputs:</B> <tt>dbug</tt>, <tt>list</tt> and <tt>list_size</tt>
+<BR><B>Outputs:</B> Space separated printout of list values
+<BR><B>Purpose:</B>
+<BR>
+Provide user feedback by showing the current state of the list if
+<tt>dbug</tt> is non-zero.  Wait for user input if <tt>dbug</tt> = 2.
+Called from Swap Macro.
+</UL>
+
+<H3>
+Hints &amp; Observations</H3>
+<UL>
+<LI>
+Remember when performing SortHeap that the size of the heap shrinks by
+one, every iteration.  Correspondingly, the largest remaining element is
+placed one position earlier every iteration.
+
+<LI>
+Use shifts instead of MUL and DIV when appropriate.
+
+<LI>
+The array is being indexed starting with one.  This means we are wasting an array location at
+the beginning and the heap has children of Node n at Nodes (2n) and (2n+1)..  Don't forget this
+ if you are using any library functions.
+</UL>
+
+<H3>
+<B>Macros</B></H3>
+
+<UL><B>Purpose:</B>
+<BR>Macros lead to more understandable and often more efficient code.
+<BR>Use macros for the following operations:
+<BR>
+<UL>
+<LI><B>Compare:</B>
+<UL><LI>Increment Comparison count variable
+    <LI>If printing debugging information, output "Comparing <i>a b</i>"
+    <LI>Return comparison flags</UL>
+<LI><B>Swap:</B>
+<UL><LI>Increment Swap count variable
+    <LI>If printing debugging information, output "Swapping <i>a b</i>, and call PrintList"
+    <LI>Swap the actual locations
+    <LI>Note: you have to make sure that your macro will handle any way
+    that it is called.  As you control these, it shouldn't be a problem.</UL>
+</UL></UL>
+
+
+<H2>Scoring</H2>
+
+
+
+<UL>Points will be awarded for completion of each of these subroutines.
+Your subroutines must perform all the functions of the library routines,
+and must be interchangeable with them in order to receive full credit.
+Macros must be used, but are not explicitly given a point value.
+The point values for each subroutine are listed below:
+
+ <P><B>TakeInput:</B> 8 pts
+<BR><B>GetArray:</B>  6 pts
+<BR><B>Percolate:</B> 9 pts
+<BR><B>SortHeap</B>:  8 pts
+<BR><B>QuickSort:</B> 9 pts
+<BR><B>Compare Macro:</B> 4 pts
+<BR><B>Swap Macro:</B> 4 pts
+<BR><B>PrintList:</B> 2pts
+</UL>
+
+<H2>Gold Star</H2>
+
+<UL>You can earn a gold star for programming excellence on this MP!  It's
+not worth any additional points, but it's a chance to show off your programming
+skills to the TAs.  To earn a gold star, you need to implement the Introsort
+algorithm as described by David R. Musser in his paper <A href="http://www.cs.rpi.edu/~musser/gp/index_1.html">
+Introspective Sorting and Selection Algorithms</A>.
+<P>Introsort is similar to Quicksort:
+it has an equally simple inner loop, and is as fast as quicksort for almost all input sequences;
+it is never more than a few percent slower. Introsort, however, has the property that its
+complexity is always O(N log N). Unlike quicksort, introsort is suitable for applications
+where it is important to have a guaranteed upper bound on complexity.
+<P>
+We're very much looking forward to seeing your implementation!
+</UL>
+
+<H2>Preliminary Procedure</H2>
+
+<UL>
+<LI>
+Copy the empty MP2 program (MP2.ASM), libraries (libmp2.lib, lib291.lib),
+and Makefile from the network drive to your home directory with the following
+command:</LI>
+
+<BR><TT>xcopy /s V:\ece291\mp2 W:\mp2</TT><br>
+or download the same files from the web as <a href="mp2.zip">mp2.zip</a>.
+<LI>
+As with the other MP's, run NMake to build an executable program using
+the given MP2 library functions.</LI>
+
+<LI>
+To receive full credit for the assignment, you need to implement each of
+the subroutines described above with your own code. As given, the
+MP2.ASM file will run the library versions of those subroutines</LI>
+
+<LI>
+As with the other MP's, use CodeView to debug your program</LI>
+</UL>
+
+<H2>
+Final Steps</H2>
+
+<OL>
+<LI>
+Demonstrate MP2.EXE to a TA or to the instructor.&nbsp; You will then be
+asked to recompile and demonstrate MP2 with different inputs, as well as
+perform a comparison of the outputs of the test cases.
+Your program must work for all different values of these
+variables.&nbsp; Once approved, you are ready to turn in your program.</LI>
+
+<LI>
+Be prepared to answer questions about any aspect of the operation of your
+program.&nbsp; The TA's will not accept an MP if you cannot fully explain
+the operation of your code.</LI>
+
+<LI>
+Copy you programs to the handin floppy: <TT>A:\HANDIN <I>YourNetID</I></TT></LI>
+
+<LI> Print MP2.ASM.  Use GreenPrint to save paper.</LI>
+</OL>
+
+<HR WIDTH="100%">
+<H2><a href='mp2.asm'>MP2.ASM</a> (Program framework)</H2>
+</HTML>

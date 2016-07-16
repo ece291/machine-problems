@@ -1,0 +1,257 @@
+<HTML>
+<HEAD>
+   <TITLE>ECE291 Machine Problem 1</TITLE>
+</HEAD>
+<BODY>
+
+<TABLE CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TD align=left   width=33%>ECE291</TD>
+
+<TD align=center width=34%>Computer Engineering II</TD>
+
+<TD align=right  width=33%>Moorman, Summer 1998</TD>
+</TR>
+</TABLE>
+
+<H1 ALIGN=CENTER>Machine Problem 1: Grading Report</H1>
+
+<CENTER><P><I><FONT SIZE=-1>Please print this page and provide it to the
+TA when you demonstrate your machine problem. <BR>
+When you submit this, the TA should: <BR>
+check your solutions, <BR>
+ask a random question that tests your understanding of the MP,<BR>
+assign points for each item on the list,<BR>
+check the 'Demo' box, <BR>
+assign bonus/penalty points,<BR>
+and provide the floppy for electronic handin.<BR>
+This page should be stapled to the front of your MP1 assignemnt. </FONT></I></P></CENTER>
+
+<CENTER><P><FORM></P></CENTER>
+
+<CENTER><TABLE CELLPADDING=7 >
+<TR>
+<TD>
+<TABLE>
+<TR>
+<TD align=right>Name: </TD>
+
+<TD><INPUT name="name" size=30></TD>
+</TR>
+
+<TR>
+<TD align=right>Date Submitted: </TD>
+
+<TD><INPUT name="submitted" size=20></TD>
+</TR>
+
+<TR>
+<TD align=right>Demo To: </TD>
+
+<TD><INPUT name="demoto" size=6>Graded By: <INPUT name="gradedby" size=6></TD>
+</TR>
+</TABLE>
+</TD>
+
+<TD>
+<TABLE BORDER=1 >
+<TR>
+<TD><INPUT type=checkbox name="gradebook">Handin to floppy </TD>
+</TR>
+
+<TR>
+<TD><INPUT type=checkbox name="gradebook">Score recorded </TD>
+</TR>
+
+<TR>
+<TD><INPUT type=checkbox name="gold_star">Gold Star<BR>
+<I>Programming Excellence</I></TD>
+</TR>
+</TABLE>
+</TD>
+</TR>
+</TABLE></CENTER>
+
+<P><INPUT type="checkbox">Completed Checksheet. (Grader will give you this
+when you turn it in.)</P>
+
+<P></FORM></P>
+
+<TABLE BORDER=1 CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TH>Category</TH>
+
+<TH>Points</TH>
+
+<TH>Min</TH>
+
+<TH>Max</TH>
+</TR>
+
+<TR>
+<TD><B>StringCopy</B> 
+<UL>
+<LI>Copies string from source to destination.</LI>
+<LI>Copies CX number of bytes.</LI>
+<LI>Does NOT alter other registers.</LI>
+<LI>Terminates destination string with '$'.</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>5</TD>
+</TR>
+
+<TR>
+<TD><B>DisplayFile</B> 
+<UL>
+<LI>Prints the file to the screen.</LI>
+<LI>Pauses every <tt>PauseLength</tt> lines.</LI>
+<LI>Does NOT alter other registers.</LI>
+<LI>Works for the range from SI to DI.</LI>
+<LI>Works for different files.</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>10</TD>
+</TR>
+
+<TR>
+<TD><B>Statistics</B> 
+<UL>
+<LI>Properly displays statistics to the screen.</LI>
+<LI>Correctly calculates and prints:</LI>
+        <ul>
+        <li>File Length
+        <li>Number of Characters
+        <li>Number of Words
+        </ul>
+<LI>Uses Binasc to convert numbers.</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>14</TD>
+</TR>
+
+<TR>
+<TD><B>Count</B> 
+<UL>
+<LI>Correctly counts the number of times &lt string &gt appears in the 
+	file.</LI>
+<LI>Results are properly displayed to the screen.</LI>
+<LI>Uses SI and BX for offsets of string and file, respectively.</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>5</TD>
+</TR>
+
+<TR>
+<TD><B>Find</B> 
+<UL>
+<LI>Correctly finds each occurrence of the &lt string &gt.</LI>
+<LI>Displays file to screen, pausing on each find.</LI>
+<LI>Uses SI and BX for offsets of string and file, respectively.</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>8</TD>
+</TR>
+
+<TR>
+<TD><B>Replace</B> 
+<UL>
+<LI>Correctly finds each occurrence of &lt string1 &gt.</LI>
+<LI>Displays file to screen, pausing on each find.</LI>
+<LI>Replaces &lt string1 &gt with &lt string2 &gt when displayed to the screen.</LI>
+<LI>Uses DI, SI, and BX for offsets of strings and file, respectively.</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>8</TD>
+</TR>
+
+
+<TR>
+<TD><B>Functionality SubTotal</B> </TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>50</TD>
+</TR>
+
+
+<tr><td><b>Comments</b> <i>(* percentage of code written)</i> <br>
+  <ul>
+  <li>Clear and precise line & procedure comments <Br>
+      (describes all major routines): -0
+  <li>Sports Announcer comments (line-by-line): -1
+  <li>Unclear comments: -1
+  <li>Sparse comments: -3
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>Technique & Style</b>  <i>(* percentage of code written)</i><br>
+  <ul>
+  <li>Compact and Efficient code: -0
+  <li>Contains repeated code (lacks loops): -3 
+  <li>Makes poor use of registers and/or variables: -2 <Br>
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>I/O Specs & Modularity</b> <i>(* percentage of code written)</i> <br>
+  <ul>
+  <li>Violates specifications for given subroutines: -5
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>Penalty/Bonus</b> <br>
+    <i>Before 5pm, Fri 6/26/98: +1 pt/weekday</i><br>
+    <i>After 5pm, Fri 6/26/98: -10 pts/weekday </i>
+    </td><td><pre> </pre></td><td>-50</td><td>5</td></tr>
+
+<tr><td><b>Total</b> </td><td><pre> </pre></td>  <td>0</td><td>55</td></tr>
+
+</TABLE>
+
+</BODY>
+</HTML>

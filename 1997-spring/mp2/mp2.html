@@ -1,0 +1,575 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 2</title>
+</head>
+
+<body bgcolor=ffffff>
+<p>
+<table cellpadding=3 width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Lockwood, Spring 1997</td></tr></table>
+<h2> </h2>
+<center><h1>Machine Problem 2: The Little (Visiting Assistant) Professor</h1>
+</center>
+
+<p>
+<!--
+<img src="../../icon/construct.gif" align=center>This MP is under construction
+-->
+
+<p>
+<center><table border=1 cellpadding=3 width=60%>
+  <tr><td align=right><b>Assigned</b></td>      <td>Tuesday 2/11/97</td></tr>
+  <tr><td align=right><b>Due Date</b></td>      <td>Friday 2/21/97</td></tr>
+  <tr><td align=right><b>Purpose</b></td><td>
+     Learn to program and debug modular assembly code.<br>
+     Practice coding arithmetic and logical operations.<br>
+     Communicate with a human via text-based I/O.
+     </td></tr>
+   <tr><td align=right><b>Points</b></td><td>50</td></tr>
+</table>
+</center>
+
+<h2>Introduction</h2>
+The <i>Little Professor</i> was a handheld 
+device developed by Texas Instruments that helped young
+students learn arithmetic by quizing them on basic math operations.
+In this machine problem, you will write the firmware 
+for a new device, called <tt> </tt>
+<i>The Little (Visiting Assistant) Professor</i>, 
+that helps older students sharpen their skills by quizing them
+on both arithmetic and logical operations.
+<p>
+This program automatically generates a sequence of ten quiz questions.
+Each question is in the form of:
+<blockquote>
+<i>Question: Num1 Operation Num2 = Result</i>
+</blockquote>
+The numbers (Num1 and Num2) and the operation are randomly chosen 
+by the program.  For each of the questions asked, the program calculates 
+the correct answer
+and compares this to the result provided by the user.  If the numbers
+match, the user is awarded a point.  If the results differ, the program
+displays the correct result but awards no points.  At the end
+of the program, the user is shown his or her score and is
+prompted to play again.
+
+<h2>Problem Description</h2>
+
+    The program supports multiple levels of difficulty.
+    Smaller numbers generated are generated at easy levels and
+    larger numbers are generated at more difficult levels.
+    A public, word-sized variable called <i>level</i> is read from the user
+    when the program begins.
+    The procedure <i>PickNum</i> and <i>PickOp</i> use 
+    modulo arithmetic with the variable <i>level</i> to
+    limit the range of the result.
+    <p> 
+    For each question, the program randomly selects  a mathematical
+    or logical operation.
+    At the level 0, only one of the 
+    four basic arithmetic operations can appear { + - * / }.
+    At all other levels, the program can also include 
+    the operations { % & | ^ } for the modulus operation (remainder),
+    logical AND, logical OR, and logical XOR. 
+
+<h2>Sample Output</h2>
+<ul>
+<li>Before you begin, be sure that you fully understand the assignment.
+    Perhaps the best way to understand how the program  works is 
+    to watch it operate.  
+    Visit the lab or download the code
+    and run the library-based MP2.EXE.
+    Try the game at different levels.  Hit 'ESC' at any time to quit.
+  <p>
+<li>Actual Output from Library-based MP2.EXE <tt>(MP2.OUT)</tt> <p>
+
+<table border=1 cellpadding=3><tr><Td>
+<font size=-1><xmp>
+--- Little (Visiting Assistant) Professor ---
+
+Select Difficulty Level 
+    0:Simple
+    1:Basic
+    2:Moderate
+    3:Rough
+    4:ECE291ish 
+  ESC:Quit
+1
+
+
+Question 1: 3 * 3 = 9
+Correct !
+
+Question 2: 4 - 6 = -2
+Correct !
+
+Question 3: 5 % 7 = 5
+Correct !
+
+Question 4: 8 / 6 = 1
+Correct !
+
+Question 5: 1 | 5 = 5
+Correct !
+
+Question 6: 8 & 6 = 0
+Correct !
+
+Question 7: 9 + 5 = 14
+Correct !
+
+Question 8: 8 ^ 6 = 14
+Correct !
+
+Question 9: 1 * 1 = 2
+Incorrect.  The answer is: 1
+
+Question 10: 8 - 7 = 4
+Incorrect.  The answer is: 1
+
+8 Points. 
+
+Select Difficulty Level 
+    0:Simple
+    1:Basic
+    2:Moderate
+    3:Rough
+    4:ECE291ish 
+  ESC:Quit
+
+LIBMP2 Calls: 
+-Random 
+-PickNum 
+-PickOp 
+-CalcResult 
+-ShowOp 
+-ReadNum 
+-CmpResult 
+-MainLib 
+
+DOSXIT: Exit to DOS
+</xmp></font>
+</table>
+</ul>
+
+<h2>Implementation</h2>
+The structure for this machine problem has already been defined to 
+consist of the subroutines listed below. 
+Once you understand the structure of the program, begin by coding the MAIN
+routine. 
+There are library routines for all functions.   You are encouraged
+to use these functions while you are debugging your code.
+<p>
+Once you have coded your own MAIN routine, you may write 
+the other routines in any order that you wish.  
+For all procedures, input and output values are passed to and from 
+the procedures via registers.
+If a register is not specified as an output, its value 
+should not be altered by the routine.  Use the stack to push
+and pop registers.
+
+<ul>
+<li><b>Main</b><br>
+  <ul>
+  <li>Using the routines described below, Implement the following
+      pseudocode in assembly:
+      <p>
+      <table border=1><Tr><td><font size=-1><xmp>
+ Print Welcome Message
+ Repeat {
+   Set Score=0
+   Print Level Message
+   Set Level=ReadNum   
+
+   For each question {
+     PickNum    ; Randomly generate first number
+     PickOp     ; Randomly select operation in {+,-,*,/,%,&,|,^}
+     PIckNum    ; Ramdomly generate second number (Repeat if Zero)
+     ShowOp     ; Prompt the user with the question
+     CalcResult ; Compute Correct Answer as DX = AX (op=BL) DX
+     ReadNum    ; Read the user's Answer
+     CmpResult  ; Compare Results and increment score if correct
+   }
+
+   Print Score
+ } Until End of Game
+      </xmp></font></td></tr></table>
+      <p>
+      Your code should replace the call to 'MainLib' in MP2.ASM. <br>
+      Your program output should should match MP2.OUT.
+  </ul>
+
+<p>
+
+<li><b>Random</b><br>
+  <ul>
+  <li>Inputs: None 
+  <li>Outputs: AX=Random number between 0 .. 2^16-1
+  <li>Uses and modifieds variable: <i>RandSeed</i>
+  <li>Summary: <p>
+    This routine generates and returns a pseudo-random number 
+    by multiplication and addition of large prime constants
+    to a random number.  The function is defined below:
+
+      <blockquote><i>R(1)=RandSeed <br> R(i+1) = RandSeed = ( K1 * R(i) + K2 ) 
+       % MaxValue </i></blockquote>
+    Where
+     <ul>
+     <li><i>R(i)</i> is the random value generated in the <i>i</i>-th call 
+         to the subroutine.   
+     <li><i>RandSeed</i> is a variable that holds the initial random value
+         and is updated with the result after each call to <i>Random</i>.  
+     <li><i>K1</i> and K2 are two large, prime-valued constants, defined as
+         55821 and 1 respectively.
+     <li><i>MaxValue</i> = 2^16-1 (0FFFFh)
+     </ul> 
+    Hints & Observations
+     <ul>
+     <li>The first call to <i>Random</i> returns the original random number seed
+     <li>Perform multiplication and division
+         using the 16-bit unsigned operations.  
+     </ul>
+   </ul>
+<p> 
+
+<li><b>PickNum</b><br>
+  <ul>
+  <li>Inputs: None
+  <li>Outputs: AX=Random number between 0 .. Range
+  <li>Uses Variable: <i>Level</i>
+  <li>Calls Routine: <i>Random</i>
+  <li>Summary: <p>
+     This routine returns a random number with a probability
+     density function evenly distributed over 0 .. <i>Range</i>.
+     <i>Range</i> is determined as a function of <i>Level</i>.
+     <i>Range</i> is smaller for easy levels and larger
+      for more difficult levels.  
+    Specifically, <i>Range</i> should be determined as follows: <p>
+
+    <table border=1>
+    <Tr><th>Level</th>
+        <th>Name</th>
+        <th>Range</th>
+    <tr><td>0<td>Simple<td>       0..   9</tr>
+    <tr><td>1<td>Basic<td>        0..   9</tr>
+    <tr><td>2<td>Moderate<td>     0..  15</tr>
+    <tr><td>3<td>Rough<td>        0..  99</tr>
+    <tr><td>4<td>ECE291ish<td>    0.. 181</tr>
+    </table><p>
+  
+    Hints
+    <ul>
+    <li>Use the modulus operation and the <i>Random</i> routine.
+    </ul> 
+  </ul>      
+<p> 
+
+<li><b>PickOp</b><br>
+  <ul>
+  <li>Inputs: None
+  <li>Outputs: BL=ASCII code for Randomly-chosen operation 
+  <li>Uses Variable: <i>Level</i>
+  <li>Calls Routine: <i>Random</i>
+  <li>Summary: <p>
+     This routine returns the ASCII value of
+     a randomly-chosen operation.  When <i>Level=0</i>,
+     the return value should be a random element in the
+     set of { + - * / }.  For more difficult levels, 
+     the set of possible operations should also include
+     { % & | ^ }.  
+  </ul>
+<p> 
+
+<li><b>CalcResult</b><br>
+  <ul>
+  <li>Inputs
+     <ul>
+     <li>AX=Num1
+     <li>BL=ASCII-coded operation
+     <li>DX=Num2
+   </ul>
+  <li>Outputs: DX = Result of Num1 (operation) Num2
+  <li>Summary: <p>
+     This procedure performs the operation
+     specified by BL on the numbers Num1 and Num2. <br>
+     The possible values of BL and their corresponding
+     operations are summarized below:
+     <p>
+    <table border=1>
+    <tr><th>Cmd</th><th>Description</th><th>Example</th></tr>
+    <tr><td><tt>+</tt> <td>Addition <td> Num1 + Num2 </tr>
+    <tr><td><tt>-</tt> <td>Subtraction<td> Num1 - Num2 </tr>
+    <tr><td><tt>*</tt> <td>Multiplication<td> Num1 * Num2 </tr>
+    <tr><td><tt>/</tt> <td>Division<td> Num1 / Num2 </tr>
+    <tr><td><tt>%</tt> <td>Modulus (remainder)<td> Num1 % Num2 </tr>
+    <tr><td><tt>&</tt> <td>Logical AND<td> Num1 & Num2 </tr>
+    <tr><td><tt>|</tt> <td>Logical OR<td> Num1 | Num2 </tr>
+    <tr><td><tt>^</tt> <td>Exclusive OR (XOR)<td> Num1 ^ Num2 </tr>
+    </table> 
+    <p>
+
+  </ul>
+
+<p> 
+
+<li><b>ShowOp</b><br>
+  <ul>
+  <li>Inputs
+     <ul>
+     <li>AX=Num1
+     <li>BL=ASCII-coded operation
+     <li>CX=Qnum
+     <li>DX=Num2
+   </ul>
+  <li>Outputs: None
+  <li>Summary: <p>
+
+  This routine prints a message in the format of:
+
+  <blockquote>
+  <tt>Question </tt><i>Qnum</i><tt>: </tt><i>Num1 operation Num2</i>
+      <tt> = </tt>
+  </blockquote>
+  Refer to the sample output for examples. 
+</ul>
+
+<p> 
+
+<li><b>ReadNum</b><br>
+  <ul>
+  <li>Inputs: None (Reads keyboard)
+  <li>Outputs: AX=Number
+  <li>Calls Routines: Kbdin, Dspout
+  <li>Summary: <p>
+
+  This routine reads a number from the keyboard.  Your routine
+  must be as robust as the library routine given in LIBMP2.  
+  Specifically, <i>ReadNum</i> must: <p>
+  <ul>
+  <li>Process the backspace key (ASCII 8) to delete a character
+  <li>Allow for the input of negative ('-') numbers 
+  <li>Reject invalid user input.
+  <li>Call MP2XIT if ESC is pressed
+  </ul>
+</ul>
+<p>
+
+<li><b>CMPResult</b><br>
+  <ul>
+  <li>Inputs: 
+    <ul>
+    <li>AX=User's Answer
+    <li>DX=Computer's Answer
+    </ul>
+  <li>Outputs: None
+  <li>Uses and modifieds variable: <i>Score</i>
+  <li>Summary: <p>
+     If the user's answer equals the computer's answer, the routine
+      increments score and prints: <br>
+     <tt>Correct !</tt><br>
+     Otherwise, the computer displays: <br>
+     <tt>Incorrect.  The answer is: </tt><i>Result</i><br> 
+     where <i>Result</i> is the computer's answer.  <br>
+     See the sample output or run the game for examples.
+  </ul>
+
+</ul>
+
+<h2>Program Assignment</h2>
+  You will begin this machine problem with a fully functional 
+  program.  The main program is given below.  I have provided the
+  library routines for each of the subroutines.  You will
+  score points by replacing each library procedures with your own code.
+  Your score will be proportional to the percentage of the code
+  that you write yourself.  The breakdown in points is given below:
+  Your routine MUST perform all functions of the subroutine to 
+  obtain credit.
+  <ul>
+  <li>Main: 10 pts
+  <li>Random: 5 pts
+  <li>PickNum: 5 pts
+  <li>PickOp: 5 pts
+  <li>ShowOp: 5 pts
+  <li>ReadNum: 7 pts
+  <li>CalcResult: 8 pts
+  <li>CMPResult: 5 pts
+  </ul>  
+
+
+
+
+<h2>Preliminary Procedure</h2>
+<ul>
+<li>Copy the empty MP2.ASM framework, Makefile, 
+    sample output, library files (LIBMP2.LIB and LIB291.LIB),
+    and library-based MP2.EXE from the network drive 
+    to your home directory with the following command: <br>
+    <tt>xcopy /s E:\ece291\mp2 F:\mp2</tt>
+<li>Alternatively, if you are working from home,
+    click below to download<br> <a href="mp2.zip">mp2.zip</a> 
+<li>You can Assemble and link your program with 
+    the <tt> nmake</tt> command.  
+</ul>
+
+
+<h2>Final Steps</h2>
+<ol>
+<li>Demonstrate MP2.EXE to a TA or to the instructor.  
+    You will be asked to reassemble and demonstrate 
+    MP2 for all levels for multiple runs. 
+<li>Because the <i>Random</i> Routine uses a fixed seed, your
+    program should choose the exact same operations as the 
+    library version.
+<li>Have the TA execute the handin program from your machine.
+<li>Print MP2.ASM and give it to  
+    to the same TA which approved your 
+    demonstration.  Be sure that your name appears in your program.
+</ol>
+
+<hr>
+<h2>MP2.ASM</h2>
+<font size=-1><xmp>
+        PAGE 75, 132
+        TITLE ECE291:MP2:LProf - Your Name - Date
+
+COMMENT *
+        The Little (Visiting Assistant) Professor
+
+        This program automatically generates quiz questions to
+        teach basic arithmetic.  Both the numbers and the operations
+        are randomly chosen.  For each of the ten questions asked,
+        the program calculates the correct answer and compares this
+        to the user's response.  If the answers match, the user is
+        awarded a point.  The premis of this program is based
+        on a handheld device called 'The Little Professor' by
+        Texas Instruments.
+
+
+        ECE291: Machine Problem 2
+        Prof. John W. Lockwood
+        Unversity of Illinois, Dept. of Electrical & Computer Engineering
+        Spring 1997
+        *
+
+;====== Constants =========================================================
+
+CR      EQU 13
+LF      EQU 10
+ESCKEY  EQU 27
+SPACE   EQU 32
+QUIZLEN EQU 10 ; Number of questions in a quiz
+
+;====== Externals =========================================================
+
+; -- LIB291 Routines (Free) ---
+
+extrn kbdine:near, kbdin:near, dspout:near   ; LIB291 Routines
+extrn dspmsg:near, binasc:near, ascbin:near  ; (Always Free)
+
+; -- LIBMP2 Routines (Replace these with your own code) ---
+
+extrn MainLib:near    ; Comment out this line to add your own procudure
+extrn Random:near     ; Comment out this line to add your own procedure
+extrn PickNum:near    ; Comment out this line to add your own procedure
+extrn PickOp:near     ; Comment out this line to add your own procedure
+extrn CalcResult:near ; Comment out this line to add your own procedure
+extrn ShowOp:near     ; Comment out this line to add your own procedure
+extrn ReadNum:near    ; Comment out this line to add your own procedure
+extrn CmpResult:near  ; Comment out this line to add your own procedure
+
+extrn mp2xit:near ; Call this routine at end of the program
+
+;====== SECTION 3: Define stack segment ===================================
+stkseg  segment stack                   ; *** STACK SEGMENT ***
+        db      64 dup ('STACK   ')     ; 64*8 = 512 Bytes of Stack
+stkseg  ends
+
+;====== SECTION 4: Define code segment ====================================
+cseg    segment public                  ; *** CODE SEGMENT ***
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== Variables =========================================================
+
+RandSeed DW 13 ; Random Number Seed
+Score    DW  0 ; User's Score
+Level    DW  0 ; Difficulty Level
+
+PUBLIC RandSeed, Score, Level ; Must be visible to LIBMP2
+
+HelloMsg  db CR,LF,'--- Little (Visiting Assistant) Professor ---'
+          db CR,LF,LF,'$'
+LevelMsg  db 'Select Difficulty Level ',CR,LF
+          db '    0:Simple',CR,LF
+          db '    1:Basic',CR,LF
+          db '    2:Moderate',CR,LF
+          db '    3:Rough',CR,LF
+          db '    4:ECE291ish ',CR,LF
+          db '  ESC:Quit',CR,LF,'$'
+ScoreMsg1 db 'You Scored $'
+ScoreMsg2 db ' Points. ',CR,LF,'$'
+crlf DB CR,LF,'$' ; New Line
+pbuf db 7 dup(?)
+
+;====== Procedures ========================================================
+
+; Random PROC Near
+; =================================
+; ==  Put Your Random Code Here  ==
+; == and remove extern statement ==
+; =================================
+; Random ENDP
+
+; =================================
+; ==             ...             ==
+; ==   Put Other routines here   ==
+; ==             ...             ==
+; =================================
+
+;====== Main procedure ====================================================
+
+main    proc    far
+        mov     ax, cseg   ; Initialize DS register
+        mov     ds, ax
+
+;
+; -- Pseudocode for the main body of the program --
+;
+; Print Welcome Message
+; Repeat {
+;   Set Score=0
+;   Print Level Message
+;   Set Level=ReadNum   
+;
+;   For each question {
+;     PickNum    ; Randomly generate first number
+;     PickOp     ; Randomly select operation in {+,-,*,/,%,&,|,^}
+;     PIckNum    ; Ramdomly generate second number (Repeat if Zero)
+;     ShowOp     ; Prompt the user with the question
+;     CalcResult ; Compute Correct Answer as DX = AX (op=BL) DX
+;     ReadNum    ; Read the user's Answer
+;     CmpResult  ; Compare Results and increment score if correct
+;   }
+;
+;   Print Score
+;   
+; } Until End of Game
+
+        mov dx, offset HelloMsg
+        call DspMsg
+
+; ==============================
+; == Put Your Main Code Here ===
+; ==============================
+
+        call MainLib ; Remove this line to run your own MAIN code
+
+        call    mp2xit ; Exit to DOS
+main    endp
+ 
+cseg    ends
+        end     main
+
+</xmp></font>
+</body>

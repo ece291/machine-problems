@@ -1,0 +1,1647 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 4</title>
+</head>
+
+<body bgcolor=ffffff>
+<p>
+<table cellpadding=3 width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Moorman, Summer 1999</td></tr></table>
+<h2> </h2>
+
+
+<center><h1>Machine Problem 4/5: MarbleMaze </h1></center>
+<p>
+<center><table border=1 cellpadding=3 width=70%>
+  <tr><td align=right><b>Part I Due Date</b></td><td>Friday 7/23/99</td></tr>
+  <tr><td align=right><b>Part II Due Date</b></td><td>Wednesday 7/28/99</td></tr>
+  <tr><td align=right><b>Purpose</b></td><td>
+     VGA Graphics, Interrupts, Structures, Floating Point operations 
+     </td></tr>
+   <tr><td align=right><b>Points</b></td><td>100</td></tr>
+</table>
+</center>
+
+
+<p><center><img src="./mp4.jpg" width="654" height="461"></center><p>
+
+
+<h2>Introduction</h2>
+  In this dual MP we will be writing a program that allows two
+  marbles to navigate through a maze, racing against each other.
+  Our version will be a simplified model but will
+  perform accurate calculations for the marble movement
+  according to those fundamental physics equations you learned
+  so long ago.
+
+<p>
+  The main idea of the game is for each player to navigate the
+  marble to the bottom of the screen and get into the respective
+  basket.  A player can control the path of the marble by applying
+  a force to the marble in an upwards, left, or right direction.
+  The respective forces can only be applied when the marble is
+  in contact with a wall.
+<p>
+  There are only two marbles involved in the game.  The blue
+  marble is Player A and the red marble is Player B.  Each player
+  will navigate the maze using their respective keys to apply
+  forces.  The game can be exited at any time by pressing the 'ESC'
+  key.
+<p>
+  The game will use interrupts to perform some vital functions of the
+  program.  An interrupt timer is used so that certain events can
+  be coordinated with real time.  This includes the calculations for the
+  marble motion. An interrupt is also written for the keyboard for
+  instantaneous real time key response.
+<p>
+  The program will take care of updating the player movements as
+  the marbles navigate the maze.  These include the effect of
+  forces applied via the key presses and the force due to gravity.
+  The heart of the collision detection routine will be given to be
+  used freely, but the collision update will also be performed.
+<p>
+  This machine problem will also be capable of displaying different
+  mazes by using a map file called <tt>LEVEL.MAP</tt>.  This map is
+  used to display different block tiles to the screen.  The map is
+  actually larger than the viewable screen.  When the marbles get to
+  the bottom of the screen the map is scrolled upwards.
+<p>
+  Along with the game there is also a map editor supplied for creating
+  and changing the game maps.  This program can be used by running
+  the executable <tt>mapedit</tt> at the command prompt.
+
+<p>
+  Because of the number of routines involved in this MP, and the
+  short time duration, we will split it into two parts.  The
+  first part will effectively count as MP4 and the second part
+  as MP5.  This will then be worth a total of double MP points
+  (100).  You will have the opportunity to receive half
+  of those points at the first checkpoint (Part I (MP4) due date)
+  and the final half of the points at the second/final checkpoint
+  (Part II (MP5) due date).
+<p>
+  The second part of the MP will involve a routine of your
+  choice to enhance the quality of the game.  This will be
+  judged on complexity, efficiency, and overall quality.
+<p>
+  In the second part of the MP you will <b>NOT</b> be allowed to use
+  library routines for the procedures that you demonstrated during the
+  first checkpoint.  In other words at the second checkpoint all
+  routines should be your own.
+
+<h2>Implementation</h2>
+   Your implementation of this program should follow that of
+   the library code.  You will use mode 13h VGA graphics to
+   display the necessary graphics to the screen.  All game input
+   will be through the keyboard.  In this MP we will be
+   programming using the <tt>.486</tt> model.  With this
+   model we are able to use some things that we have not
+   had access to up to this point.  This includes access to
+   some extra segment registers
+   (GS and FS) which we will use in our graphics manipulation.
+
+<p>
+   Your program should do the following:
+   <ul>
+   <li>Display the 'BKGRND.PCX' file to the screen.
+   <li>Draw the MarbleMaze to the screen using the 'LEVEL.MAP' data file.
+   <li>Draw the two marbles onto their starting positions.
+   <li>Take user input to add forces to the respective marble.
+   <li>Update the marble positions according to the calculated
+       physics equations.
+   <li>Use the <tt>CollisionCore</tt> routine to determine if the
+       marble has collided.
+   <li>Update each players velocities according to the collision.
+   <li>Scroll the screen down when either marble reaches the
+       bottom and the other player marble is not at the top
+       of the map.
+   <li>Perform a player update by using the time to find new velocity
+       and position calculations at each timer interval.
+   <li>Use the keyboard interrupt to get the user input.
+   <li>Determine when a player has gotten their marble into the basket.
+   <li>Exit when the 'ESC' key is hit.
+   </ul>
+   
+
+<h2>Video Graphics</h2>
+In order to reduce the amount of screen flicker inherent
+in programs that use VGA graphics, we are going
+to use double-buffering to draw on the screen.  
+After an entire image has been created, it will be quickly
+transferred with the <i>Update_Screen</i> routine directly
+to the screen.  With this implementation, you don't see
+this image while it is being changed.
+<p>
+Because one page of graphics alone requires 64,000 bytes of
+information, more than one segment must be defined for our
+graphics manipulatinos.
+Three variables in different segments have been defined as follows:
+<UL>
+<LI><i>VBuf</i>: A double-buffered "virtual" screen that holds 
+    images as they are created.
+<li><i>VScratchPad</i>: A video scratch pad that holds our PCX data
+                        including the marbles and the map blocks as
+                        shown below.
+<LI><i>ScratchPad</i>: A temporary buffer used to hold PCX image data 
+    during decoding.</LI>
+</UL>
+
+<center><img src="./graphics.jpg" width="320" height="200"></center><p>
+
+A few steps are required to draw a video screen.  We update all of
+our video changes (marble position updates, map scrolling) in
+the <tt>VBufSeg</tt> in the respective routines by using needed
+pieces from the PCX file stored in <tt>VScratchSeg</tt>.
+This buffer is then blasted to actual video memory destroying
+whatever was currently on the screen.  
+
+<h2>Image Data</h2>
+It would be tedious to define images using assembly code.
+It is much more convienient to create an image using a standard image 
+editor (such as CorelPHOTO-PAINT) and save the results in a file.
+Our program then need only load this data when it executes.
+
+<p>
+For this MP, we will write the <i>Load_PCX</i> routine to 
+open and read a .PCX file; run-length decode it; then
+save the uncompressed data in a memory segment.  
+DOS file services (software interrupts) are described in the lab 
+manual and in your textbook. (You will need to open a file, 
+point a register to the scratch segment, and issue the read command).  
+This is the same process that was used for file access in MP1.
+<p>
+Details of the PCX image format are in
+<a href="../../lecture/l22.html">Lecture 22</a>. <!-- PCX -->
+PCX files use a variation of Run-Length encoding. 
+A "run" of data corresponds to horizontal lines in the image.
+Adjacent pixels that are the same value are compressed into
+two bytes, an attribute and a length.
+You will find some very helpful example PCX code in your lab manual.
+
+
+<h2>Interrupt Routines</h2>
+<h3>Timer Interrupt</h3>
+Remember that for the timer interrupt we need to chain or call the
+default interrupt handler with our own code.  This will allow us
+to insert our code which we need to execute every 1/18 sec. while still
+allowing the normal system timing functions to proceed.
+Your <i>Install_Timer</i> routine is called to install a new
+interrupt into the vector table.  The <i>Deinstall_Timer</i> routine is
+used to remove it (and restore just the DOS default routine).  
+<p>
+We will be using a few flags to communicate between the interrupt routines
+(i.e. <i>IntTimer</i>) and the rest of our code.  The timer routine will
+set the <tt>Timer_Flag</tt> to inform the main program code that a
+clock tick has passed and it is time to update the marble positions.
+Then every time tick (1/18 sec) the marble positions are updated.
+
+<h3>Keyboard Interrupt</h3>
+The keyboard interrupt can just be installed thus replacing the old
+keyboard interrupt.  Remember however to save the old routine address
+so that it can be restored when the program exits.
+The <i>Install_Keyboard</i> routine is called to install a new
+interrupt into the vector table.  The <i>Deinstall_Keyboard</i> routine is
+used to remove it (and restore the DOS default routine).  
+<p>
+The <i>IntKeyboard</i> routine will use Hardware I/O to query the keyboard.
+The scan code will be read so that the key that was pressed can be read.
+If an 'ESC' key is hit the <tt>Exit_Flag</tt> will be set so that
+the program can exit.  If a Player A key is hit ('A'=Left, 'S'=Up,
+'D'=Right) then the blue marble is updated with a force in the
+proper direction using the <tt>FORCE</tt> constant.  If a Player B key
+is hit ('J'=Left, 'K'=Up, 'L'=Right) then the red marble is updated
+with force using the <tt>FORCE</tt> constant.  Note that a force is
+only allowed to be applied during a collision.  This state is
+signified when the respective player field <tt>Key=1</tt>
+
+
+<h2>Physical Equations</h2>
+The program tracks the velocity, and position of the
+marble along both the horizontal and vertical directions.
+By breaking the motion into distinctive X and Y directions
+the resulting movement can be more easily calculated.
+For our game scenario the positive x-direction is to
+the right and the positive y-direction is downward.  This
+is chosen to correspond to the way the display memory
+is arranged with larger values at the bottom of the screen.
+
+<center><img src="./direction.jpg" width="130" height="120"></center><p>
+
+Each marble is considered to have a mass as specified in
+the <tt>Mass</tt> field of each player.  The acceleration
+in each direction can be calculated according to the
+force and mass in that direction since we know
+that Force = Mass * Acceleration.
+Remember the acceleration in the y-direction must be
+adjusted by the acceleration due to gravity.
+At all times, there is a gravitational field
+accelerating the marble downward at a rate of
+9.81 meters per second squared (m/s^2).  The net motion of the marble
+can be determined by summing the forces.
+<p>
+Recall that acceleration (A) is the time derivative of
+velocity (V) and that velocity (V) is the time derivative of position (X).
+For this problem, it is convienient to calculate the piece-wise integral
+of acceleration to obtain velocity and the piece-wise integral of
+velocity to calculate the position.  Using V<sub>i-1</sub> as the
+previous velocity and X<sub>i-1</sub> as the previous position, 
+new values of A, V, and X can be calculated at each instant of time
+as shown below:
+<blockquote>
+A<sub>i</sub> = <i>Sum of forces / Mass</i><br>
+V<sub>i</sub> = V<sub>i-1</sub> + A<sub>i</sub> * dt <br>
+X <sub>i</sub>= V<sub>i-1</sub> * dt + (1/2) A<sub>i</sub> * dt<sup>2</sup><br> 
+</blockquote>
+Finally, recall that we will perform the calculation for each time tick
+so that our dt = 1/18 sec.
+
+<h2>Map Layout</h2>
+The map is saved in the file 'LEVEL.MAP'.  This file is organized by
+using a byte to store the data for each map block.  The current map
+displays 32 (<tt>MAPWIDTH</tt>) blocks wide and 17
+(<tt>MAPHEIGHT</tt>) blocks high on each screen.  Currently there
+are a total of 2.5 screens.  The file is terminated with an <tt>EOF</tt>
+byte.  Each block is 10x10 pixels, and the map starts at screen location
+<tt>MAPSTART</tt>.  There are currently 13 different base tiles
+defined in the 'GRAPHICS.PCX' file.  The location of the tiles can be
+found using the <tt>PieceLocations</tt> table with the <tt>MapElement</tt>
+sprite structure for use with <i>CopySprite</i>.
+
+<center><img src="./blocks.jpg" width=50%></center><p>
+
+
+Each block on the screen can actually display two different tiles from
+the PCX file.  The high nibble of the map byte is used to reference
+the first tile and the low nibble of the map byte is used to reference
+the second tile.  Both of these tiles are drawn on top of each other
+to generate different map patterns.  For example if the map byte
+has the value 59h then the 5th tile and 9th tile in the PCX file
+will be drawn to the specified position on the screen.  The 0th
+tile references a blank tile.
+
+<h2>Map Editor</h2>
+Along with the <u>MarbleMaze</u> program that you will write is a map
+editor that is included in the program distribution.  This editor
+can be used to generate the 'LEVEL.MAP' file that is used in our
+program.  A screen shot of the map editor is shown below.  This
+program can be run by typing 'mapedit' at a DOS prompt.
+<p>
+<center><img src="./mapedit.jpg" width="640" height="400"></center><p>
+
+In the upper left corner is the current tile that can be placed on
+a block in the screen.  Remember that two different tiles can be
+placed on any single block.  In the middle of the menu is the up/down
+arrows for scrolling around the screen to draw on the entire map.
+The menu also includes buttons to save the file and exit the map editor.
+All input is performed using the mouse.  The left mouse button places
+the current tile onto the block at which the mouse is pointing.  The
+right mouse button is used to toggle through the different tiles.
+
+
+
+<h2>User Interface</h2>
+  <ul>
+  <li>Each player will use the keyboard to add forces to the marble
+      as it travels around the maze.  Player A will use the 'A', 'S',
+      and 'D' keys to go left, up, and right respectively.  Player B
+      will use the 'J', 'K', and 'L' keys for the same functions on
+      the red marble.  Either user can also have
+      the option to quit at any time by using the 'ESC' key.
+      <p>
+
+<li>The are two important data structure in the game which are defined using
+    the <tt>STRUCT</tt> command.  The first structure, <tt>Sprite</tt>, is
+    for the <i>CopySprite</i> routine.  It contains the (x,y) coordinates
+    in the source segment, the (x,y) coordinates in the destination segment,
+    and the height and width in pixels.
+    <p>
+    The second structure, <tt>Player</tt> is for actual player data.  It
+    contains the players current (x,y) coordinates, the players next
+    (x,y) coordinates, the marble mass, the current force on the marble
+    in the x- and y-directions, the current velocity of the marble in
+    the x- and y-directions, and a Key flag to determine when forces
+    can be applied to the marble.  These structures are used throughout the
+    routines in this MP.
+    <p>
+    Each field of the structure can be accessed by name.  The compiler
+    will then take care of adding the proper offset to access the
+    requested field.  For example the code <xmp>mov ax, PlayerA.Xpos</xmp>
+    will put the value of PlayerA's X-position into register ax.  In another
+    example if the value of the register si=offset Player, then the
+    force of that player in the x-direction can be found via
+    <tt>[si].Fx</tt>.
+
+<li>You are also given some constants, variables, and tables in this MP
+    for easier manipulation of graphics.  The values are given
+    to you in the program framework and are described in more detail
+    below.
+<p>
+<li>When updating the marble on the screen it is important to erase the
+    old marble position before drawing the new one.  The new position
+    is calculated using the <i>Move</i> procedure.  This uses the
+    floating point unit to calculate new displacement values.  The
+    <i>Update_Collision</i> routine uses the library
+    <i>CollisionCore</i> to update the marble velocities after
+    colliding with a boundary wall.
+<p>
+<li>The <i>CollisionCore</i> routine performs the detailed bounds
+    checking algorithm needed to determine when a boundary wall has
+    been hit.  The results of the collision is returned to the
+    calling program and the next x- and y-positions (<tt>NXpos,
+    NYpos</tt>) are updated to the proper place within the routine.
+    The heart of this algorithm is to perform a sweep outward from
+    the marble towards the new position in the direction of the
+    marble movement.  When a collision is determined the position
+    is updated.  This routine is very detailed but well within your
+    capabilities as a programmer.  However, due to time constraints
+    this routine has been given to use without penality.
+<p>
+<li>A sample screen shot is shown above.  You should run the program to
+    get an idea of how the <u>MarbleMaze</u> should operate.
+    Your program should match this very closely.
+<p>
+
+<li>Your program should be robust to all types of input.
+
+</ul>
+
+<h2>Data Structures</h2>
+  <ul>
+  <li>The following variables have already been defined for you in the program
+      framework.  <p>
+     <ul>
+     <li><b>MainPCX</b>: The BKGRND.PCX file string for the background.
+     <li><b>PiecesPCX</b>: The GRAPHICS.PCX file string for the graphic
+            pieces.
+     <li><b>MapFile</b>: The LEVEL.MAP file string for map data.
+        <p>
+     <li><b>Old_Vector</b>: A double word to store the timer interrupt
+            vector address that is removed from the interrupt
+            vector table. This is the routine that will still
+            need to be run every timer tick, and will be
+            put back into the vector table in the <i>Deinstall_Timer</i>
+            routine.<br>
+     <li><b>Old_KBVector</b>: A double word for storing the keyboard
+            interrupt timer.  Our keyboard interrupt will be installed
+            over this routine but we still need to keep the address
+            to restore in the <i>Deinstall_Keyboard</i> routine.
+        <p>
+     <li><b>Timer_Flag</b>: Variable to signify that it is time to
+            calculate a new position for the current shot in progress.
+     <li><b>Exit_Flag</b>: Variable to signify that a the 'ESC' key has
+            been hit and the program should be ended.
+     <li><b>Win_Flag</b>: Variable to signify that one of the players
+            has won the game by getting their marble in the basket.
+            Once this flag is set no more key presses should be accepted
+            unless the 'ESC' key is hit to exit the game.
+        <p>
+     <li><b>GRAVITY</b>: Floating point variable holding the constant
+            downward (+y) acceleration due to gravity.
+     <li><b>VelSlice</b>: FP => a*t =  -0.545   ; -(1/18)*9.81
+     <li><b>TimeSlice</b>: FP => (1/18) = 0.0555555556
+     <li><b>SqTimeSlice</b>: FP => (1/2)*t<sup>2</sup> =
+            -0.0015432098          ; -(1/2)*(1/18)<sup>2</sup>
+     <li><b>BOUNCE</b>: Floating point value to reduce the marble velocity
+            when a bottom collision occurs.
+     <li><b>REBOUND</b>: Floating point value to reduce the marble velocity
+            when a left or right collision occurs.
+     <li><b>Displ</b>: Integer (word) variable to convert floating point
+            numbers into integers.
+     <li><b>MAXVELOCITY</b>: Floating point maximum velocity to limit
+            the marble velocity.
+        <p>
+     <li><b>PieceLocations</b>: Word values to be used with the
+            <i>CopySprite</i> routine for source x- and y-positions
+            in the graphics segment.  Each entry in the table defines
+            the coordinates for the various tiles used in creating
+            the map blocks.
+     <li><b>MapFlag</b>: Flag variable used to specify when the map
+            has scrolled all the way to the bottom and cannot scroll
+            any longer.
+     <li><b>MapTop</b>: Variable to hold the current row (in map
+            blocks) that should be displayed at the top of the viewable
+            screen.
+     <li><b>MapElement</b>: Sprite structer for displaying map
+            blocks to the screen.
+     <p>
+
+     <li><b>PlayerA</b>: Player structure for the Player A vital data.
+     <li><b>PlayerB</b>: Player structure for the Player B vital data.
+        <p>
+     <li><b><i>player</i>.Xpos</b>: Current x-position of player marble.
+     <li><b><i>player</i>.Ypos</b>: Current y-position of player marble.
+     <li><b><i>player</i>.NXpos</b>: Next (calculated) x-position of
+            player marble.
+     <li><b><i>player</i>.NYpos</b>: Next (calculated) y-position of
+            player marble.
+     <li><b><i>player</i>.Mass</b>: Floating point field to hold the
+            current marble Mass.
+     <li><b><i>player</i>.Fx</b>: Integer field to hold the
+            current marble Force in the x-direction.
+     <li><b><i>player</i>.Fy</b>: Integer field to hold the
+            current marble Force in the y-direction.
+     <li><b><i>player</i>.Vx</b>: Floating point field to hold the
+            current marble Velocity in the x-direction.
+     <li><b><i>player</i>.Vy</b>: Floating point field to hold the
+            current marble Velocity in the y-direction.
+     <li><b><i>player</i>.Key</b>: Integer field to hold a flag to
+            keep track of when a collision has occurred and keys
+            can be pressed.
+        <p>
+     <li><b>PlayerAData</b>: Sprite structure for the Player A marble.
+     <li><b>PlayerBData</b>: Sprite structure for the Player B marble.
+     <li><b>PlayerSave</b>: Sprite structure to erase a marble.
+     <li><b>WinMsg</b>: Sprite structure for the winning messages.
+        <p>
+     <li><b><i>sprite</i>.SourceX</b>: Source x-position.
+     <li><b><i>sprite</i>.SourceY</b>: Source y-position.
+     <li><b><i>sprite</i>.DestX</b>: Destination x-position.
+     <li><b><i>sprite</i>.DestY</b>: Destination y-position.
+     <li><b><i>sprite</i>.Swidth</b>: Sprite Width.
+     <li><b><i>sprite</i>.Sheight</b>: Sprite Height.
+        <p>
+        
+     </ul> <p>
+
+  <li>These constants have also been defined:<p>
+     <ul>
+     <li><b>VIDSEG</b> == 0A000h<br>
+            VGA Mode 13h video graphics.
+     <p>
+     <li><b>Sec</b> == 18<br>
+            The number of clock ticks (timer interrupts) to equal 1 second.
+            This is only an approximation since the timer actually occurs
+            18.2 times/sec.
+     <p>
+     <li><b>ROW</b> == 320<br>
+            The respective width of a row in VGA Mode 13h. (Pixels/Bytes)
+     <li><b>COL</b> == 200<br>
+            The respective height of a column in VGA Mode 13h. (Pixels/Bytes)
+     <p>
+     <li><b>SCREENSIZE</b> == 64000<br>
+            The number of pixels in one screen (320x200 with 256 colors)
+     <li><b>MAXFILELENGTH</b> == MAPWIDTH*MAPHEIGHT*3 ; 3 map screens of data<br>
+            The maximum length to reserve for the game map file.
+     <p>
+     <li><b>MARBLEWIDTH</b> == 10<br>
+            The width of each marble in pixels.
+     <li><b>MARBLEHEIGHT</b> == 8<br>
+            The height of each marble in pixels.
+     <p>
+     <li><b>FORCE</b> == 750<br>
+            The force to apply to the marble in the direction specified
+            by a key press.
+     <p>
+     <li><b>PlayerA_X</b> == 30<br>
+            The initial x-position of Player A. (Column)<br>
+     <li><b>PlayerA_Y</b> == 46<br>
+            The initial y-position of Player A. (Row)<br>
+     <li><b>PlayerA_MASS</b> == 1.0<br>
+            Floating point mass of Player A.<br>
+     <li><b>PlayerB_X</b> == 273<br>
+            The initial x-position of Player B. (Column)<br>
+     <li><b>PlayerB_Y</b> == 46<br>
+            The initial y-position of Player B. (Row)<br>
+     <li><b>PlayerB_MASS</b> == 1.0<br>
+            Floating point mass of Player B.<br>
+     <p>
+     <li><b>PlayerAWinMsg_Y</b> == 40<br>
+            The source y-position of the Player A win message to
+            use with the <tt>sprite</tt> structure.
+     <li><b>PlayerBWinMsg_Y</b> == 60<br>
+            The source y-position of the Player B win message to
+            use with the <tt>sprite</tt> structure.
+     <p>
+     <li><b>BASKET_TOPY</b> == 150<br>
+            The y-position screen location of the top of the each basket.
+     <li><b>BASKET_BottomY</b> == 170<br>
+            The y-position screen location of the bottom of the each basket.
+     <p>
+     <li><b>Red_Color</b> == 01h<br>
+            The value of the RED color that matches the PCX palette.
+     <li><b>Yellow_Color</b> == 033h<br>
+            The value of the YELLOW color that matches the PCX palette.
+     <li><b>Blue_Color</b> == 0CCh<br>
+            The value of the BLUE color that matches the PCX palette.
+     <li><b>Green_Color</b> == 066h<br>
+            The value of the GREEN color that matches the PCX palette.
+     <li><b>Orange_Color</b> == 015h<br>
+            The value of the ORANGE color that matches the PCX palette.
+     <li><b>Purple_Color</b> == 0FBh<br>
+            The value of the PURPLE color that matches the PCX palette.
+     <li><b>White_Color</b> == 0FDh<br>
+            The value of the WHITE color that matches the PCX palette.
+     <li><b>Black_Color</b> == 0FFh<br>
+            The value of the BLACK color that matches the PCX palette.
+     <p>
+     <li><b>Bkgnd_Color</b> == Black_Color<br>
+            The color of the marble maze background.
+     <li><b>Border_Color</b> == Green_Color<br>
+            The color of the maze walls.
+     <p>
+     <li><b>MAPWIDTH</b> == 32<br>
+            The number of blocks for each map screen row.
+     <li><b>MAPHEIGHT</b> == 17<br>
+            The number of blocks for each map screen column.
+     <li><b>NUMBLOCKS</b> == MAPWIDTH*MAPHEIGHT+1<br>
+            The total number of map blocks on a screen.
+     <li><b>MAPSTART</b> == 30<br>
+            The starting y-position of the map blocks in pixels.
+     <li><b>SCROLLBOTTOM</b> == Col-3*BlockHeight<br>
+            Pixel count to start scrolling screen one a marble
+            has gone past this y-position value.
+     <li><b>SCROLLTOP</b> == MAPSTART + 3*BlockHeight<br>
+            Pixel count to stop scrolling screen if one marble
+            has not yet gone past this y-position value.
+     <li><b>BLOCKWIDTH</b> == 10<br>
+            The width of a sprite block.
+     <li><b>BLOCKHEIGHT</b> == 10<br>
+            The height of a sprite block.
+     <li><b>UPPERMASK</b> == 11110000b<br>
+            Bit mask to use to get upper nibble.
+     <li><b>LOWERMASK</b> == 00001111b<br>
+            Bit mask to use to get lower nibble.
+
+     </ul><p>
+  <li>These structures have also been defined:<p>
+     <li><b>Sprite</b><br>
+        <ul>
+        <li> SourceX = Source Segment X-position.
+        <li> SourceY = Source Segment Y-position.
+        <li> DestX = Destination Segment X-position.
+        <li> DestY = Destination Segment Y-position.
+        <li> Swidth = The width of the sprite in pixels.
+        <li> Sheight = The height of the sprite in pixels.
+        </ul>
+     <p>
+     <li><b>Player</b><br>
+        <ul>
+        <li> Xpos = X-position of marble (leftmost column).
+        <li> Ypos = Y-position of marble (top row).
+        <li> NXpos = Next X-position of marble (leftmost column).
+        <li> NYpos = Next Y-position of marble (top row).
+        <li> Mass = Floating point mass of marble.
+        <li> Fx = Current x-direction force on the marble.
+        <li> Fy = Current y-direction force on the marble.
+        <li> Vx = Current floating point x-direction velocity
+             on the marble.
+        <li> Vy = Current floating point y-direction velocity
+             on the marble.
+        <li> Key = Flag to specify if key presses (applied forces)
+             are allowed or not.
+        </ul>
+     <p>
+     </ul>
+  </ul>
+
+<h2>Procedures</h2>
+
+  <ul>
+  <li>This assignment has seventeen procedures.  
+      You will receive credit for this
+      assignment by replacing each 
+      procedures listed below with your own code.  For the initial
+      demonstration you only need to hand in 50 pts worth of procedures.
+      You will have the option to choose which procedures you write
+      in which order.  You must therefore carefully choose your
+      routines such that the inherent dependencies do not keep you
+      from demonstrating there functionality. <br><p>
+      <b><font +2> NOTE: IT IS YOUR RESPONSIBILITY TO BE ABLE TO SHOW THAT
+      YOUR PROCEDURES ARE FUNCTIONAL!</font></b><br><p>
+      This means you will not be able to hand in a routine that you cannot
+      run and demonstrate to the TA.  This may mean you need to write some
+      test code to show the functionality.
+  <li>The eighteenth procedure you will be required to generate on your own.
+      This will be for the second checkpoint handin.  The routine should
+      add some functionality, be written efficiently, and be of
+      interesting and worthwhile value to the program.  Some possible
+      examples are given below in the procedure definition.
+  <li>Experiment with the working code 
+      to gain a full understanding of how the programs works.
+  <li>Your program should match the functionality of the library 
+      subroutines.
+  <li>All subroutines should be <i>modular</i>.  They should use the stack to
+      <i>preserve</i> the value of any registers they may modify.  
+  <li><i>Library routines only call other Library Routines.</i>&nbsp;
+      Keep this in mind when testing your code with the given library code.
+  <li>The <i>CollisionCore</i> routine has been given to you.  However, it
+      has been specified below so that you know the inputs and outputs.
+  </ul>
+
+
+<ul>
+<li><font size=+1><b>CopySeg</b></font>
+  <ul>
+  <li><b>Purpose:</b> To copy data from an entire segment to another segment.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>ES = Source segment.
+        <li>GS = Destination segment.
+        </ul>
+  <li><b>Outputs:</b> GS segment is updated.
+  <li><b>Hints:</b> You might try using string instructions.
+  <li><b>Calls:</b> This function is called by <i>Update_Screen</i>.
+  <li><b>Points:</b> 3
+  </ul><p>
+
+<li><font size=+1><b>Load_PCX</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure loads a PCX file into a segment.  It
+        also reads and updates the palette.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>CS:DX = Address of PCX file string.
+        <li>ES = Segment to store file.
+        <li>FS = Scratch segment for uncompressing PCX files.
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>ES segment contains the PCX file.
+        </ul>
+  <li><b>Notes:</b>
+        <ul>
+        <li>You must uncompress this run length encoded file.  For more
+            details see your lab book or lecture notes.
+        </ul>
+  <li><b>Calls:</b> This function is called by <i>Load_Game</i>.
+  <li><b>Points:</b> 5 
+  </ul><p>
+
+<li><font size=+1><b>CopySprite</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure copies a sprite of given size from
+       a source segment to a destination segment.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>ES = Destination segment.
+        <li>GS = Source segment.
+        <li>CS:BX = Offset of sprite structure.
+                <ul>
+                <li>[bx].SourceX = Source X-location (Column).
+                <li>[bx].SourceY = Source Y-location (Row).
+                <li>[bx].DestX = Destination X-location (Column).
+                <li>[bx].DestY = Destination Y-location (Row).
+                <li>[bx].Swidth = Sprite width in pixels.
+                <li>[bx].Sheight = Sprite height in pixels.
+                </ul>
+        </ul>
+  <li><b>Outputs:</b> ES segment contains the sprite at the proper location.
+  <li><b>Description:</b> This routine does a pixel by pixel copy in order to
+         only copy part of a PCX file to the screen buffer.  In other words
+         you will use this to copy sprites from the <tt>VScratchSeg</tt>
+         into the <tt>VBufSeg</tt>.
+  <li><b>Hints:</b> The first pixel that is read from the source segment
+         should be used as the transparent palette color.  All other pixels
+         of this same color are not actually drawn to the destination
+         segment.  Instead these pixels are ignored so that this color is
+         transparent in the copy.
+  <li><b>Calls:</b> This function is called by 
+         <i>Update_Players</i>, <i>Show_Map</i>, and <i>CheckWin</i>.
+  <li><b>Points:</b> 5 
+  </ul><p>
+
+
+<li><font size=+1><b>Load_Game</b></font>
+  <ul>                                                              
+  <li><b>Purpose:</b> Procedure to load the PCX files into the proper
+         segments and display the initial game to the screen.  The
+         'BKGND.PCX' file should be copied to the <tt>VBufSeg</tt>.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>VBufSeg = Segment to hold the initial background PCX file and
+            to subsequently hold the video memory buffer.  This segment is
+            where all video changes will be made and then the results will
+            be blasted to video memory with <i>Update_Screen</i>.
+        <li>VScratchSeg = Segment to hold the pieces PCX file for copying
+            different sprite information to the <tt>VBufSeg</tt>.
+        <li>FS = Segment to be used for PCX uncompression. (<tt>ScratchSeg</tt>)
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>VBufSeg = Holds 'BKGRND.PCX' and subsequent updates from copying
+            various sprites to the proper location.
+        <li>VScratchSeg = Holds 'GRAPHICS.PCX'.
+        <li>ScratchSeg = Destroyed during uncompression.
+        </ul>
+  <li><b>Calls:</b> <i>Load_PCX</i>.
+  <li><b>Points:</b> 5
+  </ul><p>
+
+<li><font size=+1><b>Update_Screen</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure updates the Video Memory with
+         the contents of the video buffer segment.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>VBufSeg = Source segment.
+        <li>VIDSEG = Destination segment.
+        </ul>
+  <li><b>Outputs:</b> VIDSEG contains a new copy of VBufSeg.
+  <li><b>Calls:</b>  <i>CopySeg</i><br>.
+  <li><b>Points:</b> 2
+  </ul><p>
+
+
+<li><font size=+1><b>Show_Map</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure draws a portion of the map to the
+         screen.
+  <li><b>Inputs:</b> 
+        <ul>
+        <li>ES = Destination segment (<tt>VBufSeg</tt>).
+        <li>GS = Source segment (<tt>VScratchSeg</tt>).
+        <li>MapElement = Sprite Structure with information for a map block.
+        <li>MapTop = Variable holding top row of the map in blocks.
+        <li>GameMap = Variable holding the game map data.
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>Map_Flag = 1 if at end of map data.
+        <li>The ES segment is updated with the new blocks
+         at the proper location.
+        </ul>
+  <li><b>Notes:</b>
+        <ul>
+        <li>The block positions in the PCX file in the source segment
+            can be found using the <tt>PieceLocations</tt> table.
+        <li>Remember that each map byte contains information for two
+            different tiles that can be drawn at that block location.
+            These are specified as tile numbers by using the first tile
+            from the high nibble, and the second tile from the low nibble.
+        </ul>
+  <li><b>Hints:</b> You may need to first blank out the old game map before
+         drawing the new map to the ES (<tt>VBufSeg</tt>).
+  <li><b>Calls:</b> <i>CopySprite</i>.<br>
+         This function is called by <i>Scroll_Screen</i>.
+  <li><b>Points:</b> 10
+  </ul><p>
+
+
+<li><font size=+1><b>Scroll_Screen</b></font>
+  <ul>
+  <li><b>Purpose:</b>  This procedure takes care of checking to
+         see if the marbles are in the proper position to cause
+         the screen to scroll.  If needed the screen is then
+         scrolled by one map block.  The marbles are in the proper
+         scrolling location when one marble is in the bottom
+         3 rows of the map blocks on the screen, and the other
+         marble is not in the top 3 rows of the map blocks on
+         the screen.  
+  <li><b>Inputs:</b>
+        <ul>        
+        <li>ES = Destination segment (<tt>VBufSeg</tt>).
+        <li>GS = Source segment (<tt>VScratchSeg</tt>).
+        <li>MapTop = Top of current location to display in map.
+        <li>Map_Flag = Flag to see if EOF which blocks scrolling.
+        <li>PlayerA.Ypos = Used to determine when to scroll.
+        <li>PlayerB.Ypos = Used to determine when to scroll.
+        </ul>
+  <li><b>Outputs:</b> (If scrolling is needed)
+         <ul>
+         <li>PlayerA.Ypos is reduced by <tt>BLOCKHEIGHT</tt> 
+         <li>PlayerA.NYpos is reduced by <tt>BLOCKHEIGHT</tt> 
+         <li>PlayerB.Ypos is reduced by <tt>BLOCKHEIGHT</tt> 
+         <li>PlayerB.NYpos is reduced by <tt>BLOCKHEIGHT</tt> 
+         <li>The desination segment (ES) is updated if needed.
+         <li>
+         </ul>
+  <li><b>Hints:</b>
+         <ul>
+         <li>Both the Ypos and NYpos need to be updated for scrolling to
+             not effect the motion of the marble.
+         <li>If one marble is low enough to scroll but the other marble is
+             too high on the screen then scrolling does NOT occur.  Even
+             if this means the lower marble must hang at the bottom of the
+             screen resting where there is no wall.
+         </ul>
+  <li><b>Calls:</b> <i>ShowMap</i>
+  <li><b>Points:</b> 5
+  </ul><p>
+
+
+
+<li><font size=+1><b>Install_Timer</b></font>
+  <ul>
+  <li><b>Purpose:</b> Install the Timer Interrupt.
+  <li><b>Inputs:</b> None.
+  <li><b>Outputs:</b>
+        <ul>
+        <li>Old_Vector = Far Address read from Interrupt Vector Table.
+        <li>IntTimer address is put into Interrupt Vector Table.
+        </ul>
+  <li><b>Notes:</b>
+        <ul>
+        <li>Use the DOS function to read and write to the Vector Table.
+        </ul>
+  <li><b>Hints:</b>
+        <ul>
+        <li>You will need to write and test all three of your timer
+            routines together.  You will not be able to test any of
+            your three routines individually with the library code.
+        </ul>
+  <li><b>Points:</b> 2
+  </ul><p>
+
+<li><font size=+1><b>Deinstall_Timer</b></font>
+  <ul>
+  <li><b>Purpose:</b> Restore the original Timer Interrupt.
+  <li><b>Inputs:</b> OldVector.
+  <li><b>Outputs:</b>
+        <ul>
+        <li>Address in <tt>Old_Vector</tt> is put back into Interrupt Vector Table.
+        </ul>
+  <li><b>Notes:</b>
+        <ul>
+        <li>Use the DOS function to write to the Vector Table.
+        </ul>
+  <li><b>Hints:</b>
+        <ul>
+        <li>You will need to write and test all three of your timer
+            routines together.  You will not be able to test any of
+            your three routines individually with the library code.
+        </ul>
+  <li><b>Points:</b> 2
+  </ul><p>
+
+<li><font size=+1><b>IntTimer</b></font>
+  <ul>
+  <li><b>Purpose:</b> The timer interrupt itself needs to take care
+         of flagging when to calculate a new marble position.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>OldVector = Far Address of old timer interrupt that still
+            needs to be either called or chained from the current
+            interrupt routine.
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>Timer_Flag = 1 (This flag signals the main program code
+            that a new marble position needs to be calculated.
+        </ul>
+  <li><b>Hints:</b>
+        <ul>
+        <li>Be very carefull to save and restore all registers that
+            are changed in the routine.
+        <li>Remember that upon entering the routine you cannot depend
+            on the value of any registers being set.  This includes
+            segment registers such as ES and DS.
+        <li>Recall that to <b>chain</b> the old interrupt the last thing
+            your Interrupt routine will do is to jump to the address.
+        <li>Recall that to <b>call</b> the old interrupt your Interrupt
+            routine will first need to push the flags (<tt>pushf</tt>)
+            and then call the old routine.
+        <li>Because you may crash while working on this routine you
+            might want to first write, test, and debug the code
+            outside of an interrupt.  Once you have functional code
+            then try installing a shell of an interrupt routine.
+            Finally put the two together for a completely functional
+            routine.
+        <li>Refer to <a href="../../lecture/l14.html">Lecture 14</a>
+            for more details on interrupt routines
+        <li>You will need to write and test all three of your timer
+            routines together.  You will not be able to test any of
+            your three routines individually with the library code.
+        </ul>
+  <li><b>Calls:</b> Old timer routine.
+  <li><b>Points:</b> 4
+  </ul><p>
+
+<li><font size=+1><b>Install_Keyboard</b></font>
+  <ul>
+  <li><b>Purpose:</b> Install the Keyboard Interrupt.
+  <li><b>Inputs:</b> None.
+  <li><b>Outputs:</b>
+        <ul>
+        <li>Old_KBVector = Far Address read from Interrupt Vector Table.
+        <li>IntKeyboard address is put into Interrupt Vector Table.
+        </ul>
+  <li><b>Notes:</b>
+        <ul>
+        <li>Use the DOS function to read and write to the Vector Table.
+        </ul>
+  <li><b>Hints:</b>
+        <ul>
+        <li>This interrupt routine can be installed over the old
+            interrupt routine.
+        <li>You will need to write and test all three of your keyboard
+            routines together.  You will not be able to test any of
+            your three routines individually with the library code.
+        </ul>
+  <li><b>Points:</b> 2
+  </ul><p>
+
+<li><font size=+1><b>Deinstall_Keyboard</b></font>
+  <ul>
+  <li><b>Purpose:</b> Restore the original Keyboard Interrupt.
+  <li><b>Inputs:</b> Old_KBVector.
+  <li><b>Outputs:</b>
+        <ul>
+        <li>Address in <tt>Old_KBVector</tt> is put back
+            into Interrupt Vector Table.
+        </ul>
+  <li><b>Notes:</b>
+        <ul>
+        <li>Use the DOS function to write to the Vector Table.
+        </ul>
+  <li><b>Hints:</b>
+        <ul>
+        <li>You will need to write and test all three of your keyboard
+            routines together.  You will not be able to test any of
+            your three routines individually with the library code.
+        </ul>
+  <li><b>Points:</b> 2
+  </ul><p>
+
+<li><font size=+1><b>IntKeyboard</b></font>
+  <ul>
+  <li><b>Purpose:</b> The keyboard interrupt needs to take care
+         of flagging which key was pressed and adding the
+         appropriate force.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>Win_Flag = When this flag is set no keyboard input
+            is allowed except the 'ESC' key to exit the game.
+        <li>PlayerA.Key = Player A key input is only allowed
+            during a collision (where this flag will be set).
+        <li>PlayerB.Key = Player B key input is only allowed
+            during a collision (where this flag will be set).
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>Exit_Flag = 1 (Set when the 'ESC' key has been
+            hit and it is time to exit the game).
+        <li>PlayerA.Fx/PlayerA.Fy = Player A forces are updated according
+            to the key that was pressed.  The constant <tt>FORCE</tt>
+            should be used in the proper direction.
+        <li>PlayerB.Fx/PlayerB.Fy = Player B forces are updated according
+            to the key that was pressed.  The constant <tt>FORCE</tt>
+            should be used in the proper direction.
+        </ul>
+  <li><b>Hints:</b>
+        <ul>
+        <li>Be very carefull to save and restore all registers that
+            are changed in the routine.
+        <li>Remember that upon entering the routine you cannot depend
+            on the value of any registers being set.  This includes
+            segment registers such as ES and DS.
+        <li>You will need to use scan codes to query the keyboard hardware
+            and determine which key was pressed.
+        <li>You must acknowledge the key read with an EOI.
+        <li>For more information on the keyboard refer to your lab manual. 
+        <li>Refer to <a href="../../lecture/l14.html">Lecture 14</a>
+            for more details on interrupt routines
+        <li>You will need to write and test all three of your keyboard
+            routines together.  You will not be able to test any of
+            your three routines individually with the library code.
+        </ul>
+  <li><b>Calls:</b> None.
+  <li><b>Points:</b> 6
+  </ul><p>
+
+
+
+<li><font size=+1><b>Move</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure calculates the marble trajectory.
+         Velocity values are calculated and stored using floating point
+         math.  Displacement values are then calculated and converted
+         to integers updating the players NYpos and NXpos.
+  <li><b>Inputs:</b>
+        <ul>        
+        <li>SI = Offset of player structure to update marble movement.
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>Player displacement is updated ([si].NXpos, [si].NYpos)
+        <li>Player velocity is updated ([si].Vx, [si].Vy)
+        <li>Player Forces = 0  (Let collision routines detemine if more
+            force CAN be applied, and let the keyboard routines
+            determine if more force SHOULD be applied).
+        <li>The floating point variables are used to calculate
+            incremental changes in velocity and displacement.
+        </ul>
+  <li><b>Notes:</b>
+        <ul>
+        <li>If the calculated displacement in either direction
+            is greater than the maximum allowed displacement
+            (<tt>MAXDISPL</tt>), then the displacement is
+            limited to the maximum displacement (<tt>MAXDISPL</tt>). 
+        <li>If the displacement had to be limited then the velocity
+            was too large and should also be limited to the
+            floating point value <tt>MAXVELOCITY</tt>.
+        <li>In either case of limiting values, when the new limiting
+            value is used to replace the old value the proper
+            directio needs to be detemined and used.
+        </ul>
+  <li><b>Hints:</b>
+        <ul>
+        <li>This routine performs all the floating point calculations
+            for the marble movement.
+        <li>Make sure you use the equations for velocity and
+            displacement to calculate the marble trajectory.
+        <li>Recall that motion in the x and y direction are independent.
+        <li>Remember to convert the floating point results into
+            integers.
+        <li>Constants that are needed in the calculation have been
+            defined as floating point variables.
+        <li>Make sure you keep the floating point stacked balanced so
+            that you don't push too many values on or pop too many
+            value off the stack.
+        <li>You find it necessary to perform an <tt>fwait</tt> operation
+            in order to sync the floating point and integer units on
+            the CPU.  This is necessary when converting floating point
+            math into integers since the two core CPU units are
+            operating in parallel with each other.
+        </ul>
+  <li><b>Calls:</b> This function is called by <i>Update_Players</i>.
+  <li><b>Points:</b> 13
+  </ul><p>
+
+<li><font size=+1><b>CollisionCore</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure determines when a collision
+         with a wall has occured.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>SI = Offset of player structure to check.
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>AL = 0 (For no horizontal collision).<br>
+               = +1 (For Right collision).<br> 
+               = -1 (For Left collision).<br> 
+        <li>AH = 0 (For no vertical collision).<br>
+               = +1 (For Bottom collision).<br> 
+               = -1 (For Top collision).<br> 
+        <li>[SI].NXpos = Correctly updated to avoid collision.
+        <li>[SI].NYpos = Correctly updated to avoid collision.
+        </ul>
+  <li><b>Notes:</b>
+         <ul>
+         <li>This routine is given to you free.
+         <li>This will only find collisions with border walls
+             and not with the other marble.
+         </ul>
+  <li><b>Calls:</b> This function is called by <i>Update_Collision</i>.
+  <li><b>Points:</b> 0
+  </ul><p>
+
+
+<li><font size=+1><b>Update_Collision</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure performs the necessary updates
+         to the player velocity according to the results of the
+         collision.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>SI = Offset of player structure to check.
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>[si].Vx = Properly updated according to collision.
+        <li>[si].Vy = Properly updated according to collision.
+        <li>[si].Key = 1 (if collision occured and key presses
+            are allowed)<br>
+            = 0 Otherwise.
+        </ul>
+  <li><b>Notes:</b>
+        <ul>
+        <li>On Bottom collision change the Vy velocity by <tt>BOUNCE</tt>.
+        <li>On Right collision change the Vx velocity by <tt>REBOUND</tt>.
+        <li>On Left collision change the Vx velocity by <tt>REBOUND</tt>.
+        <li>On Top collision change the direction of the Vy velocity.
+        <li>On No collision the forces can also be set to zero.
+        </ul>
+  <li><b>Calls:</b> <i>CollisionCore</i>.<br>
+         This function is called by <i>Update_Players</i>.
+  <li><b>Points:</b> 5
+  </ul><p>
+
+<li><font size=+1><b>Update_Players</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure is used to perform the updates
+         of both players.  The old player position is erased and
+         the marble drawn at the new location.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>PlayerA = PlayerA information structure.
+        <li>PlayerAData = PlayerA sprite structure.
+        <li>PlayerB = PlayerB information structure.
+        <li>PlayerBData = PlayerB sprite structure.
+        <li>PlayerSave = Sprite structure to erase marbles.
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>ES (<tt>VBufSeg</tt>) segment is updated.
+        </ul>
+  <li><b>Hints:</b>
+         <ul>
+         <li>This routine should take care of updating all
+             player information for both players by calling
+             the specific routines needed to move the marble,
+             check for collisions, and check if either player
+             has won.
+          <li>Constants have been defined for you regarding the sprite
+            positions in the GRAPHICS.PCX file.  If you are not sure about
+            positions, widths, or heights then load the PCX file into
+            a drawing program and look at the picture in units of pixels.
+         </ul>
+  <li><b>Calls:</b> <i>Move</i>, <i>Update_Collision</i>, and
+         <i>CheckWin</i>.
+  <li><b>Points:</b> 9
+  </ul><p>
+
+
+<li><font size=+1><b>CheckWin</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure checks to see if either player has
+         won the game.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>PlayerA/B.Ypos = Check if either player is within y-position range.
+        <li>PlayerA/B.Xpos = Check if either player is within x-position range.
+        <li>Map_Flag = Don't check for a win until map is at the bottom
+            of the screen.
+        <li>WinMsg = Sprite structure of winning message.
+        <li>GS = Source segment (<tt>VScratchSeg</tt>).
+        <li>ES = Destination segment (<tt>VBufSeg</tt>).
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>Win_Flag = 1 (Once a player has won - this locks out all
+            keyboard control except the 'ESC' key).
+        <li>ES segment updated with Winning message if necessary.
+        </ul>
+  <li><b>Notes:</b>
+         <ul>
+         <li>Verify that a player is in the basket.
+         <!-- and then check the x-position.
+         If Xpos=NXpos then the marble is not
+             moving left/right and so cannot come out of the basket.-->
+             The player at this point has won the match.
+         <li>Once a game is over the respective winning message should
+             be displayed to the screen.
+         </ul>
+  <li><b>Calls:</b> <i>CopySprite</i>.
+  <li><b>Points:</b> 5
+  </ul><p>
+
+<li><font size=+1><b>Your Routine</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure performs a function of your design.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>You need to define what inputs your procedure will need.
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>You need to define what the outputs of the function will be
+            and how the rest of the program will use them.
+        </ul>
+  <li><b>Notes:</b>
+         <ul>
+         <li>This procedure should add some functionality to the initial
+             program.  Be creative in your design as this routine is
+             worth a significant number of points.
+         <li>Your procedure will be graded on functionality, style,
+             efficiency, and content.
+         </ul>
+  <li><b>Suggestions:</b>
+        <ul>
+        <li>Add a routine to perform sound effects by writing out COUNT
+            values associated with specific frequencies to the timer
+            chip for the internal speaker for each wall collision.
+        <li>Add a routine that kicks a DMA transfer off to send a sound
+            file to the DSP chip on the sound card when a player wins
+            the game.
+        <li>Switch the graphics to 640x480 mode.
+        <li>Write your own <i>CollisionCore</i> routine and add
+            the ability to collide with the other marble.
+        <li>Add special effects to the game including one or more of the
+            following:
+                <ul>
+                <li>Different ways to add force to the marble.
+                <li>Wind effects.
+                <li>Moving walls.
+                <li>Added map blocks to drop obstacles in the way of
+                    the opposing marble.
+                <li>Animation to the motion of the marbles.
+                <li>Animation scenes when the marble hits
+                    certain spots.
+                </ul>
+        <li>Another routine of your choosing.
+        </ul>
+  <li><b>Points:</b> 15
+  </ul><p>
+
+
+</ul>
+
+<h2>Preliminary Procedure</h2>
+<ul>
+<li>Copy the empty MP4 program (<tt>MP4.ASM</tt>), libraries
+    (<tt>libmp4.lib</tt>,<tt>lib291.lib</tt>), PCX files
+    (<tt>bkgrnd.pcx</tt> and <tt>graphics.pcx</tt>), map file
+    (<tt>level.map</tt>),
+    and <tt>Makefile</tt> from
+    the network drive to your home directory with the following command:
+    <br><tt>xcopy /s V:\ece291\mp4 W:\mp4</tt>
+    <br>Alternatively, from home, you can download the same files as
+    <A HREF="mp4.zip">mp4.zip</A>.
+
+<li>As with previous MPs, run <tt>NMake</tt> to build an executable program
+    using the given ECE291 library functions.
+
+<li>As with previous MPs, use a text editor to modify the program. As given,
+    the program uses LIBMP4 routines to implement all functionality. To
+    receive full credit for the assignment, you will need to implement
+    each of the subroutines described above with your own code.
+
+<li>As with previous MPs, use CodeView (<tt>CV</tt>) to debug and test your
+    program. Because you only receive credit for procedures that function
+    completely as specified, it is best to debug each routine individually.
+    <p>
+    Note: You may need to either use the <b>/s</b> option or comment out
+    the interrupt for Mode 13h in order to debug in codeview.
+</ul>
+
+
+
+<h2>Final Steps</h2>
+<ol>
+<li>Print a copy of the <a href="mp4grade.html">MP4 grading sheet</a>.
+<li>Demonstrate 50 pts worth of routines in the 
+    MP4.EXE to a TA or to the instructor.
+  <ul>
+   <li>Be prepared to answer questions about any aspect of the operation 
+       of your program.  The TAs will not accept an MP if you cannot fully
+       explain all operations of your code.
+  </ul>
+<li>Handin in your program by running: <br>
+    <tt>A:\Handin </tt> <i>YourWindowsLogin</i>
+<li>Print <font color="red">MP4.ASM </font> using <i>
+   <font color="green">GreenPrint32</font></i>
+<li>Staple the MP4 grading sheet to the front of your MP4.ASM file
+    and give both to the same TA that approved your demonstration.
+</ol>
+
+<hr>
+
+<h2>MP4.ASM (Program framework)</h2>
+<font size=-1> <xmp>
+
+
+
+        TITLE MarbleMaze - Your Name - Current Date
+
+COMMENT %
+        ECE291 MarbleMaze
+        --------------------
+        ECE291: MP4/MP5
+        Jay R. Moorman
+        University of Illinois
+        Dept. of Electrical & Computer Engineering
+        Summer 1999
+        Revision 1.0
+        %
+;====== Model ============================================================
+
+          .MODEL COMPACT
+          .486
+;====== Constants =========================================================
+
+; General Constants
+CR          EQU 13
+LF          EQU 10
+BEL         EQU 7
+EOF         EQU 0EEh
+VIDSEG      EQU 0A000h
+
+; Time constant
+Sec         EQU 18       ; 1 seconds at 1/18 increments
+
+; Graphics constants
+ROW           EQU 320
+COL           EQU 200
+MARBLEWIDTH   EQU 10
+MARBLEHEIGHT  EQU 8
+SCREENSIZE    EQU 64000
+MAXFILELENGTH EQU MAPWIDTH*MAPHEIGHT*3 ; 3 Map Screens of data
+
+FORCE       EQU 750      ; Amount of force to apply with key press
+
+; Player Constants
+PlayerA_X       EQU 30   ; Initial position
+PlayerA_Y       EQU 46
+PlayerA_MASS    EQU 1.0
+PlayerB_X       EQU 273
+PlayerB_Y       EQU 46
+PlayerB_MASS    EQU 1.0
+
+PlayerAWinMsg_Y EQU 40   ; X position of WinMsg in PCX file
+PlayerBWinMsg_Y EQU 60   ; Y position of WinMsg in PCX file
+BASKET_TOPY     EQU 150  ; Y top position of basket
+BASKET_BOTTOMY  EQU 170  ; Y bottom position of basket
+
+; Colors have been defined to match the palette from the PCX files
+Red_Color       EQU 01h
+Yellow_Color    EQU 33h
+Blue_Color      EQU 0CCh
+Green_Color     EQU 066h
+Orange_Color    EQU 15h
+Purple_Color    EQU 0FBh
+White_Color     EQU 0FDh
+Black_Color     EQU 0FFh
+
+; Constants to match up palette colors with specific objects
+Bkgnd_Color     EQU Black_Color
+Border_Color    EQU Green_Color
+
+; screen constants
+MAPWIDTH        EQU 32          ; width of screen in blocks
+MAPHEIGHT       EQU 17          ; heights of screen in blocks
+NUMBLOCKS       EQU MAPWIDTH*MAPHEIGHT+1; total number of map blocks shown on screen + 1
+MAPSTART        EQU 30          ; starting location on screen for map
+SCROLLBOTTOM    EQU Col-3*BlockHeight        ; Position to Scroll past
+SCROLLTOP       EQU MapStart+3*BlockHeight   ; Position to Stop Scroll
+
+; map block constants
+BLOCKWIDTH  EQU 10              ; width of block in pixels
+BLOCKHEIGHT EQU 10              ; heights of block in pixels
+
+; map constants
+UPPERMASK  EQU 11110000b        ; mask for upper 4 bits
+LOWERMASK  EQU 00001111b        ; mask for lower 4 bits
+
+
+; Sprite structure for CopySprite routine
+Sprite STRUCT
+  SourceX  WORD ? ; Source x position (Source Seg)
+  SourceY  WORD ? ; Source y position
+  DestX    WORD ? ; Destination x position (Destination Seg)
+  DestY    WORD ? ; Destination y position
+  Swidth   WORD ? ; Width of Sprite
+  Sheight  WORD ? ; Height of Sprite
+Sprite ENDS
+
+; Player structure for each players information
+Player STRUCT
+        Xpos      WORD  ? ; x-position  
+        Ypos      WORD  ? ; y-position
+        NXpos     WORD  ? ; Next x-position
+        NYpos     WORD  ? ; Next y-position
+        Mass      REAL4 ? ; Mass
+        Fx        WORD  ? ; Force x-direction
+        Fy        WORD  ? ; Force y-direction
+        Vx        REAL4 ? ; Velocity x-direction
+        Vy        REAL4 ? ; Velocity y-direction
+        Key       WORD  ? ; Allow key in collision
+Player ENDS
+
+;====== Externals =========================================================
+
+; -- LIB291 Routines (free) --
+
+  extrn binasc:near   ; From lib291.lib (You can use these functions freely)
+  extrn dspout:near   ; See your lab manual for a full description
+  extrn dspmsg:near   ; of each function
+  extrn kbdin:near
+  extrn kbdine:near
+  extrn rsave:near
+  extrn rrest:near
+
+; -- LIBMP4 Routines (replace these with your own code) --
+
+extrn CopySeg:near
+extrn CopySprite:near
+extrn Load_PCX:near
+extrn Load_Game:near
+extrn Show_Map:near
+extrn Scroll_Screen:near
+extrn Update_Screen:near
+extrn Install_Timer:near
+extrn Deinstall_Timer:near
+extrn IntTimer:near
+extrn Install_Keyboard:near
+extrn Deinstall_Keyboard:near
+extrn IntKeyboard:near
+extrn Move:near
+extrn Update_Players:near
+extrn Update_Collision:near
+extrn CheckWin:near
+
+; -- LIBMP4 Routines that do not need replaced
+extrn CollisionCore:near
+extrn OpenFile:near
+extrn ReadFile:near
+extrn CloseFile:near
+extrn mp4xit:near   ; Terminates Program
+                
+
+;====== Stack Segment =====================================================
+stkseg       segment stack
+             db 64 dup ('STACK   ')
+stkseg       ends
+
+;====== Video ScratchPad Segment ==========================================
+; This segment will be used to hold the Pieces PCX file
+VScratchSeg  segment public
+VScratchPad  db      65535 dup(?)
+PUBLIC VScratchPad
+VScratchSeg  ends
+
+;====== ScratchPad Segment ================================================
+; This segment is used when decompressing the PCX file
+ScratchSeg  segment public
+ScratchPad  db      65535 dup(?)
+PUBLIC ScratchPad
+ScratchSeg  ends
+
+;====== Video Buffer Segment ==============================================
+; This segment is used to hold the screen buffer
+VBufSeg     segment public
+VBuf        db      65535 dup(?)
+PUBLIC VBuf
+VBufSeg     ends
+
+
+;====== Code/Data segment =================================================
+cseg    segment public 'CODE' 
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing, gs:nothing, gs:nothing
+
+;====== Variables =========================================================
+
+; Files
+MainPCX    db 'BKGRND.PCX', 0
+PiecesPCX  db 'GRAPHICS.PCX', 0
+MapFile    db 'LEVEL.MAP',0
+
+FileHandle dw 0
+GameMap    db MAXFILELENGTH dup(EOF)
+FileMsg    db 'An error occurred accessing the file.',CR,LF,'$'
+
+Old_TimerVector dd ? ; Old Timer Interrupt vector
+Old_KBVector    dd ? ; Old Keyboard Interrupt vector
+
+; Messages
+crlf    db CR,LF,'$'
+
+; Buffers
+PBuf       db 7  dup(?)
+
+
+; Flag variables
+Timer_Flag       db 0   ; Flag to signal when to calculate a new position
+Exit_Flag        db 0   ; Flag to signal when a esc has been hit
+Win_Flag         db 0   ; Flag to signal when the game has been won
+Map_Flag         db 0   ; Flag to signal when the end of the map has been reached
+
+; Floating point equation variables and constants
+GRAVITY     REAL4 9.81 
+VelSlice    REAL4  -0.545               ; -(1/18)*9.81 = a*t
+TimeSlice   REAL4 0.0555555556          ; 1/18
+SqTimeSlice REAL4 0.0015432098          ; (1/2)*(1/18)^2 = (1/2)*t^2
+BOUNCE      REAL4 -0.75
+REBOUND     REAL4 -0.90
+Displ       dw 0        ; Variable to do floating to integer conversion
+MAXDISPL    EQU 20                      ; Maximum allowed Displacement
+MAXVELOCITY REAL4 300.0                 ; Maximum allowed Velocity
+
+; Map variables and table
+; PieceLocations: array of words arranged in (x,y).
+; Piece #1.X = PieceLocations[4], #2.Y = PieceLocations[10], and so on....
+PieceLocations dw 0,  10
+               dw 0,  25
+               dw 12, 25
+               dw 24, 25
+               dw 36, 25
+               dw 48, 25
+               dw 60, 25
+               dw 72, 25
+               dw 84, 25
+               dw 96, 25
+               dw 108,25
+               dw 120,25
+               dw 132,25
+
+MapTop dw 0
+MapElement SPRITE<?,?,?,?,BLOCKWIDTH,BLOCKHEIGHT>
+
+
+; Structure to use with copysprite - Initialized for each player
+PlayerAData Sprite< 0,0,PlayerA_X-(MARBLEWIDTH/2),PlayerA_Y-(MARBLEHEIGHT-1),MARBLEWIDTH,MARBLEHEIGHT>
+PlayerBData Sprite<10,0,PlayerB_X-(MARBLEWIDTH/2),PlayerB_Y-(MARBLEHEIGHT-1),MARBLEWIDTH,MARBLEHEIGHT>
+PlayerSave  Sprite<20,0,PlayerA_X-(MARBLEWIDTH/2),PlayerA_Y-(MARBLEHEIGHT-1),MARBLEWIDTH,MARBLEHEIGHT>
+WinMsg      Sprite<0,PlayerAWinMsg_Y,120,80,80,10>
+
+
+; Player structures with important data
+PlayerA Player<PlayerA_X,PlayerA_Y,PlayerA_X,PlayerA_Y,PlayerA_MASS,0,0,0.0,0.0,0>
+PlayerB Player<PlayerB_X,PlayerB_Y,PlayerB_X,PlayerB_Y,PlayerB_MASS,0,0,0.0,0.0,0>
+
+
+; Public variables for library functions
+PUBLIC MainPCX, PiecesPCX
+PUBLIC Timer_Flag, Exit_Flag, Win_Flag
+PUBLIC PlayerA, PlayerB, PlayerAData, PlayerBData, PlayerSave
+PUBLIC WinMsg
+PUBLIC Map_Flag, MapTop, MapElement, GameMap
+
+
+; ======== Your Code ======================================================
+
+; -- Write the code for your subroutines below --
+
+
+
+; == Main ================================================================
+
+MAIN Proc NEAR
+
+; Initialize DS register
+        mov  ax, cseg
+        mov  ds, ax
+
+
+; Initialize other segment registers
+        mov  ax, VBufSeg                ; es = VBufSeg
+        mov  es, ax
+        mov  ax, ScratchSeg             ; fs = ScratchSeg
+        mov  fs, ax
+        mov  ax, VScratchSeg            ; gs = VScratchSeg
+        mov  gs, ax
+
+        finit
+                               ; Initialize floating point unit
+; The Main Program Code
+
+        mov  AX, 0013h                  ; Get in Mode 13 (VGA)
+        int  10h
+
+        call Install_Timer              ; Install Timer Interrupt
+        call Install_Keyboard           ; Install Keyboard Interrupt
+
+        mov  dx, offset MapFile         ; Offset of file
+        call openfile                   ; Open the file
+        jc   FileError                  ; Exit on error
+        mov  FileHandle,ax              ; Save file handle for later
+
+        mov  bx, FileHandle             ; Prepare to read file
+        mov  dx, offset GameMap         ; Location to put data
+        mov  cx, MAXFILELENGTH          ; Read file for MaxFileLength
+        call readfile                   ;  bytes or until EOF reached
+        jc   FileClose                  ; Exit on error
+
+
+        call Load_Game                  ; Load initial game to screen
+        call Show_Map
+        call Update_Players             ; Put Players on Screen
+        call Update_Screen              ; Display results
+
+
+MainLoop:
+        cmp  byte ptr cs:Exit_Flag,1
+        je   Exit
+        cmp  byte ptr cs:Timer_Flag,1   ; Wait for timer to flag when to go
+        jne  MainLoop
+        mov  byte ptr cs:Timer_Flag,0   ; Clear semaphore
+
+        call Scroll_Screen              ; Scroll Screen if needed
+        call Update_Players             ; Update Player Position
+        call Update_Screen              ; Update Screen
+
+        jmp  MainLoop
+
+FileClose:
+        mov  bx, FileHandle             ; Close the GameMap file
+        call CloseFile
+        jmp  Exit
+
+FileError:
+        mov  dx,offset FileMsg          ; File Error occurred
+        call dspmsg
+
+Exit:
+        call  DeInstall_Timer           ; Restore Timer interrupt
+        call  DeInstall_Keyboard        ; Restore Keyboard interrupt
+
+        mov AX, 0002h                   ; Set 80x25 text mode and clear screen
+        int 10h
+
+        call mp4xit                     ; Exit program
+main endp
+
+; ===================== End of Procedures & Data ==========================
+
+cseg    ends
+        end    main
+
+
+
+
+
+</xmp>
+</body>
+</html>

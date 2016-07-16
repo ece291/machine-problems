@@ -1,0 +1,144 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>New Page 1</title>
+</head>
+
+<body>
+
+<h1>Drawing Shapes and Text</h1>
+<p>You'll be drawing various shapes and text in this MP.</p>
+<h2>Lines</h2>
+<p>Lines will be drawn with a modified version of Bresenham's Line
+Algorithm.&nbsp; Our version of the algorithm needs to draw lines in all eight
+octants.&nbsp; The pseudocode for our DrawLine algorithm is as follows:</p>
+<pre>Variables:
+x              = current x position on line
+y              = current y position on line
+dx             = number of pixels in x-direction
+dy             = number of pixels in y-direction
+lineerror      = error at each point of the algorithm
+numpixels      = number of pixels to draw
+xdiaginc       = the amount to add to x when lineerror &lt; 0
+xhorizinc      = the amount to add to x when lineerror &gt;= 0
+yvertinc       = the amount to add to y when lineerror &lt; 0 
+ydiaginc       = the amount to add to y when lineerror &gt;= 0; 
+errornodiaginc = the amount to add to lineerror when lineerror  &lt; 0
+errordiaginc   = the amount to add to lineerror when lineerror &gt;= 0</pre>
+<pre>procedure DrawLine(x1, y1, x2, y2, color)
+begin 
+ dx = abs(x2 - x1); 
+ dy = abs(y2 - y1); 
+
+ if dx &gt;= dy then 
+  begin 
+   numpixels = dx + 1; 
+   lineerror = (2 * dy) - dx; 
+   errornodiaginc = 2 * dy; 
+   errordiaginc = 2 * (dy - dx); 
+   xhorizinc = 1; 
+   xdiaginc = 1; 
+   yvertinc = 0; 
+   ydiaginc = 1; 
+  end 
+ else 
+  begin 
+   numpixels = dy + 1;
+   lineerror = (2 * dx) - dy;
+   errornodiaginc = 2 * dx;
+   errordiagdinc = 2 * (dx - dy);
+   xhorizinc = 0;
+   xdiaginc = 1;
+   yvertinc = 1;
+   ydiaginc = 1;
+  end</pre>
+<pre> if x1 &gt; x2 then 
+  begin 
+   xhorizinc = -xhorizinc;
+   xdiaginc  = -xdiaginc;
+  end
+ if y1 &gt; y2 then
+  begin
+   yvertinc = -yvertinc;
+   ydiaginc = -ydiaginc;
+  end</pre>
+<pre> x := x1;
+ y := y1; 
+ for i := 1 to numpixels do 
+  begin 
+   DrawPixel(x, y, color);
+   if lineerror &lt; 0 then
+    begin 
+     lineerror += errornodiaginc;
+     x += xhorizinc;
+     y += yvertinc;
+    end
+   else
+     lineerror += errordiaginc;
+     x += xdiaginc;
+     y += ydiaginc;
+    end
+   end
+ end</pre>
+<h2>Rectangles</h2>
+<p>Drawing rectangles is much easier now that you can draw lines, as a rectangle
+is made up of&nbsp; four of them.&nbsp; I don't think you need pseudocode for
+this one.</p>
+<h2>Circles</h2>
+<p>Bresenham didn't stop at a line algorithm - he also made one to draw
+circles.&nbsp; You will be using this algorithm to draw your circles.&nbsp; The
+DrawCircle pseudocode is as follows:</p>
+<p><tt>procedure DrawCircle(int x, int y, int r)<br>
+begin<br>
+&nbsp;int xdist = 0;<br>
+&nbsp;int ydist = r;<br>
+&nbsp;int circleerror = 1 - r;<br>
+&nbsp;while (xdist &lt;= ydist) do<br>
+&nbsp; begin<br>
+&nbsp;&nbsp; DrawPixel(x + xdist, y + ydist);<br>
+&nbsp;&nbsp; DrawPixel(x - xdist, y + ydist);<br>
+&nbsp;&nbsp; DrawPixel(x + xdist, y - ydist);<br>
+&nbsp;&nbsp; DrawPixel(x - xdist, y - ydist);<br>
+&nbsp;&nbsp; DrawPixel(x + ydist, y + xdist);<br>
+&nbsp;&nbsp; DrawPixel(x - ydist, y + xdist);<br>
+&nbsp;&nbsp; DrawPixel(x + ydist, y - xdist);<br>
+&nbsp;&nbsp; DrawPixel(x - ydist, y - xdist);</tt></p>
+<p><tt>&nbsp;&nbsp; xdist++;<br>
+<br>
+&nbsp;&nbsp; if (circleerror &lt; 0) then </tt><tt><br>
+&nbsp;&nbsp;&nbsp; circleerror += 2 * xdist + 1;<br>
+&nbsp;&nbsp; else<br>
+&nbsp;&nbsp;&nbsp; begin<br>
+&nbsp;&nbsp;&nbsp;&nbsp; ydist--;<br>
+&nbsp;&nbsp; &nbsp; circleerror += 2 * (xdist - ydist) + 1;<br>
+&nbsp;&nbsp;&nbsp; end<br>
+&nbsp; end<br>
+end</tt></p>
+<h2>Text - Blitting Revisited</h2>
+<p>Here's the image of a section of the font file, with the 'A' being the
+character we will draw to the screen.&nbsp; The entire font file has 128
+characters, and each character is 16 pixels wide and 16 pixels high.&nbsp;&nbsp;</p>
+<p align="center"><img border="0" src="font-a.png" width="185" height="50"></p>
+<p>The offset of the upper-left corner of a character in the font image is
+dependent on the character's ASCII value, the size of the character, and the
+number of bytes needed for each pixel.&nbsp; Take the letter 'A' in this
+example. Its offset in the font image is 4160 decimal, and here's how to get
+that number:</p>
+<ul>
+  <li>The ASCII value of 'A' is 65 decimal</li>
+  <li>Each letter in the font image is 16 pixels wide</li>
+  <li>Each pixel is represented by 4 bytes in memory</li>
+</ul>
+<p>Thus, 65 * 16 pixels * 4 bytes / pixel = 4160 bytes.&nbsp; Using this initial
+offset and the information above about each character and the font file, copy
+the character out of the font and onto the screen buffer.&nbsp; Do this for
+every character in the string, and voilà, you have a string of text on the
+screen.</p>
+<p>&nbsp;</p>
+
+</body>
+
+</html>

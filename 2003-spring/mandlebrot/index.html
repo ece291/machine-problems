@@ -1,0 +1,333 @@
+<HTML>
+	<HEAD>
+		<title></title>
+		<% title = "ECE291 Machine Problem 4"
+subtitle = "Machine Problem 4"
+
+ %>
+		<!--#include file="headvb.asp"-->
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+		<meta content="Microsoft FrontPage 5.0" name="GENERATOR">
+	</HEAD>
+	<body>
+		<h1 align="center">Machine Problem 4: Mandelbrot Fractals</h1>
+		<div align="center">
+			<center>
+				<table cellPadding="2" width="514" border="0">
+					<TBODY>
+						<tr>
+							<td align="right" width="75" bgColor="#efefef"><b>Assigned</b></td>
+							<td width="425" bgColor="#efefef">Thrusday, March 13, 2003</td>
+						</tr>
+						<tr>
+							<td align="right" width="75" bgColor="#efefef"><b>Due Date</b></td>
+							<td width="425" bgColor="#efefef">Wednesday, April 2, 2003, 5:00 pm</td>
+						</tr>
+						<tr>
+							<td align="right" width="75" bgColor="#efefef"><b>Purpose</b>
+							</td>
+							<td width="425" bgColor="#efefef">Get Aquainted with Protected Mode</td>
+						</tr>
+						<tr>
+							<td align="right" width="75" bgColor="#efefef"><b>Points</b>
+							</td>
+							<td width="425" bgColor="#efefef">40</td>
+						</tr>
+					</TBODY></table>
+			</center>
+		</div>
+		<h2>Introduction</h2>
+		<p>Mp4&nbsp;generates and displays the Mandelbrot fractal. It allows the user 
+			to&nbsp;zoom in by selecting any point on the fractal. Below is a picture of 
+			the Mandelbrot fractal zoomed in some.
+		</p>
+		<center>
+			<H3><IMG alt="" src="mandel_pic.PNG"></H3>
+		</center>
+		<H3>New Things You Need to Know</H3>
+		<ol>
+			<li>
+				Protected Mode&nbsp;&nbsp;&nbsp;&nbsp;<EM>--Do PM <A href="http://courses.engr.illinois.edu/ece291/books/labmanual/pmode-intro.html">
+						Tutorial</A> in lab manual</EM>
+			<LI>
+				High Resolution Graphics&nbsp;&nbsp;&nbsp;&nbsp;<em>--Learn in <A href="http://courses.engr.illinois.edu/ece291/books/labmanual/pmodelib-intro-graphics.html">
+						18.8</A> PM Tutorial in lab manual</em>&nbsp;
+				<ul>
+					<li>
+						_MP4Main, _CalcAllPixels, _MapBuffer
+					</li>
+				</ul>
+			<li>
+				Floating Point Instructions&nbsp;&nbsp;&nbsp;&nbsp;<EM>--Learn&nbsp;in these 
+					lecture <A href="http://courses.engr.illinois.edu/ece291/lecture/potts/lecture15_files/frame.htm">
+						notes</A> and in given code for CalcAllPixels</EM> &nbsp;
+				<ul>
+					<li>
+						_CalcAllPixels, _CalcPixel, _ComplexSquare, _IsDiverging
+					</li>
+				</ul>
+			<li>
+				Call by Value vs Call by Address&nbsp;&nbsp;&nbsp;&nbsp;<em>--Learn in <A href="http://courses.engr.illinois.edu/ece291/books/labmanual/pmodelib-intro-proc-invoke.html">
+						18.2.3</A> PM Tutorial in lab manual</em>&nbsp;
+				<ul>
+					<li>
+						_MapBuffer, _CalcAllPixels, _CalcPixel, _ComplexSquare, _IsDiverging
+					</li>
+				</ul>
+			</li>
+		</ol>
+		<H2>Program Specification&nbsp;</H2>
+		<P>A fractal is a mathematical object that has the interesting property that it 
+			repeats itself within itself infinitely.&nbsp; This can be seen by&nbsp;running 
+			mp4 and zooming in with the left mouse button.&nbsp; The black region is inside 
+			the Mandelbrot set.&nbsp; Other points may be close to being within the 
+			Mandelbrot set.&nbsp; These points are not colored black, but are given a 
+			different color depending on how close they are too being in the Mandelbrot 
+			set.&nbsp; The _CalcPixel function determines how close a point is to being in 
+			the Mandelbrot set.&nbsp; The _CalcAllPixels function&nbsp;stores this 
+			information to a buffer pointed to by [_MandelOff].&nbsp; The buffer has one 
+			byte for each pixel on&nbsp;the&nbsp;screen (640x480pixels).&nbsp; So the 
+			buffer is 8 bits per pixel (8bpp).&nbsp; Now the information in the buffer 
+			needs to be mapped to 32 bit colors.&nbsp; This is done by the function 
+			_MapBuffer.&nbsp; It maps the pixels in the 8bpp [_MandelOff] to the 32bpp 
+			[_ScreenOff].&nbsp; This mapping is done through a lookup table similar to the 
+			one used in mp3 to go from scan codes to ascii.</P>
+		<P>The MandelBrot set is calculated on the complex plane.&nbsp; So&nbsp;a region of 
+			the complex plane needs to be mapped to the screen coordinates.&nbsp; The 
+			function _CalcAllPixels handles this task.&nbsp; This region is determined by 
+			the variables _MinX, _MaxX, _MinY, and _MaxY.&nbsp;&nbsp;The mathematics behind 
+			determining how close a point is too being in the Mandelbrot set are performed 
+			on the complex coordinate that maps to that pixel.&nbsp; Floating point 
+			instructions are used throughout mp4 when dealing with complex numbers.</P>
+		<P>For more information on the Mandelbrot fractal, check out the references 
+			section.</P>
+		<H3>Closeness of a Complex Coordinate to the Mandelbrot Set</H3>
+		<p>This section will discuss how to determine the promixity of a 
+			point&nbsp;to&nbsp;the Mandlebrot set.&nbsp; First&nbsp;start with the complex 
+			coordinate C of the point.&nbsp; Then&nbsp;compute Z<SUB>1</SUB> = Z<SUB>0</SUB><SUP>2</SUP>
+			+C, where&nbsp;Z<SUB>0</SUB>=0.&nbsp;&nbsp;Now&nbsp;check&nbsp;to see if |Z<SUB>1</SUB>|&gt;=2.&nbsp; 
+			If it is, then the closeness of this point is 1, which is not close at all (255 
+			is the closest without actually being in the set).&nbsp; If |Z<SUB>1</SUB>|&gt;=2, 
+			then calculate Z<SUB>2</SUB> and see if |Z<SUB>2</SUB>|&gt;=2, and so on 
+			until&nbsp;a&nbsp;Z<SUB>n</SUB> is found where |Z<SUB>n</SUB>|&gt;=2. In this 
+			case the closeness of this point would be n.&nbsp; Since it would be 
+			computationally expensive to loop for a larger number of times,&nbsp;a maxium 
+			iteration&nbsp;limit of 255 has been set.&nbsp;&nbsp; At this point&nbsp;assume 
+			this point is in the Mandelbrot set, and&nbsp;set the closeness to 
+			0.&nbsp;&nbsp;
+		</p>
+		<H4>Multiplying Complex Numbers</H4>
+		<P>In complex number multiplication,&nbsp;(a+bi) (c+di) = (ac-bd) +(ad+bc)i. 
+			&nbsp;In particular&nbsp;(a+bi)(a+bi) = (aa-bb)+(2ab)i and&nbsp;the square of 
+			the absolute value of a complex number |a+bi|<SUP>2</SUP> = aa+bb. These two 
+			equations will be useful for&nbsp;functions _ComplexSquare and _IsDiverging.
+		</P>
+		<H4>Representing Complex Numbers</H4>
+		<P>; Complex Structure<br>
+			STRUC Complex<br>
+			.Real&nbsp;&nbsp;&nbsp; resq&nbsp;&nbsp;&nbsp; 1<br>
+			.Imag&nbsp;&nbsp;&nbsp; resq&nbsp;&nbsp;&nbsp; 1<br>
+			ENDSTRUC</P>
+		<P>Structs haven't been used before in this class, but they are friendly data 
+			structures.&nbsp; They are C-like versions of the parameter lists in mp3 used 
+			to implement the queue data structure.&nbsp; After declaration of this struct, 
+			Complex.Real = 0, Complex.Imag = 8, and Complex_size = 
+			16.&nbsp;&nbsp;[_C+Complex.Real] and [_C+Complex.Imag] are the real and 
+			imaginary parts of a complex number stored at location _C.<br>
+		</P>
+		<H3>Handling Zoom</H3>
+		<P>Zoom is handled by&nbsp;_MouseCallback and _SetZoom.&nbsp; The function 
+			_MouseCallback is called whenever left or right mouse button is pressed.&nbsp; 
+			If left mouse button is pressed, the ZOOM_IN_BIT of _MPFlags need to be set, 
+			and ZOOM_OUT_BIT of _MPFlags needs to be set for right mouse button.&nbsp; The 
+			information about which button was pressed is in the call mask located&nbsp;in 
+			the DPMI register eax.&nbsp; _MouseCallback also records the current cursor 
+			location in _MouseX and _MouseY.</P>
+		<P>Zooming entails&nbsp;changing the region of the complex plane under 
+			scrutiny.&nbsp; Function _SetZoom&nbsp;recalculates _MinX, _MaxX, _MinY, and 
+			_MaxY depending on whether the user is&nbsp;zooming in or out and depending 
+			on&nbsp;the location of the mouse click.</P>
+		<h3>Buffers</h3>
+		<P>There are two main, large buffers used in mp4.&nbsp; First is the screen buffer 
+			[_ScreenOff], which tends to be part of any good graphics program.&nbsp; It is 
+			used to double buffer the graphics.&nbsp;&nbsp;Instead of updating individual 
+			pixels&nbsp;on the screen,&nbsp;[_ScreenOff] is updated and then displayed in 
+			one feel swoop by&nbsp;function _CopyToScreen to the screen.&nbsp; Mp4 uses 
+			high resolution graphics at 640x480 pixels at 32 bits per pixel, so the size of 
+			[_ScreenOff] is 640x480x4 bytes.&nbsp; The other buffer holds the proximty of 
+			each pixel to the Mandelbrot Set.&nbsp; This value ranges from 0 to 255 and can 
+			thus be stored in a byte.&nbsp; So the size of this buffer, [_MandelOff], is 
+			640x480x1.&nbsp;&nbsp;<br>
+		</P>
+		<h2>Functions</h2>
+		<OL>
+			<li>
+				<FONT size="2"><STRONG>_MP4Main() -</STRONG> </FONT>
+				<ul>
+					<li>
+						<FONT size="2">calls _CalcAllPixels to fill MandelBuf </FONT>
+					<li>
+						<FONT size="2">calls _MapBuffer to convert _MandelOff (8bpp) to _ScreenOff (32bpp) </FONT>
+					<li>
+						<FONT size="2">calls _CopyToScreen to display _ScreenOff to the screen! </FONT>
+					<LI>
+						<FONT size="2">then it clears the ZOOM_BITS from&nbsp;_MPFlags&nbsp; </FONT>
+					<li>
+						<FONT size="2">it then waits until user presses a key or presses the mouse button </FONT>
+					<li>
+						<FONT size="2">this is done by looking at the appropriate bits of _MPFlags </FONT>
+					<li>
+						<FONT size="2">upon keypress, exit from MP4Main </FONT>
+					<li>
+						<FONT size="2">upon mouse press, call SetZoom to zoom into the apppropriate part of 
+							the screen </FONT>
+					</li>
+				</ul>
+			<LI>
+				<FONT size="2"><STRONG>_MapBuffer(int *src, int *dest)</STRONG> - </FONT>
+				<UL>
+					<li>
+						<FONT size="2">uses 640*480 bytes from src as keys into lookup table MapTable to 
+							get 640*480 dwords to put in dest </FONT>
+					<LI>
+						<FONT size="2">look at maptable.inc to see the lookup table</FONT>
+					<LI>
+						<FONT size="2">if src pixel equals 0, then&nbsp;just output 0 into dest for that 
+							pixel</FONT>
+					<LI>
+						<FONT size="2">to get the default color scheme,&nbsp;negate the src pixel 
+							before&nbsp;using the lookup table, and also flip the result of the lookup; i.e 
+							if eax =&nbsp;FFEEDDCCh, then after the flip eax = CCDDEEFFh&nbsp;</FONT>&nbsp;</LI></UL>
+			<li>
+				<FONT size="2"><STRONG>_CalcPixel(complex *C)</STRONG> - </FONT>
+				<ul>
+					<li>
+						<FONT size="2">start Z = 0, and apply Z<sub>i</sub> = Z<sub>i-1</sub><sup>2</sup>+C 
+							up to 255 times return count taken for |Z| to reach at least 2, or 0 if it does 
+							not.<br>
+						</FONT>
+					<li>
+						<FONT size="2">Calls _ComplexSquare to find Z<sub>i-1</sub><sup>2</sup> </FONT>
+					<li>
+						<FONT size="2">Calls _IsDiverging to see if |Z| &lt; 2 </FONT>
+					</li>
+				</ul>
+			<li>
+				<FONT size="2"><STRONG>_ComplexSquare(complex *Z)</STRONG> -
+					<ul>
+						<li>
+							squares Z and writes it back in place, refer to formula above if not sure how 
+							to square<br>
+						</li>
+					</ul>
+				</FONT>
+			<li>
+				<FONT size="2"><STRONG>_IsDiverging(complex *Z)</STRONG> -
+					<ul>
+						<li>
+							if |Z| &gt; 2 return 1, else return 0; refer to formula above if not sure how 
+							to take absolute value<br>
+						</li>
+					</ul>
+				</FONT>
+			</li>
+		</OL>
+		<H3>Given Functions</H3>
+		<FONT size="2">
+			<OL>
+				<li>
+					<P><FONT size="2"><STRONG>_CalcAllPixels(int *dest)</STRONG> - </FONT>
+					</P>
+					<UL>
+						<LI>
+							<FONT size="2">maps complex coordinate range to the 640*480 pixels </FONT>
+						<LI>
+							<FONT size="2">calls _CalcPixel on each pixel's associated complex number to get 
+								value(color lookup for [_MapBuffer])&nbsp;which is written into dest </FONT>
+						<LI>
+							<FONT size="2">code is given to you&nbsp;as an example!&nbsp; read it, understand 
+								it! </FONT>
+						<LI>
+							<FONT size="2">notice how local variables are declared on the stack, use this 
+								method to declare any local variables!</FONT></LI></UL>
+					<FONT size="2"><FONT size="2">
+							<li>
+								<P><FONT size="2"><STRONG>_SetZoom() - </STRONG>
+								</P>
+								<UL>
+									<LI>
+									use _MouseX, _MouseY, and the ZOOM_BITS of _MPFlags &nbsp;to modify _MinX, 
+									_MaxX, _MinY, _MaxY
+									<LI>
+									first calculate width and height of the current region of display
+									<LI>
+									then calculate the complex coordinates of _MouseX, _MouseY
+									<LI>
+									then halve or double this region
+									<LI>
+										don't clear the ZOOM_BITS, this will be done in _MP4Main</LI></UL>
+								<OL>
+								</OL>
+								<P>
+						</FONT></FONT></P></li></OL>
+		</FONT></FONT>
+		<H3>Library Functions</H3>
+		<FONT size="2"><FONT size="2">
+				<ol>
+					<li>
+						<P><FONT size="2"><STRONG>_MouseCallback(DPMIReg *)</STRONG> -
+						</P>
+						<P></P>
+						<UL>
+							<LI>
+							on left or right click set _MouseX, _MouseY, and ZOOM_IN_BIT or ZOOM_OUT_BIT in 
+							_MPFlags
+							<LI>
+							if ZOOM_BITS already set at beginning, then do nothing!
+							<LI>
+								refer to this <A href="http://www.ctyme.com/intr/rb-5968.htm">link</A>
+							to find information on the call mask with which _MouseCallback is called
+							<LI>
+							use [es:DPMIReg* + DPMI_EAX_off] to get value of eax (callmask), btw this is 
+							pseudo code!
+							<LI>
+								put curser row and column in _MouseX and _MouseY<BR>
+			</FONT></LI></UL></LI></OL><BR>
+		</FONT>
+		<br>
+		<UL>
+		</UL>
+		</FONT>
+		<h2>Procedures</h2>
+		<UL>
+			<li>
+				You may copy the mp4 files from the network drive to your home directory with 
+				the following command:
+				<br>
+				<tt>xcopy /s V:\ece291\mp4 W:\mp4</tt><br>
+				or download the files from this server as <A href="mp4.zip">mp4.zip</A>
+			<li>
+				Use <STRONG>cv32</STRONG>
+			to find and correct program errors.
+			<LI>
+				Keep a <STRONG>developement log</STRONG>
+			to facilitate writing a cover memo later.
+			<LI>
+				Make sure your program <STRONG>works</STRONG>
+			by&nbsp;zooming in and out many times.
+			<LI>
+				Write a&nbsp;<STRONG>cover memo</STRONG>
+			based on the developement log; it shouldn't be the developement log.
+			<li>
+				Demonstrate your mp4.exe to a TA or the instructor.
+			</li>
+		</UL>
+		<P><STRONG>References</STRONG></P>
+		<OL>
+			<P><A href="http://msun.org/umich/fractal.htm">http://msun.org/umich/fractal.htm</A></P>
+			<P><A href="http://www.spiritart.org/FractalSurf/mandelbrot.html">http://www.spiritart.org/FractalSurf/mandelbrot.html</A><BR>
+				<BR>
+			</P>
+		</OL>
+	</body>
+</HTML>

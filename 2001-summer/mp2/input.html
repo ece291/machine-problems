@@ -1,0 +1,77 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>User Input</title>
+</head>
+
+<body>
+
+<h1>User Input</h1>
+<p>User input will occur over the serial port.&nbsp; You will run two versions
+of the same program on the same computer.&nbsp; On the transmit side, you will
+type in a string of numbers.&nbsp; As you type, they will be displayed on the
+transmit program.&nbsp; In addition to displaying them, you will also send each
+character over the serial port.&nbsp; When the receiving side notices that there
+is a character on the port, it will read the character from the port and also display it on the screen.&nbsp;
+When you are finished inputting the string, the receiving end will parse the
+input string into an array of numbers and then sort the array. </p>
+
+<h2>Serial Port I/O </h2>
+
+<p>Lecture 8 gives a very good introduction to the serial port, and it contains
+everything you need to write the serial port I/O part of this MP.&nbsp; The port
+initialization functions have already been written for you - notice that they
+are setting up the port parameters (refer to slide 25).&nbsp; So, you'll only
+have to write the code for transmitting and receiving the data.&nbsp; Remember
+that the transmit and receive buffers, TBR and RBR respectively, are located at
+the port's base address.&nbsp; Also, the line status register, LSR, is located
+at the base address + 5.&nbsp; Take a look at slide 32 to see how you determine
+whether the port has received input. </p>
+
+<p>Some constants related to the serial port are defined for you at the top of
+the mp2.asm file.&nbsp; Using them when writing your code may make it easier to
+read.</p>
+<h2>Transmitting Data</h2>
+<p>When the user presses a key on the keyboard (other than ESC or Enter),
+display the character, and then write the character to COM2's TBR.&nbsp; If the
+user presses backspace, you should move the cursor back one place on the screen
+and remove the character at that location.&nbsp; Backspace keypresses should be
+sent over COM2 so the receiving end can handle them as well.&nbsp; When either
+ESC or Enter is pressed, you should terminate the function, and also send a '$'
+over COM2 to let the receiving end know that the user has finished inputting the
+string.</p>
+<h2>Receiving Data</h2>
+<p>You should continuously poll COM1's LSR until input has been received.&nbsp;
+When input is ready, read the value from COM1's RBR.&nbsp; You will then want to
+display the character to the screen and add it to the receive buffer.&nbsp; If
+the character is a backspace, you should update the screen as described above
+and also &quot;remove&quot; it from the buffer by updating your current position
+in the buffer.&nbsp; Make sure you do not move before the buffer in memory - so
+if you're at the beginning of the buffer and you receive a backspace, do not
+process it!&nbsp; When you receive a '$', user input has stopped.&nbsp; At this
+point, add a '$' to the buffer and then terminate the function (do not display
+the '$').&nbsp; One more note, the receive buffer has a maximum size of 75
+bytes, so make sure you do not overfill it.</p>
+<h2>Parsing Data</h2>
+<p>Once you have the string in the receive buffer, you need to parse it into an
+array of numbers.&nbsp; This is much easier as it seems, thanks to the library
+ascbin function.&nbsp; Take a look at the lab manual to see how it works - it
+will save you a great deal of time.&nbsp; So, you should go through the entire
+input string, pulling out one number at a time, converting it from ascii to
+binary, and then storing the number into the array whose pointer is passed in to
+the ParseInput function.&nbsp; Keep track of how many numbers you parse.&nbsp;
+Remember that the input string is '$' terminated, so stop when you reach a
+'$'.&nbsp; The array can hold up to 25 numbers, so if there are more numbers in
+the input string than 25, you should not add the extra ones to the array.&nbsp;
+If ascbin returns an error code (dl is nonzero), the ParseInput function should
+return -1 to indicate there was an error in parsing the input; otherwise, you
+should return the length of the array (how many numbers you successfully
+parsed).</p>
+
+</body>
+
+</html>

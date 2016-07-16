@@ -1,0 +1,29 @@
+150     ; First Number [base 10 by default] pushed to stack
+50      ; Second Number pushed to stack
+-       ; Calculate: 150-50=100 , Leave Result on stack
+8
+2
+5
+*       
++       ; Calculate: (2*5)+8=18 , Leave Result on stack
+/       ; Calculate: 100/18=5 (Integer Arithmetic)
+N       ; Calculate: Negate(5)=-5
+12      ; Enter 12
++       ; Calculate: -5+12=7
+!       ; Calculate: Factorial(7)=7*6*5*4*3*2*1=5040
+MH      ; Switch to Hex Mode (Enter/Display format): 5040d = 13B0h
+FFF     ; Enter FFF (hex)
++       ; Calculate: 13B0h+0FFFh=23AFh
+2300    ; Enter 2300 (hex)
+-       ; Calculate: 23AFh-2300h=00AFh (hex)
+MB      ; Switch to Binary Mode: 00AFh=0000000010101111b
+111111  ; Enter 111111 (binary)
+&       ; Calculate: Logical AND = 0000000000101111
+000111  ; Enter 000111 (binary) (note that preceding zeros ignored)
+^       ; Calculate: Logical XOR = 0000000000101000
+11      ; Enter 11 (binary)
+|       : Calculate: Logical  OR = 0000000000101011
+~       ; Calculate: Logical NOT = 1111111111010100
+MH      ; Switch to Hex Mode: Final Result == FFD4h
+Q       ; Escape to exit
+

@@ -1,0 +1,1628 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 4/5</title>
+</head>
+
+<body bgcolor=ffffff>
+<p>
+<table cellpadding=3 width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Moorman, Summer 1998</td></tr></table>
+<h2> </h2>
+
+
+<center><h1>Machine Problem 4 &amp; 5: Bomb </h1></center>
+<p>
+<center><table border=1 cellpadding=3 width=60%>
+  <tr><td align=right><b>Due Date</b></td><td>Friday 7/24/98</td></tr>
+  <tr><td align=right><b>Purpose</b></td><td>
+     VGA Graphics, Interrupts, Structures, Floating Point operations 
+     </td></tr>
+   <tr><td align=right><b>Points</b></td><td>100</td></tr>
+</table>
+</center>
+
+<!--
+<p><img src="../../icon/construct.gif">This MP is under construction <p>
+-->
+
+<p><center><img src="./mp4.gif" width="659" height="463"></center><p>
+
+
+<h2>Introduction</h2>
+  In this MP we will be writing our own version of the classic computer game
+  'Bomb'.  You may have seen more recent versions under the alias of 'Tank
+  Wars' or 'Scorched Earth'.  Our version will be a simplified model but will
+  perform accurate calculations for the bomb trajectory according to
+  those fundamental physics equations you learned so long ago.
+
+<p>
+  The main idea of the game is to destroy your opponent's tank by lofting bombs
+  that can cause damage to whatever they hit.  Note that an exploding bomb
+  can damage your tank just as well as your opponent no matter who actually
+  shot it.
+<p>
+  There are only two tanks involved in the game.  The red tank is Player A
+  and the yellow tank is Player B.  Each player will get to alternate
+  shots until someone quits the game ('q') or a tank has been destroyed.
+  Each time a tank is hit there is some damage done to the tank.  This
+  reduces the amount of power that the tank can then use.  When the power
+  has been reduced to zero, or in other words the tank is completely
+  damaged, then the game is over.
+<p>
+  The game will also perform timer functions so that certain events can
+  be coordinated with real time.  This includes the calculations for the
+  bomb trajectory, and a timer to hold explosions for a short period
+  of time before erasing them.
+<p>
+  One final characteristic that will need to be implemented is the falling
+  ground effect.  Whenever a bomb explodes in the ground some of the ground is
+  removed.  The ground above this will then fall down to fill in the gap.
+<p>
+  Because of the number of routines involved in this MP, and the short time
+  duration, we will split it into two parts.  The first part will effectively
+  count as MP4 and the second part as MP5.  This will then be worth a total
+  of double MP points (100).  You will have the opportunity to receive half
+  of those points at the first checkpoint (MP4 due date) and the final
+  half of the points at the second/final checkpoint (MP5 due date).
+<p>
+  The second part of the MP will involve a routine of your choice to enhance
+  the quality of the game.  This will be judged on complexity, efficiency,
+  and overall quality.
+<p>
+  In the second part of the MP you will <b>NOT</b> be allowed to use
+  library routines for the procedures that you demonstrated during the
+  first checkpoint.  In other words at the second checkpoint all
+  routines should be your own.
+
+<h2>Implementation</h2>
+   Your implementation of this program should follow that of the library
+   code.  You will use mode 13h VGA graphics to display the necessary
+   graphics to the screen.  All input will be through the keyboard.  In this
+   MP we will be programming using the <tt>.486</tt> model.  With this
+   model we are able to use some things that we have not had access to up
+   to this point.  This includes access to some extra segment registers
+   (GS and FS) which we will use in our graphics manipulation.
+
+<p>
+   Your program should do the following:
+   <ul>
+   <li>Display the 'BKGRND.PCX' file to the screen.
+   <li>Draw the two tanks onto their starting positions.
+   <li>Take user input to adjust the angle and power of the tank.
+   <li>Update the tank turret according to the tank angle.
+   <li>Display text and numbers to locations on the screen (Angle, Power)
+       according to the current player that is shooting.
+   <li>Perform a shot by using the time to find new velocity
+       and position calculations at each timer interval.
+   <li>Display shots to the screen and check bounds to not allow shots off
+       the top or bottom of the screen.
+   <li>Perform collision detection to tell when a bomb has hit an item.
+   <li>Draw and Erase explosions as needed.
+   <li>Calculate damage from explosions.
+   <li>Perform the ground falling enhancement.
+   <li>Check for a winner and exit when necessary.
+   </ul>
+   
+
+<h2>Video Graphics</h2>
+In order to reduce the amount
+of screen flicker inherent in programs that use VGA graphics, we are going
+to use double-buffering to draw on the screen.  
+After an entire image has been created, it will be quickly transferred
+with the <i>Update_Screen</i> routine directly to the screen.  
+With this implementation, you don't see this image while it
+is being changed.
+<p>
+Because one page of graphics alone requires 64,000 bytes of information, 
+more than one segment must be defined.
+Three variables in different segments have been defined as follows:
+<UL>
+<LI><i>VBuf</i>: A double-buffered "virtual" screen that holds 
+    images as they are created.
+<li><i>VScratchPad</i>: A video scratch pad that holds our PCX data
+                        including the tanks, the text messages, and the
+                        numbers.
+<LI><i>ScratchPad</i>: A temporary buffer used to hold PCX image data 
+    during decoding.</LI>
+</UL>
+A few steps are required to draw a video screen.  We update all of
+our video changes (bomb trajectories, explosions, falling ground) in
+the <tt>VBufSeg</tt> in the respective routines by using needed pieces from
+the PCX file stored in <tt>VScratchSeg</tt>.  This buffer is
+then blasted to actual video memory destroying whatever was currently
+on the screen.  
+
+<h2>Image Data</h2>
+It would be tedious to define images using assembly code.
+It is much more convienient to create an image using a standard image 
+editor (such as CorelPHOTO-PAINT) and save the results in a file.
+Our program then need only load this data when it executes.
+
+<p>
+For this MP, we will write the <i>Load_PCX</i> routine to 
+open and read a .PCX file; run-length decode it; then
+save the uncompressed data in a memory segment.  
+DOS file services (software interrupts) are described in the lab 
+manual and in your textbook. (You will need to open a file, 
+point a register to the scratch segment, and issue the read command).  
+Details of the PCX image format are in
+<a href="../../lecture/l22.html">Lecture 22</a>. <!-- PCX -->
+PCX files use a variation of Run-Length encoding. 
+A "run" of data corresponds to horizontal lines in the image.
+Adjacent pixels that are the same value are compressed into two bytes, an
+attribute and a length.
+You will find some very helpful example PCX code in your lab manual.
+
+
+<h2>Interrupt Timer</h2>
+Remember that for the timer interrupt we need to chain or call the
+default interrupt handler with our own code.  This will allow us
+to insert our code which we need to execute every 1/18 sec. while still
+allowing the normal system timing functions to proceed.
+Your <i>Install_Timer</i> routine is called to install a new
+interrupt into the vector table.  The <i>Deinstall_Timer</i> routine is
+used to remove it (and restore the DOS default routine).  
+<p>
+We will be using a few flags to communicate between the timer routine
+<i>IntTimer</i> and the rest of our code.  The timer routine will
+look at the <tt>Shot_Flag</tt> to know when a current shot is in progress.
+If a shot is running then every time tick (1/18 sec) the
+<tt>Timer_Flag</tt> will be set so that the main code knows when a new
+position calculation can be performed.  The timer will also look at the
+<tt>ExpCount</tt> to determine if an explosion is currently in progress.
+If it is then the counter is decremented until it reaches 0.  Once the
+counter has expired the explosion can be removed with the <i>Implosion</i>
+routine.
+<p>
+The final item the timer needs to take care of is the <i>Fall</i> of the
+ground.  This routine is called from the timer so that the ground has the
+appearance of falling over time.
+
+<h2>Physical Equations</h2>
+The program tracks the velocity, and position of the
+bomb along both the horizontal and vertical directions.
+The bullet is considered to have a mass of 1.  
+The force in each direction can be calculated according to the
+power and the angle.  We use the fact that Force = Mass * Acceleration
+to find the acceleration of the bullet in each direction.  So we first
+find force from the following:<br>
+F<sub>x</sub> = Power * Cos(Angle)<br>
+F<sub>y</sub> = Power * Sin(Angle)<br>
+We then divide by the mass to get the acceleration in one direction.
+At all times, there is a gravitational field
+accelerating the bomb downward at a rate of
+9.81 meters per second squared (m/s^2).  The net motion of the bomb
+can be determined by summing the forces.
+<p>
+Recall that acceleration (A) is the time derivative of
+velocity (V) and that velocity (V) is the time derivative of position (X).
+For this problem, it is convienient to calculate the piece-wise integral
+of acceleration to obtain velocity and the piece-wise integral of
+velocity to calculate the position.  Using V<sub>i-1</sub> as the
+previous velocity and X<sub>i-1</sub> as the previous position, 
+new values of A, V, and X can be calculated at each instant of time
+as shown below:
+<blockquote>
+A<sub>i</sub> = <i>Sum of forces / Mass</i><br>
+V<sub>i</sub> = V<sub>i-1</sub> + A<sub>i</sub> * dt <br>
+X <sub>i</sub>= V<sub>i-1</sub> * dt + (1/2) A<sub>i</sub> * dt<sup>2</sup><br> 
+</blockquote>
+Finally, recall that we will perform the calculation for each time tick
+so that our dt = 1/18 sec.
+
+
+
+
+<h2>User Interface</h2>
+  <ul>
+  <li>Each player will use the keyboard to determine their shot.  The up/down
+      arrows will change the power in the respective direction.  The left/right
+      arrows will allow the angle to change.  The range of power is from 0 to
+      <tt>MAX_POWER</tt> while the angle range is from 0-180.  The use will also have
+      the option to quit at any time by using the 'q' key.
+      <p>
+
+<li>The are two important data structure in the game which are defined using
+    the <tt>STRUCT</tt> command.  The first structure, <tt>Sprite</tt>, is
+    for the <i>CopySprite</i> routine.  It contains the (x,y) coordinates
+    in the source segment, the (x,y) coordinates in the destination segment,
+    and the height and width in pixels.
+    <p>
+    The second structure, <tt>Player</tt> is for actual player data.  It
+    contains the players (x,y) coordinates, the tank color, the current
+    power and angle, and the Maximum allowed power (which will change as
+    the tank is damaged).   These structures are used throughout the
+    routines in this MP.
+    <p>
+
+<li>You are also given some tables in this MP for easier manipulation
+    of graphics.  The table values are given to you in the program framework.
+    The first table is for converting the player angle into actual gun
+    turret pixels.  The second table is the pixel positions for the
+    explosion according to the point of collision.
+<p>
+<li>The trail of the bomb as it travels through the air is drawn to the
+    screen pixel by pixel.  You may leave this trail on the screen so
+    that we can more easily see the shot trajectory and compare to
+    subsequent shots.
+<p>
+<li>You will also need to check the bounds of the bomb as it is shot
+    through the air.  The world we are using can allow shots to the left or
+    right on the screen, but you CANNOT allow shots above the screen to
+    be shown below the ground, or shots below the screen to be shown on the
+    top of the screen.  In other words you can shoot left or right
+    across the screen and come out the other side, but you cannot shoot
+    out the top of the screen and come out the bottom or out the
+    bottom and come out the top.  A shot that is out of range above the
+    screen still needs new positions calculated as it can still fall within
+    the screen range at a later time.  A shot below, however, can never
+    come back above so it can be considered to be exploded once it goes
+    out of range below.  To get a feel for how the
+    bounds checking works run the program a few times and try lofting
+    bombs off the screen.  You may also want to use the different
+    PCX backgrounds supplied with the files so that the bounds testing is
+    easier.
+
+<li>A sample screen shot is shown above.  Your program should match this very
+    closely though it does not have to be exact.  The location of tanks and
+    text are given as constants and are described below.
+<p>
+
+<li>Your program should be robust to all types of input.
+
+</ul>
+
+<h2>Data Structures</h2>
+  <ul>
+  <li>The following variables have already been defined for you in the program
+      framework.  <p>
+     <ul>
+     <li><b>MainPCX</b>: The background PCX file string <br>
+     <li><b>PiecesPCX</b>: The pieces PCX file string <br>
+        <p>
+     <li><b>Old_Vector</b>: A double word to store the interrupt
+            vector address that is removed from the interrupt
+            vector table. This is the routine that will still
+            need to be run every timer tick, and will be
+            put back into the vector table in the <i>Deinstall_Timer</i>
+            routine.<br>
+        <p>
+     <li><b>Bomb_Angle</b>: The current angle of the bomb. (Defined as a word
+            for floating point conversion.)
+     <li><b>Bomb_Power</b>: The current power of the bomb. (Also a word for
+            FP conversion.)
+     <li><b>Bomb_Pos</b>: The current position of the bomb.
+        <p>
+     <li><b>Shot_Flag</b>: Variable to signify that a shot is in progress.
+            This is when position calculations will need to take place.
+     <li><b>Timer_Flag</b>: Variable to signify that it is time to
+            calculate a new position for the current shot in progress.
+        <p>
+     <li><b>ExpCount</b>: This is a counter that is decremented in the
+            timer interrupt until it reaches 0.  It is used to know how
+            long to keep an explosion before erasing it from the screen.
+     <li><b>LastExpPos</b>: The last position of the explosion.  This is
+            used to know where to erase the explosion (<i>Implosion</i>) in
+            case the explosion timer has expired, or another explosion is
+            already in progess and we have not yet
+            removed the previous explosion.
+        <p>
+     <li><b>Fx</b>: Floating point variable to hold the current shot Force
+            in the x-direction.
+     <li><b>Fy</b>: Floating point variable to hold the current shot Force
+            in the y-direction.
+     <li><b>VelX</b>: Floating point variable to hold the current shot velocity
+            in the x-direction.
+     <li><b>VelY</b>: Floating point variable to hold the current shot velocity
+            in the y-direction.
+     <li><b>DisX</b>: Floating point variable to hold the current shot displacement
+            in the x-direction.
+     <li><b>DisY</b>: Floating point variable to hold the current shot displacement
+            in the y-direction.
+        <p>
+     <li><b>BOMBMASS</b>: Floating point mass of a bomb.
+     <li><b>GRAVITY</b>: Floating point acceleration due to gravity.
+     <li><b>VelSlice</b>: FP => a*t =  -0.545   ; -(1/18)*9.81
+     <li><b>TimeSlice</b>: FP => (1/18) = 0.0555555556
+     <li><b>SqTimeSlice</b>: FP => (1/2)*a*t<sup>2</sup> =
+            -0.015138889          ; -(1/2)*9.81*(1/18)<sup>2</sup>
+     <li><b>RadConv</b>: FP => 0.017453293      ; 2*Pi/360<br>
+            Value to convert degrees to radians.
+     <li><b>Displ</b>: Integer (word) variable to convert floating point
+            numbers into integers.
+        <p>
+
+     <li><b>PlayerA</b>: Player structure for the Player A vital data.
+     <li><b>PlayerB</b>: Player structure for the Player B vital data.
+        <p>
+     <li><b>PlayerAData</b>: Sprite structure for the Player A Tank.
+     <li><b>PlayerBData</b>: Sprite structure for the Player B Tank.
+         <p>
+
+     <li><b>AngleData</b>: Sprite structure for the 'Angle:' text.
+     <li><b>PowerData</b>: Sprite structure for the 'Power:' text.
+     <li><b>WinData</b>: Sprite structure for the winning message text.
+     <li><b>NumberData</b>: Sprite structure for the number digits.
+        <p>
+
+     <li><b>Angle_Table</b>:  Table of addresses for the various pixel
+            positions associated with each gun turret angle.
+     <li><b>TurretLength</b>:  The length in pixels of the gun turret.
+     <li><b>Turret22</b> - <b>Turret0</b>:  23 different turret positions
+            referenced with respect to the tank (x,y) coordinates.
+        <p>
+     <li><b>ExpLength</b>:  Number of pixels to plot for this explosion.
+     <li><b>ExpPos</b>:  Table of offsets of explosion pixels with respect
+            to the collision point.
+
+     </ul> <p>
+
+  <li>These constants have also been defined:<p>
+     <ul>
+     <li><b>VIDSEG</b> == 0A000h<br>
+            VGA Mode 13h video graphics.
+     <li><b>ROWWIDTH</b> == 320<br>
+            The respective width of a row in VGA Mode 13h. (Pixels/Bytes)
+     <p>
+     <li><b>SCREENSIZE</b> == 64000<br>
+            The number of pixels in one screen (320x200 with 256 colors)
+     <li><b>TANKWIDTH</b> == 15<br>
+            The width of each tank in pixels.
+     <li><b>TANKHEIGHT</b> == 6<br>
+            The height of each tank in pixels.
+     <p>
+     <li><b>Sec</b> == 18<br>
+            The number of clock ticks (timer interrupts) to equal 1 second.
+            This is only an approximation since the timer actually occurs
+            18.2 times/sec.
+     <p>
+     <li><b>PlayerA_X</b> == 59<br>
+            The initial x-position of Player A. (Column)<br>
+            This value matches the PCX background file.
+     <li><b>PlayerA_Y</b> == 115<br>
+            The initial y-position of Player A. (Row)<br>
+            This value matches the PCX background file.
+     <li><b>PlayerB_X</b> == 292<br>
+            The initial x-position of Player B. (Column)<br>
+            This value matches the PCX background file.
+     <li><b>PlayerB_Y</b> == 108<br>
+            The initial y-position of Player B. (Row)<br>
+            This value matches the PCX background file.
+     <p>
+     <li><b>PlayerA_Angle</b> == 45<br>
+            The starting angle for Player A.
+     <li><b>PlayerB_Angle</b> == 135<br>
+            The starting angle for Player B.
+     <p>
+     <li><b>MAX_POWER</b> == 100<br>
+            The initial maximum power for each player.
+     <li><b>Start_Power</b> == 60<br>
+            The actual initial power for each player.
+     <li><b>Damage</b> == 2<br>
+            The amount of damage that is cause per each tank pixel
+            that is hit during an explosion.
+     <p>
+     <li><b>Angle_X</b> == 10<br>
+            The initial x-position of the 'Angle:' text message. (Column)<br>
+     <li><b>Angle_Y</b> == 188<br>
+            The initial y-position of the 'Angle:' text message. (Row)<br>
+     <li><b>Power_X</b> == 160<br>
+            The initial x-position of the 'Power:' text message. (Column)<br>
+     <li><b>Power_Y</b> == 188<br>
+            The initial y-position of the 'Power:' text message. (Row)<br>
+     <p>
+
+     <li><b>TextWidth</b> == 35<br>
+            The width in pixels of each text message.  This is taken from the
+            Pieces.pcx file.
+     <li><b>TextHeight</b> == 10<br>
+            The height in pixels of each text message.  This is taken from
+            the Pieces.pcx file.
+     <p>
+     <li><b>NumberWidth</b> == 10<br>
+            The width in pixels of the individual digit numbers.
+     <li><b>NumberSpace</b> == (NumberWidth/2) + 2<br>
+            The spacing between digits displayed to the screen.
+     <li><b>BlankDigitX</b> == 100<br>
+            The position in the PCX file of a block of green for ground
+            that can be used to erase digits before writing new digits
+            to the screen.
+     <p>
+     <li><b>Red_Color</b> == 00h<br>
+            The value of the RED color that matches the PCX palette.
+     <li><b>Yellow_Color</b> == 033h<br>
+            The value of the YELLOW color that matches the PCX palette.
+     <li><b>Blue_Color</b> == 0CCh<br>
+            The value of the BLUE color that matches the PCX palette.
+     <li><b>Green_Color</b> == 066h<br>
+            The value of the GREEN color that matches the PCX palette.
+     <li><b>Orange_Color</b> == 015h<br>
+            The value of the ORANGE color that matches the PCX palette.
+     <li><b>White_Color</b> == 0FDh<br>
+            The value of the WHITE color that matches the PCX palette.
+     <li><b>Black_Color</b> == 0FFh<br>
+            The value of the BLACK color that matches the PCX palette.
+     <p>
+     <li><b>PlayerA_Color</b> == Red_Color<br>
+            Player A is Red.
+     <li><b>PlayerB_Color</b> == Yellow_Color<br>
+            Player B is Yellow.
+     <li><b>Sky_Color</b> == Blue_Color<br>
+            The sky is Blue.
+     <li><b>Gnd_Color</b> == Green_Color<br>
+            The ground is Green.
+     <li><b>Text_Color</b> == Black_Color<br>
+            Text is Black.
+     <li><b>Expl_Color</b> == Orange_Color<br>
+            Explosions are Orange.
+     <li><b>AExpl_Color</b> == Expl_Color + 1<br>
+            This is the explosion color to use for any pixels that 
+            need to be colored on Player A.  Even though these pixels will
+            appear the same to the human eye, they can later be restored to
+            the tank pixels original color since they are a different
+            palette number than the rest of the explosion.  This is
+            a convenient trick often used in graphic programming.
+     <li><b>BExpl_Color</b> == Expl_Color + 2<br>
+            The is used in the same way as discussed above.  In addition
+            this allows us to distinguish not just between normal
+            explosions and explosions that hit a player, but we can tell
+            which player is hit.  Player B in this case.
+     <li><b>Traj_Color</b> == White_Color<br>
+            The trail left by the bomb trajectory.
+     </ul><p>
+  <li>These structures have also been defined:<p>
+     <li><b>Sprite</b><br>
+        <ul>
+        <li> SourceX = Source Segment X-position.
+        <li> SourceY = Source Segment Y-position.
+        <li> DestX = Destination Segment X-position.
+        <li> DestY = Destination Segment Y-position.
+        <li> Swidth = The width of the sprite in pixels.
+        <li> Sheight = The height of the sprite in pixels.
+        </ul>
+     <p>
+     <li><b>Player</b><br>
+        <ul>
+        <li> Xpos = X-position of tank (centermost column).
+        <li> Ypos = Y-position of tank (lowest row).
+        <li> Color = Palette color of the tank.
+        <li> Angle = Current Angle of the tank gun turret.
+        <li> Power = Current Power level of the tank.
+        <li> MaxPower = Maximum allowed power. (Decreases with damage.)
+        </ul>
+     <p>
+     </ul>
+  </ul>
+
+<h2>Procedures</h2>
+
+  <ul>
+  <li>This assignment has eighteen procedures.  
+      You will receive credit for this
+      assignment by replacing each 
+      procedures listed below with your own code.  For the initial
+      demonstration you only need to hand in 50 pts worth of procedures.
+      You will have the option to choose which procedures you write
+      in which order.  You must therefore carefully choose your
+      routines such that the inherent dependencies do not keep you
+      from demonstrating there functionality. <br><p>
+      <b><font +2> NOTE: IT IS YOUR RESPONSIBILITY TO BE ABLE TO SHOW THAT
+      YOUR PROCEDURES ARE FUNCTIONAL!</font></b><br><p>
+      This means you will not be able to hand in a routine that you cannot
+      run and demonstrate to the TA.  This may mean you need to write some
+      test code to show the functionality.
+  <li>The nineteenth procedure you will be required to generate on your own.
+      This will be for the second checkpoint handin.  The routine should
+      add some functionality, be written efficiently, and be of
+      interesting and worthwhile value to the program.  Some possible
+      examples are given below in the procedure definition.
+  <li>Experiment with the working code 
+      to gain a full understanding of how the programs works.
+  <li>Your program should exactly match the functionality of the library 
+      subroutines.
+  <li>All subroutines should be <i>modular</i>.  They should use the stack to
+      <i>preserve</i> the value of any registers they may modify.  
+  <li><i>Library routines only call other Library Routines.</i>&nbsp;
+      Keep this in mind when testing your code with the given library code.
+  </ul>
+
+
+<ul>
+<li><font size=+1><b>CopySeg</b></font>
+  <ul>
+  <li><b>Purpose:</b> To copy data from an entire segment to another segment.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>ES = Source segment.
+        <li>GS = Destination segment.
+        </ul>
+  <li><b>Outputs:</b> GS segment is updated.
+  <li><b>Hints:</b> You might try using string instructions.
+  <li><b>Calls:</b> This function is called by <i>Update_Screen</i>.
+  <li><b>Points:</b> 2
+  </ul><p>
+
+<li><font size=+1><b>Load_PCX</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure loads a PCX file into a segment.  It
+        also reads and updates the palette.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>CS:DX = Address of PCX file string.
+        <li>ES = Segment to store file.
+        <li>FS = Scratch segment for uncompressing PCX files.
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>ES segment contains the PCX file.
+        </ul>
+  <li><b>Notes:</b>
+        <ul>
+        <li>You must uncompress this run length encoded file.  For more
+            details see your lab book or lecture notes.
+        </ul>
+  <li><b>Calls:</b> This function is called by <i>Load_Game</i>.
+  <li><b>Points:</b> 6
+  </ul><p>
+
+<li><font size=+1><b>CopySprite</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure copies a sprite of given size from
+       a source segment to a destination segment.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>ES = Destination segment.
+        <li>GS = Source segment.
+        <li>CS:BX = Offset of sprite structure.
+                <ul>
+                <li>[bx].SourceX = Source X-location (Column).
+                <li>[bx].SourceY = Source Y-location (Row).
+                <li>[bx].DestX = Destination X-location (Column).
+                <li>[bx].DestY = Destination Y-location (Row).
+                <li>[bx].Swidth = Sprite width in pixels.
+                <li>[bx].Sheight = Sprite height in pixels.
+                </ul>
+        </ul>
+  <li><b>Outputs:</b> ES segment contains the sprite at the proper location.
+  <li><b>Description:</b> This routine does a pixel by pixel copy in order to
+         only copy part of a PCX file to the screen buffer.  In other words
+         you will use this to copy sprites from the <tt>VScratchSeg</tt>
+         into the <tt>VBufSeg</tt>.
+  <li><b>Hints:</b> The first pixel that is read from the source segment
+         should be used as the transparent palette color.  All other pixels
+         of this same color are not actually drawn to the destination
+         segment.  Instead these pixels are ignored so that this color is
+         transparent in the copy.
+  <li><b>Calls:</b> This function is called by <i>Load_Game</i>,
+         <i>DrawNum</i>, <i>DrawText</i>, and <i>CheckWin</i>.
+  <li><b>Points:</b> 6
+  </ul><p>
+
+
+<li><font size=+1><b>Load_Game</b></font>
+  <ul>                                                              
+  <li><b>Purpose:</b> Procedure to load the PCX files into the proper
+         segments and display the initial game to the screen.  This includes
+         drawing the two tanks in the proper locations, drawing there
+         initial gun turret positions according to their respective angles,
+         and outputing initial text to the screen.  The text consists of
+         both the 'Angle:' and 'Power:' messages along with the number digits
+         that correspond to the values of PlayerA, since this is the player
+         that will shoot first.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>PlayerAData = Structure with initial player A sprite data.
+        <li>PlayerBData = Structure with initial player B sprite data.
+        <li>VBufSeg = Segment to hold the initial background PCX file and
+            to subsequently hold the video memory buffer.  This segment is
+            where all video changes will be made and then the results will
+            be blasted to video memory with <i>Update_Screen</i>.
+        <li>VScratchSeg = Segment to hold the pieces PCX file for copying
+            different sprite information to the <tt>VBufSeg</tt>.
+        <li>FS = Segment to be used for PCX uncompression. (<tt>ScratchSeg</tt>)
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>VBufSeg = Holds 'BKGRND.PCX' and subsequent updates from copying
+            various sprites to the proper location.
+        <li>VScratchSeg = Holds 'PIECES.PCX'.
+        <li>ScratchSeg = Destroyed during uncompression.
+        </ul>
+  <li><b>Hints:</b> Constants have been defined for you regarding the sprite
+            positions in the PIECES.PCX file.  If you are not sure about
+            positions, widths, or heights then load the PCX file into
+            a drawing program and look at the picture in units of pixels.
+  <li><b>Calls:</b> <i>Load_PCX</i>, <i>CopySprite</i>, and <i>DrawText</i>.
+  <li><b>Points:</b> 5
+  </ul><p>
+
+<li><font size=+1><b>Update_Screen</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure updates the Video Memory with
+         the contents of the video buffer segment.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>VBufSeg = Source segment.
+        <li>VIDSEG = Destination segment.
+        </ul>
+  <li><b>Outputs:</b> VIDSEG contains a new copy of VBufSeg.
+  <li><b>Calls:</b>  Calls <i>CopySeg</i><br>.
+         This routine is called by <i>Player_Shot</i>, <i>Shoot</i>,
+         <i>IntTimer</i>, and <i>CheckWin</i>.
+  <li><b>Points:</b> 1
+  </ul><p>
+
+
+<li><font size=+1><b>DrawNum</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure draws a number to the screen at
+      a given location.
+  <li><b>Inputs:</b> 
+        <ul>
+        <li>ES = Destination segment (<tt>VBufSeg</tt>).
+        <li>GS = Source segment (<tt>VScratchSeg</tt>).
+        <li>NumberData = Sprite Structure with information for a number digit.
+        <li>AX = Number to print.
+        <li>DI = Starting X-position.
+        </ul>
+  <li><b>Outputs:</b> The ES segment is updated with the new number digits
+         at the proper location.
+  <li><b>Notes:</b>
+        <ul>
+        <li>You should NOT draw leading zeros unless it is the last digit,
+            in which case only a single zero will be displayed to the
+            screen.
+        <li>The Y-position of the numbers is a constant that is already
+            defined in the <tt>NumberData</tt> structure.
+        <li>The functionality of this routine is very similar to that of
+            the library routine <i>BinAsc</i>.  However, in this case
+            instead of displaying ASCII text to the screen you will
+            be displaying text sprites in VGA mode.
+        </ul>
+  <li><b>Hints:</b> You should first blank out the old numbers before
+         drawing new numbers to the ES (<tt>VBufSeg</tt>).
+  <li><b>Calls:</b> Calls <i>CopySprite</i>.<br>
+         This function is called by <i>DrawText</i>.
+  <li><b>Points:</b> 5
+  </ul><p>
+
+
+<li><font size=+1><b>DrawText</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure draws the two text messages
+         'Angle:' and 'Power:' to the screen.  It also makes sure
+         that the actual number values for the current players
+         angle and power are properly updated.
+  <li><b>Inputs:</b>
+        <ul>        
+        <li>ES = Destination segment (<tt>VBufSeg</tt>).
+        <li>GS = Source segment (<tt>VScratchSeg</tt>).
+        <li>AngleData = Sprite Structure for 'Angle:' text.
+        <li>PowerData = Sprite Structure for 'Power:' text.
+        <li>Bomb_Angle = Current angle of active player.
+        <li>Bomb_Power = Current power of active player.
+        </ul>
+  <li><b>Outputs:</b> The desination segment (ES) is updated with the
+         text message sprites and the respective number digit sprites.
+  <li><b>Calls:</b> Calls <i>CopySprite</i> and <i>DrawNum</i>.<br>
+         This function is called by <i>Draw_Gun</i> and <i>Load_Game</i>.
+  <li><b>Points:</b> 3
+  </ul><p>
+
+
+<li><font size=+1><b>Draw_Gun</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure draws the gun turret at the correct
+         angle for the current player.
+  <li><b>Inputs:</b> 
+        <ul>
+        <li>DI = Address of Player Structure.
+        <li>ES = Segment to be updated (<tt>VBufSeg</tt>). 
+        <li>GS = Segment to get text from (<tt>VScratchSeg</tt>).
+        <li>DL = Color of the turret
+        <li>Angle_Table = Address table for pixel offsets of different
+            turret positions.
+        <li>TurretLength = The number of pixels in a gun turret.
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>The gun at the new angle is drawn to the Destination
+            segment (ES).
+        <li>Bomb_Pos = End of gun turret (pixel offset).
+        <li>Bomb_Angle = [di].Angle (Player Angle).
+        <li>Bomb_Power = [di].Power (Player Power).
+        </ul>
+  <li><b>Description:</b> The <tt>Angle_Table</tt> has 23 different turret
+         positions.  Since the range of our angle is 0-180 we can use
+         only some of the bits of the angle to access the table.  This
+         can be done through shifting or division.  Once the new address
+         is retrieved form the <tt>Angle_Table</tt> then this value can
+         be used to get the pixel offsets to draw to the screen.  There are
+         a total of <tt>TurretLength</tt> pixels and there offsets are with
+         respect to the gun origin (X,Y) position in the lower middle line
+         of the tank.
+  <li><b>Notes:</b>
+        <ul>
+        <li>Don't forget to access <tt>Angle_Table</tt> as a word table.
+        <li>This routine also updates the text values on each call.
+        </ul>
+  <li><b>Calls:</b> Calls <i>DrawText</i>.<br>
+         This routine is called by <i>Player_Shot</i>.
+  <li><b>Points:</b> 6
+  </ul><p>
+
+<li><font size=+1><b>Player_Shot</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure determines what the current Player
+         actually wants to do.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>DI = Address of Player Structure.
+        <li>ES = Destination segment (<tt>VBufSeg</tt>).
+        <li>GS = Segment with sprite data (<tt>VScratchSeg</tt>).
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>Erases the old gun from ES.
+        <li>Draws the new gun to ES.
+        <li>From the call to Draw_Gun:
+                <ul>
+                <li>Bomb_Pos = End of gun turret (pixel offset).
+                <li>Bomb_Angle = [di].Angle (Player Angle).
+                <li>Bomb_Power = [di].Power (Player Power).
+                 </ul>
+        <li>AX = Return  Function.
+                <ul>
+                <li>0 -&gt Shoot Bomb.
+                <li>1 -&gt Quit Game.
+                </ul>
+        </ul>
+  <li><b>Description:</b> This procedure reads a value from the
+         keyboard to determine what the current active player wants
+         to do.  Upon exiting the Bomb position, angle, and power
+         values are updated.  As individual values are changed in
+         the routines loop, the <tt>BEL</tt> character should be
+         output.  Each time a new key is hit the current status
+         of the screen needs to be changed and updated so that the
+         player will see the gun turret change and the variables
+         change as the key is pressed.<p>
+         The following keys perform the associated function:
+                <ul>
+                <li>SPACE = Shoot Bomb.
+                <li>'Q' or 'q' = Quit.
+                <li> Left Arrow = Increase Angle.
+                <li> Right Arrow = Decrease Angle.
+                <li> Up Arrow = Increase Power.
+                <li> Down Arrow = Decrease Power.
+                </ul>
+  <li><b>Notes:</b>
+         <ul>
+         <li>The Angle should remain in the range between 0 and 180 degrees.
+         <li>The Power should remain in the range between 0 and
+                [di].MaxPower.
+  <li><b>Calls:</b> Calls <i>DrawGun</i> and <i>UpdateScreen</i>.
+  <li><b>Points:</b> 7
+  </ul><p>
+
+
+<li><font size=+1><b>Install_Timer</b></font>
+  <ul>
+  <li><b>Purpose:</b> Install the Timer Interrupt.
+  <li><b>Inputs:</b> None.
+  <li><b>Outputs:</b>
+        <ul>
+        <li>OldVector = Far Address read from Interrupt Vector Table.
+        <li>IntTimer address is put into Interrupt Vector Table.
+        </ul>
+  <li><b>Notes:</b>
+        <ul>
+        <li>Use the DOS function to read and write to the Vector Table.
+        </ul>
+  <li><b>Hints:</b>
+        <ul>
+        <li>You will need to write and test all three of your timer
+            routines together.  You will not be able to test any of
+            your three routines individually with the library code.
+        </ul>
+  <li><b>Points:</b> 2
+  </ul><p>
+
+<li><font size=+1><b>Deinstall_Timer</b></font>
+  <ul>
+  <li><b>Purpose:</b> Restore the original Timer Interrupt.
+  <li><b>Inputs:</b> OldVector.
+  <li><b>Outputs:</b>
+        <ul>
+        <li>Address in OldVector is put back into Interrupt Vector Table.
+        </ul>
+  <li><b>Notes:</b>
+        <ul>
+        <li>Use the DOS function to write to the Vector Table.
+        </ul>
+  <li><b>Hints:</b>
+        <ul>
+        <li>You will need to write and test all three of your timer
+            routines together.  You will not be able to test any of
+            your three routines individually with the library code.
+        </ul>
+  <li><b>Points:</b> 2
+  </ul><p>
+
+<li><font size=+1><b>IntTimer</b></font>
+  <ul>
+  <li><b>Purpose:</b> The timer interrupt itself needs to take care
+         of flagging when to calculate a new shot position and
+         counting down the explosion counter.  The routine also
+         needs to update the VBufSeg by erasing explosions when
+         it is time, and by running the procedure to take care of
+         falling ground.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>Shot_Flag = 1 (Shot in progress)
+        <li>ExpCount = Count for clock ticks left in explosion.
+        <li>LastExpCount = Position to erase explosion when the
+            counter expires.
+        <li>OldVector = Far Address of old timer interrupt that still
+            needs to be either called or chained from the current
+            interrupt routine.
+        <li>VBufSeg = Segment to update for graphics (<i>Implosion</i>).
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>Timer_Flag = 1 (This flag signals the main program code
+            that a new shot position needs to be calculated.  It is
+            only set when <tt>Shot_Flag</tt> signals a shot is in progress.)
+        <li>ExplCount = Decremented until 0 at which time the
+            current explosion in progress is removed by <i>Implosion</i>.
+        <li>VBufSeg is updated by erasing an explosion when the
+            <tt>ExplCount</tt> expires.
+        <li>VBufSeg is updated by calculating the next iteration of
+            the falling ground positions.
+        </ul>
+  <li><b>Hints:</b>
+        <ul>
+        <li>Be very carefull to save and restore all registers that
+            are changed in the routine.
+        <li>Remember that upon entering the routine you cannot depend
+            on the value of any registers being set.  This includes
+            segment registers such as ES and DS.
+        <li>Recall that to <b>chain</b> the old interrupt the last thing
+            your Interrupt routine will do is to jump to the address.
+        <li>Recall that to <b>call</b> the old interrupt your Interrupt
+            routine will first need to push the flags (<tt>pushf</tt>)
+            and then call the old routine.
+        <li>Because you may crash while working on this routine you
+            might want to first write, test, and debug the code
+            outside of an interrupt.  Once you have functional code
+            then try installing a shell of an interrupt routine.
+            Finally put the two together for a completely functional
+            routine.
+        <li>Refer to <a href="../../lecture/l14.html">Lecture 14</a>
+            for more details on interrupt routines
+        <li>You will need to write and test all three of your timer
+            routines together.  You will not be able to test any of
+            your three routines individually with the library code.
+        </ul>
+  <li><b>Calls:</b> <i>Implosion</i>, <i>Fall</i> and
+         <i>Update_Screen</i>.
+  <li><b>Points:</b> 7
+  </ul><p>
+
+<li><font size=+1><b>Shoot</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure calculates the bomb trajectory
+         and updates the destination segment at the proper times
+         flagged by the interrupt routine.
+  <li><b>Inputs:</b>
+        <ul>        
+        <li>ES = Segment to be updated (<tt>VBufSeg</tt>).
+        <li>Timer_Flag = Flag to signal when a new position calculation
+            is needed.
+        <li>Bomb_Pos = Current position of the end of the gun turret.
+        <li>Bomb_Angle = Current angle of active player/bomb.
+        <li>Bomb_Power = Current power of active player/bomb.
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>Shot_Flag = 1 (Once initial calculations are made this
+            flag signals the timer interrupt that a shot calculation
+            is in progress).
+        <li>Shot_Flag = 0 (Once a collision has occurred this flag
+            is cleared).
+        <li>The floating point variables are used to calculate
+            incremental changes in velocity and displacement.
+        </ul>
+  <li><b>Notes:</b>
+        <ul>
+        <li>Once initial calculations are mode using <tt>Bomb_Angle</tt>
+            and <tt>Bomb_Power</tt> then the <tt>Shot_Flag</tt> should
+            be set for the timer interrupt.
+        <li>The <tt>Timer_Flag</tt> will then be checked and new
+            velocity and position calculations made when the flag is
+            set.
+        <li>Each new position calculation will need to call
+            <i>Collision</i> to decide when the shot has finished.
+        <li>Once the bomb has colloded the <tt>Shot_Flag</tt>
+            should be cleared and <i>Explosion</i> should be
+            called.
+        </ul>
+  <li><b>Hints:</b>
+        <ul>
+        <li>This routine performs all the floating point calculations
+            for the bomb trajectory.
+        <li>Floating point sin (<tt>fsin</tt>) and cos (<tt>fcos</tt>)
+            calculations are peformed in Radians.
+            You will therefore need to convert your angle in degrees into
+            an angle in radians.
+        <li>Make sure you use the equations for velocity and
+            displacement to calculate the bomb trajectory.
+        <li>Recall that motion in the x and y direction are independent.
+        <li>Remember to convert the floating point results into
+            integers.
+        <li>Constants that are needed in the calculation have been
+            defined as floating point variables.
+        </ul>
+  <li><b>Calls:</b> <i>Collision</i>, <i>Explosion</i> and 
+         <i>Update_Screen</i>.
+  <li><b>Points:</b> 10
+  </ul><p>
+
+<li><font size=+1><b>Collision</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure determines when and what
+         the current bomb hits and if the bomb is out of range
+         or not.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>DI = Offset of next bomb position.
+        <li>BX = Y displacement from gun turret.
+        <li>DX = X displacement from gun turret.
+        <li>ES = Segment to be checked (<tt>VBufSeg</tt>).
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>BX = 0 (Output is valid (in range) but no collision).
+        <li>BX = 1 (Output is invalid (out of range) and no collision).
+        <li>BX = 2 (The bullet has collided with an object).
+        </ul>
+  <li><b>Notes:</b>
+         <ul>
+         <li>If the bomb range is above the screen then the bomb is
+             not drawn.  However, the calculation still needs to
+             be performed so that the bomb will properly fall.
+         <li>If the bomb range is below the screen then the shot is
+             finished.
+         <li>A bomb will collide with all objects that are not Sky,
+             Text, or another bomb trail.  This includes both
+             tanks and the ground.
+         </ul>
+  <li><b>Calls:</b> This function is called by <i>Shot</i>.
+  <li><b>Points:</b> 5
+  </ul><p>
+
+
+<li><font size=+1><b>Explosion</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure performs an explosion
+         and calculates damage if needed.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>DI = Offset of explosion position (The last <tt>Bomb_Pos</tt>).
+        <li>ES = Segment to be checked (<tt>VBufSeg</tt>).
+        <li>LastExpPos = Used to erase old explosion and save the
+            current explosion position for the next <i>Implosion</i>.
+        <li>ExpPos = Table of pixel position offsets relative to the
+            explosion position.
+        <li>ExpLength = Number of pixels that need to be drawn for
+            the explosion.
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>LastExpPos = Changed to current explosion position.
+        <li>ExpCount = Number of ticks to hold the explosion.
+        <li>ES segment is updated with explosion pixels.
+        <li>PlayerA/B.MaxPower = Updated if any damage occurs to the
+            respective player.
+        <li>PlayerA/B.Power = Truncated to new MaxPower value if
+            it is currently larger than the MaxPower.
+        </ul>
+  <li><b>Notes:</b>
+        <ul>
+        <li>For each pixel on a tank that is hit you should subtract
+            <tt>Damage</tt> from the MaxPower.
+        <li>MaxPower should not be allowed to go below zero.
+        <li>If the MaxPower is decreased below that players current
+            power then the Power level needs to be changed to the
+            new reduced MaxPower.
+        </ul>
+  <li><b>Hints:</b>
+         <ul>
+         <li>To determine if a tank is hit you can look at the pixel
+             color at that position.
+         <li>To draw an explosion over a tank and not destroy the pixel
+             color information, try drawing the explosion with a different
+             palette color that maps to the same real color.  In other
+             words you can use <tt>AExpl_Color</tt> and
+             <tt>BExpl_Color</tt> respectively to
+             temporarily draw over tanks.  These can then later be
+             restored to their proper colors.
+         <li>Load <tt>ExpCount</tt> to hold the explosion for 2 seconds.
+         </ul>
+  <li><b>Calls:</b> Calls <i>Implosion</i> and <i>Update_Screen</i>.<br>
+         This function is called by <i>Shoot</i>.
+  <li><b>Points:</b> 5
+  </ul><p>
+
+<li><font size=+1><b>Implosion</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure erases an explosion in the video
+         buffer.  The explosion is replaced with sky unless it was over
+         one of the tanks.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>DI = Offset of explosion position to erase.
+        <li>ES = Segment to be checked (<tt>VBufSeg</tt>).
+        <li>PlayerA/B.Color = The color of a damaged tank to
+            redraw. Used to erase old explosion without erasing
+            part of the tank.
+        <li>ExpPos = Table of pixel position offsets relative to the
+            explosion position.
+        <li>ExpLength = Number of pixels that need to be drawn for
+            the explosion.
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>ES segment is restored where the explosion was drawn.
+        </ul>
+  <li><b>Hints:</b>
+         <ul>
+         <li>To fix the explosion over the tanks look at the color
+             pixels and see if they are the special palette numbers.
+             If they are, replace with the respective tank color,
+             otherwise replace the explosion pixel with sky.
+         </ul>
+  <li><b>Calls:</b> This function is called by <i>Explosion</i>
+         and <i>IntTimer</i>.
+  <li><b>Points:</b> 4
+  </ul><p>
+
+<li><font size=+1><b>Fall</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure causes the ground to fall by
+         1 pixel each call.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>ES = Segment to cause ground to fall (<tt>VBufSeg</tt>).
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>ES segment is updated.
+        </ul>
+  <li><b>Hints:</b>
+         <ul>
+         <li>To see if a ground pixel needs to fall check below the pixel
+             and see if it is sky or not.
+         <li>Make sure you update the screen in the proper direction
+             to give the appearance of ground falling and not a hole
+             floating up.
+         <li>Because this routine is called form the interrupt timer
+             make sure you save all registers and keep the routine
+             as short as possible.
+         </ul>
+  <li><b>Calls:</b> This function is called by <i>IntTimer</i>.
+  <li><b>Points:</b> 4
+  </ul><p>
+
+<li><font size=+1><b>CheckWin</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure checks to see if either player has
+         won the game.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>PlayerA/B.MaxPower = Maximum Power of each player.
+        <li>WinData = Sprite structure of winning message.
+        <li>GS = Source segment (<tt>VScratchSeg</tt>).
+        <li>ES = Destination segment (<tt>VBufSeg</tt>).
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>AX = 1 (Game Over).
+        <li>AX = 0 (Game Continues).
+        </ul>
+  <li><b>Notes:</b>
+         <ul>
+         <li>Determine if a player has lost by checking if MaxPower is
+             zero.
+         <li>Once a game is over the respective winning message should
+             be displayed to the screen.
+         </ul>
+  <li><b>Calls:</b> <i>CopySprite</i> and <i>Update_Screen</i>.
+  <li><b>Points:</b> 5
+  </ul><p>
+
+<li><font size=+1><b>Your Routine</b></font>
+  <ul>
+  <li><b>Purpose:</b> This procedure performs a function of your design.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>You need to define what inputs your procedure will need.
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>You need to define what the outputs of the function will be
+            and how the rest of the program will use them.
+        </ul>
+  <li><b>Notes:</b>
+         <ul>
+         <li>This procedure should add some functionality to the initial
+             program.  Be creative in your design as this routine is
+             worth a significant number of points.
+         <li>Your procedure will be graded on functionality, style,
+             efficiency, and content.
+         </ul>
+  <li><b>Suggestions:</b>
+        <ul>
+        <li>Add a routine to perform sound effects by writing out COUNT
+            values associated with specific frequencies to the timer
+            chip for the internal speaker.
+        <li>Add a routine that kicks a DMA transfer off to send a sound
+            file to the DSP chip on the sound card when an explosion
+            occurs.
+        <li>Switch the graphics to 640x480 mode.
+        <li>Add multiple tanks with Computer AI.
+        <li>Add special effects to the game including one or more of the
+            following:
+                <ul>
+                <li>Rebounding walls.
+                <li>Different choices of bombs.
+                <li>Wind effects.
+                <li>Falling tanks.
+                <li>Different Explosion sizes.
+                <li>Random initial background ground.
+                </ul>
+        <li>Another routine of your choosing.
+        </ul>
+  <li><b>Points:</b> 15
+  </ul><p>
+
+
+</ul>
+
+<h2>Preliminary Procedure</h2>
+<ul>
+<li>Copy the empty MP4 program (<tt>MP4.ASM</tt>), libraries
+    (<tt>libmp4.lib</tt>,<tt>lib291.lib</tt>), PCX files
+    (<tt>bkgrnd.pcx</tt> and <tt>pieces.pcx</tt>),
+    and <tt>Makefile</tt> from
+    the network drive to your home directory with the following command:
+    <br><tt>xcopy /s V:\ece291\mp4 W:\mp4</tt>
+    <br>Alternatively, from home, you can download the same files as
+    <A HREF="mp4.zip">mp4.zip</A>.
+
+<li>As with previous MPs, run <tt>NMake</tt> to build an executable program
+    using the given ECE291 library functions.
+
+<li>As with previous MPs, use a text editor to modify the program. As given,
+    the program uses LIBMP4 routines to implement all functionality. To
+    receive full credit for the assignment, you will need to implement
+    each of the subroutines described above with your own code.
+
+<li>As with previous MPs, use CodeView (<tt>CV</tt>) to debug and test your
+    program. Because you only receive credit for procedures that function
+    completely as specified, it is best to debug each routine individually.
+    <p>
+    Note: You may need to either use the <b>/s</b> option or comment out
+    the interrupt for Mode 13h in order to debug in codeview.
+</ul>
+
+
+
+<h2>Final Steps</h2>
+<ol>
+<li>Print a copy of the <a href="mp4grade.html">MP4 grading sheet</a>.
+<li>Demonstrate MP4.EXE to a TA or to the instructor.  
+  <ul>
+   <li>Be prepared to answer questions about any aspect of the operation 
+       of your program.  The TAs will not accept an MP if you cannot fully
+       explain all operations of your code.
+  </ul>
+<li>Handin in your program by running: <br>
+    <tt>A:\Handin </tt> <i>YourWindowsLogin</i>
+<li>Print <font color="red">MP4.ASM </font> using <i>
+   <font color="green">GreenPrint32</font></i>
+<li>Staple the MP4 grading sheet to the front of your MP4.ASM file
+    and give both to the same TA that approved your demonstration.
+</ol>
+
+<hr>
+
+<h2>MP4.ASM (Program framework)</h2>
+<font size=-1> <xmp>
+
+
+        TITLE Bomb - Your Name - Current Date
+
+COMMENT %
+        ECE291 Bomb
+        --------------------
+        ECE291: MP4
+        Jay R. Moorman
+        University of Illinois, Dept. of Electrical & Computer Engineering
+        Summer 1998
+        Revision 1.0
+        %
+;====== Model ============================================================
+
+          .MODEL COMPACT
+          .486
+;====== Constants =========================================================
+
+; General Constants
+CR          EQU 13
+LF          EQU 10
+BEL         EQU 7
+VIDSEG      EQU 0A000h
+
+; Time constant
+Sec         EQU 18              ; 1 seconds at 1/18 increments
+
+; Graphics constants
+ROWWIDTH    EQU 320
+SCREENSIZE  EQU 64000
+TANKWIDTH   EQU 15
+TANKHEIGHT  EQU 6
+
+; Player Constants
+PlayerA_X       EQU 59          ; Initial position to fit PCX background
+PlayerA_Y       EQU 115
+PlayerB_X       EQU 292
+PlayerB_Y       EQU 108
+PlayerA_Angle   EQU 45          ; Range 0-180
+PlayerB_Angle   EQU 135         ; Range 0-180
+MAX_POWER       EQU 100         ; Maximum Power each player starts with
+Start_Power     EQU 60          ; Beginning Power of each player
+Damage          EQU 2
+
+Angle_X     EQU 10              ; Position of Angle Text
+Angle_Y     EQU 188
+Power_X     EQU 260             ; Position of Power Text
+Power_Y     EQU 188
+TextWidth   EQU 35              ; Width in pixels from PCX file
+TextHeight  EQU 10              ; Height "   "     "    "   "
+NumberWidth EQU 10              ; Width of digits from PCX file
+NumberSpace EQU (NumberWidth/2)+2 ; Number spacing on VIDSEG
+BlankDigitX EQU 100             ; PCX position of green block to blank digit
+
+
+; Colors have been defined to match the palette from the pcx files
+Red_Color       EQU 01h
+Yellow_Color    EQU 33h
+Blue_Color      EQU 0CCh
+Green_Color     EQU 066h
+Orange_Color    EQU 15h
+White_Color     EQU 0FDh
+Black_Color     EQU 0FFh
+
+; Constants to match up palette colors with specific objects
+PlayerA_Color   EQU Red_Color
+PlayerB_Color   EQU Yellow_Color
+Sky_Color       EQU Blue_Color
+Gnd_Color       EQU Green_Color
+Text_Color      EQU Black_Color
+Expl_Color      EQU Orange_Color
+AExpl_Color     EQU Expl_Color+1
+BExpl_Color     EQU Expl_Color+2
+Traj_Color      EQU White_Color
+
+; Public constants for library functions
+PUBLIC Angle_X, Power_X
+
+; Sprite structure for CopySprite routine
+Sprite STRUCT
+  SourceX  WORD ? ; Source x position (Source Seg)
+  SourceY  WORD ? ; Source y position
+  DestX    WORD ? ; Destination x position (Destination Seg)
+  DestY    WORD ? ; Destination y position
+  Swidth   WORD ? ; Width of Sprite
+  Sheight  WORD ? ; Height of Sprite
+Sprite ENDS
+
+; Player structure for each players information
+Player STRUCT
+        Xpos     WORD ? ; x-position  
+        Ypos     WORD ? ; y-position
+        Color    BYTE ? ; Color from palette
+        Angle    BYTE ? ; Gun turret angle
+        Power    BYTE ? ; Power
+        MaxPower BYTE ? ; Maximum allowed Power
+Player ENDS
+
+;====== Externals =========================================================
+
+; -- LIB291 Routines (free) --
+
+  extrn binasc:near   ; From lib291.lib (You can use these functions freely)
+  extrn dspout:near   ; See your lab manual for a full description
+  extrn dspmsg:near   ; of each function
+  extrn kbdin:near
+  extrn kbdine:near
+  extrn rsave:near
+  extrn rrest:near
+  extrn mp4xit:near   ; Terminates Program
+
+; -- LIBMP4 Routines (replace these with your own code) --
+
+extrn CopySeg:near
+extrn CopySprite:near
+extrn Load_PCX:near
+extrn Load_Game:near
+extrn DrawNum:near
+extrn DrawText:near
+extrn Update_Screen:near
+extrn Draw_Gun:near
+extrn Player_Shot:near
+extrn Install_Timer:near
+extrn Deinstall_Timer:near
+extrn IntTimer:near
+extrn Shoot:near
+extrn Collision:near
+extrn Fall:near
+extrn Explosion:near
+extrn Implosion:near
+extrn CheckWin:near
+
+                
+
+;====== Stack Segment =====================================================
+stkseg       segment stack
+             db 64 dup ('STACK   ')
+stkseg       ends
+
+;====== Video ScratchPad Segment ==========================================
+; This segment will be used to hold the Pieces PCX file
+VScratchSeg  segment public
+VScratchPad  db      65535 dup(?)
+PUBLIC VScratchPad
+VScratchSeg  ends
+
+;====== ScratchPad Segment ================================================
+; This segment is used when decompressing the PCX file
+ScratchSeg  segment public
+ScratchPad  db      65535 dup(?)
+PUBLIC ScratchPad
+ScratchSeg  ends
+
+;====== Video Buffer Segment ==============================================
+; This segment is used to hold the screen buffer
+VBufSeg     segment public
+VBuf        db      65535 dup(?)
+PUBLIC VBuf
+VBufSeg     ends
+
+
+;====== Code/Data segment =================================================
+cseg    segment public 'CODE' 
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing, gs:nothing, gs:nothing
+
+;====== Variables =========================================================
+
+; PCX Files
+MainPCX    db 'BKGRND.PCX', 0
+;MainPCX    db 'BKGRND1.PCX', 0
+;MainPCX    db 'BKGRND2.PCX', 0
+PiecesPCX  db 'PIECES.PCX', 0
+
+Old_Vector dd ? ; Old Interrupt vector
+
+; Messages
+crlf    db CR,LF,'$'
+
+; Buffers
+PBuf       db 7  dup(?)
+
+; Variables for Bomb information
+Bomb_Angle dw 0
+Bomb_Power dw 0
+Bomb_Pos   dw 0
+
+; Flag variables
+Shot_Flag        db 0   ; Flag to keep track of when a shot is in progress
+Timer_Flag       db 0   ; Flag to signal when to calculate a new position
+
+; Explosion variable
+ExpCount         db 0   ; Keep count for when to turn off explosion
+LastExpPos       dw 0   ; Keep last Explosion position for removing
+
+; Floating point equation variables and constants
+Fx          REAL4 0.0                   ; Calculated x Force
+Fy          REAL4 0.0                   ; Calculated y Force
+VelX        REAL4 0.0                   ; Velocity in x direction
+VelY        REAL4 0.0                   ; Velocity in y direction            
+DisX        REAL4 0.0                   ; Displacement in x direction
+DisY        REAL4 0.0                   ; Displacement in y direction
+BOMBMASS    REAL4 1.0
+GRAVITY     REAL4 9.81
+VelSlice    REAL4  -0.545               ; -(1/18)*9.81 = a*t
+TimeSlice   REAL4 0.0555555556          ; 1/18
+SqTimeSlice REAL4 -0.015138889          ; -(1/2)*9.81*(1/18)^2 = (1/2)*a*t^2
+RadConv     REAL4 0.017453293           ; 2*Pi/360
+Displ       dw 0        ; Variable to do floating to integer conversion
+
+; Structure to use with copysprite - Initialized for each player
+PlayerAData Sprite<0,0,PlayerA_X-(TANKWIDTH/2),PlayerA_Y-(TANKHEIGHT-1),TANKWIDTH,TANKHEIGHT>
+PlayerBData Sprite<20,0,PlayerB_X-(TANKWIDTH/2),PlayerB_Y-(TANKHEIGHT-1),TANKWIDTH,TANKHEIGHT>
+
+; Player structures with important data
+PlayerA Player<PlayerA_X,PlayerA_Y,PlayerA_Color,PlayerA_Angle,Start_Power,MAX_POWER>
+PlayerB Player<PlayerB_X,PlayerB_Y,PlayerB_Color,PlayerB_Angle,Start_Power,MAX_POWER>
+
+; Sprite structures for printing Text messages
+AngleData   Sprite<0,10,Angle_X,Angle_Y,TextWidth,TextHeight>
+PowerData   Sprite<0,20,Power_X,Power_Y,TextWidth,TextHeight>
+WinData     Sprite<0,50,100,10,2*TextWidth,TextHeight>
+NumberData  Sprite<0,30,0,Angle_Y,NumberWidth,TextHeight>
+
+; Public variables for library functions
+PUBLIC MainPCX
+PUBLIC Bomb_Angle, Bomb_Power, Bomb_Pos, Shot_Flag
+PUBLIC Timer_Flag, ExpCount, LastExpPos
+PUBLIC PlayerAData, PlayerBData, PlayerA, PlayerB
+PUBLIC AngleData, PowerData, WinData, NumberData
+
+; Table of Gun Turret positions according to angles
+Angle_Table     dw offset Turret0
+                dw offset Turret1
+                dw offset Turret2
+                dw offset Turret3
+                dw offset Turret4
+                dw offset Turret5
+                dw offset Turret6
+                dw offset Turret7
+                dw offset Turret8
+                dw offset Turret9
+                dw offset Turret10
+                dw offset Turret11
+                dw offset Turret12
+                dw offset Turret13
+                dw offset Turret14
+                dw offset Turret15
+                dw offset Turret16
+                dw offset Turret17
+                dw offset Turret18
+                dw offset Turret19
+                dw offset Turret20
+                dw offset Turret21
+                dw offset Turret22
+
+TurretLength    dw 5
+Turret22 dw -8,-1,-1,-1,-1
+Turret21 dw -(ROWWIDTH+8),-1,-(ROWWIDTH+1),-1,-1
+Turret20 dw -(2*ROWWIDTH+7),-1,-(ROWWIDTH+1),-1,-(ROWWIDTH+1)
+Turret19 dw -(2*ROWWIDTH+7),-(ROWWIDTH+1),-1,-(ROWWIDTH+1),-1
+Turret18 dw -(3*ROWWIDTH+6),-1,-(ROWWIDTH+1),-(ROWWIDTH+1),-1
+Turret17 dw -(3*ROWWIDTH+6),-(ROWWIDTH+1),-(ROWWIDTH+1),-(ROWWIDTH+1),-1       
+Turret16  dw -(4*ROWWIDTH+5),-(ROWWIDTH+1),-(ROWWIDTH+1),-(ROWWIDTH+1),-(ROWWIDTH+1)
+Turret15 dw -(5*ROWWIDTH+4),-(ROWWIDTH+1),-ROWWIDTH,-(ROWWIDTH+1),-(ROWWIDTH+1)
+Turret14 dw -(5*ROWWIDTH+3),-(ROWWIDTH+1),-ROWWIDTH,-(ROWWIDTH+1),-ROWWIDTH
+Turret13 dw -(6*ROWWIDTH+2),-(ROWWIDTH+1),-ROWWIDTH,-(ROWWIDTH+1),-ROWWIDTH
+Turret12  dw -(6*ROWWIDTH+1),-ROWWIDTH,-(ROWWIDTH+1),-ROWWIDTH,-ROWWIDTH
+Turret11 dw -(6*ROWWIDTH),-ROWWIDTH,-ROWWIDTH,-ROWWIDTH,-ROWWIDTH
+Turret10 dw -(6*ROWWIDTH-1),-ROWWIDTH,-(ROWWIDTH-1),-ROWWIDTH,-ROWWIDTH
+Turret9  dw -(6*ROWWIDTH-2),-(ROWWIDTH-1),-ROWWIDTH,-(ROWWIDTH-1),-ROWWIDTH
+Turret8  dw -(5*ROWWIDTH-3),-(ROWWIDTH-1),-ROWWIDTH,-(ROWWIDTH-1),-ROWWIDTH
+Turret7  dw -(5*ROWWIDTH-4),-(ROWWIDTH-1),-ROWWIDTH,-(ROWWIDTH-1),-(ROWWIDTH-1)
+Turret6  dw -(4*ROWWIDTH-6),-(ROWWIDTH-1),-(ROWWIDTH-1),-(ROWWIDTH-1),-(ROWWIDTH-1)
+Turret5  dw -(3*ROWWIDTH-7),-(ROWWIDTH-1),-(ROWWIDTH-1),-(ROWWIDTH-1),1
+Turret4  dw -(3*ROWWIDTH-7),1,-(ROWWIDTH-1),-(ROWWIDTH-1),1
+Turret3  dw -(2*ROWWIDTH-7),-(ROWWIDTH-1),1,-(ROWWIDTH-1),1
+Turret2  dw -(2*ROWWIDTH-7),1,-(ROWWIDTH-1),1,-(ROWWIDTH-1)
+Turret1  dw -(ROWWIDTH-8),1,-(ROWWIDTH-1),1,1
+Turret0  dw 8,1,1,1,1
+
+; Table of oblong explosion
+ExpLength dw 31
+ExpPos  dw                                  -3*ROWWIDTH
+        dw                  -(2*ROWWIDTH+1),-2*ROWWIDTH,-(2*ROWWIDTH-1)
+        dw      -(ROWWIDTH+3),-(ROWWIDTH+2),-(ROWWIDTH+1),-ROWWIDTH,-(ROWWIDTH-1),-(ROWWIDTH-2),-(ROWWIDTH-3)
+        dw                 -4,   -3,    -2,   -1,   0,   1,   2,   3,  4
+        dw       (ROWWIDTH-3), (ROWWIDTH-2), (ROWWIDTH-1), ROWWIDTH, (ROWWIDTH+1), (ROWWIDTH+2), (ROWWIDTH+3)
+        dw                   (2*ROWWIDTH-1), 2*ROWWIDTH, (2*ROWWIDTH+1)
+        dw                                   3*ROWWIDTH
+; Table of round explosion
+ExpLength1 dw 25
+ExpPos1  dw                                 -3*ROWWIDTH
+        dw                  -(2*ROWWIDTH+1),-2*ROWWIDTH,-(2*ROWWIDTH-1)
+        dw    -(ROWWIDTH+2),-(ROWWIDTH+1),-ROWWIDTH,-(ROWWIDTH-1),-(ROWWIDTH-2)
+        dw               -3,  -2,  -1,   0,   1,   2,  3
+        dw     (ROWWIDTH-2), (ROWWIDTH-1), ROWWIDTH, (ROWWIDTH+1), (ROWWIDTH+2)
+        dw                  (2*ROWWIDTH-1), 2*ROWWIDTH, (2*ROWWIDTH+1)
+        dw                                 3*ROWWIDTH
+
+; ======== Your Code ======================================================
+
+; -- Write the code for your subroutines below --
+
+
+
+; == Main ================================================================
+
+MAIN Proc NEAR
+
+; Initialize DS register
+        mov  ax, cseg
+        mov  ds, ax
+
+; Initialize other segment registers
+        mov  ax, VBufSeg                ; es = VBufSeg
+        mov  es, ax
+        mov  ax, ScratchSeg             ; fs = ScratchSeg
+        mov  fs, ax
+        mov  ax, VScratchSeg            ; gs = VScratchSeg
+        mov  gs, ax
+
+        finit                           ; Initialize floating point unit
+; The Main Program Code
+
+        mov  AX, 0013h                  ; Get in Mode 13 (VGA)
+        int  10h
+
+        call Install_Timer              ; Install Interrupt time
+
+        call Load_Game                  ; Load initial game to screen
+
+        mov  di, offset cs:PlayerB
+        mov  dl,cs:PlayerB.Color        ; Initialize PlayerB
+        call Draw_Gun
+
+        mov  di, offset cs:PlayerA
+        mov  dl,cs:PlayerA.Color        ; Initialize PlayerA
+        call Draw_Gun
+        call Update_Screen              ; Display results
+
+MainLoop:
+
+        mov  di, offset cs:PlayerA      ; Player structure address
+        mov  dl,cs:PlayerA.Color        ; PlayerA color
+        mov  cx,2                       ; Perform Main loop once as
+                                        ;  PlayerA and once as PlayerB
+Inner_MainLoop:
+        call Draw_Gun                   ; Update gun and text
+        call Player_Shot                ; Get new angle/power
+        cmp  ax,0                       ; Check if we need to exit
+        jne  Exit
+        call Shoot                      ; Let PlayerA/B shoot
+
+        call CheckWin                   ; See if anyone has won
+        cmp  ax,0                       ; If so then exit
+        jne  Exit
+
+        mov  di, offset cs:PlayerB      ; Player structure address
+        mov  dl,cs:PlayerB.Color        ; PlayerB color
+        loop Inner_MainLoop             ; Now do PlayerB
+
+        jmp MainLoop                    ; Do Outer Loop
+
+
+
+Exit:
+        cmp   ExpCount,0
+        jne   Exit                      ; Wait until finished exploding
+
+        call  DeInstall_Timer           ; Restore interrupt time
+
+        mov AX, 0002h                   ; Set 80x25 text mode and clear screen
+        int 10h
+
+        call mp4xit                     ; Exit program
+main endp
+
+; ===================== End of Procedures & Data ==========================
+
+cseg    ends
+        end    main
+
+</xmp>
+</body>
+</html>

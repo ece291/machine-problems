@@ -1,0 +1,33 @@
+Input this into the sending side 
+Send this
+S1 234567890abcdefghijklmnopABCXYZ
+K 23 257
+S Does your program handle BS? Your program does handle BACKSPACE.
+S dollar SiGnS$$$$
+Error
+K 23 7759
+K 23 7759
+K 23 7759
+S ABCDXYZ
+K 254 6619
+K 254 6619
+K 254 6619
+SABCDXYZ
+K 12 8447
+K 12 8447
+K 12 8447
+SABCDXYZ
+K 343 13063
+K 343 13063
+K 343 13063
+S   ABCDXYZ
+K 23 5555
+K NAN 23
+K 23 NAN
+
+S Stuff
+S More Stuff
+S EvenMOreStuff
+X
+
+

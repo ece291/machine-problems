@@ -1,0 +1,1116 @@
+<%
+title = "ECE 291 - MP2"
+subtitle = "MP2"
+%>
+
+<!--#include file="headvb.asp"-->
+
+<h1 align="center">Machine Problem 2: Wordsearch Generator</h1>
+<div align="center"><center>
+<table border=0 cellpadding=2 cellspacing=2 width="60%">
+  <tr><td align=right bgcolor="#efefef"><b>Assigned</b></td>
+
+    <td bgcolor="#efefef">Thursday, February 12, 2004</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Due Date</b></td>
+    <td bgcolor="#efefef">Friday, February 27, 2004</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Purpose</b></td>
+      <td bgcolor="#efefef">User I/O, C-style Procedures, Recursion.</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Points</b></td>
+
+    <td bgcolor="#efefef">80</td></tr>
+</table>
+</center></div>
+
+<h2>Updates</h2>
+<ul><li>The descriptions for CheckWord and CheckDirection have been updated.
+You do not need to use the <tt>DirLookupTable</tt> structure in the CheckDirection
+function.</ul>
+<h2 align="left">Introduction
+</h2>
+
+<p align="left">In this MP, you'll be creating a wordsearch puzzle (the fun
+ones you can find in the comic sections of newspapers) from a list of words
+that a user types in.</p>
+
+<p align="center"><img src="mp2.jpg"></p>
+
+<h2>Problem Description</h2>
+
+<p>
+Your program will:
+<ul>
+<li>Obtain user input from the keyboard
+<li>Manipulate and use a wordsearch grid
+<li>Place words into a wordsearch grid recursively
+<li>Use the C-Style procedures and the C calling convention
+</ul>
+</p>
+
+<h2>Obtaining User Input</h2>
+<p>
+User input will be taken from the keyboard. As the user types characters, 
+they will be added to the input buffer and displayed on the screen.  The 
+input buffer can hold <tt>maxLength</tt> characters; if the user attempts to type 
+more characters, they should not be added to the buffer or displayed on
+the screen.  Also, you should handle backspacing properly.  If the user
+hits the Backspace key, a character should be removed from the buffer 
+(allowed to be overwritten with the next typed character) and removed 
+from the screen.  Make sure that the user does not backspace before the
+beginning of the input buffer: this will incorrectly overwrite locations
+on the screen, and worse, it could potentially corrupt variables in memory.
+Last, you should also terminate 
+the input loop when the user hits the Enter key.  At this time, place a '$' at the 
+end of the input string and return the number of characters entered.
+
+<h2>Structure of the <tt>Words</tt> array</h2>
+<p>
+The program stores a maximum of 10 words in an array in memory called <tt>Words</tt>.
+Each entry in this array consists of 14 bytes to be used for characters, and
+2 bytes used to store the length of the word in that entry.  The two bytes
+at the end of each entry allow us to very quickly check the length of the word
+stored at that location.
+
+<pre>
+Words   times 14        db   0
+			dw   0
+        times 14        db   0
+			dw   0
+        times 14        db   0
+			dw   0
+        times 14        db   0
+			dw   0
+        ...
+</pre>
+If we were to store the word "COMPUTER" in the first entry in the array,
+bytes 0-7 would be "COMPUTER", byte 8 would be a '$' to mark the end
+of the string, and bytes 14 and 15 would store the integer 8
+<pre>
+Words                   db   "COMPUTER$",0,0,0,0,0
+			dw   8
+        times 14        db   0
+			dw   0
+        times 14        db   0
+			dw   0
+        times 14        db   0
+			dw   0
+        ...
+</pre>
+When the user is done inputting words, they will type a blank line (i.e. they will
+just hit ENTER without typing any text).  The <tt>GetWord</tt> function will set
+the very first byte of the word to be a '$'.  This way, we know that when we see a
+'$' as the first byte of a word, we have reached the end of our word list.
+
+<a name="Grid">
+<h2>Using the wordsearch grid</h2>
+<p>A wordsearch puzzle can be thought of as an N x N grid of letters.  While the
+puzzle is being constructed, some of the locations in the grid are taken up
+by letters, and others are "blank."  In this MP, when a location in the grid
+contains a '$' character, that location is "blank."
+</p><p>
+Our MP will support wordsearch grids from a very small 2 x 2 grid to a large
+10 x 10 grid.  To make this possible, the <tt>WordsearchArray</tt> array
+contains 100 bytes of '$' characters, some of which may go unused, depending
+on the size of the puzzle.  The end-result of our program will be
+a 2-dimensional puzzle; however, while constructing the puzzle, we will have
+to deal with the <tt>WordsearchArray</tt> array as a 1-dimensional block of
+bytes.  This means that positions in the wordsearch grid are simply linear offsets
+from the starting address of the <tt>WordsearchArray</tt>.
+
+<p>An example will help illustrate the point.  Let's say we have a 5x5 wordsearch grid
+containing all blanks.  We wish to access the character at the location row 3, column 1.  This location
+is highlighted in yellow in the grid below:
+<p><tt>
+<table border="1">
+<tr bgcolor="black"><td> </td><td><font color="white"> 0</font></td><td><font color="white"> 1</font></td>
+    <td><font color="white"> 2</font></td><td><font color="white"> 3</font></td><td><font color="white"> 4</font></td></tr>
+<tr><td bgcolor="black"><font color="white"> 0</font></td><td>__</td><td>__</td><td>__</td><td>__</td><td>__</td></tr>
+<tr><td bgcolor="black"><font color="white"> 1</font></td><td>__</td><td>__</td><td>__</td><td>__</td><td>__</td></tr>
+<tr><td bgcolor="black"><font color="white"> 2</font></td><td>__</td><td>__</td><td>__</td><td>__</td><td>__</td></tr>
+<tr><td bgcolor="black"><font color="white"> 3</font></td><td>__</td><td bgcolor="yellow">__</td><td>__</td><td>__</td><td>__</td></tr>
+<tr><td bgcolor="black"><font color="white"> 4</font></td><td>__</td><td>__</td><td>__</td><td>__</td><td>__</td></tr></table>
+</tt></p>
+Let's assume that each location in the array is 1 byte.  The upper left corner of this
+grid corresponds to the starting address of <tt>WordsearchArray</tt>.  In other words, to
+access the character at location row 0, column 0, we would write <tt>[WordsearchArray + 0]</tt>.
+In order to access the character at the position row 3, column 1, we need to calculate an
+offset from this upper left corner.  Since each row contains 5 characters (5 bytes), the offset
+for this location would be 3*5 + 1, or 16, and so we would write <tt>[WordsearchArray + 16]</tt>
+to access that character.  This is easy to see if you number the
+locations in each row of this grid sequentially, left to right, starting at 0.
+<p><tt>
+<table border="1">
+<tr bgcolor="black"><td> </td><td><font color="white"> 0</font></td><td><font color="white"> 1</font></td>
+    <td><font color="white"> 2</font></td><td><font color="white"> 3</font></td><td><font color="white"> 4</font></td></tr>
+<tr><td bgcolor="black"><font color="white"> 0</font></td><td> 0</td><td> 1</td><td> 2</td><td> 3</td><td> 4</td></tr>
+<tr><td bgcolor="black"><font color="white"> 1</font></td><td> 5</td><td> 6</td><td> 7</td><td> 8</td><td> 9</td></tr>
+<tr><td bgcolor="black"><font color="white"> 2</font></td><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td></tr>
+<tr><td bgcolor="black"><font color="white"> 3</font></td><td>15</td><td bgcolor="yellow">16</td><td>17</td><td>18</td><td>19</td></tr>
+<tr><td bgcolor="black"><font color="white"> 4</font></td><td>20</td><td>21</td><td>22</td><td>23</td><td>24</td></tr></table>
+</tt></p>
+<p>The offsets range from 0 to (<tt>PuzzleSize</tt>*<tt>PuzzleSize</tt> - 1).  (Size note: <tt>PuzzleSize</tt>*<tt>PuzzleSize</tt> will be
+calculated in Main and stored in the variable <tt>PuzzleSizeSq</tt> for your use).  Any offset in this range
+represents a valid location within the grid.
+<p>So once we have a starting offset, how do you move around in the grid?  I've redrawn the 5x5 grid
+we were using before, this time with offsets relative to the <b>colored</b> location (instead of
+relative to the upper left corner as in the previous grid).
+<p><tt>
+<table border="1">
+<tr bgcolor="black"><td> </td><td><font color="white"> 0</font></td><td><font color="white"> 1</font></td>
+    <td><font color="white"> 2</font></td><td><font color="white"> 3</font></td><td><font color="white"> 4</font></td></tr>
+<tr><td bgcolor="black"><font color="white"> 0</font></td><td>__</td><td>__</td><td>__</td><td>__</td><td>__</td></tr>
+<tr><td bgcolor="black"><font color="white"> 1</font></td><td>__</td><td>__</td><td>__</td><td>__</td><td>__</td></tr>
+<tr><td bgcolor="black"><font color="white"> 2</font></td><td>-6</td><td>-5</td><td>-4</td><td>__</td><td>__</td></tr>
+<tr><td bgcolor="black"><font color="white"> 3</font></td><td>-1</td><td bgcolor="yellow">__</td><td>+1</td><td>__</td><td>__</td></tr>
+<tr><td bgcolor="black"><font color="white"> 4</font></td><td>+4</td><td>+5</td><td>+6</td><td>__</td><td>__</td></tr></table>
+</tt></p>
+
+To move left from a starting position, you simply subtract 1 from its offset.
+To move right, add 1.  In order to move up one row in the grid, you will need
+to subtract N bytes from this position, where N is equal to the puzzle size.
+In this case, N=5, and since there are 5 characters from
+the colored location to the position directly above it, we subtract 5 bytes from its.  Similarly, to move
+down one row in the grid, you will need to add 5 bytes to this position.  
+To move diagonally, the relative offsets simply add
+together, and so we get -6, -4, +4, and +6 respectively.
+</p>
+<a name="DirLookupTable">
+<p>So if our program supports a variable puzzle size (ranging from 2x2 to 10x10), how do you determine
+how many bytes to add or subtract?  To make this easy, our program builds
+a lookup table that contains the offsets you need to add to a starting position
+in order to move diagonally up and left, straight up, diagonally up and right,
+straight left, straight right, diagonally down and left, straight down, and diagonally
+down and right.  Each direction is encoded as a number from 0 to 7.  These 8 different
+directions corresponding to the 8 word-sized values in the
+<tt>DirLookupTable</tt> array.  This array is built for you by the Main procedure once
+the size of the puzzle is determined, so you can simply use it knowing it contains
+correct values.</p>
+<p><tt>
+<table border="1">
+<tr><td bgcolor="black"><font color="white"><b>Direction</b></font></td><td bgcolor="black"><font color="white"><b>Index</b></font></td><td bgcolor="black"><font color="white"><b>Value in table</b></font></td></tr>
+<tr><td>Up + Left</td><td>0</td><td>-N - 1</td></tr>
+<tr><td>Up</td><td>1</td><td>-N</td></tr>
+<tr><td>Up + Right</td><td>2</td><td>-N + 1</td></tr>
+<tr><td>Left</td><td>3</td><td>-1</td></tr>
+<tr><td>Right</td><td>4</td><td>+1</td></tr>
+<tr><td>Down + Left</td><td>5</td><td>+N - 1</td></tr>
+<tr><td>Down</td><td>6</td><td>+N</td></tr>
+<tr><td>Down + Right</td><td>7</td><td>+N + 1</td></tr>
+</table>
+</tt></p>
+
+<p>To clarify further, let's say we have the same 5x5 grid as before, and we are at row 3, column.  This would make
+our starting offset 16, as we calculated above.  We wish to move
+up and to the right of this character.  "Up + Right" is direction 2 according to our above table.
+We look up the word-sized value at index 2 in <tt>DirLookupTable</tt> to determine the <b>relative</b>
+offset to add to our starting offset of 16.  The <tt>DirLookupTable</tt> will give us a
+value of -N + 1, in this case -5 + 1 = -4.  So we add -4 to our initial offset of 16 to obtain an
+offset of 12.  As you can see from looking at the grid, this offset of 12 corresponds to row 2, column 2,
+the position up and to the right of our starting position at row 3, column 1.
+
+<h2>Placing words into the grid</h2>
+
+<p>
+To successfully create a crossword puzzle, we need to place all the words into
+the wordsearch grid.  The general idea is as follows:
+<ol>
+<li>Pick a random starting location (0 to PuzzleSizeSq-1).
+<li>Pick a random direction (0 to 7, corresponding to all 8 directions).
+<li>Check to see if the word will fit into the space left in the wordsearch
+grid according to what direction the word is going.
+<li>Check each character in the wordsearch grid to see if it is
+not used (has a '$' character in that location) or if it matches the current
+letter of the word we are trying to place.
+<li>If success, attempt to place the next word.
+<li>If failure on current direction, try the next direction and go back to step 3.
+<li>If failure on all directions, try the next location and go back to step 2.
+<li>If failure on all positions, return -1 to indicate that the word cannot be placed.
+</ol>
+A problem arises, however, when we find a word that we cannot
+place into the grid.  At every starting location and every direction, either the
+word will not fit into the available space, or there is a conflict with another word
+already placed into the wordsearch grid.
+</p>
+<p>
+A possible solution is that once we find a word that cannot be placed, scrap the entire
+wordsearch grid and start over from the beginning with the first word.  This is a rather
+naive approach, however, since it may be possible to only move around one or two words
+in the grid in order to place all of them.
+</p>
+
+<p>
+Our program will use a more intelligent approach: recursively placing the words into
+the wordsearch grid.  The reasoning behind this is as follows: assume there are 8 words to place.
+Your program successfully places 7 of the 8 words, but it exhausts all possible locations
+for the eighth word and cannot place it into the grid.  What the program must now do is
+return to the seventh word and find a new location for it, since the current location
+does not allow the eighth word to be placed.  So the program removes the seventh word and
+places it in a new location/direction.  If it is successful, it moves on to
+the eighth word again.  Hopefully, now we will be able to find a place for the eighth word.
+In this scenario, we have only altered one extra word, instead of redoing the entire wordsearch.
+</p>
+<p>
+In order to support the removal of words, however, we cannot simple remove their characters from
+the <tt>WordsearchArray</tt>.  Words can share letters with other words if they cross, and we
+have to keep track of this so we can remove a word properly from the <tt>WordsearchArray</tt>.
+To this end, we will use a <tt>FrequencyArray</tt> to keep a count of how many times each
+character is used.  Consider the following wordsearch:
+
+<p><tt>
+<table border="1">
+<tr bgcolor="black"><td> </td><td><font color="white"> 0</font></td><td><font color="white"> 1</font></td>
+    <td><font color="white"> 2</font></td><td><font color="white"> 3</font></td><td><font color="white"> 4</font></td></tr>
+<tr><td bgcolor="black"><font color="white"> 0</font></td><td>__</td><td>&nbsp;H</td><td>__</td><td>__</td><td>__</td></tr>
+<tr><td bgcolor="black"><font color="white"> 1</font></td><td>__</td><td>&nbsp;E</td><td>__</td><td>__</td><td>__</td></tr>
+<tr><td bgcolor="black"><font color="white"> 2</font></td><td>__</td><td>&nbsp;L</td><td>__</td><td>__</td><td>__</td></tr>
+<tr><td bgcolor="black"><font color="white"> 3</font></td><td>__</td><td>&nbsp;L</td><td>__</td><td>__</td><td>__</td></tr>
+<tr><td bgcolor="black"><font color="white"> 4</font></td><td>&nbsp;J</td><td>&nbsp;O</td><td> H</td><td> N</td><td>__</td></tr></table>
+</tt></p>
+
+If for some reason we wanted to remove the word "JOHN", we couldn't just replace all the letters in the
+<tt>WordsearchArray</tt> with blanks - we would have to leave the 'O' in place since it is used by "HELLO".
+To keep track of this, we will use the <tt>FrequencyArray</tt> as follows:
+<p>
+<table border="0">
+<tr><td><tt>WordsearchArray</tt></td><td><tt>FrequencyArray</tt></td></tr>
+<tr><td>
+<tt>
+<table border="1">
+<tr bgcolor="black"><td> </td><td><font color="white"> 0</font></td><td><font color="white"> 1</font></td>
+    <td><font color="white"> 2</font></td><td><font color="white"> 3</font></td><td><font color="white"> 4</font></td></tr>
+<tr><td bgcolor="black"><font color="white"> 0</font></td><td>__</td><td>&nbsp;H</td><td>__</td><td>__</td><td>__</td></tr>
+<tr><td bgcolor="black"><font color="white"> 1</font></td><td>__</td><td>&nbsp;E</td><td>__</td><td>__</td><td>__</td></tr>
+<tr><td bgcolor="black"><font color="white"> 2</font></td><td>__</td><td>&nbsp;L</td><td>__</td><td>__</td><td>__</td></tr>
+<tr><td bgcolor="black"><font color="white"> 3</font></td><td>__</td><td>&nbsp;L</td><td>__</td><td>__</td><td>__</td></tr>
+<tr><td bgcolor="black"><font color="white"> 4</font></td><td>&nbsp;J</td><td>&nbsp;O</td><td> H</td><td> N</td><td>__</td></tr></table></tt>
+</td>
+<td><tt>
+<table border="1">
+<tr bgcolor="black"><td> </td><td><font color="white"> 0</font></td><td><font color="white"> 1</font></td>
+    <td><font color="white"> 2</font></td><td><font color="white"> 3</font></td><td><font color="white"> 4</font></td></tr>
+<tr><td bgcolor="black"><font color="white"> 0</font></td><td>&nbsp;0</td><td>&nbsp;1</td><td>&nbsp;0</td><td>&nbsp;0</td><td>&nbsp;0</td></tr>
+<tr><td bgcolor="black"><font color="white"> 1</font></td><td>&nbsp;0</td><td>&nbsp;1</td><td>&nbsp;0</td><td>&nbsp;0</td><td>&nbsp;0</td></tr>
+<tr><td bgcolor="black"><font color="white"> 2</font></td><td>&nbsp;0</td><td>&nbsp;1</td><td>&nbsp;0</td><td>&nbsp;0</td><td>&nbsp;0</td></tr>
+<tr><td bgcolor="black"><font color="white"> 3</font></td><td>&nbsp;0</td><td>&nbsp;1</td><td>&nbsp;0</td><td>&nbsp;0</td><td>&nbsp;0</td></tr>
+<tr><td bgcolor="black"><font color="white"> 4</font></td><td>&nbsp;1</td><td>&nbsp;2</td><td>&nbsp;1</td><td>&nbsp;1</td><td>&nbsp;0</td></tr></table>
+</td></tt></tr></table>
+
+<p>
+
+When the program adds a word to the <tt>WordsearchArray</tt> (the given <tt>WriteWord</tt> function),
+it increments the corresponding usage counts in
+<tt>FrequencyArray</tt>.  When you go to remove a word from <tt>WordsearchArray</tt> (the <tt>RemoveWord</tt> function
+which you must implement), you will decrement
+the usage count and check to see if it is 0.  If it is 0, you can safely remove the letter from
+<tt>WordsearchArray</tt> and replace it with a '$'.  If it is &gt; 0, you must leave the letter in the
+<tt>WordsearchArray</tt> since it is being used by another word.
+<p>
+<a name="pseudocode">
+Here is the PlaceWord pseudocode:
+<pre>
+PlaceWord(wordToPlace*)
+begin
+
+ // Set up local variables on the stack
+ // I would *strongly* recommend that you set up these variables
+ // on the stack, as it will make recursion easier
+ // The size of each variable is a WORD (2 bytes)
+ WORD DirectionCounter
+ WORD PositionCounter
+ WORD CurrentDir
+ WORD CurrentPos
+
+ // Keep track of how many recursive calls we are making
+ PlaceWordNumCalls = PlaceWordNumCalls + 1
+
+ // Base case for recursion
+ if wordToPlace[0] == '$' then
+   return 0
+
+ // Get a random starting location in
+ // the puzzle
+ CurrentPos = Rand(PuzzleSize * PuzzleSize)
+
+ // Try all possible positions in the puzzle,
+ // starting at location CurrentPos
+ for PositionCounter=0 upto (PuzzleSizeSq-1)
+ begin
+  
+  // Get a random direction, 0 to 7
+  CurrentDir = Rand(8)
+
+  // Try all 8 directions, starting with CurrentDir
+  for DirectionCounter=0 upto 7
+  begin
+
+   // Call CheckWord to check this current position and direction
+   if (CheckWord(wordToPlace*, CurrentPos, CurrentDir)) == 0 then
+
+    // CheckWord was successful - the word can be placed here
+    WriteWord(wordToPlace*, CurrentPos, CurrentDir)
+    
+    // Recursive call to PlaceWord, passing in the next word
+    // in the list
+    if PlaceWord(wordToPlace*+16) == 0
+
+     // Success, all words have been placed
+     return 0
+
+    else
+    
+     // Failure, one of the words following this current word
+     // could not be placed.  Remove this word and try a new
+     // direction and/or location
+     RemoveWord(wordToPlace*, CurrentPos, CurrentDir)
+
+    end if
+   end if
+   
+   // % is the modulus operator
+   // It means divide the first operand by the second
+   // and take the REMAINDER as the result.
+   CurrentDir = (CurrentDir + 1) % 8
+   DirectionCounter = DirectionCounter + 1
+  end loop
+
+  // We just exited the inner, "Direction" for loop
+  // Try the next position in the grid
+  CurrentPos = (CurrentPos + 1) % PuzzleSizeSq
+  PostionCounter = PositionCounter + 1
+ end loop
+
+ // If we exit the "Position" for loop, we have tried
+ // every position and every direction in the grid and
+ // can still not place the word.  Return -1 to indicate
+ // error
+ return -1
+end
+</pre>
+
+<p>
+
+<h2>C-Style Procedures</h2>
+<p>
+Each of the subroutines you will write in this MP are C-Style procedures.  Check out John Lockwood's
+<a href="http://courses.engr.illinois.edu/ece291/lecture/lockwood/l8.html">lecture on C-Style Procedures</a> for 
+a description on how they work.  Some notes on his lecture:
+
+<ul>
+ <li>You <b>have</b> to set up a "stack frame" in order to access the parameters passed in to each procedure
+ on the stack.<p>
+ <li>NASM by default makes NEAR calls, not FAR calls. Thus, only the IP gets pushed onto the stack. As a result,
+     the leftmost parameter will be located at <strong>[bp+4]</strong>, not <strong>[bp+6]</strong> as indicated in the lecture.
+     The next parameter will then be available at <strong>[bp+6]</strong>, and so on.</li><p>
+ <li>It is not necessary to set DS=CS as is done in the example code.</li><p>
+ <li>Only PUSH and POP SI, DI, SS, or DS if you use them.</li><p>
+ <li>Because PlaceWord is recursive, you will <b>need</b> to allocate local variables on the stack to keep
+ track of positions, directions, and loop counts.  Allocating local storage on the stack will be discussed
+ in lecture, but here are some added notes.<p>
+ <ul>
+ <li>After setting up the stack frame, you can create room on the stack to store things local
+ to a procedure.  By doing this, you create local variables on the stack.  Since they are on the stack, these variables will maintain their value even if other
+ functions are called, including recursive calls to the same function.  However, they will be lost when the function returns.<p>
+ <li>For example, let's make a function called Foo that takes two parameters Bar1 and Bar2, creates two local variables
+ Temp1 and Temp2, and returns a 0 if successful.  This function in C would look like:
+ <pre>
+   short Foo(short Bar1, short Bar2)
+   {
+     short Temp1, Temp2;
+     ...
+     return 0;
+   }
+ </pre>
+ <tt>short</tt> is C's data type for a 16-bit (WORD sized = 2 byte) integer.<br>
+ This function in assembly would look like this:
+ <pre>
+ Foo:
+   push bp        ; Save the value in bp
+   mov  bp, sp    ; This sets up a "stack frame."  We can now use bp
+                  ; to access the parameters passed in to this function
+   
+   sub  sp, 4     ; This just allocated 4 bytes worth of temporary storage
+                  ; on the stack to store Temp1 and Temp2, each 2 bytes
+   ...
+   ...
+   ...
+
+   add  sp, 4     ; Clean up local variables
+   pop  bp        ; Restore old value of bp
+
+   mov  ax, 0     ; ALL return values go in ax
+   ret
+</pre>
+
+   Calling this function and executing the first 3 instructions will create the following structure on the stack:
+ <p>
+ <table border="1">
+ <tr><td>Address</td><td>Value/Name</td></tr>
+ <tr><td bgcolor="cyan">...</td><td bgcolor="cyan">...</td></tr>
+ <tr><td bgcolor="cyan">bp + 6</td><td bgcolor="cyan">Bar2</td></tr>
+ <tr><td bgcolor="cyan">bp + 4</td><td bgcolor="cyan">Bar1</td></tr>
+ <tr><td bgcolor="yellow">bp + 2</td><td bgcolor="yellow">Return address</td></tr>
+ <tr><td bgcolor="red">bp + 0</td><td bgcolor="red">Old value of bp (that we just pushed)</td><td>&lt;---- bp</td></tr>
+ <tr><td bgcolor="orange">bp - 2</td><td bgcolor="orange">Temp1</td></tr>
+ <tr><td bgcolor="orange">bp - 4</td><td bgcolor="orange">Temp2</td><td>&lt;---- sp</td></tr>
+ <tr><td>...</td><td>...</td></tr>
+ </table></p>
+
+ <p>So by subtracting 4 from sp, we made room for 4 bytes worth of data on the stack.  The first word
+ is accessible at <tt>[bp - 2]</tt> and the second word accessible at <tt>[bp - 4]</tt>.  Before we return,
+ we must "clean up" the local variables we just created.  We do this by adding 4 back to sp, effectively
+ deallocating storage for those two variables.
+ </ul>
+</ul>
+
+<h2>Hints</h2>
+<ul>
+<li>The LIBMP2 file contains executable library functions for each of the
+routines that you need to implement.  
+This allows you to run the program and understand how it works before you implement it.  You can test your program with any combinations of your own
+code and library functions.  You will only receive credit, however, for
+the routines that you implement yourself.</li><p>
+
+<li>When debugging your code in TD, you will find it helpful to use
+the memory window to show you the memory location of the file and strings.
+You can also use the watch window to keep track of variables in your code.</li><p>
+
+<li>Do not assume that the file starts at memory location 0.</li><p>
+
+<li>You may define new variables as needed.</li><p>
+
+<li>Be very careful if you call another subroutine not to clobber the SI or DI registers
+that the calling subroutine uses.</li><p>
+
+<li>You need to create function headers for each of the functions you
+  write.&nbsp; Function headers should include the name of the function, a description of the function's purpose, the list of inputs to the function, the list of the outputs, and any functions
+  that the function calls.&nbsp; You will lose points if you do not do this!</li><p>
+
+<li>START EARLY!</li><p>
+
+
+<li>Monitor the <a href="http://my.ece.uiuc.edu/secure/webboard/select.asp?bid={38D8D827-70BA-4FB6-A186-3C9AD02FC672}">ECE291 Web Board</A> for clarifications and help.</li><p>
+
+</ul>
+
+<h2>Subroutines</h2>
+
+<p>This assignment has six subroutines. You will receive credit by replacing 
+each of these six subroutines listed below with your own code. </p>
+
+
+<p>Each of the subroutines you will write in this MP are C-style. That
+means the inputs to the subroutines (if any) are passed on the
+stack. If the subroutine returns a value, the value will be in al or
+ax, depending on the size. Also, any general purpose register other than SI and DI may be
+overwritten: you do not have to preserve their vales, and you cannot assume the 
+other subroutines (including the library subroutines) preserve them, either. 
+Keep this in mind when writing your code - make sure that you preserve any necessary register 
+values around subroutines calls that occur within other subroutines!</p>
+
+
+<p>The size of the inputs, as well as the size of the return value, are included
+in each subroutine definition. Pointers are denoted with asterisks (*), whereas
+values do not have asterisks. If a subroutine does not have any inputs, <b>void</b>
+will be present in the parentheses. Similarly, if the subroutine does not
+return a value, it will be declared as <b>void</b> before the name of the
+subroutine. </p>
+
+<table BORDER="1">
+      <tr VALIGN="TOP">
+        <th>WORD GetWord(WORD *wordBuffer, WORD maxLength)</th>
+        <td>
+        <ul>
+	  <li>Reads a string from the user, handles backspace, ignores LF, and exits on Enter.
+	  <li>Inputs:<br>
+		<ul><li><tt>wordBuffer</tt> = pointer to a buffer in memory in which to read the word
+		<li><tt>maxLength</tt> = maximum length of the word that should be read by this function</ul>
+	  <li>Outputs:<br>
+		<ul><li>Returns number of characters that were read (can be zero)</ul>
+          <li>Calls:<ul><li><tt>kbdin</tt>, <tt>dspout</tt></ul>
+	  <li>Notes:<ul>
+              <li>This function should only accept capital letters, and numbers ('A' through 'Z'
+              and '0' through '9').  No other keys should be displayed or added to the input buffer, you should
+              simply ignore them.  Run the given MP2.EXE program to experiment with how input should work.
+              <li>The input buffer can hold up to <tt>maxLength</tt> characters (includes spaces). Stop adding characters to the input buffer when this limit is reached.
+              <li>You should correctly handle backspacing.  If the user hits backspace, you should move the cursor back to the previous spot, and the character at that spot should be cleared from the screen. Also, make sure that the user does not backspace past the beginning of the input buffer.  The constant <tt>BKSPKEY</tt> is defined as an ASCII character constant.  Outputting <tt>BKSPKEY</tt> with dspout will move the cursor left one space in the window.
+              <li>Terminate the input loop only when user presses the Enter key. Also, add a '$' to the end of the input string when the input loop terminates.</ul>
+          <li>Points: 15</li>
+        </ul>
+        </td>
+      </tr>
+      <tr VALIGN="TOP">
+        <th>WORD PlaceWord(WORD *wordToPlace)</th>
+        <td>
+        <ul>
+          <li>Attemps to place <tt>wordToPlace</tt> into the <tt>WordsearchArray</tt>
+          <li>Inputs:<ul><li><tt>wordToPlace</tt> = pointer to a word in the <tt>Words</tt> array that we are attempting to place into the grid</ul>
+	  <li>Outputs:<ul><li>Returns 0 if the word was successfully placed into the <tt>WordsearchArray</tt>.
+                          <li>Returns -1 if the word could not be placed.</ul>
+	  <li>Calls: <tt>Rand</tt>, <tt>CheckWord</tt>, <tt>WriteWord</tt>, <tt>RemoveWord</tt>, <tt>PlaceWord</tt> (recursive)
+	  <li>Notes: <ul><li>Follow the <a href="#pseudocode">pseudocode</a> given earlier in this writeup.
+                         <li>Look at the comments in the given code for the specifications for the
+                             <tt>Rand</tt> and <tt>WriteWord</tt> functions.</ul>
+          <li>Points: 25</li>
+        </ul>
+        </td>
+      </tr>
+      <tr VALIGN="TOP">
+        <th>WORD CheckDirection(WORD wordLength, WORD position, WORD direction)</th>
+        <td>
+        <ul>
+          <li>This function checks to see if a word of <tt>wordLength</tt> characters will fit in the
+          <tt>WordsearchArray</tt> going in <tt>direction</tt>.
+	  <li>Inputs:<ul><li><tt>wordLength</tt> = number of characters in the word we are checking
+                         <li><tt>position</tt> = linear offset starting position for the word we are checking
+                         <li><tt>direction</tt> = direction that the word we are checking is going</ul>
+	  <li>Outputs:<ul><li>Returns 0 if the word can fit into the <tt>WordsearchArray</tt> starting at
+          <tt>position</tt> and going in <tt>direction</tt>.
+                          <li>Returns -1 if the word cannot fit.</ul>
+	  <li>Notes:<ul>                        <li>You will need to use mul and div to transform a linear position offset
+                        (passed in as the <tt>position</tt> parameter) into a 2-dimensional row-and-column
+                        position.  Remember the <a href="#Grid">discussion</a> about how the grid is 2D, but in memory
+                        it is only 1D.
+                        <li>You must implement checks for all 8 directions.  Remember, though, that
+                            the diagonal directions are the most restrictive.  If a word fits going down
+                            but not going right, then it will not fit going Down + Right.  You should be
+                            able to use this to eliminate some comparisons and redundant code.</ul>
+          <li>Points: 15</li>
+        </ul>
+        </td>
+      </tr>
+      <tr VALIGN="TOP">
+        <th>WORD CheckWord(WORD *wordToCheck, WORD position, WORD direction)</th>
+        <td>
+        <ul>
+          <li>Sees if <tt>wordToCheck</tt> can be placed in the <tt>WordsearchArray</tt> at location
+          <tt>position</tt> going in <tt>direction</tt>.
+          <li>Inputs:<ul><li><tt>wordToCheck</tt> = pointer to a word in the <tt>Words</tt> array that we are attempting to place into the grid
+			 <li><tt>position</tt> = starting position for the word we are attempting to place
+                         <li><tt>direction</tt> = direction that the word we are attempting to place is going</ul>
+	  <li>Outputs:<ul><li>Returns 0 if the word can be placed into the <tt>WordsearchArray</tt> starting at
+          <tt>position</tt> and going in <tt>direction</tt>.
+                          <li>Returns -1 if the word cannot fit.</ul>
+	  <li>Calls: <tt>CheckDirection</tt>
+	  <li>Notes: <ul><li>First, call CheckDirection to see if <tt>wordToCheck</tt> will fit at all.
+                         <li>Then, go character-by-character through <tt>wordToCheck</tt> and <tt>WordsearchArray</tt>,
+                             making sure that the character in <tt>WordsearchArray</tt> is either a '$' or matches
+                             the corresponding character in <tt>wordToCheck</tt>.
+                        <span style="background-color: #ffff00"><li>Use the <a href="#DirLookupTable"><tt>DirLookupTable</tt></a> to navigate through the wordsearch grid.</span>
+
+          <li>Points: 15</li>
+        </ul>
+        </td>
+      </tr>
+      <tr VALIGN="TOP">
+        <th>VOID RemoveWord(WORD *wordToRemove, WORD position, WORD direction</th>
+        <td>
+        <ul>
+          <li>This function removes the characters in wordToRemove from the wordsearch grid if they are not used
+          by any other words.</li>
+          <li>Inputs: <ul><li><tt>wordToRemove</tt> = pointer to the word to remove
+                          <li><tt>position</tt> = linear offset starting position for the word we are removing in the <tt>WordsearchArray</tt>
+                          <li><tt>direction</tt> = direction that the word we are removing goes</ul>
+          <li>Outputs: <tt>WordsearchArray</tt> and <tt>FrequencyArray</tt> are updated
+          <li>Notes:
+		<ul>
+                    <li>Make use of the <tt>FrequencyArray</tt> to determine how many words use each character.
+                        If a character is used more than once because two or more words cross on that character, decrement its usage count in the <tt>FrequencyArray</tt>
+                        but do not remove it from the <tt>WordsearchArray</tt>.</ul>
+          <li>Points: 10</li>
+        </ul>
+        </td>
+      </tr>
+    </table>
+
+
+<h2>Procedure</h2>
+<ul>
+<li>You will begin this MP with the following files:
+    <ul>
+    <li><tt>MP2.ASM</tt>: Program Framework
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled
+        and linked.</li>
+    <li><tt>LIBMP2.LIB</tt>: Library functions for MP2</li>
+    <li><tt>LIB291.LIB</tt>: General-purpose library functions</li>
+    </ul>
+<li>You may copy these files from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s V:\ece291\mp2 W:\mp2</tt><br>
+    or download the files from this server as <a href="mp2.zip">mp2.zip</a> 
+</li>
+<li>Add your code to <tt>MP2.ASM</tt>.
+<li>Assemble and link your program by typing<tt> make.</tt>&nbsp; This command reads
+  the Makefile then invokes NASM and TLINK to build 
+    an executable program.  
+<li>Use TD debugger to find and correct program errors.
+</ul>
+
+<h2>Final Steps</h2>
+
+<ol>
+  <li>Demonstrate your MP2.EXE to a TA or to the instructor.&nbsp; The TA or
+    instructor will verify that your program produces the correct output. </li>
+  <li>Be prepared to answer questions about any aspect of the operation of
+   your program. The TAs will not accept an MP if you cannot fully explain
+   the operation of your code and details of your implementation. Delayed
+   MPs will be subject to late penalties as described in the course
+   syllabus (10pts/day).</li>
+  <li>The TA will handin your MP online.
+</ol>
+
+<hr>
+
+<h2>MP2.ASM (program framework)</h2>
+<pre>
+; MP2 - Wordsearch Generator
+; Your Name
+; Date
+;
+; Zbigniew Kalbarczyk, Spring 2004
+; Author: John King
+; University of Illinois, Urbana-Champaign
+; Dept. of Electrical and Computer Engineering
+;
+; Version 1.0
+
+	BITS	16
+
+;====== SECTION 1: Define constants =======================================
+
+        CR		EQU     0Dh
+        LF		EQU     0Ah
+        ESC             EQU     01Bh
+        SPACE           EQU     020h
+        BKSPKEY         EQU     08h
+
+;====== SECTION 2: Declare external routines ==============================
+
+; Declare external library routines
+EXTERN kbdin, dspout, dspmsg, mp2xit, ascbin, binasc
+EXTERN libGetWord, libRemoveWord, libCheckWord, libCheckDirection, libPlaceWord
+
+; Declare local routines
+GLOBAL Rand, PlaceWord, WriteWord, RemoveWord
+GLOBAL GetWord, CheckWord, CheckDirection
+
+; Make program variables global
+GLOBAL WordsearchArray, FrequencyArray, CRLFString, UsageMessage, FailureMessage
+GLOBAL Words, PuzzleSize, PuzzleSizeSq, R, DirLookupTable, CRLFString
+GLOBAL PlaceWordNumCalls, CallsString, EndString
+
+
+
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        resb      64*16
+stacktop:
+        resb      0                     ; work around NASM bug
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+
+; Our wordsearch grid
+WordsearchArray times 10*10        db      '$'
+; Frequency grid
+FrequencyArray  times 10*10        db      0
+
+; Some messages
+UsageMessage    db      'Input format:',CR,LF
+		db	'<Puzzle Size>',CR,LF
+		db	'<word0>',CR,LF
+		db	'<word1>',CR,LF
+		db	'...',CR,LF
+		db	'<wordN>',CR,LF,'$'
+FailureMessage  db      'Unable to create wordsearch puzzle',CR,LF,'$'
+
+; Puzzle size variables
+PuzzleSize      dw      0
+PuzzleSizeSq	dw	0
+
+; Random number seed
+R		dw	1
+
+; Words array
+Words   times 14        db   0
+			dw   0
+        times 14        db   0
+			dw   0
+        times 14        db   0
+			dw   0
+        times 14        db   0
+			dw   0
+        times 14        db   0
+			dw   0
+        times 14        db   0
+			dw   0
+        times 14        db   0
+			dw   0
+        times 14        db   0
+			dw   0
+        times 14        db   0
+			dw   0
+        times 14        db   0
+			dw   0
+        times 14        db   0
+			dw   0
+        times 14        db   0
+			dw   0
+        times 14        db   0
+			dw   0
+        times 14        db   0
+			dw   0
+        times 14        db   0
+			dw   0
+        times 14        db   0
+			dw   0
+                        db   '$'
+
+; Direction lookup table
+DirLookupTable  dw      0,0,0
+                dw      -1,1
+                dw      0,0,0
+
+; More useful strings and things for display purposes
+CRLFString      db      CR,LF,'$',0
+CallsString     db      CR,LF,"There were ",'$'
+EndString       db      " calls to PlaceWord.",CR,LF,'$'
+TempBuffer      times 8 db      0
+
+; Variable to keep track of how many calls we make to PlaceWord
+PlaceWordNumCalls       dw      0
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        mov     ax, cs                  ; Initialize Default Segment register
+        mov     ds, ax  
+        mov     ax, stkseg              ; Initialize Stack Segment register
+        mov     ss, ax
+        mov     sp, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+MAIN:
+        call    ParsePuzzleSize         ; Get puzzle size from the user
+
+        cmp     ax, 1                   ; The size must be > 1 for this to
+        jg      .NoError                ; be a valid wordsearch
+
+        mov     dx, UsageMessage        ; Size was invalid, print out the
+        call    dspmsg                  ; usage message
+        jmp     .CouldNotCreateWordsearch
+
+.NoError
+        mov     [PuzzleSize], ax	; Set up the PuzzleSize and
+	mul	word[PuzzleSize]	; PuzzleSizeSq variables
+	mov	[PuzzleSizeSq], ax
+	mov	ax, [PuzzleSize]
+
+                                               
+        not     ax                      ; This next section of code sets up
+        mov     [DirLookupTable], ax    ; DirLookupTable so we can use it
+        inc     ax                      ; in the rest of the functions
+        mov     [DirLookupTable+2], ax
+        inc     ax
+        mov     [DirLookupTable+4], ax
+        neg     ax
+        mov     [DirLookupTable+10], ax
+        inc     ax
+        mov     [DirLookupTable+12], ax
+        inc     ax
+        mov     [DirLookupTable+14], ax
+
+        mov     bx, Words
+        xor     cx, cx
+.InputLoop:
+        push    bx                      ; Save bx and cx, all procedures are
+        push    cx                      ; C-style, so they can (and will!)
+                                        ; modify registers other than si and di
+                                       
+	push	word[PuzzleSize]	; C-style calling procedure:
+        push    bx                      ; parameters passed on the stack
+
+        call    GetWord			; GetWord(WORD *wordToWrite, WORD maxLength)
+        add     sp, 4                   ; remove parameters from the stack
+        
+        pop     cx
+        pop     bx                      ; restore bx and cx
+
+        cmp     ax, 0                   ; Check return value, if it's 0 we've
+        je      .DoneGettingWords       ; reached the end of the list so move on
+
+	mov	word[bx + 14], ax
+        add     bx, 16                  ; Otherwise set bx to point to the next
+        inc     cx                      ; word
+        cmp     cx, 10
+        jl      .InputLoop
+
+.DoneGettingWords
+        mov     byte[bx], '$'
+	mov	dx,CRLFString
+        call    dspmsg
+      
+      	mov	bx, Words
+        push    bx       
+        call    PlaceWord               ; Begin the calls to PlaceWord
+        add     sp, 2
+
+        cmp     ax, 0
+        jl      .CouldNotCreateWordsearch
+
+        call    PrintWordsearch         ; Success; print the wordsearch
+	mov	dx, CRLFString
+	call	dspmsg
+        jmp     .DisplayNumCalls
+
+.CouldNotCreateWordsearch
+        mov     dx, FailureMessage      ; Failure; print a failure message
+        call    dspmsg
+.DisplayNumCalls
+        mov     ax, [PlaceWordNumCalls]	; Print the # of calls to PlaceWord
+        mov     bx, TempBuffer
+        call    binasc
+        mov     dx, CallsString
+        call    dspmsg
+        mov     dx, TempBuffer
+        call    dspmsg
+        mov     dx, EndString
+        call    dspmsg
+        call    mp2xit
+
+;====== SECTION 8: Your subroutines =========================================
+
+;=== Given Subrouties: ParsePuzzleSize, WriteWord, PrintWordSearch, and Rand
+
+;;; WORD ParsePuzzleSize
+;;; PURPOSE: Processes the parameters typed in on the command line
+;;; INPUTS:  NONE
+;;; RETURNS: Puzzle size
+
+ParsePuzzleSize:
+        push    bp                      ; Set up stack frame
+        mov     bp, sp
+        push    si
+
+.GoodToGo
+	mov	bx, TempBuffer
+	mov	ax, 2                   ; The biggest puzzle we support is
+	push	ax                      ; 10, so at most we need 2 digits
+	push	bx                      ; from the user
+
+	call	GetWord                 ; Get the puzzle size from the user
+	add	sp, 4
+
+        mov     bx, TempBuffer
+        call    ascbin
+        cmp     dl, 0
+        je      .Return                 ; Leave the return value in ax
+
+        mov     ax, -1
+.Return
+        pop     si
+        pop     bp
+        ret
+
+;;; VOID WriteWord(WORD *wordToWrite, WORD position, WORD direction)
+;;; PURPOSE: Commits the word pointed to by bx to the wordsearch
+;;; INPUTS:  *wordToWrite = Pointer to the word to commit to the grid
+;;;          position = Linear offset starting position that word
+;;;                     starts at in WordsearchArray
+;;;          direction = Direction the word is going in
+;;; OUTPUTS: WordsearchArray, FrequencyArray are updated
+WriteWord:
+        push    bp
+        mov     bp, sp
+
+        push    si
+        push    di
+        
+        ; Retrieve the parameters from the stack
+        mov     bx, [bp + 4]            ; [bp + 4] = *wordToWrite
+        mov     di, [bp + 6]            ; [bp + 6] = position
+        mov     si, [bp + 8]            ; [bp + 8] = direction
+	shl	si, 1
+.Top
+        mov     al, [bx]                ; Strings are '$'-terminated, so
+        cmp     al, '$'                 ; when we hit a '$', we're done
+        je      .Done
+
+        mov     [WordsearchArray + di], al      ; Update the Wordsearch array
+        inc     byte[FrequencyArray + di]       ; Update the frequency array
+        inc     bx
+        add     di, [DirLookupTable + si]
+        jmp     .Top
+
+.Done
+        pop     di
+        pop     si
+        pop     bp
+        ret
+
+;;; VOID PrintWordsearch(WORD mode)
+;;; PURPOSE: Prints the wordsearch out, either with random
+;;;          letters filled in, or without
+;;; INPUTS:  mode = 0 for random letter mode
+;;;                 1 for blanks mode
+;;; OUTPUTS: Wordsearch puzzle is printed to the screen
+PrintWordsearch:
+        push    bp
+        mov     bp, sp
+        push    si
+
+        xor     si, si
+	xor	cx, cx
+
+.PrintLoop
+        mov     dl, [WordsearchArray + si]
+        cmp     dl, '$'
+        jne      .NonRandom             ; If the char is a '$', then
+                                        ; that location in the grid
+                                        ; is not occupied by a letter
+                                        
+
+        cmp     word[bp + 4], 0         ; Either print out an underscore 
+        jne     .Blank                  ; or a random letter
+
+	push	cx
+        mov     ax, 26
+        push    ax
+        call    Rand
+	add	sp, 2
+	pop	cx
+        mov     dl, al
+        jmp     .NonRandom
+    
+.Blank
+        mov     dl, '_'
+.NonRandom
+        call    dspout                  ; Display the character
+        mov     dl, ' '
+        call    dspout
+        inc     si
+        inc     cx
+        cmp     cx, [PuzzleSize]        ; The inner loop displays each character
+                                        ; in a row
+        jne     .PrintLoop
+        
+	cmp	si, [PuzzleSizeSq]      ; The outer one loops through all the
+	jge	.Done                   ; rows
+        xor     cx, cx
+        mov     dx, CRLFString
+        call    dspmsg
+        jmp     .PrintLoop
+.Done
+        pop     si
+        pop     bp
+        ret
+
+; WORD Rand(maxNumber)
+; PURPOSE: Generates random number
+;  INPUTS: maxNumber = range of random number
+;          (global) R = current stored random number
+; RETURNS: random number in range 1 ... (maxNumber-1)
+
+Rand:
+	push	bp
+	mov	bp,sp
+
+	mov	ax, word[R]
+	mov	bx, 2053
+	mul	bx
+	add	ax, 13849
+	adc	dx, 0
+	mov	bx, 0FFFFh
+	div	bx
+	mov	word[R], dx
+	mov	ax, dx
+	mov	dx, 0
+	div	word[bp + 4]
+	mov	ax, dx
+
+	pop	bp
+	ret 
+        
+; === Your own subrouties ===================================================
+
+;;; You MUST implement the following five subroutines to earn full credit
+;;; on this MP.
+
+
+;;; WORD GetWord(WORD *wordBuffer, WORD maxLength)
+GetWord:
+        push    bp
+        mov     bp, sp
+
+        push    word[bp + 6]
+        push    word[bp + 4]
+        call    libGetWord
+        add     sp, 4
+
+        pop     bp
+	ret
+
+;;; WORD PlaceWord(WORD *wordToPlace)
+PlaceWord:
+        push    bp
+        mov     bp, sp
+
+        push    word[bp + 4]
+        call    libPlaceWord
+        add     sp, 2
+
+        pop     bp
+	ret
+        
+;;; VOID RemoveWord(WORD *wordToRemove, WORD position, WORD direction)
+RemoveWord:
+        push    bp
+        mov     bp, sp
+
+        push    word[bp + 8]
+        push    word[bp + 6]
+        push    word[bp + 4]
+        call    libRemoveWord
+        add     sp, 6
+
+        pop     bp
+	ret
+
+; CheckDirection(WORD wordLength, WORD position, WORD direction)
+CheckDirection:
+        push    bp
+        mov     bp, sp
+
+        push    word[bp + 8]
+        push    word[bp + 6]
+        push    word[bp + 4]
+        call    libCheckDirection
+        add     sp, 6
+
+        pop     bp
+	ret
+
+; CheckWord(WORD *wordToCheck, WORD position, WORD direction)
+CheckWord:
+
+        push    bp
+        mov     bp, sp
+
+        push    word[bp + 8]
+        push    word[bp + 6]
+        push    word[bp + 4]
+        call    libCheckWord
+        add     sp, 6
+
+        pop     bp
+	ret
+	
+</pre>
+
+<!--#include file="foot.asp"-->
+</body>
+
+</html>

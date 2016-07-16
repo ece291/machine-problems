@@ -1,0 +1,455 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>MP4: High Quality Graphics</title>
+<style type="text/css"><!--
+body{ background:white; color:black; }
+P{ text-indent: -0.5em; margin-left: 3em; }
+H1{ margin-left: 0em; clear: right; }
+H2{ margin-left: 1em; clear: right; }
+H3{ margin-left: 2em; clear: right; }
+pre{ margin-left: 3em; clear: all }
+ol,ul{ margin-left: 5em; }
+sub{ font-style: italic; }
+.eqn { margin-left: 5em; font-family: times; }
+.decl{ font-weight: bold; }
+.int{ color: maroon; }
+.intv{ color: blue; }
+.func{ color: red; }
+.float{ color: maroon; }
+.floatv{ color: purple; }
+.keyw{ color: green; font-weight: bold; }
+.comment{ color: green; font-style: italic; }
+.innerul{ margin-left: 1em; }
+@media print {
+ //.noprint{ display:none; }
+}
+@media screen {
+ //.print{ display: none;}
+}
+--></style>
+</head>
+<body bgcolor="#FFFFFF">
+&nbsp;
+<table BORDER=0 CELLPADDING=3 WIDTH="100%" >
+<tr>
+<td ALIGN=LEFT WIDTH="33%">ECE291</td>
+
+<td ALIGN=CENTER WIDTH="34%">
+<center>Computer Engineering II</center>
+</td>
+
+<td ALIGN=RIGHT WIDTH="33%">Kalbarczyk, Fall 2000</td>
+</tr>
+</table>
+
+<h1 align='center'>
+Machine Problem 4: High Quality Graphics</h1>
+
+<table align='center' BORDER CELLPADDING=3 WIDTH="60%" >
+<tr><td ALIGN=RIGHT><b>Assigned</b></td>
+    <td>Thursday, October 26, 2000</td>
+</tr>
+
+<tr><td ALIGN=RIGHT><b>Purpose</b></td>
+    <td>Protected Mode, Great Graphics, Mouse</td>
+</tr>
+
+<tr><td ALIGN=RIGHT><b>Points</b></td>
+    <td>75</td>
+</tr>
+
+<tr><td ALIGN=RIGHT><b>Due Date</b></td>
+    <td>Tuesday Nov 14 5:00pm</td>
+</tr>
+</table>
+<Center><IMG SRC="http://www.ece.uiuc.edu/ece291/icon/construct.gif" width="38" height="38" >This MP is under construction</Center>
+
+<a name='intro'><h2>Introduction</h2></a>
+
+<p>Ever looked at something like Adobe Photoshop and wondered how they
+did it?  Or even Windows Paint?  In MP4 we are going to create a program
+somewhere inbetween the previous two. You now have the amazing tool of
+Protected Mode Programming available to you.  It's time to start really
+using it.</p>
+
+<h2>Problem Description</h2>
+
+<p>We're going to implement some features that you might expect in a paint
+program:</p>
+<ul>
+ <li>Controlling the program with the <a href="misc.html#mouse">Mouse</a></li>
+ <li>Ability to enter text strings via <a href="text.html">DrawChar</a></li>
+ <li>Stamping images onto the canvas with <a href="ablit.html">AlphaBlit</a></li>
+ <li>Line Drawing via <a href="anti.html">AALine</a></li>
+</ul>
+
+<p>Only it won't be the plain vanilla way of doing things.  We're doing
+a full alpha-blit for stamping images.  This way we can stamp images
+that have a drop shadow, and have it look good.  We're writing in an
+anti-aliased font, which again makes the text look rather good.  We're
+drawing anti-aliased lines--none of the stairstep jagginess of plain
+lines for us!</p>
+
+<p>Take a look at the pages we've linked above for full information on
+how to implement them.  You probably need to learn it before you start
+coding.</p>
+
+<p>We're also using the brand new <a href="grfx.html">High Resolution
+Graphics library</a> written by our very own Pete Johnson, to let you do
+these amazing tasks. Read up on it--as it alone tells you of some known
+problems when trying to use it, especially in conjunction with cv32.
+Check back if you start running into issues you really don't understand,
+and let us know so we can add it to the page.</p>
+
+
+<h2>The Procedures</h2>
+<p>You are required to code 9 functions.  These functions are described
+in C notation whenever you see the parenthesis, or assembly notation if
+you see register names.  Don't forget the leading underscore that goes
+unwritten in the C notation!</p>
+
+<p>Note: I've tried to list these in something approaching order of
+difficulty.  You can certainly approach them in any order you feel
+appropriate, but we strongly suggest understanding and/or implementing
+AlphaBlit() before AALine().</p>
+
+<ul>
+ <li><a href="#clearimage">ClearImage</a></li>
+ <li><a href="#installmouse">InstallMouse</a>,
+     <a href="#removemouse">RemoveMouse</a>,
+     <a href="#mousecallback">MouseCallback</a></li>
+ <li><a href="#drawchar">DrawChar</a></li>
+ <li><a href="#alphablit">AlphaBlit</a>,
+     <a href="#alphacompose">AlphaCompose</a></li>
+ <li><a href="#aaline">AALine</a>,
+     <a href="#drawpixeld">DrawPixelD</a></li>
+</ul>
+
+
+<h3><a name="clearimage">void ClearImage(int color)</a></h3>
+<ul>
+ <li>Input</li>
+ <ul class="innerul">
+  <li>Current color</li>
+ </ul>
+ <li>Output</li>
+ <ul class="innerul">
+  <li><em>None</em></li>
+ </ul>
+ <li>Purpose</li>
+ <ul class="innerul">
+  <li>Clear the "paint" area (_ImageBlock) to a solid color</li>
+ </ul>
+ <li>Notes</li>
+ <ul class="innerul">
+  <li>The area you want to clear is 640 by 450 pixels</li>
+  <li>Use a string operation to make this short and easy and worth full
+  points</li>
+ </ul>
+</ul>
+
+
+<h3><a name="installmouse">bool InstallMouse(void)</a></h3>
+<ul>
+ <li>Input</li>
+ <ul class="innerul">
+  <li><em>None</em></li>
+ </ul>
+ <li>Output</li>
+ <ul class="innerul">
+  <li>Writes to variables: MouseSeg, MouseOff</li>
+  <li>Returns 1 on error, 0 otherwise</li>
+ </ul>
+ <li>Purpose</li>
+ <ul class="innerul">
+  <li>Install the mouse callback</li>
+ </ul>
+ <li>Notes</li>
+ <ul class="innerul">
+  <li>Don't forget to lock areas the <a
+  href="#mousecallback">callback</a> will access</li>
+  <li>You need to use a <a href="library.html">library function</a> to
+  obtain a real-mode callback address (segment and offset) that you can
+  pass to Int 33h.</li>
+  <li>Do <em>not</em> try to pass cs and the offset of MouseCallback
+  directly to Int 33h: selectors are not the same as segments!</li>
+  <li>You want the callback to be called on left mouse button press and
+  release as well as on mouse movement.</li>
+  <li>To get the length of the handler, subtract the start of the
+  handler from the label at the end of the handler (remember, labels
+  are just addresses)</li>
+ </ul>
+</ul>
+
+<h3><a name="removemouse">void RemoveMouse(void)</a></h3>
+<ul>
+ <li>Input</li>
+ <ul class="innerul">
+  <li>Reads from variables: MouseSeg, MouseOff</li>
+ </ul>
+ <li>Output</li>
+ <ul class="innerul">
+  <li><em>None</em></li>
+ </ul>
+ <li>Purpose</li>
+ <ul class="innerul">
+  <li>Remove the mouse callback</li>
+ </ul>
+ <li>Notes</li>
+ <ul class="innerul">
+ <li>Uninstall the <a href="#mousecallback">mouse callback</a> using Int 33h before
+  you free the real-mode callback.</li>
+ </ul>
+</ul>
+
+<h3><a name="mousecallback">void MouseCallback(DPMI_REGS *DPMIRegsPtr)</a></h3>
+<ul>
+ <li>Input</li>
+ <ul class="innerul">
+  <li>DPMIRegsPtr, pointer to a DPMI registers structure</li>
+ </ul>
+ <li>Output</li>
+ <ul class="innerul">
+  <li>Adds event to event queue</li>
+ </ul>
+ <li>Purpose</li>
+ <ul class="innerul">
+  <li>Process mouse input</li>
+ </ul>
+ <li>Notes</li>
+ <ul class="innerul">
+  <li>Index into the DPMI registers structure using the library-defined
+  DPMI_*_off, where *=EAX,EBX, etc.</li>
+  <li>Look at the mouse interrupt documentation to find what registers
+  map to what variables</li>
+  <li>See the <a href="misc.html#mouse">Mouse</a> section for further information.</li>
+ </ul>
+</ul>
+
+<h3><a name="drawchar">void DrawChar(short DestSel, int *Dest, short Char, int
+CharPos, int Color)</a></h3>
+<ul>
+ <li>Input</li>
+ <ul class="innerul">
+  <li>DestSel, destination selector to write character into</li>
+  <li>Dest, offset into DestSel</li>
+  <li>Char, ASCII character to write</li>
+  <li>CharPos, position to write character at: specified in character units, not pixels</li>
+  <li>Color, color to make text</li>
+ </ul>
+ <li>Output</li>
+ <ul class="innerul">
+  <li>Correct character written to correct location in DestSel</li>
+ </ul>
+ <li>Purpose</li>
+ <ul class="innerul">
+  <li>Writes a single character.  Used in both dialogs (typing in filenames) and
+  with the Text tool to write strings to the screen.</li>
+ </ul>
+ <li>Notes</li>
+ <ul class="innerul">
+  <li>Each character is 16x16.</li>
+  <li>Overwrite the color value of each pixel written with the Color argument,
+  but leave the alpha value intact: as the characters are antialiased, when they
+  are copied to the screen using AlphaBlit, they will be correctly blended onto
+  the background.</li>
+  <li>MMX highly recommended, but not required.  Use this function to
+  familiarize yourself with the MMX instructions and how to use them to modify
+  32-bit pixels before diving into AlphaBlit.</li>
+  <li>The width of the destination bitmap is always 640 (pixels).  You need to
+  adjust the destination pointer after every row so that the character is
+  aligned properly on the destination.</li>
+  <li>See <a href="text.html">Drawing Strings of Text</a> for further information.
+ </ul>
+</ul>
+
+<h3><a name="alphablit">void AlphaBlit(short DestSel, int *Dest, int DestWidth, short DestX, short DestY, short SrcSel, int *Src, int SrcWidth, int SrcHeight)</a></h3>
+<ul>
+ <li>Input</li>
+ <ul class="innerul">
+  <li>DestSel, selector containing destination image to blit onto</li>
+  <li>Dest, offset of start of image within DestSel</li>
+  <li>DestWidth, width of destination image in pixels</li>
+  <li>DestX, X coordinate of the upper-left corner of where the source image should be placed on the destination</li>
+  <li>DestY, Y coordinate of the upper-left corner of where the source image should be placed on the destination</li>
+  <li>SrcSel, selector containing source image to blit from</li>
+  <li>Src, offset of start of image within SrcSel</li>
+  <li>SrcWidth, width of source image in pixels</li>
+  <li>SrcHeight, height of source image in pixels</li>
+ </ul>
+ <li>Output</li>
+ <ul class="innerul">
+  <li>Source alpha-blended onto destination</li>
+ </ul>
+ <li>Purpose</li>
+ <ul class="innerul">
+  <li>Copy a source image over a destination image taking into account the
+  alpha value of each pixel in the source (the destination alpha values are
+  ignored).</li>
+ </ul>
+ <li>Notes</li>
+ <ul class="innerul">
+  <li>DestWidth and SrcWidth will always be multiples of 2.</li>
+  <li>Provides the setup and loop for AlphaCompose()</li>
+  <li>You must correctly handle the source image going off the right of
+  the destination (don't worry about it going off the bottom).</li>
+  <li>You should load RoundingFactor into an MMX register in the setup here.
+It will be used by AlphaCompose, but AlphaCompose doesn't know what the real
+data segment (where RoundingFactor is stored) is, so it can't load it.  If you
+use the library AlphaCompose, load RoundingFactor into mm4 and zero mm5 (pxor
+mm5, mm5) in AlphaBlit, before starting the loop that calls AlphaCompose().</li>
+  <li>See <a href="ablit.html">Alpha Blitting</a> for further information.</li>
+ </ul>
+</ul>
+
+<h3><a name="alphacompose">_AlphaCompose</a></h3>
+<ul>
+ <li>Input</li>
+ <ul class="innerul">
+  <li>ds:esi points to the source image double-pixel</li>
+  <li>es:edi points to the destination image double-pixel</li>
+ </ul>
+ <li>Output</li>
+ <ul class="innerul">
+  <li>Alpha Composed Source over Destination in Destination double-pixel</li>
+ </ul>
+ <li>Purpose</li>
+ <ul class="innerul">
+  <li>Perform the Over operation as a helper function to AlphaBlit()</li>
+ </ul>
+ <li>Notes</li>
+ <ul class="innerul">
+  <li>Use MMX for full points and speed</li>
+  <li>The Over operator is Dest = (alpha * Source) + ((1-alpha) * Dest)</li>
+  <li>See <a href="ablit.html#algo">Alpha Blitting</a> for further
+  information and optimizations.
+ </ul>
+</ul>
+
+<h3><a name="aaline">void AALine(short x0, short y0, short x1, short y1, int Color)</a></h3>
+<ul>
+ <li>Input</li>
+ <ul class="innerul">
+  <li>(x0,y0), starting coordinate of anti-aliased line</li>
+  <li>(x1,y1), ending coordinate of anti-aliased line</li>
+  <li>Color, color to draw line with</li>
+ </ul>
+ <li>Output</li>
+ <ul class="innerul">
+  <li>Anti-aliased line drawn in the current color</li>
+ </ul>
+ <li>Purpose</li>
+ <ul class="innerul">
+  <li>Draws an anti-aliased line in the current color by calling
+  DrawPixelD()</li>
+ </ul>
+ <li>Notes</li>
+ <ul class="innerul">
+  <li>This function calls DrawPixelD in an irregular way!</li>
+  <li>Make sure to leave <tt>ES</tt> as passed, when you call DrawPixelD</li>
+  <li>See <a href="anti.html#algo">Anti-aliased Lines</a> for further
+  information and optimizations</a></li>
+ </ul>
+</ul>
+
+<h3><a name="drawpixeld">void DrawPixelD(char *addr, int Color)</a></h3>
+<ul>
+ <li>Input</li>
+ <ul class="innerul">
+  <li>addr holds the pixel address</li>
+  <li>Color holds the base color to draw the pixel with</li>
+  <li>st0 holds the calculated distance</li>
+ </ul>
+ <li>Output</li>
+ <ul class="innerul">
+  <li>Composited pixel for Anti-aliased line</li>
+ </ul>
+ <li>Purpose</li>
+ <ul class="innerul">
+  <li>Perform the one pixel Alpha Compositing with Alpha as a function
+  of distance</li>
+ </ul>
+ <li>Notes</li>
+ <ul class="innerul">
+  <li>Don't use MMX in this function!</li>
+  <li><tt>ES</tt> holds the selector to which you should draw. (<tt>[ES:addr]</tt>)</li>
+  <li>This function is called irregularly!  Nowhere else will you see a
+  value passed on the FPU stack.</li>
+  <li>Use the Over operator, as above.</li>
+ </ul>
+</ul>
+
+<a name='prelim'><h2>Preliminary Procedure</h2></a>
+<ul>
+<li>
+Copy the given MP4 files from the network drive to your home directory
+with the following command:</li>
+
+<br><tt>xcopy /s V:\ece291\mp4 W:\mp4</tt>
+<br>Alternatively, from home you can download the same files as <a href="http://www.ece.uiuc.edu/ece291/mp/mp4/mp4.zip">mp4.zip</a>.
+<br><b>Note that this MP will
+not work unless you have Windows 2000 (or possibly NT).</b>
+<li>
+
+<B>Unlike most previous MP's</B>, you need to run V:\djgpp\djgpp.bat
+before building your program (only once per DOS session!).<br>Run
+<tt>nmake</tt> to build an executable program using the given ECE291
+library functions.</li>
+
+<li>
+As with previous MP's, use a text editor to modify the program. As given,
+the program uses LIBMP4 routines to implement all functionality. To receive
+full credit for the assignment, you will need to implement each of the
+subroutines described above with your own code. At Handin, the program
+must be fully functional, with library functions used as necessary to
+replace any broken or unwritten functions.  You will not receive points
+for library functions.</li>
+
+<li>
+By modifying a few comments, you can mix and match usage of your own code
+and Library routines. You may notice that the LIBMP4 routines contain extraneous
+and difficult-to-read code. They are not meant to be easily unassembled!</li>
+</ul>
+<i>Monitor the newsgroup and this on-line section for revisions to the
+MP or to the write-up</i>
+
+<h2>Final Steps</h2>
+
+<ol>
+<li>
+Verify that your program meets all requirements for handin.</li>
+
+<li>
+Print a copy of the
+<a href="http://www.ece.uiuc.edu/~ece291/mp/mp4/mp4grade.html">MP4
+grading sheet</a>.</li>
+
+<li>
+Demonstrate MP4.EXE to a TA or to the instructor.</li>
+
+<li>
+Be prepared to answer questions about any aspect of the operation of your
+program. The TAs will not accept an MP if you cannot fully explain all
+operations of your code.</li>
+
+<li>
+Handin in your program with the TA on the <a
+href="http://www.ece.uiuc.edu/ece291/mp/index.html">Web Page</a></li>
+
+<li>
+Print your MP4.ASM 4 pages per page and double sided.
+If you don't know how to do this ask a TA for assistance.</li>
+
+<li>
+Staple the MP4 grading sheet to the front of your MP4.ASM file and give
+both to the same TA that approved your demonstration.</li>
+</ol>
+
+<hr>
+
+<p><a href="mp4.asm">mp4.asm</a></p>
+
+</body>
+</html>

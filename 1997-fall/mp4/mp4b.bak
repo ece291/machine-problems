@@ -1,0 +1,401 @@
+<HTML>
+<HEAD>
+   <TITLE>ECE291 Machine Problem 4</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<TABLE BORDER=0 CELLPADDING=3 WIDTH="100%" >
+<TR>
+  <TD ALIGN=LEFT WIDTH="33%">ECE291</TD>
+  <TD ALIGN=CENTER WIDTH="34%">Computer Engineering II</TD>
+  <TD ALIGN=RIGHT WIDTH="33%">Lockwood, Fall 1997</TD>
+</TR>
+</TABLE>
+
+<CENTER>
+<H1>Machine Problem 4: Battletank Simulator:<br> 
+  Part I (graphics)</H1>
+</CENTER>
+
+<CENTER>
+<TABLE BORDER=1 WIDTH="60%">
+<TR>
+  <TD ALIGN=RIGHT><B>Assigned</B></TD>
+  <TD>Tuesday, October 28, 1997</TD>
+</tr><TR>
+  <TD ALIGN=RIGHT><B>Due Date</B></TD>
+  <TD>Friday, November 7, 1997</TD>
+</TR><TR>
+  <TD ALIGN=RIGHT><B>Purpose</B></TD>
+  <TD>VGA Graphics, Bresenham's Line Algorithm</TD>
+</TR><TR>
+  <TD ALIGN=RIGHT><B>Points</B></TD>
+  <TD>50</TD>
+</TR></TABLE>
+</CENTER>
+
+<h2>Introduction</h2>
+
+In the near future, battles will be fought in virtual environments.
+The nastiest of these battles may very well be in the ECE291 laboratory.
+For this assignment, we will render a 3-dimensional battlefield and
+each be the captain of our own tank.
+<p>
+This is the beginning of a two-part machine problem.  
+In this machine problem, you will code the graphic routines
+and write a keyboard interrupt handler for a 3-D tank simulator.
+For the graphics, you will write a routine to draw polygons on the 
+screen, load PCX files, and use effiecient string operations to
+create smooth-motion (30+ frames/second) animation.
+<p>
+Our battlefield will be a square region with vertical walls.  As 
+we move our tank toward a wall, the wall will appear larger.
+As we move away, it will appear smaller.  At any given time, we
+will be able to see up to three walls.  
+A screen dump of the running program is shown below.
+<p>
+<center><img src="mp4-view.gif"><p></center>
+<p>
+
+<H2>Drawing Polygons</h2>
+We will render the walls in our 3-D world using 
+multiple instances of a single graphic primitive: a four-sided polygon.
+Figure 1(a) shows the type of polygon that we will be using
+for this assignment.
+<p>
+The poloygon is most easily drawn by breaking the problem into three
+filled regions, as shown in Figure 1.b.
+Region 2 is the easiest, you just need to draw a rectangular box
+from X1 to X2 going from Y2 down to Y4.
+Recall that the string instructions covered in class for
+<a href="../../lecture/l17.html">Lecture 17</a> <!-- string -->
+are most efficient for fast graphics.
+<p>
+Drawing regions 1 and 3, are more difficult.
+You must use Bresenham's Line Algorithm
+to determine the points connecting (X1, Y1) to (X2, Y2) and (X1, Y3) 
+to (X2, Y4).  Once you know the points on the line, you can draw horizontal
+lines to fill in the region.  The derivation of Bresenham's algorithm
+was covered in class in
+<a href="../../lecture/l19.html">Lecture 19</a>. <!-- Bresenham -->
+<p>
+<CENTER><IMG SRC="poly.gif" ALIGN=CENTER></CENTER>
+<p>
+Once you determine which pixel appears on the diagonal; 
+you can simply draw a fill line back to the other end of the triangle.
+If the slope of the line is greater than 1, you will need to swap
+your independent axis.   You will want to code this complex 
+routine using several simplier subroutines.  It is up to you to 
+determine a good set of modular subroutines.  Points will be deducted
+for routines that attempt to draw the entire polygon using one, large
+procedure.
+
+
+<h2>Video Graphics</h2>
+In order to reduce the amount
+of screen flicker inherent in programs that use VGA graphics, we are going
+to use double-buffering to drawn on the screen.  
+After an entire image has been created, it will be quickly transferred
+with the <i>MoveScreen</i> routine directly to the screen.  
+With this implementation, you don't see this image while it
+is being changed.
+<p>
+Because one page of graphics alone requires 64,000 bytes of information, 
+more than one segment must be defined.
+The segments used in this MP have been defined as follows:
+<UL>
+<LI>ScreenBuffer: A double-bufferd "virtual" screen that holds 
+    images as they are created.
+<li>Background: Background images of clouds. 
+<LI>Foreground: Foreground images (not needed until MP5).
+<LI>ScratchPad: A temporary buffer used to hold PCX image data 
+    during decoding.</LI>
+</UL>
+A few steps are required to draw a video screen.
+First, we call the <i>AnimateScreen</i> routine to 
+transfer a horizontally shifted version of the Background image 
+to the ScreenBuffer.  This routine not only erases the old 
+images from ScreenBuffer, but it also creates the illusion of moving clouds.
+Next, we call <i>DrawPoly</i> to draw polygons on ScreenBuffer to
+represent the vertical walls.  
+Once an entire image has been created in
+ScreenBuffer, <i>MoveScreen</i> is called to blast the data from
+ScreenBuffer to the VGA's video RAM (at <tt>A0000h</tt>).
+
+<h2>Image Data</h2>
+It would be tedious to define images using assembly code.
+It is much more convienient to create an image using a standard image 
+editor (such as PhotoPaint) and save the results in a file.
+Our program then need only load this data when it executes.
+
+<p>
+For this MP, we will write the <i>LoadPCX</i> routine to 
+open and read a .PCX file; run-length decode it; then
+save the uncompressed data in a memory segment.  
+DOS file services (software interrupts) are described in the l
+ab manual and in your textbook.
+Details of the PCX image format were discussed in class in
+<a href="../../lecture/l22.html">Lecture 22</a>. <!-- PCX -->
+PCX files use a slight variation of the Run-Length encoding 
+technique covered in <a href="../mp2/mp2.html">MP2</a>.
+A "run" of data corresponds to horizontal lines in the image.
+
+
+<h2>Keyboard Control</h2>
+The last part of this machine problem involves reading input from
+the user's keyboard.  To read of keys pressed simultaneously,
+we need to replace the default keyboard handler with our own code.  
+Your <i>InstKey</i> routine is called to install a new
+handler into the vector table.  The <i>DeInstallKey</i> routine is
+used to remove it (and restore the DOS default routine).  
+<p>
+Key presses affect the variables <i>ExitFlag</i>,
+<i>Xoffset</i>, and <i>Yoffset</i>.  <i>ExitFlag</i> should be
+set to 1 when the ESC key is pressed.  The <i>Xoffseg</i> variable holds
+{-1, 0, 1} for {left key, no horizontal movement, right key} and 
+<i>Yoffset</i> holds {-1, 0, 1} for {down key, no vertical movement, up key}.
+The value of offset is undefined when arrows in opposite directions
+are pressed together.  The topic of interrupts was discussed in great
+detail during the <a href="../../lecture/l14.html">Lecture 14</a>
+class period.  We discussed the operation of the 
+keyboard controller during <a href="../../lecture/l14.html">Lecture 16</a>
+
+<h2>C-Style Procedures</h2>
+The routines in this MP should be implemented so that they can be
+called from C.  As discussed in <a href="../../lecture/l10.html">Lecture 10</a>,
+this involves making FAR procedure calls,
+pushing arguments to the stack, and using BP to access the arguments passed
+to a procedure.  Recall that C expects ASM functions to be
+prefixed with an underscore.  <p>
+
+Look at the code given in this assignment for examples of 
+procedure calls with INVOKE. 
+<p>
+
+Details of the INVOKE command
+can be found in the MASM on-line help (<tt>MASM /h</tt>) and in the 
+MASM manual.  
+
+<h2>Program Debugging</h2>
+For your convienince, the program provides several debugging modes.
+By invoking the program with a command-line argument between 1 and 5, 
+you can specify which part of the code to debug.  Typing <tt>MP4 5</tt>, for
+example, exercises all features of the program. Typing <tt>MP4 1</tt>
+just exercises the drawing of a single polygon.
+<p>
+
+
+<h2>Procedures</H2>
+
+<ul>
+
+<LI><B><FONT SIZE=+1>DrawPoly</FONT></b>
+<UL>
+<LI><B>Purpose</B>: 
+    Draws a filled polygon, of the specified color, representing
+    one of the walls in the ScreenBuffer segment.
+
+<LI><B>Inputs:</B>
+  <UL>
+  <LI>X1: Horizontal position of left edge 
+  <LI>Y1: Vertical position of top-left corner
+  <LI>Y3: Vertical position of bottom-left corner
+  <LI>X2: Horizontal position of right edge
+  <LI>Y2: Vertical position of top-right corner
+  <LI>Y4: Vertical position of bottom-right corner
+    <Br><i>(See Figure 1)</i>
+  <LI>Color: Color of the polygon (byte-sized Palette number)
+  </UL>
+
+<LI><B>Output:</B> 
+  <ul>
+  <li>Writes a polygon into the ScreenBuffer</LI>
+  </ul>
+
+<li><b>Assumptions:</b>
+    <ul>
+    <li>Both the left and right edges are vertical 
+    <li>X1 &lt; X2 , 
+       <i>i.e., X1 always specifies the left side</i>
+    <li>Both (Y1 and Y2) &lt;= 100 , 
+       <i>i.e., top corners always above or at mid-line of screen</i>
+    <li>Both (Y3 and Y4) >= 100, 
+       <i>i.e., bottom corners always below or at mid-line of screen</i>
+    </ul>
+
+<LI><B>Notes:</B>
+  <ul>
+  <li>Your code should use Bresenham's Line Algorithm
+      to determine the points long the lines between <br>
+      (X1,Y1)-(X2,Y2) and (X1,Y3)-(X2,Y4) and work for all possible 
+      slopes, including:<Br>
+      {less than -1, -1..0, 0, 0..1, and more than 1}.
+  </ul>
+
+<LI><B>Hints</B>
+  <ul>
+  <li>Switch the roles of X and Y in your line algorithm to 
+      deal with slopes > 1
+  <li>Don't attempt to write the routine as a single procedure.
+      Write modular subroutines that each perform a specific function.
+  </ul>
+
+<LI><B>Test Cases</B>
+  <ul>
+  <li><tt>MP4 1</tt>: Simple red polygon
+  <li><tt>MP4 2</tt>: A few multiple-colored polygons of different shapes
+  <li><tt>MP4 5</tt>: Dynamically changing polygons.
+  </UL>
+
+<LI><B>Points</B>: 20
+</UL><p>
+
+<LI><B><FONT SIZE=+1>LoadPCX</FONT></B>
+  <UL>
+  <LI><B>Purpose</B>: Loads and decodes 
+         a 320x200 PCX file into memory and 
+         sets VGA Palette registers to those used by the image.
+  <LI><B>Inputs</B>
+    <UL>
+    <LI>Destination segment address
+    <LI>Far pointer (segment:offset)
+        to a null-terminated string containing the filename
+    </UL>
+  <LI><B>Outputs</B>
+    <ul>
+    <li>Fills destination segment with image data
+    <li>Fills VGA palette registers with image colors 
+    </ul>
+  <li><b>Notes</b>
+    <ul>
+    <li>Map 8-bit RGB values to 6-bit RGB by dividing by four.
+    <li>Set VGA Palette using <tt>OUT</tt> commands to port 03C8h and 03C9h
+    </ul>
+  <li><b>Hints</b>
+    <ul>
+    <li>PCX files are run-length encoded images.
+    <li>Study and understand relevant example code in your lab manual
+    <li>Use DOS File services to open and read the file
+    </ul>
+  <LI><B>Test Cases</B>
+    <ul>
+    <li><tt>MP4 3</tt>: Loads horizon.pcx into background
+    <li><tt>MP4 5</tt>: Animates background
+    </UL>
+  <li><B>Points</B>: 10
+</ul><p>
+
+<li><B><FONT SIZE=+1>MoveScreen</FONT></B>
+<UL>
+<LI><B>Purpose</B>: Move 320x200 pixels of screen data from one segment 
+       to another.
+<LI><B>Inputs:</B>
+  <UL>
+  <LI>Destination Segment
+  <LI>Source Segment
+  </UL>
+<LI><B>Outputs</b>
+  <ul>
+  <li>Transfers 320*200=64,000 bytes of data<br>
+      from [SourceSeg:0] to [DestSeg:0].
+  </ul>
+
+<LI><B>Test Cases</B>
+  <ul>
+  <li><i>Used in all test cases except: </i> <tt>MP4 4</tt>.
+  </ul>
+
+<li><B>Notes</B>
+  <ul>
+  <li>Use string opcodes to transfer data
+  <li>Use 32-bit registers for optimal efficiency
+  </ul>
+
+<LI><B>Points</B>: 5
+</UL><p>
+
+<li><B><FONT SIZE=+1>AnimateScreen</FONT></B>
+<UL>
+<LI><B>Purpose</B>: Move 320x200 pixels of screen data from one segment 
+       to another while horizontally shifting the image by an offset.
+<LI><B>Inputs:</B>
+  <UL>
+  <LI>Destination Segment
+  <LI>Source Segment
+  <LI>HorShift: number of pixels to shift by (0..319)
+  </UL>
+<LI><B>Outputs</b>
+  <ul>
+  <li>Transfers 320*200=64,000 bytes of data<br>
+      from [SourceSeg:0] to [DestSeg:0].
+  </ul>
+<li><B>Notes</B>
+  <ul>
+  <li>Use string opcodes to transfer data
+  </ul>
+
+<LI><B>Test Cases</B>
+  <ul>
+  <li><tt>MP4 5</tt>: Moving clouds
+  </ul>
+
+<LI><B>Points</B>: 5
+</ul> <p>
+
+
+<li><B><FONT SIZE=+1>InstKey / KeyInterrupt / DeInstallKey</FONT></B>
+  <ul>
+  <li><b>Purpose:</b> Replace default keyboard interrupt routine.
+  <li><b>Inputs:</b>
+    <ul>
+    <li>Button presses 
+    </ul>
+  <li><b>Outputs:</b> 
+    <ul>
+    <li>Variable <i>ExitFlag</i> set to 1 when escape key pressed
+    <li>Variable <i>Xoffset</i> 
+      <ul>
+      <li>Set to -1 when left key pressed
+      <li>Set to +1 when right key pressed
+      <li>Set to 0 when left or right key released
+      </ul>
+    <li>Variable <i>Yoffset</i>
+      <ul>
+      <li>Set to -1 when left key pressed
+      <li>Set to +1 when right key pressed
+      <li>Set to 0 when left or right key released
+      </ul>
+    </ul>
+
+  <LI><B>Test Cases</B>
+    <ul>
+    <li>See <i>Keyboard Control</i> section earlier in this writeup.
+    </ul>
+
+  <LI><B>Test Cases</B>
+    <ul>
+    <li><tt>MP4 4</tt>: Quits program and moves a red '*' to 
+        any of 9 positions in a square. 
+    <li><tt>MP4 5</tt>: Quits program and moves tank 
+        forward, back, left, and right.
+    </ul>
+
+  <LI><B>Points</B>: 10  (Install+Process+Deinstall)
+  </ul>
+
+</ul>
+
+
+
+
+
+
+
+
+
+<ul>
+<li><a href="mp4.zip">MP4.ZIP</a>
+</ul>
+
+</BODY>
+</HTML>

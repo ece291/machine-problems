@@ -1,0 +1,977 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv=Content-Type content="text/html; charset=unicode"><%
+title = "ECE291 Machine Problem 2"
+subtitle = "Machine Problem 2"
+%>
+<!--#include file="headvb.asp"-->
+<META content="MSHTML 5.50.4616.200" name=GENERATOR></HEAD>
+<BODY>
+
+<h1 align="center">Machine Problem 2: Financial Calculations</h1>
+
+<div align="center"><center>
+<table border=0 cellpadding=2 cellspacing=2 width="60%">
+  <tr><td align=right bgcolor="#efefef"><b>Assigned</b></td>
+    <td bgcolor="#efefef">Thursday, 9/13/2001</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Due Date</b></td>
+    <td bgcolor="#efefef">Wednesday, 10/3/2001</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Purpose</b></td>
+    <td bgcolor="#efefef">Handle complex user input.  Perform
+    calculations on user data structures.  Recursion.</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Points</b></td>
+    <td bgcolor="#efefef">75</td></tr>
+</table>
+</center></div>
+
+<span class="update"><strong>Updates:</strong></span><br>
+<span class="update">9/21: Due date changed to 10/3</span><br>
+<span class="update">9/20: FDPow even/odd b corrected to n</span><br>
+<span class="update">9/18: FDPow description</span>
+
+<h2>Introduction</h2>
+
+<p>After reeling from several thousand dollars of debt to the Illini
+Union Bank, you get a strange feeling that something was not right.  The
+Illini Union Bank was not paying interest on its accounts!</p>
+
+<p>It's time to fix this major oversight.  The IUB is still expecting
+the unwitting engineering students to work out the minor flaws in its
+original roll-out, such as the inability to collect from students who
+have taken out several $4096 withdrawals.  Of course, we don't want to
+fix <em>that</em> bug.</p>
+
+<h2>Problem Description</h2>
+
+<p>Now no longer working with the front end to the bank ledger, we will
+instead work with back-end functionality.  The back-end interface takes
+individual commands that work on <em>fixed-point</em> decimal values.
+The operations it supports are as follows:</p>
+
+<ul>
+
+ <li>Compound Interest Calculation 
+ 
+
+ <p>Your money in a bank account that earns interest is often compounded
+ monthly on a yearly percentage.  The formula that governs this is:</p>
+
+ <blockquote>A = P (1+(i/m))<sup>n m</sup>,</blockquote>
+
+ <p>where <em>P</em> is the principal, <em>i</em> is the interest per
+ cycle, and <em>m</em> is number of periods in a cycle.  For our MP's
+ purposes we don't want to implement division; we will pre-divide out
+ <em>i/m</em>, and pre-multiply the exponent <em>n m</em>.  Thus our
+ simplified equation is:</p>
+
+ <blockquote>A = P (1+i)<sup>n</sup>,</blockquote>
+
+ <p>where <em>i</em> is now the interest per period, and <em>n</em> is
+ the number of periods.</p>
+
+ <li>Currency Conversion 
+ 
+
+ <p>The Illini Union Bank is looking to set up branches in several
+ countries.  At each of these branches they will allow you to withdraw
+ your money in the local currency.  In order to know how much to give
+ you, their backend must support currency conversions.</p>
+
+ <p>To convert between currencies, the IUB is converting through
+ dollars.  The formula to convert between arbitrary currencies is as
+ follows:</p>
+
+ <blockquote>A = P (from X to dollars) (from dollars to Y)</blockquote>
+
+ <p>These conversion rates are stored in tables, allowing for easy
+ lookup.</p> </li>
+
+</ul>
+
+<h2>Fixed Point Decimal Numbers</h2>
+
+<p>Since we want to read, work with, and store numbers that look like
+102.34, we need to define a representation and to write functions to
+perform useful math on them.  First we'll address the representation we
+will be using, and then we'll address what functions we need to write
+and how to write them.</p>
+
+<h3>Representation</h3>
+
+<p>One way to store these numbers is by storing a larger number that is
+100 times larger than the stored number.  For example to store our
+number 102.34, we'd store the binary for 10234, and divide off the 34 to
+display it.  As it turns out, doing it this way would make it hard to
+use <tt>ascbin</tt>, <tt>binasc</tt>, and other assorted functions since
+we would need to store more than 16 bits to keep the same range our
+normal 16 bit numbers have.</p>
+
+<p>To address these size issues, we will instead use a object which is
+32 bits large.  In one half we will store the integer component.  In the
+other half, we will store the decimal component multiplied by 100, with
+a maximum value of 99.  The number 102.34 would be stored with the two
+word-sized numbers 102 and 34.  The primary advantage to doing it this
+way is that our normal tools will work, <tt>ascbin</tt> and
+<tt>binasc</tt> in particular.</p><!--<p>See the <a href="rep.html">additional</a> information for detailed
+diagrams and several examples.</p>-->
+
+<h3>Functions</h3>
+
+<p>For the financial calculations in this MP we need several basic
+utility functions.  These include the following:</p>
+
+<h4>FDRead</h4>
+
+<p>To do any work with a FDNumber, we must first read it in.  While
+<tt>ascbin</tt> can turn a string into a number, this only works for
+integers.  <tt>FDRead</tt> must handle numbers that look like
+<tt>102</tt>, <tt>102.3</tt>, and <tt>102.34</tt>.  To do this, you will
+probably wish to call <tt>ascbin</tt> on the components and then store
+them into the appropriate halves of the FDNumber.</p>
+
+<p><tt>FDRead</tt> must report success and error cases like
+<tt>ascbin</tt> does.  Unlike <tt>ascbin</tt> the output is in the
+FDNumber pointed to by <tt>di</tt>, and <tt>ax</tt> should remain
+unchanged.</p>
+
+<p>Special cases to be aware of:</p>
+
+<ul>
+
+ <li><tt>102</tt> with no decimal. 
+  Don't forget to zero the decimal portion. 
+ 
+
+ <li><tt>102.</tt> with a trailing decimal point cannot be handled
+ easily due to the way <tt>ascbin</tt> functions. 
+ 
+
+ <p>If you choose to handle this, expect to do something unusual.  If
+ you do not choose to handle these, expect debugging such numbers to not
+ work as you may expect.</p>
+
+ <li><tt>102.3</tt> with a single 
+  digit after the decimal point. 
+ 
+
+ <p>When a single digit occurs after the decimal point, it needs to be
+ multiplied by 10, as otherwise the 3 will be 3/100, not 3/10.  One way
+ to handle this is by tracking the change <tt>bx</tt> across calls to
+ <tt>ascbin</tt> and acting accordingly.</p>   
+
+ <li><tt>102.345</tt> a decimal 
+  portion too large; these numbers are illegal in our limited framework. 
+ 
+
+ <li><tt>102.003</tt> a decimal portion too long; these cannot easily
+ be detected, except perhaps by similar means to the <tt>102.3</tt>
+ case.  Just know that these numbers are not handled correctly, and you
+ don't have to.</li>
+
+</ul>
+
+<h4>FDWrite</h4>
+
+<p>After reading in a number, it's good to be able to display the number
+to a curious user.  Just as <tt>FDRead</tt> can be implemented with two
+calls to <tt>ascbin</tt> with additional logic, <tt>FDWrite</tt> can be
+implemented as two calls to <tt>binasc</tt> also with additional
+logic.</p>
+
+<p><tt>FDWrite</tt> must match <tt>binasc</tt> in terms of outputs, with
+<tt>bx</tt> pointing to the first non-blank character in the
+<strong>10</strong>-byte buffer, and <tt>cl</tt> holding the number of
+non-blank characters in the generated string.</p>
+
+<p>The only special case to <tt>FDWrite</tt> is for numbers like 102.03.
+Since <tt>binasc</tt> will generate the string
+<tt>"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3$"</tt>, you must manually add the
+prepended zero.  You may find it useful to use an additional buffer to
+write parts of the numbers and copy them into the final buffer pointed
+to by <tt>bx</tt>.</p>
+
+<h4>FDAdd</h4>
+
+<p>Reading and writing FDNumbers is nice, but now let's do some math.
+Adding two numbers is very straightforward, and is good practice for the
+more complicated operations we will be doing next.</p>
+
+<p>If you consider the two FDNumbers <em>A</em> and <em>B</em>, with
+corresponding pieces <em>A<sub>h</sub></em>, <em>A<sub>l</sub></em>,
+<em>B<sub>h</sub></em>, and <em>B<sub>l</sub></em> such that
+<em>A</em>=<em>A<sub>h</sub></em>+<em>A<sub>l</sub></em>/100. Their sum
+<em>S</em> is calculated as follows:</p>
+
+<blockquote> S<sub>h</sub> = A<sub>h</sub>+B<sub>h</sub><br>
+             S<sub>l</sub> = A<sub>l</sub>+B<sub>l</sub><br>
+</blockquote>
+
+<p>Except one thing: <em>A<sub>l</sub></em>+<em>B<sub>l</sub></em> may
+exceed 99, but <em>S<sub>l</sub></em> is not allowed to.  In such cases,
+for every 100 in <em>S<sub>l</sub></em>, subtract it out and add 1 to
+<em>S<sub>h</sub></em>.  You may find it more intuitively obvious to do
+this with <tt>div</tt> or you may not.</p>
+
+<p>Note that <tt>FDAdd</tt> reads from the FDNumbers at offsets
+<tt>si</tt> and <tt>di</tt> and writes to the FDNumber at offset
+<tt>di</tt>, much like an <tt>add [di], [si]</tt> might function if it
+were possible.</p>
+
+<h4>FDMul</h4>
+
+<p>Multiplication is an extension of adding.  Consider again two such
+numbers <em>A</em> and <em>B</em>, separated as above.  Their product
+<em>P</em> is calculated much like you would calculated the product
+(x+y)(x-y)</p>
+
+<blockquote> P<sub>h</sub> = A<sub>h</sub>*B<sub>h</sub> +
+			     A<sub>h</sub>*B<sub>l</sub>/100 +
+			     A<sub>l</sub>*B<sub>h</sub>/100<br>
+             P<sub>l</sub> = A<sub>h</sub>*B<sub>l</sub>%100 +
+			     A<sub>l</sub>*B<sub>h</sub>%100 +
+			     A<sub>l</sub>*B<sub>l</sub>/100,
+</blockquote>
+
+<p>where <em>x % 100</em> is the remainder when <em>x</em> is divided by
+100, or its modulus.</p>
+
+<p>Note that <em>A<sub>l</sub></em>*<em>B<sub>l</sub></em> % 100 may be
+greater than or equal to 50.  In such cases <em>P<sub>l</sub></em>
+should be incremented, and such changes should be propagated through to
+<em>P<sub>h</sub></em> as necessary.</p>
+
+<p>The additions in the formula for <em>P</em> may be done by calling
+<tt>FDAdd</tt> or you may find it easier to implement them manually.</p>
+
+<h4>FDPow</h4>
+
+<p><tt>FDPow</tt> is our exponentiation operator.  In an algorithms
+class you may have become acquainted with the recursive algorithm we
+will be using.  Don't worry if you haven't, as we describe it fully
+here.</p>
+
+<p>Recursive algorithms work by defining a base case and an iterative
+step.  The Fibonacci function is the classic example: the base cases are
+F(0)=0 and F(1)=1.  For all other F(n), F(n) = F(n-1) + F(n-2).  Thus
+when finding F(12), it recursively can ask for F(10) and F(11).  Once F(10)
+and F(11) return their answers, the body for the Fibonacci function can
+add them together and return the final answer for F(12).</p>
+
+<p>Applying this back to the problem at hand: we have a number
+<em>b</em> which we wish to raise to the <em>n</em>th power.  The base
+case is <em>b</em> raised to the first power, or merely <em>b</em>
+itself.  Thus when <tt>FDPow</tt> is called with exponent 1, it can
+return the base as the answer without further calculations.  The
+recursive step is one of two things, depending on whether the exponent
+is an even or odd number:
+
+<blockquote> b<sup>n</sup> = b * b<sup>n/2</sup> * b<sup>n/2</sup>,</blockquote>
+
+<p>for all odd <span class="update"><em>n</em></span>, and truncated values <em>n/2</em>, or</p>
+
+<blockquote> b<sup>n</sup> = b<sup>n/2</sup> * b<sup>n/2</sup>,</blockquote>
+
+<p>for all even <span class="update"><em>n</em></span>.</p>
+
+<p>Once these cases are all handled, i.e. <em>n</em>=1, and all even or
+odd numbers above 1, the nature of recursion (or the Recursion Fairy,
+according to Professor <a href="http://www.cs.uiuc.edu/~jeffe/">Jeff
+Erickson</a>, who should know) will give you your final answer almost
+magically.  The only trick is the actual implementation of recursion in
+assembly.  Where high level languages will automagically keep your
+inputs and outputs separate, assembly style procedures make use of
+single pieces of hardware (registers) for both input and outputs.</p>
+
+<div class="update">
+<strong>UPDATE (9/18)</strong> The library code now handles an additional base case <em>n</em>=0.
+You are encouraged, but not required, to handle it as well.  The proper
+return value is <tt>1.00</tt>.
+</div>
+
+<p><tt>FDPow</tt> takes two addresses as input.  Like the previous
+functions they are <tt>si</tt> and <tt>di</tt>.  Unlike the previous
+functions, we neither store back to the number at offset <tt>di</tt>,
+nor is the operation commutative: <em>a<sup>n</sup></em> is not
+<em>n<sup>a</sup></em>.  The convention we have instead chosen is to
+calculate <tt>[di]<sup>[si]</sup></tt>, storing the result in
+<tt>dx:ax</tt>.  Store the integer portion in <tt>dx</tt> and the
+hundredths in <tt>ax</tt>.</p>
+
+<p>Note: thinking recursively takes practice.  The same code must
+function correctly whether it is called with 1, 4, or n as the exponent.
+And more importantly, since it calls itself, anything it writes to will
+be similarly written to by its recursive call.  In general you can work
+around this by pushing values to the stack and restoring them from the
+stack as the recursive procedure exits.  Don't give up!</p>
+
+<h2>Input Handling</h2>
+
+<p>Now that we've got a set representation and several utility functions
+for our fixed-point decimal numbers, it's time to write the rest of the
+program that makes it possible to use them.  To perform a compound
+interest calculation or currency conversion, the user will type
+something like: <tt>i 100 0.03 12</tt>, which represents a starting
+value of $100, at a 3% interest rate, compounded 12 times.  How do we
+read this command in and then process it?</p>
+
+<p>There are four parts to this answer: <tt>DoCommand</tt>,
+<tt>ReadLine</tt>, <tt>GetLetter</tt>, and <tt>GetNumber</tt>.
+Additionally, once a command line is understood, either
+<tt>CalculateInterest</tt> or <tt>ConvertCurrency</tt> is called to
+handle the computation.</p>
+
+<h3>DoCommand</h3>
+
+<p><tt>DoCommand</tt> is the heart of the operation.  It performs all
+the steps necessary to do one calculation.  It will orchestrate the
+reading of a line of input data, the matching pieces to either an
+interest or currency calculation, the dispatching of this data to the
+corresponding computational function, and error checking in several
+steps.</p>
+
+<p>In particular <tt>DoCommand</tt> must call <tt>ReadLine</tt> with
+pointers set to the appropriate buffer (<tt>tbuf</tt>, for typing
+buffer).  If no characters are read, it must call <tt>ReadLine</tt>
+again until some are.  Then <tt>DoCommand</tt> must call various
+patterns of <tt>GetLetter</tt> and <tt>GetNumber</tt> to parse out a
+command.</p>
+
+<p>The first item in the line must be either <tt>i</tt>, <tt>c</tt>,
+or <tt>q</tt>.  If it reads <tt>q</tt>, then <tt>DoCommand</tt> must
+return a 0 so the main loop will know to quit.  If instead it reads
+<tt>i</tt>, it must then read three fixed-point decimal numbers, the
+principle, the interest rate, and the number of periods, respectively.
+<tt>DoCommand</tt> can then call <tt>CalculateInterest</tt> and print
+the result.</p>
+
+<p>Correspondingly, if the first letter is <tt>c</tt>,
+<tt>DoCommand</tt> must get two more letters, and a number.  These are,
+in order, the originating currency, the resulting currency, and the
+amount in the original currency.  For instance, <tt>c d c 100.30</tt>
+represents a conversion from 100.30 US dollars to Canadian dollars.</p>
+
+<p>For any other first letters, including of course any non-letters that
+cause <tt>GetLetter</tt> to return an error, <tt>DoCommand</tt> must
+report an error.  The help message should be provided at this point in
+time.</p>
+
+<p>If any of the <tt>GetNumber</tt> or <tt>GetLetter</tt> calls returns
+an error, or if the call to the computational function returns an error,
+<tt>DoCommand</tt> should display the error message (but no help
+message), and exit with a nonzero value in <tt>ax</tt> to indicate not
+to quit.  Otherwise if no errors occur, <tt>DoCommand</tt> should print
+out the result (preceded by the result message, of course).</p>
+
+<h3>ReadLine</h3>
+
+<p>Before we can retrieve any values from the string which the user
+inputs, we must read the string into a buffer.  There are several
+important details to this function, so read carefully!</p>
+
+<ul>
+
+ <li>Ignore linefeed characters (<tt>LF</tt>) 
+ 
+
+ <p>LF characters are part of a file stored in the disk, generated as
+ one of two characters for every newline (think Enter or Return) stored
+ in the file.  By ignoring this we can take files as test inputs.</p>
+
+ <li>Handle Backspace (<tt>BS</tt>) 
+ 
+
+ <p>When the users make a mistake in typing, chances are they will hit
+ the Backspace key.  In general we want to make this delete the previous
+ character, perhaps in memory just decreasing our length counter.  To
+ actually delete the character on the screen, however, we must display a
+ backspace to move back, a space to remove the displayed character, and
+ a second backspace to move back once again.</p>
+
+ <p>Note that the backspace should result in a beep when pressed at the
+ beginning of the buffer, and should work normally when pressed at the
+ end of the buffer.</p>
+
+ <li>End input upon Enter (<tt>CR</tt>) 
+ 
+
+ <p>When the user presses Enter, <tt>ReadLine</tt> must place a
+ <tt>'$'</tt> at the spot where the <tt>CR</tt> would otherwise go, and
+ return with the appropriate outputs.  Enter should be accepted at any
+ point along the line, including an empty or a full buffer.</p>
+
+ <li>Don't overflow the buffer 
+ 
+
+ <p>One of your inputs is the length of your buffer.  Don't write to
+ more memory than this value indicates, as it can corrupt essential
+ data.  Chances are you won't trigger this problem in normal use, but
+ expect the TA to check it.  When the user presses a normal key (other
+ than one of the above) and the buffer is full, <tt>ReadLine</tt> must
+ beep and not change the buffer's contents.</p>
+
+ <li>Everything else 
+ 
+
+ <p>Chances are anything else should just be copied into the buffer and
+ echoed to the screen.  If you find that you wish to improve the user
+ experience by limiting user input to valid letters and numbers only,
+ you may do so (it must still accept <tt>CR</tt>, <tt>BS</tt>, and
+ <tt>LF</tt> as above, though).</p> </li>
+
+</ul>
+
+<p>Note the inputs and outputs; you're given a buffer address and size,
+and must return a (partially) filled buffer, and a count of filled
+characters.  Prompt the user by displaying "<tt>&gt;&nbsp;</tt>" but do
+not place it in the buffer.  Don't forget to write to the screen.</p>
+
+<h3>GetLetter</h3>
+
+<p>The purpose of <tt>GetLetter</tt> is simple.  Ignoring any
+intervening spaces, it should return in <tt>al</tt> the ASCII value of
+the first letter at or after offset <tt>bx</tt>.  If the first value
+which is not a space is not a letter, it should return <tt>ax=0</tt>
+instead to indicate an error.  <tt>GetLetter</tt> should also update
+<tt>bx</tt> to point to the character after the letter it returned.</p>
+
+<h3>GetNumber</h3>
+
+<p><tt>GetNumber</tt> functions similarly to <tt>GetLetter</tt>.  It
+receives as input the offset of (part of) a string, and returns in
+<tt>ax</tt> a value indicating whether it was successful.  Instead of
+returning a successful letter in <tt>al</tt>, however,
+<tt>GetLetter</tt> places the read number in the memory located at
+offset <tt>di</tt>; <tt>di</tt> is an input to <tt>GetNumber</tt>.</p>
+
+<h3>CalculateInterest</h3>
+
+<p>Calculate the interest by calling appropriate <tt>FD<em>x</em></tt>
+functions and manipulating pointers correctly.  To be fully functional,
+<tt>CalculateInterest</tt> may not write to any of its inputs.  If
+necessary, however, it may use other buffers such as the pre-declared
+<tt>numbuf1</tt>.  Remember that the equation that we are using is:</p>
+
+<blockquote><tt>[result]</tt> = <tt>[principle]</tt> *
+(1+<tt>[interest]</tt>)<sup><tt>[periods]</tt></sup></blockquote>
+
+<p>Note that large numbers, especially as the exponent, can cause
+overflows.  You do not have to handle these; merely understand why the
+occur with large numbers</p>
+
+<h3>ConvertCurrency</h3>
+
+<p>Converting currency is probably a longer procedure than calculating
+interest, but mostly because it must validate its input.  The two
+currencies chosen are represented with letters in <tt>dh</tt> and
+<tt>dl</tt>.  You must make sure that the provided arguments are really
+letters because you must then use them as indices in the lookup-tables
+<tt>tab_from</tt> and <tt>tab_to</tt>.  Furthermore, if the value you
+retrieve from the table is <tt>0</tt>, it means the user has requested
+an invalid currency.  Otherwise it is the address of a FDNumber as found
+online last week.  The equation for currency conversion is:</p>
+
+<blockquote><tt>[result]</tt> = 
+  from</TT> * <tt>to</tt> *
+<tt>[principle]</tt>,</blockquote>
+
+<p>where <em>from</em> and <em>to</em> are the values looked up in
+<tt>tab_from</tt> and <tt>tab_to</tt> respectively.
+
+<p>Note: on any invalid input <tt>ConvertCurrency</tt> must signal
+error.  Like <tt>CalculateInterest</tt>, <tt>ConvertCurrency</tt> should
+not write to any of its inputs, and instead should write to
+<tt>[result]</tt>.
+
+<h2>Subroutines</h2>
+
+<p>In this section there is a listing of the inputs, outputs, and
+summarized actions of each function you will need to write.  Refer to
+the above information or to the <A
+ href="../../user/domp.asp?mpnum=2" >Gradesheet</a> for more information
+on what is required.</p>
+
+<h3>DoCommand</h3>
+<strong>Inputs: none</strong>
+<br><strong>Outputs:</strong>
+  <br><tt>ax</tt> = 1 to continue or 0 to quit
+<br><strong>Purpose: gets and processes a command, reporting the result</strong>
+<br><strong>Calls:</strong>
+<br>dspmsg, ReadLine, GetLetter, GetNumber, CalculateInterest,
+ConvertCurrency, FDWrite
+
+<h3>ReadLine</h3>
+<strong>Inputs:</strong>
+  <br><tt>ax</tt> = size of the buffer<br>
+     <tt>bx</tt> = offset of the buffer
+<br><strong>Outputs:</strong>
+  <br><tt>ax</tt> = number of characters in the buffer (excluding <tt>'$'</tt>)<br>
+     buffer at <tt>bx</tt> holds the typed characters
+<br><strong>Purpose: take keyboard entry from the user, handling backspace and bounds</strong>
+<br><strong>Calls:</strong>
+  <br>dspout, kbdin, optionally dspmsg
+<br><strong>Note:</strong>
+  <br>Display the "<tt>&gt;&nbsp;</tt>" but do not place it in the buffer.
+
+<h3>GetLetter</h3>
+<strong>Inputs:</strong>
+  <br><tt>bx</tt> = offset of the buffer from which to read
+<br><strong>Outputs:</strong>
+  <br><tt>al</tt> = ASCII value of first letter (ignoring spaces), or
+     <tt>ax</tt> = 0 if it's not a letter<br>
+     <tt>bx</tt> = offset of the character following the letter
+     returned, undefined on error
+<br><strong>Purpose: retrieve a letter from the input string; error if one isn't
+available</strong>
+
+<h3>GetNumber</h3>
+<strong>Inputs:</strong>
+  <br><tt>bx</tt> = offset of the buffer from which to read
+     <tt>di</tt> = offset of the FDNumber in which to store the read number
+<br><strong>Outputs:</strong>
+  <br><tt>ax</tt> = 0 on error or non-zero on success<br>
+     <tt>bx</tt> = 
+  offset of the character following the number
+     returned, undefined on error<br>
+     <tt>[di]</tt> = the number read from the string
+<br><strong>Purpose: retrieve a FDNumber from the input string; error if one isn't
+available</strong>
+<br><strong>Calls:</strong>
+  <br>FDRead
+
+<h3>CalculateInterest</h3>
+<strong>Inputs:</strong>
+  <br><tt>[principle]</tt> = the principle for the calculation<br>
+     <tt>[interest]</tt> = the interest rate per period<br>
+     <tt>[periods]</tt> = the number of periods to compound<br>
+     All three of the above are FDNumbers
+<br><strong>Outputs:</strong>
+  <br><tt>ax</tt> = 0 on error or non-zero on success<br>
+     <tt>[result]</tt> = the result of the calculation <em>principle * (1
+     + interest)<sup>periods</sup></em>
+<br><strong>Purpose: calculate the compound interest, storing to <tt>[result]</tt></strong>
+<br><strong>Calls:</strong>
+  <br>FDAdd, FDMul, FDPow
+<br><strong>Note:</strong>
+  <br>This subroutine should always succeed; <tt>ax</tt> should thus always be
+  non-zero on exit
+
+<h3>ConvertCurrency</h3>
+<strong>Inputs:</strong>
+  <br><tt>[principle]</tt> = the principle for the calculation, a FDNumber<br>
+     <tt>dh</tt> = the letter for the currency from which to convert<br>
+     <tt>dl</tt> = the letter for the currency to which to convert
+<br><strong>Outputs:</strong>
+  <br><tt>ax</tt> = 0 on error or non-zero on success<br>
+     <tt>[result]</tt> = the result of the calculation <em>principle *
+     from * to</em>
+<br><strong>Purpose: calculate a currency conversion, storing to <tt>[result]</tt></strong>
+<br><strong>Calls:</strong>
+  <br>FDMul
+<br><strong>Note:</strong>
+  <br>This subroutine can fail, so make sure to properly check for such
+  error conditions
+
+<h3>FDRead</h3>
+<strong>Inputs:</strong>
+  <br><tt>bx</tt> = offset to a string representing a decimal number<br>
+     <tt>di</tt> = offset of the buffer to which it should be stored
+<br><strong>Outputs:</strong>
+  <br><tt>bx</tt> = offset of the first non-converted character<br>
+     <tt>dl</tt> = conversion error code, as in <tt>ascbin</tt>; use
+     overflow if the portion following the decimal is above 99<br>
+     <tt>[di]</tt> holds the converted FDNumber
+<br><strong>Purpose: input a FDNumber from a user-typed string</strong>
+<br><strong>Calls:</strong>
+  <br>ascbin
+<br><strong>Note:</strong>
+  <br>The formats of supported numbers are varied, and a number like 100.3
+  is tricky; see above
+
+<h3>FDWrite</h3>
+<strong>Inputs:</strong>
+  <br><tt>bx</tt> = offset to a 10 byte buffer<br>
+     <tt>si</tt> = offset of the FDNumber to be converted into ASCII
+<br><strong>Outputs:</strong>
+  <br><tt>bx</tt> = offset of the first non-blank character, with the
+     number right-justified and with spaces to the left; two digits after
+     the decimal point<br>
+     <tt>cl</tt> = number of non-blank characters
+<br><strong>Purpose: output a FDNumber into a user-readable string</strong>
+<br><strong>Calls:</strong>
+  <br>binasc
+<br><strong>Note:</strong>
+  <br>Numbers like 100.03 must have the zero inserted manually<br>
+  you may wish to use a second buffer for at least one of the calls to
+  <tt>binasc</tt>
+
+<h3>FDAdd</h3>
+<strong>Inputs:</strong>
+  <br><tt>si</tt> = offset to a source FDNumber<br>
+     <tt>di</tt> = offset to a source and destination FDNumber
+<br><strong>Outputs:</strong>
+  <br><tt>[di]</tt> = holds the result of the addition
+<br><strong>Purpose: Adds the FDNumbers at offsets di, si and stores at offset di</strong>
+<br><strong>Note:</strong>
+  <br>When the decimal portion exceeds 99, the overflow must be transferred
+  into the integer portion of the FDNumber
+
+<h3>FDMul</h3>
+<strong>Inputs:</strong>
+  <br><tt>si</tt> = offset to a source FDNumber<br>
+     <tt>di</tt> = offset to a source and destination FDNumber
+<br><strong>Outputs:</strong>
+  <br><tt>[di]</tt> = holds the result of the multiplication
+<br><strong>Purpose: Multiplies the FDNumbers at offsets di, si and stores at offset di</strong>
+<br><strong>Calls:</strong>
+  <br>FDAdd, optionally
+<br><strong>Note:</strong>
+  <br>Round to the nearest hundredth by turning .005 and higher into .01<br>
+  You may find it useful to use a scratch FDNumber or two
+
+<h3>FDPow</h3>
+<strong>Inputs:</strong>
+  <br><tt>si</tt> = offset to a source FDNumber as exponent<br>
+     <tt>di</tt> = 
+  offset to a source FDNumber as base
+<br><strong>Outputs:</strong>
+  <br><tt>dx</tt> = integer portion of the result<br>
+     <tt>ax</tt> = the hundredths portion of the result
+<br><strong>Purpose: raises [di] to the [si] power</strong>
+<br><strong>Calls:</strong>
+<br>FDMul
+<br><strong>Note:</strong>
+  <br>Recursion takes practice<br>
+  Ignore the non-integer portion of <tt>[si]</tt> if there is one
+
+<H2>Hints</H2>
+<ul>
+
+  <li>The libmp2 file contains executable library functions 
+  for each of the routines that you need to implement. This allows you to run 
+  the program and understand how it works before you implement it. You can test 
+  your program by stepping through&nbsp;it and making sure the display and 
+  comparison functions work correctly. You will only receive credit, however, 
+  for the routines that you implement yourself. 
+
+  <li>When debugging your code in Turbo Debugger, you will 
+  find it helpful to use the memory window to show you the memory location of 
+  the file and strings. You can also use the watch window to keep track of 
+  variables in your code. 
+
+  <li>Run the program many times to get a good feel of 
+  it.&nbsp; Your final program with your code should resemble our version.&nbsp; 
+  Formatting aesthetics aren't as important as correctly operating code. 
+
+  <li>Do not forget to push and pop to avoid clobbering 
+  registers! 
+
+  <li>Push and Pop can also be used on memory, as long as 
+  you specify the size and it's word-sized or larger. You don't have to move it 
+  into a register first. (Yes, this does appear to break the two-memory access 
+  rule. Don't worry!) 
+
+  <li>Remember to include function headers for&nbsp;and 
+  write comments in each of your functions!&nbsp; Headers should give a general 
+  idea of what the function does and have a list of inputs, outputs, and called 
+  functions.&nbsp; Commenting should be specific enough to allow a function to 
+  be understood by just reading the comments.&nbsp; Commenting every line, 
+  however, is excessive and may cost you some points. 
+
+  <li>START EARLY! 
+
+  <li>Monitor the <A href="news:uiuc.class.ece291">newsgroup</a> for
+clarifications and help.</li>
+
+</ul>
+
+<h2>Procedure</h2>
+<ul>
+  <li>You will begin this MP with the following files:
+  <ul>
+    <li><tt>MP2.ASM</tt>: Program Framework
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled and
+    linked.
+    <li><tt>libmp2.lib</tt>: Library functions for MP2
+    <li><tt>lib291.lib</tt>: General-purpose library functions </li></ul>
+  <li>You may copy these files from the network drive to your home directory
+  with the following command: <br><tt>xcopy /s V:\ece291\mp2 W:\mp2</tt><br>or
+  download the files from this server as <A href="mp2.zip">mp2.zip</A>
+  <li>Add your code to <tt>MP2.ASM</tt>.
+  <li>Assemble and link your program by typing<br><tt>make</tt><br>This command
+  reads <em>Makefile</em> then invokes NASM and LINK to build an executable
+  program.
+  <li>Use Turbo Debugger (TD) to find and correct program errors.</li>
+</ul>
+
+<h2>Final Steps</h2>
+<ol>
+
+  <li>Demonstrate your MP2.EXE to a TA. You may be asked to 
+  recompile and demo the program. Your program must work with all given input. 
+
+  <li>Be prepared to answer questions about any aspect of 
+  the operation of your program. The TAs will not accept an MP if you cannot 
+  fully explain your code and your implementation. Delayed MPs will be subject 
+  to late penalties as described in the course syllabus (10% pts per day). 
+
+  <li>The TA will complete the code submission procedure.</li>
+
+</ol>
+
+<hr>
+
+<h2>MP2.ASM (program framework)</h2>
+
+<small><pre>
+; MP2 - Your Name - Today's Date
+;
+;
+; Josh Potts, Fall 2001
+; Guest Authors: Michael Urman, Justin Quek
+; University of Illinois, Urbana-Champaign
+; Dept. of Electrical and Computer Engineering
+;
+; Version 1.0
+
+	BITS	16
+
+;====== SECTION 1: Define constants =======================================
+
+	BS	    EQU 8
+        CR          EQU 0Dh
+        LF          EQU 0Ah
+        BEL         EQU 07h
+	TBUF_SIZE   EQU 79
+
+;====== SECTION 2: Declare external procedures ============================
+
+; These are functions from lib291
+EXTERN kbdin, dspout, dspmsg, ascbin, binasc, mp2xit
+
+; You will be writing your own versions of these functions
+EXTERN _libDoCommand, _libReadLine, _libGetLetter, _libGetNumber
+EXTERN _libCalculateInterest, _libConvertCurrency
+EXTERN _libFDRead, _libFDWrite, _libFDAdd, _libFDMul, _libFDPow
+
+; The _lib functions need these to work properly
+GLOBAL _DoCommand, _ReadLine, _GetLetter, _GetNumber
+GLOBAL _CalculateInterest, _ConvertCurrency
+GLOBAL _FDRead, _FDWrite, _FDAdd, _FDMul, _FDPow
+GLOBAL tbuf, pbuf, binascbuf
+GLOBAL principle, interest, periods, result
+GLOBAL numbuf1, numbuf2
+GLOBAL msg_help, msg_error, msg_result, msg_crlf
+GLOBAL tab_from, tab_to
+
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        resb      64*8
+stacktop:
+	resb 0
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+tbuf		resb TBUF_SIZE
+pbuf            resb 10
+binascbuf	resb 7
+principle	resd 1
+interest	resd 1
+periods		resd 1
+result		resd 1
+numbuf1		resd 1
+numbuf2		resd 1
+
+msg_help	db CR, LF, 'Perform an Interest calculation by entering'
+		db CR, LF, '  i <principle> <interest rate> <periods>'
+		db CR, LF
+		db CR, LF, 'Perform a currency conversion by entering'
+		db CR, LF, '  c <from> <to> <principle>'
+		db CR, LF, ' where <from> and <to> are one of the letters:'
+		db CR, LF, '  c d e f g k l* m p q r s w* y z'
+		db CR, LF, ' Letters with a star can only be <to>.'
+		db CR, LF, '$'
+
+msg_error	db CR, LF, ' ** ERROR **', CR, LF, '$'
+msg_result	db CR, LF, ' The result is: ', '$'
+msg_crlf	db CR, LF, '$'
+
+; c = canada dollar
+; d = us dollar
+; e = euros
+; f = france francs
+; g = germany deutchmarks
+; k = czech republic koruny
+; l = italy lira
+; m = mexico peso
+; p = great britain pounds
+; r = russia rubles
+; s = israel new shekel
+; w = south korea won
+; y = japan yen
+
+tab_from	dw 0, 0			; a, b
+		dw from_canadian	; c
+		dw from_dollar		; d
+		dw from_euros		; e
+		dw from_francs		; f
+		dw from_deutsche	; g
+		dw 0, 0, 0		; h, i, j
+		dw from_koruny		; k
+		dw 0			; l
+		dw from_peso		; m 
+		dw 0, 0			; n, o
+		dw from_pound		; p
+		dw 0			; q
+		dw from_ruble		; r
+		dw from_shekel		; s
+		dw 0, 0, 0, 0, 0	; t, u, v, w, x
+		dw from_yen		; y
+		dw 0			; z
+		
+tab_to		dw 0, 0			; a, b
+		dw to_canadian		; c
+		dw to_dollar		; d
+		dw to_euros		; e
+		dw to_francs		; f
+		dw to_deutsche		; g
+		dw 0, 0, 0		; h, i, j
+		dw to_koruny		; k
+		dw to_lira		; l
+		dw to_peso		; m 
+		dw 0, 0			; n, o
+		dw to_pound		; p
+		dw 0			; q
+		dw to_ruble		; r
+		dw to_shekel		; s
+		dw 0, 0, 0		; t, u, v
+		dw to_won		; w
+		dw 0			; x
+		dw to_yen		; y
+		dw 0			; z
+
+from_canadian	dw	0, 64
+from_dollar	dw	1, 0
+from_euros	dw	0, 91
+from_francs	dw	0, 14
+from_deutsche	dw	0, 46
+from_koruny	dw	0, 03
+from_peso	dw	0, 11
+from_pound	dw	1, 46
+from_ruble	dw	0, 03
+from_shekel	dw	0, 23
+from_yen	dw	0, 01
+
+to_canadian	dw	1, 56
+to_dollar	dw	1, 0
+to_euros	dw	1, 10
+to_francs	dw	7, 23
+to_deutsche	dw	2, 16
+to_koruny	dw	37, 61
+to_lira		dw	2133, 87
+to_peso		dw	9, 29
+to_pound	dw	0, 68
+to_ruble	dw	29, 2
+to_shekel	dw	4, 29
+to_won		dw	1281, 0
+to_yen		dw	120, 0
+
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        mov     ax, cs                  ; Initialize Default Segment register
+        mov     ds, ax  
+        mov     ax, stkseg              ; Initialize Stack Segment register
+        mov     ss, ax
+        mov     sp, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+MAIN:
+	call	_DoCommand
+	test	ax, ax
+	jnz	MAIN
+	
+	call	mp2xit
+
+;--------------------------------------------------------------------------
+; DoCommand
+;--------------------------------------------------------------------------
+_DoCommand
+	call	_libDoCommand
+	ret
+
+;--------------------------------------------------------------------------
+; ReadLine
+;--------------------------------------------------------------------------
+_ReadLine
+	call	_libReadLine
+	ret
+
+;--------------------------------------------------------------------------
+; GetLetter
+;--------------------------------------------------------------------------
+_GetLetter
+	call	_libGetLetter
+	ret
+
+;--------------------------------------------------------------------------
+; GetNumber
+;--------------------------------------------------------------------------
+_GetNumber
+	call	_libGetNumber
+	ret
+
+;--------------------------------------------------------------------------
+; CalculateInterest
+;--------------------------------------------------------------------------
+_CalculateInterest
+	call	_libCalculateInterest
+	ret
+
+;--------------------------------------------------------------------------
+; ConvertCurrency
+;--------------------------------------------------------------------------
+_ConvertCurrency
+	call	_libConvertCurrency
+	ret
+
+;--------------------------------------------------------------------------
+; FDRead
+;--------------------------------------------------------------------------
+_FDRead
+	call	_libFDRead
+	ret
+
+;--------------------------------------------------------------------------
+; FDWrite
+;--------------------------------------------------------------------------
+_FDWrite
+	call	_libFDWrite
+	ret
+
+;--------------------------------------------------------------------------
+; FDAdd
+;--------------------------------------------------------------------------
+_FDAdd
+	call	_libFDAdd
+	ret
+
+;--------------------------------------------------------------------------
+; FDMul
+;--------------------------------------------------------------------------
+_FDMul
+	call	_libFDMul
+	ret
+
+;--------------------------------------------------------------------------
+; FDPow
+;--------------------------------------------------------------------------
+_FDPow
+	call	_libFDPow
+	ret
+</pre></small><!--#include file="foot.asp"--></BODY></HTML>

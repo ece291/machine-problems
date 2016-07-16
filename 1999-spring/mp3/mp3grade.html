@@ -1,0 +1,378 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.05 [en] (Win95; I) [Netscape]">
+   <TITLE>MP3 Grading Report</TITLE>
+</HEAD>
+<BODY>
+&nbsp;
+<TABLE BORDER=0 CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TD ALIGN=LEFT WIDTH="33%">ECE291</TD>
+
+<TD ALIGN=CENTER WIDTH="34%">Computer Engineering II</TD>
+
+<TD ALIGN=RIGHT WIDTH="33%">Lockwood, Spring 1999</TD>
+</TR>
+</TABLE>
+
+<CENTER>
+<H1>
+<FONT SIZE=-1>Machine Problem 3: Grading Report</FONT></H1></CENTER>
+
+<CENTER><I><FONT SIZE=-1>Please print this page and provide it to the TA
+when you demonstrate your machine problem.</FONT></I></CENTER>
+
+<CENTER><I><FONT SIZE=-1>The TA should verify each functionality item,
+initial the 'Demo' box, assign functionality and bonus points,</FONT></I></CENTER>
+
+<CENTER><I><FONT SIZE=-1>then copy your files to the HANDIN floppy. This
+page should be stapled to the front of your printed .ASM program.</FONT></I></CENTER>
+
+<CENTER></CENTER>
+
+<CENTER><FORM></CENTER>
+
+<CENTER><TABLE BORDER=0 CELLPADDING=7 >
+<TR>
+<TD>
+<TABLE BORDER=0 >
+<TR>
+<TD ALIGN=RIGHT>Name:&nbsp;</TD>
+
+<TD><INPUT name="name" size=30></TD>
+</TR>
+
+<TR>
+<TD ALIGN=RIGHT>Date Submitted:&nbsp;</TD>
+
+<TD><INPUT name="submitted" size=20></TD>
+</TR>
+
+<TR>
+<TD ALIGN=RIGHT>Demo To:&nbsp;</TD>
+
+<TD><INPUT name="demoto" size=6>Graded By:&nbsp;<INPUT name="gradedby" size=6></TD>
+</TR>
+</TABLE>
+&nbsp;</TD>
+
+<TD>
+<TABLE BORDER >
+<TR>
+<TD><INPUT type=checkbox name="gradebook">Handin to floppy&nbsp;</TD>
+</TR>
+
+<TR>
+<TD><INPUT type=checkbox name="gradebook">Score recorded&nbsp;</TD>
+</TR>
+
+<TR>
+<TD><INPUT type=checkbox name="gold_star">Gold Star
+<BR><I>Programming Excellence</I></TD>
+</TR>
+</TABLE>
+&nbsp;</TD>
+</TR>
+</TABLE></CENTER>
+</FORM>
+<H3>
+Assignment Notes</H3>
+
+<UL>
+<LI>
+For all assignments, use of MASM dot commands (.if .else .while ..) is
+prohibited.</LI>
+</UL>
+&nbsp;
+<TABLE BORDER CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TH>Category</TH>
+
+<TH>Points</TH>
+
+<TH>Min</TH>
+
+<TH>Max</TH>
+</TR>
+
+<TR>
+<TD><B>MP3Main</B>&nbsp;
+<UL>
+<LI>
+Program should flow correctly and not crash upon exiting.</LI>
+
+<LI>
+Program exits with &lt;ESC> or &lt;Q>&lt;ENTER></LI>
+</UL>
+</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>5</TD>
+</TR>
+
+<TR>
+<TD><B>DrawScreen</B>&nbsp;
+<UL>
+<LI>
+Graphics for buttons and window display with correct color attribute</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>5</TD>
+</TR>
+
+<TR>
+<TD><B>WaitForInput</B>&nbsp;
+<UL>
+<LI>
+No extra characters seen when entering a value</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>5</TD>
+</TR>
+
+<TR>
+<TD><B>DisplayResult</B>
+<UL>
+<LI>
+Result is right-justified</LI>
+
+<LI>
+Result is appended by correct mode "signifier"</LI>
+
+<LI>
+Displayed number of operands on stack is correct</LI>
+</UL>
+</TD>
+
+<TD>&nbsp;</TD>
+
+<TD>0</TD>
+
+<TD>5</TD>
+</TR>
+
+<TR>
+<TD><B>KbdInstall and KbdUninstall</B>
+<UL>
+<LI>
+Keyboard handler is enabled during program</LI>
+
+<LI>
+Keyboard still works after program is finished</LI>
+</UL>
+</TD>
+
+<TD>&nbsp;</TD>
+
+<TD>0</TD>
+
+<TD>5</TD>
+</TR>
+
+<TR>
+<TD><B>KbdHandler</B>
+<UL>
+<LI>
+Program exits when &lt;ESC> pressed</LI>
+
+<LI>
+Values displayed left-justified as being entered</LI>
+
+<LI>
+Backspace works</LI>
+
+<LI>
+All operations ('~', '&amp;', '-', 'MB' etc.) are displayed and then executed
+when &lt;enter> is pressed.</LI>
+</UL>
+</TD>
+
+<TD>&nbsp;</TD>
+
+<TD>0</TD>
+
+<TD>7</TD>
+</TR>
+
+<TR>
+<TD><B>MouseInstall and MouseUninstall</B>
+<UL>
+<LI>
+Mouse handler is enabled during program</LI>
+
+<LI>
+Mouse works after program completes</LI>
+</UL>
+</TD>
+
+<TD>&nbsp;</TD>
+
+<TD>0</TD>
+
+<TD>5</TD>
+</TR>
+
+<TR>
+<TD><B>MouseHandler</B>
+<UL>
+<LI>
+Nothing happens if no button region clicked</LI>
+
+<LI>
+New operands entered after "ENTER" button clicked</LI>
+
+<LI>
+Operations are performed immediatley after button is clicked</LI>
+
+<LI>
+If operation entered while operand is being entered, operand is ignored.</LI>
+</UL>
+</TD>
+
+<TD>&nbsp;</TD>
+
+<TD>0</TD>
+
+<TD>7</TD>
+</TR>
+
+
+<TR>
+<TD><B>OFF Button</B>
+<UL>
+<LI>Program quits when this new button is pressed</LI>
+</UL>
+<TD>&nbsp;</TD>
+<TD>0</TD>
+<TD>6</TD>
+</TR>
+
+
+<TR>
+<TD><B>Functionality SubTotal</B>&nbsp;</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>50</TD>
+</TR>
+
+<TR>
+<TD><B>Comments</B> <I>(* percentage of code written)</I>&nbsp;
+<UL>
+<LI>
+Clear and precise line &amp; procedure comments&nbsp;</LI>
+
+<BR>(describes all major routines): -0&nbsp;
+<LI>
+Sports Announcer comments (line-by-line): -1&nbsp;</LI>
+
+<LI>
+Unclear comments: -1&nbsp;</LI>
+
+<LI>
+Sparse comments: -3&nbsp;</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>-5</TD>
+
+<TD>0</TD>
+</TR>
+
+<TR>
+<TD><B>Technique &amp; Style</B> <I>(* percentage of code written)</I>
+<UL>
+<LI>
+Compact and Efficient code: -0&nbsp;</LI>
+
+<LI>
+Contains repeated code (lacks loops): -3&nbsp;</LI>
+
+<LI>
+Makes poor use of registers and/or variables: -2&nbsp;</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>-5</TD>
+
+<TD>0</TD>
+</TR>
+
+<TR>
+<TD><B>I/O Specs &amp; Modularity</B> <I>(* percentage of code written)</I>&nbsp;
+<UL>
+<LI>
+Violates specifications for given subroutines: -5&nbsp;</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>-5</TD>
+
+<TD>0</TD>
+</TR>
+
+<TR>
+<TD><B>Penalty/Bonus</B>&nbsp;
+<BR><I>Before 5pm on deadline: +1 pt/weekday</I>
+<BR><I>After 5pm on deadline: -10 pts/weekday&nbsp;</I></TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>-50</TD>
+
+<TD>5</TD>
+</TR>
+
+<TR>
+<TD><B>Total</B>&nbsp;</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>55</TD>
+</TR>
+</TABLE>
+&nbsp;
+</BODY>
+</HTML>

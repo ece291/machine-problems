@@ -1,0 +1,37 @@
+
+------------- MP2 Menu --------------
+  Enter   (T)ext     / (B)inary
+  Print   (M)essage  / (R)buffeR
+  RLE     (E)ncode   / (D)ecode
+------ [ESC] or (Q)uit to exit ------
+
+Enter Text Message: 
+ABCD
+
+Compressed Size = 20 bits ~= 2 bytes.  (LSBit .. MSBit)
+10000 01000 11000 00100
+
+Enter Text Message: 
+****
+
+Compressed Size = 15 bits ~= 1 bytes.  (LSBit .. MSBit)
+00111 11111 11000
+
+Enter Binary Data (LSBit .. MSBit): 
+00010 10100 00110 11111 11000 11110 00000 11101 11110 01001 00110 00100
+
+Text Message=
+HELLLLO WORLD
+
+
+
+LIBMP2 Calls: 
+ -PrintBuffer 
+ -ReadBuffer 
+ -ReadTextMsg 
+ -PrintTextMsg 
+ -Encode 
+ -AppendBuffer 
+ -EncodeRLE 
+ -DecodeRLE 
+

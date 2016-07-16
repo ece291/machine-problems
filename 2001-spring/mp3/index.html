@@ -1,0 +1,744 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <title>MP3</title>
+</head>
+<body bgcolor="#FFFFFF">
+&nbsp;
+<table BORDER=0 CELLPADDING=3 WIDTH="100%" >
+<tr>
+<td ALIGN=LEFT WIDTH="33%">ECE291</td>
+
+<td ALIGN=CENTER WIDTH="34%">
+<center>Computer Engineering II</center>
+</td>
+
+<td ALIGN=RIGHT WIDTH="33%">Potts, Spring 2001</td>
+</tr>
+</table>
+
+<center>
+<h1>
+Machine Problem 3: Typing-Tutor 291</h1>
+</center>
+
+<center><table BORDER="1" CELLPADDING=3 WIDTH="60%" >
+<tr>
+<td ALIGN=RIGHT><b>Assigned</b></td>
+
+<td>Tuesday, February 27, 2001</td>
+</tr>
+
+<tr>
+<td ALIGN=RIGHT><b>Purpose</b></td>
+
+<td>Text-Mode Graphics, Timer and Keyboard Interrupts</td>
+</tr>
+
+<tr>
+<td ALIGN=RIGHT><b>Points</b></td>
+
+<td>50</td>
+</tr>
+
+<tr>
+<td ALIGN=RIGHT><b>Due Date</b></td>
+
+<td>March 21 - 5:00pm</td>
+</tr>
+</table></center>
+<!--<Center><IMG SRC="../../icon/construct.gif" >This MP is under construction</Center>-->
+<h2>
+Introduction</h2>
+<blockquote>
+<p>
+Ever used a typing tutor to learn how to type? Ever think of doing so? We're
+about to create one, but don't expect it to be as good as Mavis Beacon.</p>
+</blockquote>
+
+<h2>
+Problem Description</h2>
+
+<center><img SRC="mp3.gif" BORDER=0 width="812" height="481"></center>
+
+<blockquote>
+  <p>Our typing tutor has to do three main things:
+  <ul>
+    <li>Show the current state of the keyboard (to help the typist look at the
+      screen)</li>
+    <li>Show a string for the typist to type, showing the typist's progress and
+      mistakes</li>
+    <li>Track the time and number of mistakes the typist makes, and display this
+      at the end</li>
+  </ul>
+  <p><font size="3">To do these somewhat efficiently, we're going to hook into
+  the computer's keyboard and timer interrupts, to run some of the code
+  asynchronously from the main loop. Asynchronously means, in this sense, that
+  you never know ahead of time when it will run. You could have two move opcodes,
+  or a compare and a conditional jump, and either could be interrupted to run
+  the Interrupt Service Routine (ISR). More on this shortly.</font></p>
+</blockquote>
+<h2>
+Implementation</h2>
+<blockquote>
+  <h3> Interrupt Service Routines</h3>
+  <p>Hardware Interrupts are generated when various hardware events occur.&nbsp;
+  Examples include the timer, which triggers 18.2 times per second, the
+  keyboard, which triggers for every key press and release, and the mouse which
+  triggers for any movement or button press or release. These interrupts are the
+  hardware's way of saying &quot;I need attention,&quot; so that the rest of the
+  time the CPU can completely ignore such devices, and just execute code.</p>
+  <p>When the interrupt happens, the CPU is informed.&nbsp; The current opcode
+  finishes execution, and then the current program is interrupted. This is when
+  your Interrupt Service Routine (ISR) is executed. As it happens between two effectively random lines of your program,
+  the ISR needs to save all registers and the flags. The hardware takes care of
+  part of this (by pushing of
+  the flags); the rest you must take care of by using IRET instead of RET (to pop the
+  flags), and saving your registers like normal.</p>
+  <h3>The Timer</h3>
+  <p>The timer will be used to keep track of how long it takes the
+  typist to type the sentences. While we could probably be saving these
+  scores for charting improvement, we'll just use it to report back to
+  the user immediately. Every time your timer ISR is called, increment
+  the tick counter, [<code>ticks</code>]. Then, every 18 ticks increment
+  the seconds counter and the fifths counter, [<code>seconds</code>] and
+  [<code>fifths</code>] respectively, and reset the tick counter to 0.
+  Finally, every 5 seconds, decrement the time counter (to make up for
+  the .2 of the 18.2 ticks per second) and reset the second counter to
+  0.</p>
+  <h3>The Keyboard</h3>
+  <p>When your keyboard handler is called, you know a key has been pressed or
+  released. Unfortunately, you don't know what key, whether it was pressed or
+  released, and whether the press is a true press or an auto-repeat press.
+  There's no way for us find out the last (except keeping track yourself), but
+  as for which key and press or release, you can (and must) find this out by
+  asking the keyboard for the scancode. See the lab manual, page 75 or
+  thereabouts, for information on retrieving these scancodes. The
+  pages after that describe how scancodes work.</p>
+  <h3>The Keyboard Lookup Tables</h3>
+  <p>If you look at the scancodes, and you look at your ascii table, the first
+  thing you'll probably notice is that there's no connection. If you then look
+  down at the keyboard, however, you may notice a general correlation between
+  the scancode and the location of the key, with ESC being scancode 1, and the
+  numbers following an increasing pattern.</p>
+  <p>While theoretically we could try to come up with some arbitrary math
+  procedure to translate from scancode to ascii code, it's much easier and much
+  faster to just use a lookup table. And since there are several bits of
+  information we want to handle, using multiple lookup tables is definitely the
+  choice.</p>
+  <p>The tables we'll be using are as follows:</p>
+  <ul>
+    <li><code>QwertyNames</code>
+      <ul>
+        <li>Mostly an ascii lookup table, 128 bytes long, one byte per
+          character.</li>
+        <li>If the value is under or equal to <code>KEY_STR</code>, it is a
+          &quot;special&quot; character, and takes a second lookup.</li>
+      </ul>
+    </li>
+    <li><code>QwertyShift</code>
+      <ul>
+        <li>Just like <code>QuertyNames</code>, but has the values for when
+          shift is pressed.&nbsp; Special keys are identical to original table.</li>
+      </ul>
+    </li>
+    <li><code>SpecialKeys</code>
+      <ul>
+        <li>Holds <code>KEY_STR</code> offsets (word sized) that point to <code>'$'</code> terminated strings</li>
+      </ul>
+    </li>
+    <li><code>SpecialAscii</code>
+      <ul>
+        <li>Holds <code>KEY_STR</code> characters (byte sized) which are the ascii the special
+          keys should use</li>
+      </ul>
+    </li>
+    <li><code>KeyLocations</code>
+      <ul>
+        <li>Holds screen offsets used for drawing each key.</li>
+      </ul>
+    </li>
+  </ul>
+  <h3>The Strings</h3>
+  <p>As the user types a string, it needs to be compared against the correct
+  string.&nbsp; As the user makes mistakes, they need to be highlighted. When the
+  user hits backspace, we need to back up the user version. All these things
+  need to be tracked, and drawn in the appropriate colors.</p>
+  <ul>
+    <li>Draw the string the user has to match in <code>ATTR_STRING</code>
+    </li>
+    <li>Draw pieces of the string the user types correctly in <code>ATTR_NORMAL</code></li>
+    <li>Draw mistaken characters in <code>ATTR_ERROR</code></li>
+  </ul>
+  <p>Similarly, the keyboard must be updated to match the current state of the
+  keyboard (yes, there are some keys that make it look like shift was pressed
+  when it wasn't.&nbsp; Don't worry about them; just treat the shift scancode as
+  you always would).</p>
+  <ul>
+    <li>Draw the keyboard border and all normal keys in <code>ATTR_RELEASE</code></li>
+    <li>Draw the keys that are currently down in <code>ATTR_PRESS</code></li>
+  </ul>
+  <p>Rather than redrawing the entire keyboard every time, just use <code>HighlightKey</code>
+  to change the attribute of a given key by scancode (for easy use of the lookup
+  table). But do redraw the entire keyboard (not changing the attributes) using
+  the Shift tables, if [<code>shift</code>] changes to true (or the normal
+  tables if it changes to false).</p>
+</blockquote>
+
+<h2>
+Procedures</h2>
+
+<ul>
+<li>
+This assignment has 15 procedures. You will receive credit for this
+assignment by replacing each of the fifteen procedures listed below with
+your own code.</li>
+
+<li>
+Experiment with the working code to gain a full understanding of how the
+program works.</li>
+
+<li>
+Use defined constants/variables where appropriate.</li>
+
+<li>
+Comment ALL the functions and make sure that they preserve all register
+values.&nbsp; Be sure to include function headers for ALL functions that
+you write.</li>
+
+<li>
+Optionally, for a gold star, implement word wrapping and longer strings..</li>
+</ul>
+
+<ul>
+<li>
+<b><font size="+1">MP3Main</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose :</b>   Do all necessary initializations, set up interrupt handlers,
+run the main loop, remove handlers, exit</li>
+
+<li>
+<b>Inputs :</b> None</li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls :</b>  <code>InstallKeyboard</code>, <code>InstallTimer</code>, <code>DrawKeyboard</code>,
+<code>NextString</code>, <code>GetKeyPress</code>, <code>TypeKey</code>, <code>DisplayStats</code>,
+<code>RemoveKeyboard</code>, <code>RemoveTimer</code></li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+<li>Exit immediately on [<code>quit</code>] being set to nonzero. This requires
+  smart coding of <code>GetKeyPress</code>.</li>
+
+<li>
+Install and remove the Interrupt Service Routines only once.</li>
+
+<li>
+On end of string, call <code>DisplayStats</code> and wait for a key press before
+resetting with <code>NextString</code>.</li>
+
+<li>Don't forget to reset your string offset to the beginning of each new
+  string!</li>
+</ul>
+
+<li>
+<b>Points : 3</b>
+
+<p>&nbsp;</p>
+
+</li>
+</ul>
+</ul>
+
+<ul>
+<li>
+<b><font size="+1">DrawKeyboard</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose :</b>   Draw the keyboard onto the screen; includes lines,
+attributes, and names.</li>
+
+<li>
+<b>Inputs :</b> None</li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls :</b>  <code>DrawKeyNames</code></li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+<li>Loop over the characters in <code>KeySkin</code>, drawing them to the screen
+  starting at <code>KBD_OFF</code>, and looping for 11 rows of 80 characters.</li>
+<li>Call <code>DrawKeyNames</code> second, as <code>DrawKeyboard</code> draws
+  blanks where the names will go.</li>
+</ul>
+
+<li>
+<b>Points : 3</b>
+
+<p>&nbsp;</p>
+
+</li>
+</ul>
+<li><b><font size="+1">DrawKeyNames</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose :</b>   Draw the key names onto the screen, paying attention to [<code>shift</code>]</li>
+
+<li>
+<b>Inputs : </b>None</li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls : </b>None</li>
+
+<li>
+<b>Notes :</b> &nbsp;
+<ul>
+  <li>Use <code>QwertyNames</code> if [shift]==0, or <code>QwertyShift</code>
+    otherwise.</li>
+  <li>Draw only the character bytes; don't draw the attribute bytes.</li>
+  <li>Pay close attention to the structure of the lookup tables: (view them
+    directly in the include file)
+    <ul>
+      <li>If <code>QwertyNames</code>[scancode] &gt; <code>KEY_STR</code>, just
+        use the byte value as its appearance.</li>
+      <li>Else (<code>QwertyNames</code>[scancode] &lt;= <code>KEY_STR</code>)
+        it is a lookup into <code>SpecialKeys</code>, which points to <code>'$'</code>
+        terminated strings.</li>
+      <li>If the location for the key is 0, don't draw it.</li>
+    </ul>
+  </li>
+</ul>
+</li>
+
+<li>
+<b>Points : 6</b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">NextString</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose :</b>   Sets up the various variables for the next string run</li>
+
+<li>
+<b>Inputs : </b>None</li>
+
+<li>
+<b>Outputs : </b>None (several variables are changed, however)</li>
+
+<li>
+<b>Calls : </b>None</li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+<li>Reset [<code>errors</code>], [<code>seconds</code>], [<code>ticks</code>], and [<code>fifths</code>]</li>
+<li>Clear the four string rows to <code>ATTR_NORMAL</code>,
+  update [<code>currentStr</code>], and draw the new string with <code>ATTR_STR</code></li>
+<li>Use the constants <code>STR_OFF</code>, <code>IN_OFF</code>, <code>ERR_OFF</code>,
+  and <code>TIME_OFF</code> appropriately</li>
+<li>No string can be more than 80 characters long.</li>
+<li>If <code>StrTable</code>[<code>currentStr</code>] is zero, this is
+one past the final string.  Reset [<code>currentStr</code>] to zero.</li>
+<li>Update the cursor position in from this function too.  The library
+code cheats by calling TypeKey with a backspace.  You may (but are not
+required) to do it this way.
+</ul>
+
+<li>
+<b>Points : 4 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">InstallTimer, RemoveTimer</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose : </b>These procedures Install and Remove the Timer ISR</li>
+
+<li>
+<b>Inputs : </b>location of <code>TimerISR</code></li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls : </b>Interrupt 21h</li>
+
+<li>
+<b>Notes :</b> See <a href="http://www.ctyme.com/intr/int-21.htm">http://www.ctyme.com/intr/int-21.htm</a></li>
+
+</ul>
+
+<ul>
+
+<li>
+<b>Points : 2 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">TimerISR</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose : </b>Increment counters and set update to track player's time</li>
+
+<li>
+<b>Inputs : </b>None</li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls : </b>Original Timer ISR</li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+<li>Don't forget to call the original handler (this is called chaining) to
+  ensure the functionality that is dependant on the timer</li>
+<li>See <a href="http://www.ece.uiuc.edu/ece291/lecture/lockwood/l11.html">Lecture 14</a>
+  for more information on writing and installing ISRs</li>
+<li>Increment [<code>ticks</code>] every time, [<code>seconds</code>] and [<code>fifths</code>]
+  every 18 ticks, and decrement [<code>seconds</code>] every five fifths.</li>
+<li>reset [<code>ticks</code>] and [<code>fifths</code>] after they trigger an
+  increment or decrement, respectively.</li>
+</ul>
+
+<li>
+<b>Points : 2 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">InstallKeyboard, RemoveKeyboard</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose : </b>These procedures Install and Remove the Keyboard ISR</li>
+
+<li>
+<b>Inputs : </b>location of <code>KeyboardISR</code></li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls : </b>Interrupt 21h</li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+
+<li>
+ See <a href="http://www.ctyme.com/intr/int-21.htm">http://www.ctyme.com/intr/int-21.htm</a></li>
+</ul>
+
+<li>
+<b>Points : 2 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">KeyboardISR</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose : </b>Sets variables such that the main loop will react to the keyboard inputs</li>
+
+<li>
+<b>Inputs : </b>None
+</li>
+
+<li>
+<b>Outputs :</b>
+ None (writes to several variables)
+</li>
+
+<li>
+<b>Calls : </b><code>HighlightKey</code>, <code>DrawKeyNames</code></li>
+
+<li>
+<b>Notes :</b>
+<ul>
+  <li>See the lab manual for a skeleton ISR</li>
+  <li>Set [<code>nextKey</code>] to the ascii according to the lookup tables:
+    like in <code>DrawKeyNames</code>, if <code>QwertyNames</code>[scancode]
+    &gt; <code>KEY_STR</code>, just use it as the ascii, but use <code>SpecialAscii</code>[scancode]
+    if <code>QwertyNames</code>[scancode] &lt;= <code>KEY_STR</code></li>
+  <li>Call <code> HighlightKey</code> on any scancode &lt; <code>SCAN_MAX</code></li>
+  <li>Track the status of the shift keys in [<code>shift</code>], and call <code>DrawKeyNames</code>
+    when it changes</li>
+  <li>Set [quit] to 1 when ESC is pressed.</li>
+</ul>
+</li>
+
+</ul>
+
+<ul>
+
+<li><b>Points : 8 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">HighlightKey</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose : </b>Change attributes on pressed (or released) key to show which
+keys are currently pressed</li>
+
+<li>
+<b>Inputs : </b>al = scancode
+</li>
+
+<li>
+<b>Outputs :</b>
+ None
+</li>
+
+<li>
+<b>Calls : </b>None</li>
+
+<li>
+<b>Notes :</b>
+<ul>
+  <li>Use <code>ATTR_PRESSED</code> or <code>ATTR_RELEASED</code> as your
+    attribute byte</li>
+  <li>Change only the attribute byte; don't change the character byte</li>
+  <li>Don't forget the Special keys which need to have entire strings
+    highlighted</li>
+  <li>See <code>DrawKeyNames</code> for documentation on the lookup table
+    structure</li>
+  <li>Beware rogue inputs - don't try looking up scancodes &gt;
+  <code>SCAN_MAX</code></li>
+</ul>
+</li>
+
+</ul>
+
+<ul>
+
+<li><b>Points : 4 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>GetKeyPress</b></font>
+    <ul>
+      <li><font size="3"><b>Purpose : </b>Retrieve the next key pressed, like <code>kbdin</code></font></li>
+      <li><font size="3"><b>Inputs : </b>None</font>
+      </li>
+      <li><font size="3"><b>Outputs : </b>al = ascii of key, unless [<code>quit</code>]
+        &gt; 0 (then it can be anything)</font></li>
+      <li><font size="3"><b>Calls : </b>None</font></li>
+      <li><b><font size="3">Notes :&nbsp;</font></b>
+        <ul>
+          <li><font size="3">Wait&nbsp; for (loop until) either [<code>quit</code>] or
+            [<code>nextKey</code>]
+            to be nonzero</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 3 </b></font></li>
+    </ul>
+  </li>
+</ul>
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>TypeKey</b></font>
+    <ul>
+      <li><font size="3"><b>Purpose :</b>  Draw the next pressed key to the
+        screen, updating the cursor appropriately</font></li>
+      <li><font size="3"><b>Inputs :</b></font>
+        <ul>
+          <li><font size="3">al = ascii of key</font></li>
+          <li><font size="3">bx = offset into current string</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Outputs :&nbsp; </b></font>
+        <ul>
+          <li><font size="3">bx = next offset into string</font></li>
+          <li><font size="3">cf = 1 if and only if we have finished the current
+            string</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Calls : </b><code>CheckKey</code></font></li>
+      <li><b><font size="3">Notes :&nbsp;</font></b>
+        <ul>
+          <li>Draw the character at <code>IN_OFF</code>+<i>f(</i>bx<i>)</i>&nbsp;</li>
+          <li>If <code>CheckKey</code> claims a match, use <code>ATTR_NORMAL</code>,
+            but use <code>ATTR_ERROR</code> otherwise</li>
+          <li><font size="3">Display either a null (0) or a space to the screen
+            after moving one space to the left on backspace</font></li>
+          <li><font size="3">Don't backspace before the beginning of the buffer</font></li>
+          <li><font size="3">End the current string if either <code>CheckKey</code>
+            says we're done, or the user presses enter</font>
+          </li>
+          <li><font size="3">Use Interrupt 10h, function 2 to move the cursor to
+            row <code>IN_ROW</code>, column bx (</font>See <a href="http://www.ctyme.com/intr/int-10.htm">http://www.ctyme.com/intr/int-10.htm</a>)
+          </li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 6 </b></font></li>
+    </ul>
+  </li>
+</ul>
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>CheckKey</b></font>
+    <ul>
+      <li><font size="3"><b>Purpose : </b>Check if the pressed key matches the
+        appropriate character of the string, or if the string is complete</font></li>
+      <li><font size="3"><b>Inputs :&nbsp; </b></font>
+        <ul>
+          <li><font size="3">al = ascii of key</font>
+          </li>
+          <li><font size="3">bx = offset into current string</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Outputs :&nbsp; </b></font>
+        <ul>
+          <li><font size="3"><code>ZF</code> = 1 if and only if key matches
+            (don't worry about during end case; user can't press 00h)</font></li>
+          <li><font size="3"><code>CF</code> = 1 if and only if we're at the end
+            of the string (zero terminated)</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Calls : </b>None</font></li>
+      <li><b><font size="3">Notes :&nbsp;</font></b>
+        <ul>
+          <li>Take advantage of your compare to set the zero flag appropriately</li>
+          <li><font size="3">Set the carry flag and exit if appropriate, and
+            ignore the zero flag if at the end of the string</font></li>
+          <li><font size="3">[<code>currentStr</code>] is the index of the
+            string (0..<code>STR_MAX</code>-1)</font></li>
+          <li><font size="3"><code>StrTable</code> is a lookup table of string
+            starting addresses: thus compare [[<code>StrTable</code>+[<code>currentStr</code>]]+bx]
+            to al, but make it work in assembly</font></li>
+	  <li>Increment [<code>errors</code>] on any mismatched key</li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 3 </b></font></li>
+    </ul>
+  </li>
+</ul>
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>DisplayStats</b></font>
+    <ul>
+      <li><font size="3"><b>Purpose : </b>Display the statistics earned by the
+        user, both errors and time</font></li>
+      <li><font size="3"><b>Inputs : </b>None</font>
+      </li>
+      <li><font size="3"><b>Outputs : </b>None</font></li>
+      <li><font size="3"><b>Calls : </b>None</font></li>
+      <li><b><font size="3">Notes :&nbsp;</font></b>
+        <ul>
+          <li>Call <code>binasc</code> on [<code>errors</code>] and [<code>seconds</code>]
+            pointing to <code>errorNum</code> and <code>timeNum</code>,
+            respectively</li>
+          <li>Display strings <code>errorMsg</code> and <code>timeMsg</code>
+            starting at <code>ERR_OFF</code> and <code>TIME_OFF</code>,
+            respectively, with <code>ATTR_STR</code></li>
+          <li><font size="3">Writing a helper function to draw strings of a
+            given attribute to the screen may be useful</font></li>
+          <li><font size="3">Note that <code>errorMsg</code> is directly before <code>errorNum</code>
+            and relies on the <code>'$'</code> that <code>binasc</code> places
+            at the end of <code>errorNum</code></font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 4 </b></font></li>
+    </ul>
+  </li>
+</ul>
+<p>
+<i>Monitor the newsgroup and this on-line section for revisions to the
+MP or to the write-up</i>
+</p>
+<h2>Procedure</h2>
+<ul>
+  <li>You will begin this MP with the following files:
+    <ul>
+      <li><tt>MP3.ASM</tt>: Program Framework
+      <li><tt>Makefile</tt>: Specifies how and when programs are assembled and
+        linked.
+      <li><tt>LIBMP3.LIB</tt>: Library functions for MP2
+      <li><tt>LIB291.LIB</tt>: General-purpose library functions</li>
+    </ul>
+  <li>You may copy these files from the network drive to your home directory
+    with the following command:<br>
+    <tt>xcopy /s V:\ece291\mp3 W:\mp3</tt><br>
+    or download the files from this server as <a href="mp3.zip">mp3.zip</a>
+  <li>Add your code to <tt>MP3.ASM</tt>.
+  <li>Assemble and link your program by typing<br>
+    <tt>make</tt><br>
+    This command reads <i>Makefile</i> then invokes NASM and LINK to build an
+    executable program.
+  <li>Use Turbo Debugger (TD) to find and correct program errors.
+  <li>Verify your program operation by testing the input test file. You should
+    alter the test file to check different scenarios with your code.</li>
+</ul>
+<h2>Final Steps</h2>
+<p>1. Demonstrate your MP3.EXE to a TA. You may be asked to recompile and demo
+the program. Your program must work with all given input.</p>
+<p>2. Be prepared to answer questions about any aspect of the operation of your
+program. The TAs will not accept an MP if you cannot fully explain your code and
+your implementation. Delayed MPs will be subject to late penalties as described
+in the course syllabus (10/pts per day).</p>
+<p>3. The TA will complete the code submission procedure.</p>
+<p>&nbsp;</p>
+
+<hr>
+
+<h2><a href="mp3.asm"><b>mp3.asm</b></a></h2>
+
+</body>
+</html>

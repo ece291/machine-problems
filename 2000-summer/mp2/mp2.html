@@ -1,0 +1,901 @@
+<html>
+
+<head>
+
+<title>Machine Problem 2: Gregorian Calendar Generator</title>
+
+<style>
+<!--
+
+body   {font-family: arial, helvetica, sans-serif;
+        font-size: 10pt;
+       }
+
+td     {font-family: arial, helvetica, sans-serif;
+        font-size: 10pt;
+       }
+
+th     {font-family: arial, helvetica, sans-serif;
+        font-size: 10pt;
+       }
+
+ul     {font-family: arial, helvetica, sans-serif;
+        font-size: 10pt;
+       }
+
+ol     {font-family: arial, helvetica, sans-serif;
+        font-size: 10pt;
+       }
+
+a      {font-family: arial, helvetica, sans-serif;
+        font-size: 10pt;
+        text-decoration: none;
+       }
+
+//-->
+</style>
+
+</head>
+
+<body bgcolor = #ffffff text = #000000>
+
+<table cellpadding = 0 cellspacing = 0 width = 100% border = 0>
+
+<tr>
+  <td align = left   width = 33%>ECE291</td>
+  <td align = center width = 34%>Computer Engineering II</td>
+  <td align = right  width = 33%>Potts, Summer 2000</td>
+</tr>
+
+</table>
+
+<h1 align = center>Machine Problem 2: Gregorian Calendar Generator</h1>
+
+<div align = center>
+<table border = 1 width = 60%>
+
+<tr>
+  <td align = right width = 20% nowrap>Assigned :</td>
+  <td>: June 26, 2000</td>
+</tr>
+
+<tr>
+  <td align = right>Due Date :</td>
+  <td>: July 6, 2000</td>
+</tr>
+
+<tr>
+  <td align = right>Purpose :</td>
+  <td nowrap>: Parsing Command Line Input, Arithmetic and Logical Operations, Lookup Tables, Text Formatting</td>
+</tr>
+
+<tr>
+  <td align = right>Points :</td>
+  <td>: 50</td>
+</tr>
+
+</table>
+</div>
+
+<h2>Introduction</h2>
+
+<p>
+Under Construction
+
+<h2>Command Line Parameters</h2>
+
+<p>
+When a program is loaded into memory for execution, DOS first builds up a Program Segment Prefix (PSP) immediately before it.
+The online text book for this course, Art of Assembly, gives a detailed layout of the PSP in <a href = "http://www.ece.uiuc.edu/ece291/books/ch13/ch13-8.html#heading8-103">Chapter 13 Section 3 Subsection 11</a>.
+To quote, 
+
+<p>
+Locations 80h through the end of the PSP contain a very important piece of information- the command line parameters typed on the DOS command line along with the program's name.
+For example, if the following is typed on the DOS command line:
+
+<p>
+<div align = center><img src = "cmd.gif" border = 0 alt = "" width="602" height="90"></div>
+
+<p>
+the following is stored into the command line parameter field:
+
+<p>
+<div align = center><img src = "cv.gif" border = 0 alt = "" width="602" height="90"></div>
+
+<p>
+Location <tt>80h</tt> contains <tt>13h</tt>, the length of the parameters following the program name<br>
+Locations <tt>81h</tt> through <tt>93h</tt> contain the characters making up the parameter string<br>
+Location <tt>94h</tt> contains a carriage return<br>
+Notice that the carriage return character is not figured into the length of the command line string
+
+<p>
+Thus, in order to extract the command line parameters, we only need to traverse through the PSP, starting at offset <tt>81h</tt> and run through the number of bytes specified at byte offset <tt>80h</tt> of the Program Segment Prefix
+
+<h2>The Doomsday Algorithm</h2>
+
+<p>
+The Doomsday algorithm was created by John Horton Conway who is best known as the inventor of the Game of Life.
+A more detailed explanation on how it works along with plenty of examples, is available at <a href = "http://www.interlog.com/~r937/doomsday.html">this web site</a>.
+Once you have an idea of how the algorith works, we suggest you see it in action. Run the <tt>mp2.exe</tt> without any parameters to get an idea of valid parameters.
+Next, try running it with different sets of inputs. For example you may want to try the following:
+
+<p>
+<div align = center>
+<table border = 1>
+
+  <tr>
+    <td><tt>mp2 2000 6 26</tt></td>
+  </tr>
+
+  <tr>
+    <td><tt>mp2 1752 9 14</tt></td>
+  </tr>
+
+  <tr>
+    <td><tt>mp2 1980 2</tt></td>
+  </tr>
+
+  <tr>
+    <td><tt>mp2 2000 6 31</tt></td>
+  </tr>
+
+  <tr>
+    <td><tt>mp2 1980</tt></td>
+  </tr>
+
+  <tr>
+    <td><tt>mp2 2001 1 1</tt></td>
+  </tr>
+
+  <tr>
+    <td><tt>mp2 69 7 21</tt></td>
+  </tr>
+
+  <tr>
+    <td><tt>mp2 1800 2 29</tt></td>
+  </tr>
+
+  <tr>
+    <td><tt>mp2 1571 1 1</tt></td>
+  </tr>
+
+  <tr>
+    <td><tt>mp2 3001 1 1</tt></td>
+  </tr>
+
+  <tr>
+    <td><tt>mp2 1999 12 31</tt></td>
+  </tr>
+
+</table>
+</div>
+
+<h2>Problem Description</h2>
+
+<div align = center>
+  <img src = "mp2.gif" border = 0 alt = "">
+</div>
+
+<p>
+So now that we have some idea of what this algorithm looks like, lets see how we shall go about implementing it.
+
+<ul>
+  <li>The first step is to accept input from the user, which we shall do via the command line.
+      A procedure <tt>ParseInput()</tt> will scan through the command string and extract out the parameters</li>
+  <li>Next a procedure <tt>FilterFields()</tt> will validate the parameters, making sure that they conform to reasonable numbers.
+      In our case, the <tt>year</tt> field should lie between <tt>1582</tt> and <tt>3000</tt>.
+      The reason for choosing <tt>1582</tt> is that the Gregorian Calendar came into effect only after this year, so calculating the day of the week for any year before this, would only lead to a useless result.
+      Note that this calendar was adopted in Russia only in 1919 and by the English colonies in 1752.</li>
+  <li>So now that we have a valid year, we call <tt>IsLeapYear()</tt> to check if the year is leap or not.
+      This function not only assists the Doomsday algorithm calculation but also helps validate the <tt>day</tt> field</li>
+  <li>Once we confirm that we have valid data, we find the Doomsday for the year in <tt>GetDoomsDay()</tt>.
+      This is done by first getting the Doomsday for the century that this year falls in. 
+      For this, we shall use the <tt>doomsDayYHash</tt>. More on it later.</li>
+  <li>The above link discusses that, in any given century, the Doomsday advances by 1 every 12 years. 
+      So, we divide the given year (without the century) by 12 and get the quotient. 
+      We divide the remainder by 4 and sum up the previous quotient and remainder along with the new quotient.
+      This number we add to the DoomsDay for the century and divide by 7, to get the Doomsday for the year in question (which will be the remainder of the final computation).</li>
+  <li>The reason why this works is because there are 365 (<tt>365/7 = 52</tt> remainder <tt>1</tt>) days in a year, one more added to 52 weeks.
+      This causes every day to advance by 1 every year and by 2 every leap year. For every leap year that falls within the remainder that we get on division by 12 (see above), we add 1.
+      Hence, the sum includes the quotient and remainder on division by 12, and the quotient on division by 4 to account for leap years</li>
+  <li>If the user, has only provided a <tt>year</tt>, we need to generate a calendar for every month in that year, <tt>MakeCalendar()</tt>.
+      We will achieve this by setting up a loop that runs 12 times, and calling <tt>DisplayMonth()</tt> with different values set in the <tt>month</tt> field</li>
+  <li>For a given month, we will generate a formatted output that looks like a calendar.
+      To do this, take advantage of all the strings that have been provided to you.
+      You will not need any others, but if you feel having some more will help you in your implementation, go right ahead.
+      You will make use of a lookup table, <tt>monthTable</tt> to save you a bunch of comparisions</li>
+  <li>The last function in this MP will be the <tt>GetDayofWeek()</tt> which will obtain the day of the week for a given date from the Doomsday for that year.
+      It will also be called by <tt>DisplayMonth()</tt> with the <tt>day</tt> field set to 1. This function will take advantage of the <tt>doomsDayMHash</tt>.
+      Also, if a complete date was provided by the user, it shall display a formatted message on the screen taking advantage of <tt>monthTable</tt> and <tt>dayTable</tt></li>
+</ul>
+
+<h2>Hash Tables</h2>
+
+<p>
+The two hash tables you shall be working with are <tt>doomsDayMHash</tt> and <tt>doomsDayYHash</tt>. 
+Lets look at these in a little more detail:
+
+<ul>
+  <li><tt>doomsDayYHash</tt></li>
+  <ul>
+    <li>This hash table gives us the Doomsday for the first year in any given century (say for example, 1900, 2000, 1800)</li>
+    <li>The Doomsday for all centuries that are multiples of 4 (20, 16, etc) is on a Tuesday</li>
+    <li>The Doomsday for all centuries that give a remainder of 1 on division by 4 (21, 17, etc) is on a Sunday</li>
+    <li>The Doomsday for all centuries that give a remainder of 2 on division by 4 (22, 18, etc) is on a Friday</li>
+    <li>The Doomsday for all centuries that give a remainder of 3 on division by 4 (23, 19, etc) is on a Wednesday</li>
+    <li>This can be better understood by the following table:</li>
+    <p>
+    <div align = center><table border = 1>
+    <tr>
+      <th>Sun</th>
+      <th>Mon</th>
+      <th>Tue</th>
+      <th>Wed</th>
+      <th>Thu</th>
+      <th>Fri</th>
+      <th>Sat</th>
+    <tr>
+    <tr>
+      <td>1700</td>
+      <td></td>
+      <td>1600</td>
+      <td>1500</td>
+      <td></td>
+      <td></td>
+      <td></td>
+    <tr>
+    <tr>
+      <td>2100</td>
+      <td></td>
+      <td>2000</td>
+      <td>1900</td>
+      <td></td>
+      <td>1800</td>
+      <td></td>
+    <tr>
+    <tr>
+      <td>2500</td>
+      <td></td>
+      <td>2400</td>
+      <td>2300</td>
+      <td></td>
+      <td>2200</td>
+      <td></td>
+    <tr>
+    </table></div>
+    <p>
+    <li>Thus, in order to use the hash table, divide the century by 4 and index into it to get the Doomsday for the century that <tt>year</tt> falls in</li>
+ </ul>
+
+  <p>
+  <li><tt>doomsDayMHash</tt></li>
+  <ul>
+    <li>This hash table gives us that day in the <tt>month</tt> that corresponds to the Doomsday</li>
+    <li>For every month, there is a day, that falls on the same day of the week as the Doomsday</li>
+    <li>With this, we only need to count up/down from this day to the <tt>day</tt> in question, rather than from the Doomsday</li>
+  </ul>
+</ul>
+
+<h2>Subroutines</h2>
+
+You will implement the following procedures:
+
+<h4>ParseInput</h4>
+
+<ul>
+
+<b>Purpose</b>
+
+  <ul>
+    <li>Parse the command line input and transfer it to <tt>cmdLine</tt></li>
+    <li>Ignore all white-spaces (tabs included), separate the parameters by a single space and terminate with a <tt>$</tt></li>
+    <li>Inform the program of illegal characters via <tt>AX</tt></li>
+  </ul>
+
+<b>Inputs</b>
+
+  <ul>
+    <li><tt>ES</tt> points at the Program Segment Prefix</li>
+  </ul>
+
+<b>Output</b>
+
+  <ul>
+    <li><tt>cmdLine</tt> holds the input parameters</li>
+    <li><tt>AX</tt> is set to <tt>-1</tt> if any non-white space or non-number character is encountered, or if <tt>PSP:[80h]</tt> reports a length greater than <tt>MAX</tt></li>
+  </ul>
+
+<b>Calls</b>
+
+  <ul>
+    <li>None</li>
+  </ul>
+
+<b>Notes</b>
+
+  <ul>
+    <li>Make sure you ignore any initial white-spaces</li>
+    <li>Beware of consecutive white-spaces</li>
+    <li>Don't forget the terminating sentinel, the <tt>$</tt></li>
+  </ul>
+
+</ul>
+
+<h4>FilterFields</h4>
+
+<ul>
+
+<b>Purpose</b>
+
+  <ul>
+    <li>Extract the <tt>year</tt>, <tt>month</tt>, <tt>day</tt> fields from <tt>cmdLine</tt></li>
+    <li>Set <tt>command</tt> to 1, 2 or 3 based on the number of parameters encountered</li>
+    <li>Inform the program of an invalid number of parameters or invalid parameters via the carry flag, <tt>CF</tt></li>
+  </ul>
+
+<b>Inputs</b>
+
+  <ul>
+    <li><tt>cmdLine</tt> stores the parameter string</li>
+  </ul>
+
+<b>Output</b>
+
+  <ul>
+    <li><tt>year</tt>, <tt>month</tt> and <tt>day</tt> hold their respective values</li>
+    <li><tt>command</tt> is set to an appropriate value</li>
+    <li><tt>CF</tt> is set if an error occured, else it is unset</li>
+  </ul>
+
+<b>Calls</b>
+
+  <ul>
+    <li><tt>ascbin()</tt> - Read the online lab manual to understand how it works</li>
+    <li><tt>IsLeapYear()</tt> - Call this function after validating the <tt>year</tt> field</li>
+  </ul>
+
+<b>Notes</b>
+
+  <ul>
+    <li>Run mp2.exe without any parameters and read the 'usage' message</li>
+    <li>Make sure the <tt>year</tt> field is within the range and adjust for <tt>0</tt> to <tt>99</tt></li>
+    <li>Before validating the <tt>day</tt> field, make sure you call <tt>IsLeapYear()</tt> - Read up on the function to understand why you need to do so</li>
+    <li>Use <tt>monthHash</tt> to help in validating the <tt>day</tt> parameter - Ask a TA if you are unclear on how to use a hash table</li>
+    <li>The carry flag can be manipulated using <tt>STC</tt> - set carry, <tt>CLC</tt> - clear carry and <tt>CMC</tt> - compliment carry</li>
+  </ul>
+
+</ul>
+
+<h4>GetDoomsDay</h4>
+
+<ul>
+
+<b>Purpose</b>
+
+  <ul>
+    <li>Obtain the Doomsday for the given <tt>year</tt></li>
+  </ul>
+
+<b>Inputs</b>
+
+  <ul>
+    <li><tt>year</tt></li>
+    <li><tt>doomsDayYHash</tt></li>
+  </ul>
+
+<b>Output</b>
+
+  <ul>
+    <li><tt>AX</tt> holds the Doomsday</li>
+  </ul>
+
+<b>Calls</b>
+
+  <ul>
+    <li>None</li>
+  </ul>
+
+<b>Notes</b>
+
+  <ul>
+    <li>Read the description above on Doomsday</li>
+    <li>Understand what <tt>doomsDayYHash</tt> is holding - Ask a TA if you need clarifiaction</li>
+    <li>This function should be straight forward</li>
+  </ul>
+
+</ul>
+
+<h4>IsLeapYear</h4>
+
+<ul>
+
+<b>Purpose</b>
+
+  <ul>
+    <li>To fix the values of the hash functions based on whether the given <tt>year</tt> is a leap year or not</li>
+  </ul>
+
+<b>Inputs</b>
+
+  <ul>
+    <li><tt>year</tt></li>
+  </ul>
+
+<b>Output</b>
+
+  <ul>
+    <li>Entries 0 and 1 of <tt>doomsDayMHash</tt></li>
+    <li>Entry 1 of <tt>monthHash</tt></li>
+  </ul>
+
+<b>Calls</b>
+
+  <ul>
+    <li>None</li>
+  </ul>
+
+<b>Notes</b>
+
+  <ul>
+    <li>Our hash functions are initialized to values that correspond to non-leap years and hence need to be fixed if the year in question is leap</li>
+    <li><tt>monthHash</tt> holds the number of days in every month and hence only the number of days in February may need to be changed</li>
+    <li>Refer to the description on Doomsday to understand what <tt>doomsDayMHash</tt> holds</li>
+  </ul>
+
+</ul>
+
+<h4>MakeCalendar</h4>
+
+<ul>
+
+<b>Purpose</b>
+
+  <ul>
+    <li>To display the calendar for the given <tt>year</tt></li>
+  </ul>
+
+<b>Inputs</b>
+
+  <ul>
+    <li><tt>AX</tt> holds the DoomsDay</li>
+    <li><tt>waitString</tt></li>
+  </ul>
+
+<b>Output</b>
+
+  <ul>
+    <li>On the screen</li>
+  </ul>
+
+<b>Calls</b>
+
+  <ul>
+    <li><tt>DisplayMonth()</tt></li>
+    <li><tt>kbdin()</tt></li>
+  </ul>
+
+<b>Notes</b>
+
+  <ul>
+    <li>You need to run a loop varying <tt>month</tt> from <tt>1</tt> to <tt>12</tt> and calling the above functions each time</li>
+    <li>This function too should be straight forward</li>
+  </ul>
+
+</ul>
+
+<h4>DisplayMonth</h4>
+
+<ul>
+
+<b>Purpose</b>
+
+  <ul>
+    <li>To display the calendar for the given <tt>month</tt></li>
+  </ul>
+
+<b>Inputs</b>
+
+  <ul>
+    <li><tt>AX</tt> holds the DoomsDay</li>
+    <li><tt>month</tt></li>
+  </ul>
+
+<b>Output</b>
+
+  <ul>
+    <li>On the screen</li>
+  </ul>
+
+<b>Calls</b>
+
+  <ul>
+    <li><tt>GetDayofWeek()</tt></li>
+    <li><tt>binasc()</tt></li>
+  </ul>
+
+<b>Notes</b>
+
+  <ul>
+    <li>You need to set <tt>day</tt> to 1 and get the day of the week for the 1st of the month</li>
+    <li>Formatting the output can be a pain - (^#@%) - so take your time implementing this procedure</li>
+    <li>Make sure you handle spacing appropriately, we will be picky</li>
+    <li>Remember to use <tt>monthHash</tt> and increment your counter for the day properly (mod 7)</li>
+    <li>Use all the string formatting variables <tt>monthString__</tt></li>
+    <li>You will not need any other variables, but you are most welcome to declare some if you find it convenient</li>
+  </ul>
+
+</ul>
+
+<h4>GetDayofWeek</h4>
+
+<ul>
+
+<b>Purpose</b>
+
+  <ul>
+    <li>To obtain the day of the week for the given <tt>day</tt></li>
+    <li>To display the day of the week on the screen as part of a formatted string</li>
+  </ul>
+
+<b>Inputs</b>
+
+  <ul>
+    <li><tt>AX</tt> holds the DoomsDay</li>
+    <li><tt>day</tt>, <tt>month</tt> and <tt>year</tt> variables</li>
+    <li><tt>doomsDayMHash</tt></li>
+  </ul>
+
+<b>Output</b>
+
+  <ul>
+    <li><tt>AX</tt> holds the day of the week for the given date</li>
+    <li>On the screen</li>
+  </ul>
+
+<b>Calls</b>
+
+  <ul>
+    <li>None</li>
+  </ul>
+
+<b>Notes</b>
+
+  <ul>
+    <li>Understand how <tt>DoomsDayMHash</tt> can help</li>
+    <li>Only if <tt>command</tt> = <tt>3</tt>, do you need to display to the screen</li>
+    <li>Use <tt>monthTable</tt> and <tt>dayTable</tt> to help in the display</li>
+    <li>Be very, very careful in your math</li>
+    <li>This function too should be quite straight forward</li>
+  </ul>
+
+</ul>
+
+<h2>Procedure</h2>
+
+<ul>
+  <li>Copy the skeleton code (mp2.asm), libraries (libmp2.lib, lib291.lib), and makefile from the network drive to your home directory with the following command:</li>
+  <br><tt>xcopy /s V:\ece291\mp2 W:\mp2</tt><br>
+  or download the same files from the web as <a href = "mp2.zip">mp2.zip</a>
+
+  <li>As with the other MP's, run <tt>nmake</tt> to build an executable program using the given MP2 library functions</li>
+
+  <li>To receive full credit for the assignment, you need to implement each of the subroutines described above with your own code.
+      As given, the MP2.ASM file will run the library versions of those subroutines</li>
+
+  <li>As with the other MP's, use CodeView to debug your program</li>
+</ul>
+
+<h2>Final Steps</h2>
+
+<ol>
+  <li>Print a copy of the <a href = "mp2grade.html">MP2 Grading Report</a>.
+      Double-check that your program is ready for demonstration.
+      Print a copy of MP2.ASM (use GreenPrint32 to print at 4 pages/side)</li>
+ 
+  <li>Demonstrate MP2.EXE to a TA or to the instructor. 
+      You will then be asked to recompile and demonstrate MP2 with different values for the date fields, as well as perform a comparison of the outputs to those of the test cases.
+      Your program must work for all different values. 
+      Once approved, you are ready to turn in your program</li>
+
+  <li>Be prepared to answer questions about any aspect of the operation of your program.
+      The TAs will not accept an MP if you cannot fully explain the operation of your code and details of your implementation. 
+      Delayed MPs will be subject to late penalties as described in the course syllabus (10pts/day)</li>
+
+  <li>The TA will then upload a copy of your code on to the web server</li>
+
+  <li>Take your printouts to the same TA who approved your demonstration.
+      Staple the grading sheet to the front of the MP1.ASM printout. 
+      Be sure that your name appears in your code and on the grading sheet</li>
+</ol>
+
+<hr>
+
+<h3>MP2.ASM (Program Framework)</h3>
+
+<font size = -1><pre>
+PAGE    70, 140
+TITLE   MP2 - [Gregorian Calendar Generator] - Your Name - Today's Date -
+
+COMMENT *
+        In this MP, you will write a program which
+        generates a Gregorian Calendar using the
+        DoomsDay Algorithm - by John Horton Conway
+
+        ECE291 - Machine Problem 2
+        Professor Josh Potts
+        Guest Author - Karan Mehra
+        University of Illinois at Urbana Champaign
+        Dept. of Electrical & Computer Engineering
+        Summer 2000
+
+        Ver 1.0
+        *
+
+;--------------------------------------------------------------
+;--                   Defining  Constants                    --
+;--------------------------------------------------------------
+
+        BELL    EQU     07
+        TAB     EQU     09
+        LF      EQU     10
+        CR      EQU     13
+        
+        MAX     EQU     80
+
+        public  BELL, TAB, LF, CR, MAX
+
+;--------------------------------------------------------------
+;--               Declaring External Procedures              --
+;--------------------------------------------------------------
+
+;       Functions in LIB291.LIB These functions are free to 
+;       be used by you. Complete descriptions of the LIB291
+;       functions can be found in your lab manuals. Use these
+;       functions for displaying output on the screen
+
+        extrn dspmsg:near, dspout:near, ascbin:near
+        extrn rrest:near, rsave:near, binasc:near, kbdin:near
+
+;       Functions in LIBMP2.LIB
+;       You will need to write these functions for this program
+
+        extrn libParseInput:near, libFilterFields:near
+        extrn libGetDoomsDay:near, libIsLeapYear:near
+        extrn libMakeCalendar:near, libDisplayMonth:near
+        extrn libGetDayofWeek:near
+
+;       This function terminates the program
+
+        extrn mp2xit:near
+
+;--------------------------------------------------------------
+;--                Defining the Stack Segment                --
+;--------------------------------------------------------------
+
+stkseg SEGMENT stack
+        db  64 dup ('-STACK-')
+stkseg ENDS
+
+;--------------------------------------------------------------
+;--                 Defining the Code Segment                --
+;--------------------------------------------------------------
+
+cseg SEGMENT PUBLIC 'CODE'
+        assume cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;--------------------------------------------------------------
+;--           Declaring variables for the Procedures         --
+;--------------------------------------------------------------
+
+command         db  ?                                           ; 1 = only year
+                                                                ; 2 = year and month
+                                                                ; 3 = year, month and day
+
+cmdLine         db  80  dup(?),'$'                              ; array that holds the parameters
+
+year            dw  ?
+month           db  ?
+day             db  ?
+
+doomsDayYHash   db  2, 0, 5, 3                                  ; 0 = Sunday
+                                                                ; 1 = Monday
+                                                                ; ...
+                                                                ; 6 = Saturday
+
+doomsDayMHash   db  31, 28, 0, 4, 9, 6, 11, 8, 5, 10, 7, 12     ; day of the month that
+                                                                ; corresponds to the doomsday
+
+monthHash       db  31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+
+usageString     db  CR, LF, 'ABOUT: Gregorian Calendar Generator [- DoomsDay Algorithm -]', CR, LF
+                db  CR, LF, 'USAGE: MP2 <year> <month> <day>', CR, LF
+                db  CR, LF, '       The <year> field should be in the range [1582-3000] - required'
+                db  CR, LF, '       The <month> field should be in the range [1-12] - optional'
+                db  CR, LF, '       The <day> field should be in the range [1-31] - optional', CR, LF
+                db  CR, LF, 'NOTES: If the <year> field is in the range [0-99], then 1900 is assumed'
+                db  CR, LF, '       Not all of the months have 31 days in them'
+                db  CR, LF, '       Only white spaces may be used as delimiters', CR, LF, BELL, '$'
+
+dayString       db  ' falls on a ', '$'
+
+dayTable        db  'Sunday   ', CR, LF, '$'                    ; this is called a lookup table - look it up!
+                db  'Monday   ', CR, LF, '$'                    ; note that each string is 12 characters long
+                db  'Tuesday  ', CR, LF, '$'
+                db  'Wednesday', CR, LF, '$'
+                db  'Thursday ', CR, LF, '$'
+                db  'Friday   ', CR, LF, '$'
+                db  'Saturday ', CR, LF, '$'
+
+monthStringTL   db  CR, LF, 0c9h, 33 dup (0cdh), 0b5h, '$'      ; the following strings are for formatting purposes only
+
+monthTable      db  ' Jan ', '$'                                ; this is another lookup table
+                db  ' Feb ', '$'                                ; here each string is 6 characters long
+                db  ' Mar ', '$'
+                db  ' Apr ', '$'
+                db  ' May ', '$'
+                db  ' Jun ', '$'
+                db  ' Jul ', '$'
+                db  ' Aug ', '$'
+                db  ' Sep ', '$'
+                db  ' Oct ', '$'
+                db  ' Nov ', '$'
+                db  ' Dec ', '$'
+
+monthStringTR   db  ' ', 0c6h, 32 dup (0cdh), 0bbh, '$'
+monthStringM    db  CR, LF, 0bah, '    Sun        Mon        Tue        Wed        Thu        Fri        Sat    ', 0bah
+                db  CR, LF, 0cch, 77 dup (0cdh), 0b9h, '$'
+monthStringL    db  CR, LF, 0bah, '$'
+monthStringS    db  '     ', '$'
+monthStringR    db  0bah, '$'
+monthStringB    db  CR, LF, 0c8h, 68 dup(0cdh), 0b5h, 0e4h, 9bh, 0eeh, ' 291', 0c6h, 0bch, '$'
+
+waitString      db  CR, LF, 'Press any key to continue...', '$' ; not that there is an "any" key :)
+
+buffer          db  7   dup(0)                                  ; this array is to be used along with the binasc()
+bufferS         db  6   dup(' '), '$'                           ; this one can be helpful where numbers don't exist
+
+public command, cmdLine, year, month, day, doomsDayYHash, doomsDayMHash, monthHash
+public usageString, dayString, dayTable, monthStringTL, monthTable, monthStringTR
+public monthStringM, monthStringL, monthStringS, monthStringR, monthStringB
+public waitString, buffer, bufferS, DisplayMonth, GetDayofWeek, IsLeapYear
+
+;--------------------------------------------------------------
+;--                       Main Procedure                     --
+;--------------------------------------------------------------
+
+MAIN PROC FAR
+        mov     ax, ds
+        mov     es, ax
+
+        mov     ax, cseg
+        mov     ds, ax                                          ; Initialize ds to cs
+
+        call    ParseInput
+
+        cmp     ax, -1                                          ; Here we get the
+        je      mainError                                       ; command line input
+                                                                ; from the PSP and
+        call    FilterFields                                    ; validate it
+        jc      mainError
+
+        call    GetDoomsDay                                     ; This function sets up ax
+
+        cmp     command, 1
+        jne     mainNotYear
+
+        call    MakeCalendar
+        jmp     mainExit
+
+mainNotYear:
+        cmp     command, 2
+        jne     mainNotMonth
+
+        call    DisplayMonth
+        jmp     mainExit
+
+mainNotMonth:
+        cmp     command, 3
+        jne     mainError
+
+        call    GetDayofWeek
+        jmp     mainExit
+
+mainError:
+        mov     dx, offset usageString
+        call    dspmsg
+
+mainExit:
+        call    mp2xit
+
+MAIN ENDP
+
+;--------------------------------------------------------------
+;--             Replace Library Calls with your Code!        --
+;--             [Save all reg values that you modify]        --
+;--             Do not forget to add Function Headers        --
+;--------------------------------------------------------------
+
+;--------------------------------------------------------------
+;--                        ParseInput()                      --
+;--------------------------------------------------------------
+
+ParseInput PROC NEAR
+
+        call    libParseInput
+        ret
+
+ParseInput ENDP
+
+;--------------------------------------------------------------
+;--                       FilterFields()                     --
+;--------------------------------------------------------------
+
+FilterFields PROC NEAR
+
+        call    libFilterFields
+        ret
+
+FilterFields ENDP
+
+;--------------------------------------------------------------
+;--                       GetDoomsDay()                      --
+;--------------------------------------------------------------
+
+GetDoomsDay PROC NEAR
+
+        call    libGetDoomsDay
+        ret
+
+GetDoomsDay ENDP
+
+;--------------------------------------------------------------
+;--                        IsLeapYear()                      --
+;--------------------------------------------------------------
+
+IsLeapYear PROC NEAR
+
+        call    libIsLeapYear
+        ret
+
+IsLeapYear ENDP
+
+;--------------------------------------------------------------
+;--                       MakeCalendar()                     --
+;--------------------------------------------------------------
+
+MakeCalendar PROC NEAR
+
+        call    libMakeCalendar
+        ret
+
+MakeCalendar ENDP
+
+;--------------------------------------------------------------
+;--                       DisplayMonth()                     --
+;--------------------------------------------------------------
+
+DisplayMonth PROC NEAR
+
+        call    libDisplayMonth
+        ret
+
+DisplayMonth ENDP
+
+;--------------------------------------------------------------
+;--                       GetDayofWeek()                     --
+;--------------------------------------------------------------
+
+GetDayofWeek PROC NEAR
+
+        call    libGetDayofWeek
+        ret
+
+GetDayofWeek ENDP
+
+CSEG ENDS
+     END    MAIN
+</pre></font>
+
+</body>
+
+</html>

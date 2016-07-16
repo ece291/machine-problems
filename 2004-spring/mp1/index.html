@@ -1,0 +1,790 @@
+<%
+title = "ECE 291 - MP1"
+subtitle = "MP1"
+%>
+
+<!--#include file="headvb.asp"-->
+
+
+
+
+<h1 align="center">
+    Machine Problem 1: Schedule Maker</h1>
+    <div align="center">
+      <center>
+      <table border="1">
+        <tr>
+          <td align="right">Assigned</td>
+          <td width="433">Thursday, 29 January 2004</td>
+        </tr>
+        <tr>
+          <td align="right">Due Date</td>
+          <td width="433">Wednesday, 11 February 2004</td>
+        </tr>
+        <tr>
+          <td align="right">Purpose</td>
+          <td Roman" width="433">Learn to write assembly code. Use looping and 
+          branching. Perform memory accesses and manipulation.</td>
+        </tr>
+        <tr>
+          <td align="right" width="64">Points</td>
+          <td width="433">70</td>
+        </tr>
+      </table>
+      </center>
+    </div>
+    <h2>Introduction</h2>
+    <p>As engineers, you all know how important it is to manage your time.
+    Sometimes, however, even good engineers get swamped with classes, work,
+    due dates, and other obligations.  In this machine problem, you'll help
+    tackle this problem by making a single day planner that schedules and
+    lists all the tasks for each day in its database.</p>
+    <h2>Problem Description</h2>
+    <p>Your program is required to: </p>
+    <ul>
+      <li>Read items from a calendar database in the specified format.</li>
+      <li>Match items to a specific day of the week (Monday - Friday).</li>
+      <li>Insert items into the day-long schedule, being sure not to double-book a time slot.</li>
+      <li>Calculate statistics for each day's activities.</li>
+      <li>Disaply the completed schedule and statistics.</li>
+    </ul>
+	<p>
+	In our implementation of the schedule maker, there are a few key things to know:
+	<ul><b> <li>Strings</b><br>
+	In assembly, strings are just a series of bytes of ASCII characters.
+	The lib291 string-display function, dspmsg, uses a '$' character to mark
+	the end of a string. For example, the string 'ECE291$' would be a
+	seven-byte string - one byte each for 'E', 'C', 'E', '2', '9', '1',
+	and the end-of-string character '$'.<p>
+	<a name="DatabaseFormat"><b><li>Database entry format</b></a><br>
+	Each entry in the <tt>ClassSchedule</tt>, <tt>WorkSchedule</tt>, and <tt>PlaySchedule</tt> databases
+	has the following format:
+<pre>Day code,Start time,Duration,Description   
+| 1 byte|    1 byte|  1 byte|up to 13 bytes|</pre>
+	<b>Day code</b> is a byte-sized integer with the following meaning:
+	<table border="1">
+	<tr><td>Day code</td><td>Day of week</td></tr>
+	<tr><td>0</td><td>Monday</td></tr>
+	<tr><td>1</td><td>Tuesday</td></tr>
+	<tr><td>2</td><td>Wednesday</td></tr>
+	<tr><td>3</td><td>Thursday</td></tr>
+	<tr><td>4</td><td>Friday</td></tr></table><br>
+	<b>Start time</b> is a byte-sized integer from 0 to 23, with 0 being 12am (midnight) and 23 being 11pm.<p>
+	<b>Duration</b> is a byte-sized integer that tells how many hours an event lasts.<p>
+	An example entry is highlighted below:
+<pre>ClassSchedule   db      0,9,1,"CS 321",'$',0,0,0,0,0,0
+                db      0,11,1,"MUSIC 285",'$',0,0,0
+                db      0,13,1,"KINES 104",'$',0,0,0
+                db      1,13,2,"LEIST 100",'$',0,0,0
+<span style="background-color: #FFFF00">                db      1,15,1,"ECE 311",'$',0,0,0,0,0</span>
+                db      1,17,1,"MUSIC 287",'$',0,0,0</pre>
+	This entry tells us that there is an event called "ECE 311" on Tuesday (Day code 1), at 3pm (hour 15),
+	for 1 hour.  The zeros at the end of this entry (and most other entries) don't do anything but 
+	simply pad the entry out to be 16 bytes long.<p>
+
+	<li><a name="DaySchedule"><b>The <tt>DaySchedule</tt> array</b></a><br>
+	To build our single-day schedule, we'll use an array called <tt>DaySchedule</tt>.
+	This array has 15 rows, each with 16 characters (16 bytes) in each row.  Each row corresponds to
+	a 1-hour timeslot in the day's schedule, with the first row (row 0) corresponding to 9am.
+	Remember, all rows in this array are 16 bytes long, so the start of row 1,
+	corresponding to 10am, is located 16 bytes beyond the start of row 0.  Row 2, corresponding to
+	11am, is located 16 bytes beyond the start of row 1.  And so on.
+	</ul>
+
+    <a name="Screenshot">
+    <h2>Screenshot</h2></a>
+    The following screen capture depicts ECE291 Schedule Maker with a schedule displayed.
+    <center>
+    <p><img border="0" src="mp1.gif"></p>
+    </center>
+<H2>Brief Intro to PUSH and POP</H2>
+<UL>
+  <LI>Pushing and poping are stack operations and will be covered later in 
+  lecture. 
+  <P></P>
+  <LI>PUSHA will record onto the stack a copy of the data in all of the CPU's 
+  registers. POPA removes the data from the stack and copies it back to the 
+  registers. 
+  <P></P>
+  <LI>Pushing and popping is, among other things, used to ensure that a 
+  called function doesn't scramble registers that the calling function 
+  uses. 
+  <P></P>
+  <LI>You can push and pop individual registers with instructions like <TT>push 
+  ax</TT> and <TT>pop cx</TT>. PUSHA and POPA save <I>all</I> of the registers 
+  to the stack.  Pushing and popping individual registers is the 
+  preferred method of saving/restoring register data when calling a function. 
+  PUSHA and POPA are used here for simplicity. 
+  <P></P>
+  <LI>Precocious students will examine <A 
+  href="http://courses.engr.illinois.edu/ece291/lecture/potts/lecture6.htm">Lecture 
+  6</A> or <A 
+  href="http://courses.engr.illinois.edu/ece291/lecture/lockwood/l7.html">Lockwood's 
+  Lecture</A>. </LI></UL>
+
+
+    <h2>MP1 Program Assignment</h2>
+    <p>In this machine problem, the main procedure is provided for you; however, 
+    you must write the code to replace the library procedures. You will replace 
+    these procedures from the LIBMP1 library by commenting out the statements 
+    calling the library procedure and adding your code. Each procedure that you 
+    write should match the output of the library code exactly. Each of the 
+    function calls and their functionality is described below in the <b>
+    Procedures</b> section. The best way to get a feel for the program is to run 
+    it to see how it is supposed to operate. You can also edit the test file to 
+    see how various changes will affect the program execution.</p>
+    <p>The program can be run by typing <tt>mp1</tt> at the command prompt. </p>
+    
+
+<H2>Development Log and Cover Memo</H2>
+
+<P>As you work on each machine problem, you will keep a simple MP 
+development log. The log will document your design decisions, development plan,
+and debugging experiences, including the time you spent on different parts
+of the machine problem. The log may be kept in any form. In general, whenever
+you work on a machine problem, briefly record the starting time, 
+significant design decisions, progress in coding and
+testing, bugs you discovered, and the ending time. Do <I>not</I> record
+simple syntax errors detected by NASM at assembly time; these 
+are not considered to be bugs.</P>
+
+<P>For each machine problem, beginning with MP1, you will submit a cover memo of
+200 to 400 words (up to one page, single spaced). The cover memo
+should answer the following questions, based on the information that you
+record in your MP development log. 
+<UL>
+<LI>How much time did you spend on the design, coding, and testing of
+each part or subroutine? </LI>
+<LI>What kinds of defects (bugs) did you find during the development 
+of the program? When did you discover these defects (during
+code review or during testing)? How did you find them?</LI>
+<LI>What you would do differently for the next MP?</LI>
+</UL>
+Type your cover memo into a plain text file in your MP1 directory
+</P>
+
+
+<h2>Hints</h2>
+    <ul>
+      <li>The LIBMP1 file contains executable library functions for each of the 
+      routines that you need to implement. This allows you to run the program 
+      and understand how it works before you implement it. You can test your 
+      program with any combinations of your own code and library functions. You 
+      will only receive credit, however, for the routines that you implement 
+      yourself.<p></li>
+      <li>When debugging your code in TD, you will find it helpful to use the 
+      memory window to show you the memory location of the file and strings. You 
+      can also use the watch window to keep track of variables in your code.<p></li>
+      <li>You may define new variables as needed.<p></li>
+      <li>Be very careful if you call another procedure not to destroy registers 
+      that the calling procedure uses.<p></li>
+      <li><span style="background-color: #FFFF00">START EARLY!</span> This is 
+      the first MP that requires you to write your own program. Composition is 
+      much more difficult than comprehension.<p></li>
+      <li>Be careful to preserve register values you need in all of the 
+      procedures you write. &quot;dspmsg,&quot; for example, destroys the contents of 
+      several registers that you might have been using for something else. You 
+      can use &quot;pusha&quot; to save all your register values before making a 
+      destructive call, and &quot;popa&quot; to get all your values back.<p></li>
+      <li>You need to create function headers for each of the functions you 
+      write.&nbsp; Function headers should include the name of the function, the 
+      list of inputs to the function, the list of the outputs, and any functions 
+      that the function calls.&nbsp; Function headers and comments let you keep 
+      all your points!<p></li>
+      <li>Monitor the <a href="http://my.ece.uiuc.edu/secure/webboard.asp">
+      webboard</a> for clarifications and help.</li>
+    </ul>
+    <h2>Procedures</h2>
+    <p>This assignment has seven procedures.  Three of them are given in the mp1.asm file.
+       You will receive credit by replacing the other four procedures listed below with your own code.</p>
+    <table BORDER="1">
+      <tr VALIGN="TOP">
+        <td valign="middle" width="108"><font size="+1"><b>CheckEntry</b></font></td>
+        <td>
+        <ul>
+	  <li>Checks to see if there are enough open timeslots in <tt>DaySchedule</tt> for
+              the event pointed to by <tt>si</tt>
+	  <li>Inputs:<br>
+		<ul><li>si = The address of the database entry we are to check</ul>
+	  <li>Returns:<br>
+		<ul><li><tt>[FreeSlot] = 0</tt> if the event is able to be scheduled
+		    <li><tt>[FreeSlot] = -1</tt> if there was a scheduling conflict</ul>
+	  <li>Notes:<ul>
+	      <li>The start time and duration (in hours) for the event can be found in
+              the event's database entry.  The database entry format was described
+	      <a href="#DatabaseFormat">above</a>.
+	      <li>This function must check all required timeslots for the duration of the event.
+	      For example, if the event starts at 1pm and has a duration of 3 hours, timeslots
+              1pm, 2pm, and 3pm must all be checked.
+	      <li>Remember that the first timeslot in <tt>DaySchedule</tt> corresponds to 9am.
+	      Also, recall that all timeslots in <tt>DaySchedule</tt>
+	      are 16 bytes.  You should be able to use the
+	      start time found in the database entry as an index into the <tt>DaySchedule</tt> array
+	      using subtraction and shifting operations.  Review the blurb on
+	      <a href="#DaySchedule"><tt>DaySchedule</tt></a> for more information.
+              <li>The timeslot is "open" if the first character of the corresponding location in the
+              <tt>DaySchedule</tt> array is a '$'.
+	  <li>If the first character of the timeslot is <b>not</b> a '$', that means that there is an event already
+	      in that timeslot.  This is a scheduling conflict.  Set <tt>[FreeSlot]</tt> to -1
+	      and return immediately.
+          <li>Continue checking timeslots for the number of hour-long timeslots specified by
+	      the "Duration" field in the database entry.  This should be done using a loop.
+	  <li>If all the required timeslots are available, set <tt>[FreeSlot]</tt> to 0 and return.</ul>
+          <li>Points: 25</li>
+        </ul>
+        </td>
+      </tr>
+      <tr>
+        <td valign="middle" width="108"><font size="+1"><b>CalculatePercentages</b></font></td>
+        <td>
+        <ul>
+          <li>This subroutine calculates the percentage of each day spent at Class, Work, Play,
+              or doing Nothing and updates the <tt>[PercentageArray]</tt> with the correct percentages.</li>
+          <li>Inputs: <tt>[HoursArray]</tt> contains how many hours are spent in Class, Work, and Play,
+	  and Nothing.
+          "Nothing" is what's left over after those three have been added (i.e. 24 - (Class+Work+Play) ).
+	  You do not need to worry about calculating this, however.  It will be set up in the
+	  <tt>HoursArray</tt> for you already.
+          <li>Output: All four bytes in <tt>[PercentageArray]</tt> contain the percentage of the day
+          spent at Class, Work, Play, and doing Nothing.
+          <li>Notes:
+		<ul><li>To find the percentage, the formula is 100*num/24.  Make sure you multiply
+		by 100 first.
+		<li>This function must be written using a loop to go through all 4 categories.
+		Either the "register relative" or "base plus index" addressing modes are useful
+		in this function. Review your lecture notes or look at the
+		<a href="http://courses.engr.illinois.edu/ece291/lecture/potts/index.html">online lecture notes</a>
+		for more information on memory addressing.
+		<li>Using <tt>mul</tt> and <tt>div</tt> is tricky, and won't be covered until a week
+                before this MP is due.
+		If you need help with these instructions, ask a TA or consult your lab manual.</ul>
+          <li>Points: 15</li>
+        </ul>
+        </td>
+      </tr>
+      <tr VALIGN="TOP">
+        <td valign="middle" width="108"><font size="+1"><b>DisplaySchedule</b></font></td>
+        <td>
+        <ul>
+          <li>This function displays the schedule built using the
+	  <tt>DaySchedule</tt> array.
+	  <li>Inputs:<ul><li>The <tt>DaySchedule</tt> array</ul>
+	  <li>Outputs:<ul><li>The schedule is drawn to the screen, formatted properly</ul>
+	  <li>Calls: <tt>binasc</tt>, <tt>dspmsg</tt>, <tt>PauseAndClearScreen</tt> (given in mp1.asm)
+	  <li>Notes:<ul><li>The first thing you'll need to do is clear the screen.  Do this by calling
+	  the given function PauseAndClearScreen with <tt>ax</tt> set to 0.
+	  <li>The output format is as follows:<br>
+	  <tt>|  Time  | TAB | Description</tt><br>
+			    Take a look at the <a href="#Screenshot">screenshot</a> for exact matching.
+			<li>You will need to use the lib291 function <tt>binasc</tt> to convert
+			numbers from binary to ASCII representation for displaying to the screen.
+			<tt>binasc</tt> is covered in your lab manual.  The temporary buffer
+			<tt>AsciiNumber</tt> is provided for you to use with <tt>binasc</tt>.</ul>
+			<li>The correct time of day should be displayed, i.e. am or pm.
+			<li>This function must also be written using a loop.
+          <li>Points: 15</li>
+        </ul>
+        </td>
+      </tr>
+      <tr VALIGN="TOP">
+        <td valign="middle" width="108"><font size="+1"><b>DisplayPercentages</b></font></td>
+        <td>
+        <ul>
+          <li>Displays the percentages calculated in CalculatePercentages
+          <li>Inputs:<ul><li>Arrays <tt>[HoursArray]</tt> and <tt>[PercentageArray]</tt>
+			 <li>Most <tt>_____Text</tt> variables</ul>
+	  <li>Outputs:<ul><li>Prints summary to screen.</ul>
+	  <li>Calls: <tt>dspout</tt>, <tt>dspmsg</tt>, <tt>binasc</tt>
+	  <li>Notes: <ul><li>The output must be formatted so all lines are properly aligned,
+	  like the given code does.
+			 <li>This function can be written as a loop by using the <tt>[HourTypes]</tt>
+          Array.  This is not required, however.</ul>
+          <li>Points: 15</li>
+        </ul>
+        </td>
+      </tr>
+    </table>
+
+<h2>Procedure</h2>
+<ul>
+<li>You will begin this MP with the following files:
+    <ul>
+    <li><tt>MP1.ASM</tt>: Program Framework
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled
+        and linked.
+    <li><tt>LIBMP1.LIB</tt>: Library functions for MP1
+    <li><tt>LIB291.LIB</tt>: General-purpose library functions
+    </ul>
+<li>You may copy these files from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s V:\ece291\mp1 W:\mp1</tt><br>
+    or download the files from this server as <a href="mp1.zip">mp1.zip</a> 
+<li>Add your code to <tt>MP1.ASM</tt>.
+<li>Assemble and link your program by typing<br>
+      <tt>make</tt><Br>
+    This command reads <i>Makefile</i> then invokes NASM and TLINK to build 
+    an executable program.  
+<li>Use Turbo Debugger (TD) to find and correct program errors. 
+<li>Verify your program operation.
+</ul>
+
+    <h2>Final Steps</h2>
+    <ol>
+      <li>Demonstrate your MP1.EXE to a TA or to the instructor.&nbsp; The TA or 
+      instructor will verify that your program produces the correct output. </li>
+      <li>Be prepared to answer questions about any aspect of the operation of 
+      your program. The TAs will not accept an MP if you cannot fully explain 
+      the operation of your code and details of your implementation. Delayed MPs 
+      will be subject to late penalties as described in the course syllabus 
+      (10pts/day).</li>
+      <li>The TA will handin your MP online.</li>
+    </ol>
+
+<hr>
+
+<h2>MP1.ASM (program framework)</h2>
+
+<pre>
+; MP1 - Scheduling Program
+; Your Name
+; Date
+;
+; Zbigniew Kalbarczyk, Spring 2004
+; Author: John King
+; University of Illinois, Urbana-Champaign
+; Dept. of Electrical and Computer Engineering
+;
+; Version 1.5
+
+	BITS	16
+
+;====== SECTION 1: Define constants =======================================
+
+        CR		EQU     0Dh
+        LF		EQU     0Ah
+        TAB             EQU     09h
+
+;====== SECTION 2: Declare external routines ==============================
+
+; Declare external library routines
+EXTERN kbdin, kbdine, dspout, dspmsg, mp1xit, binasc
+EXTERN libBuildSchedule, libCheckEntry, libCalculatePercentages
+EXTERN libDisplaySchedule, libDisplayPercentages, libCopyString
+
+; Declare local routines
+GLOBAL CheckEntry, CalculatePercentages, CopyString
+GLOBAL DisplaySchedule, DisplayPercentages, PauseAndClearScreen
+
+; Make program variables global
+GLOBAL TableAddresses, ClassSchedule, WorkSchedule, PlaySchedule
+GLOBAL HoursArray, PercentArray, SuccessfulSchedule, FreeSlot
+GLOBAL DaySchedule
+GLOBAL MainMenuText, InvalidText, UnableText, PauseText
+GLOBAL SchedulingText, EllipsesText, CRLFString, HourTypes
+GLOBAL PMText, AMText, JohnHadText, HoursOfText, WhichWasText
+GLOBAL PercentText, ClassString, WorkString, PlayString, NothingString
+GLOBAL AsciiNumber
+
+
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        resb      64*16
+stacktop:
+        resb      0                     ; work around NASM bug
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+
+TableAddresses  dw      ClassSchedule, WorkSchedule, PlaySchedule
+
+; Format for each database entry:
+; | Day code | Start time | # of hours | Description
+; | (1 byte) | (1 byte)   | (1 byte)   | (String terminated with '$')
+;      .
+;     /|\
+;      |
+;      |
+;     bx
+;
+; To access all members of this entry, I recommend setting bx (or si or di)
+; to "point to" the first byte of the entry as shown above.  This means that
+; bx will hold the address of the first byte of the entry.  This will make
+; it easy to access all the elements in the database entry.
+;
+; Each entry in all the databases is 16 bytes long, so to move from one
+; entry to the next in the list, simply add 16 to bx.
+
+
+ClassSchedule   db      0,9,1,"CS 321",'$',0,0,0,0,0,0
+                db      0,11,1,"MUSIC 285",'$',0,0,0
+                db      0,13,1,"KINES 104",'$',0,0,0
+                db      1,13,2,"LEIST 100",'$',0,0,0
+                db      1,15,1,"ECE 311",'$',0,0,0,0,0
+                db      1,17,1,"MUSIC 287",'$',0,0,0
+                db      2,9,1,"CS 321",'$',0,0,0,0,0,0
+                db      2,11,1,"MUSIC 285",'$',0,0,0
+                db      2,13,1,"KINES 104",'$',0,0,0
+                db      3,13,2,"LEIST 100",'$',0,0,0
+                db      3,15,1,"ECE 311",'$',0,0,0,0,0
+                db      3,17,1,"MUSIC 287",'$',0,0,0
+                db      4,9,1,"CS 321",'$',0,0,0,0,0,0
+                db      4,11,1,"MUSIC 285",'$',0,0,0
+                db      4,13,1,"KINES 104",'$',0,0,0
+                db      -1
+
+WorkSchedule    db      0,16,2,"Office Hours",'$'
+                db      1,20,4,"Grade MPs",'$',0,0,0
+                db      2,15,2,"Office Hours",'$'
+                db      3,18,2,"Office Hours",'$'
+                db      -1
+
+PlaySchedule    db      1,18,2,"Basketball",'$',0, 0
+                db      2,22,2,"Go out",'$',0,0,0,0,0,0
+                db      3,17,2,"Basketball",'$',0,0
+                db      4,19,2,"Nap",'$',0,0,0,0,0,0,0,0,0
+                db      4,21,3,"Go out",'$',0,0,0,0,0,0
+                db      -1
+
+; HoursArray is used to keep track of how many hours are spent in each
+; category - Class, Work, and Play (it is padded with an extra byte to make it
+; a nice round 4 bytes long)
+HoursArray      times 4 db      0
+
+; PercentageArray is used to store what percent of each day is spent in each
+; category - Class, Work, Play, and Nothing.
+PercentArray    times 4 db      0
+
+; DaySchedule is an array where events and tasks get placed for a
+; particular day.  It is used to make sure there are no scheduling conflicts,
+; and to lay out the schedule of events nicely so DisplaySchedule can easily
+; print the day's schedule to the screen.
+DaySchedule     times 16 db     '$'
+		times 16 db	'$'
+		times 16 db	'$'
+		times 16 db	'$'
+		times 16 db	'$'
+		times 16 db	'$'
+		times 16 db	'$'
+		times 16 db	'$'
+		times 16 db	'$'
+		times 16 db	'$'
+		times 16 db	'$'
+		times 16 db	'$'
+		times 16 db	'$'
+		times 16 db	'$'
+		times 16 db	'$'
+
+; Status variable used by BuildSchedule
+SuccessfulSchedule	db	0
+
+; Status variable used by CheckEntry
+FreeSlot		db	0
+
+; Main menu text
+MainMenuText    db      "Welcome to ECE291 Schedule Maker!",CR,LF
+                db      "Select a choice:",CR,LF,CR,LF
+                db      "1) Monday",CR,LF
+                db      "2) Tuesday",CR,LF
+                db      "3) Wednesday",CR,LF
+                db      "4) Thursday",CR,LF
+                db      "5) Friday",CR,LF
+                db      "6) Quit",CR,LF,'$'
+
+InvalidText     db      "Invalid choice.",CR,LF,'$'
+UnableText      db      "Scheduling conflict, unable to create schedule.",CR,LF,'$'
+PauseText       db      "Press any key to continue.",CR,LF,'$'
+SchedulingText  db      "Scheduling John's ",'$'
+EllipsesText    db      "...",CR,LF,'$'
+
+; Strings for use in your display functions, DisplaySchedule and
+; DisplayPercentages
+CRLFString      db      CR,LF,'$'
+PMText          db      "pm",'$'
+AMText          db      "am",'$'
+JohnHadText     db      "John had ",'$'
+HoursOfText     db      " hours of ",'$'
+WhichWasText    db      ", which was ",'$'
+PercentText     db      "% of his day.",CR,LF,'$'
+ClassString     db      "  Class",'$'
+WorkString      db      "   Work",'$'
+PlayString      db      "   Play",'$'
+NothingString   db      "Nothing",'$'
+
+; This table can be used to write DisplayPercentages using a loop
+HourTypes       dw      ClassString, WorkString, PlayString, NothingString
+
+; Temporary buffer for use with the binasc function
+AsciiNumber     times 7 db      0
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        mov     ax, cs                  ; Initialize Default Segment register
+        mov     ds, ax  
+        mov     ax, stkseg              ; Initialize Stack Segment register
+        mov     ss, ax
+        mov     sp, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+MAIN:
+
+.MainMenuTop
+        mov     bx, HoursArray		; Zero out the HoursArray to remove
+        mov     cx, 8			; values for the percentages
+.ClearLoop
+        mov     byte[bx], 0
+	inc	bx
+        loop    .ClearLoop
+
+
+
+	mov	bx, DaySchedule		; Clear out the DaySchedule to remove
+	mov	cx, 16*15		; old strings from a previous schedule
+.DollarLoop
+	mov	byte[bx], '$'
+	inc	bx
+	loop	.DollarLoop
+
+        mov     ax, 0			; Clear the screen
+        call    PauseAndClearScreen	; This function takes ax = 0 to just
+					; clear, ax != 0 to pause, then clear
+
+
+        mov     dx, MainMenuText	; Print out the main menu
+        call    dspmsg
+        call    kbdine			; Input a character from the keyboard
+					; into al
+
+	
+        cmp     al, '1'			; Make sure the input is a valid choice
+        jl      .Error
+        cmp     al, '6'
+        jle     .NoError
+
+.Error
+	mov	dx, CRLFString		; Input was invalid, display error msg
+	call	dspmsg			; and jump back to the main menu
+        mov     dx, InvalidText
+        call    dspmsg
+        mov     ax, 1
+        call    PauseAndClearScreen
+        jmp     .MainMenuTop
+
+.NoError
+        cmp     al, '6'			; If a '6' was entered, quit the program
+        je      .Quit
+
+        sub     al, '1'			; Otherwise, set up al to correspond to
+                      			; the correct day value:
+                     			; 0 = Mon, 1 = Tues, 2 = Wed,
+					; 3 = Thurs, 4 = Fri
+
+	xor	bx, bx
+	mov	cx, 3
+        
+.MakeScheduleLoop
+        
+	mov	dx, CRLFString		; Display some status messages
+	call	dspmsg
+        mov     dx, SchedulingText
+        call    dspmsg
+
+	shl	bx, 1			; bx corresponds to the types of activities
+        mov     dx, [HourTypes + bx]	; 0 = Class, 1 = Work, 2 = Play
+	shr	bx, 1			; We use shifting instructions here because
+					; the HourTypes array holds words, not bytes.
+
+					; So if bx = 1, we want the 1st entry, which
+					; is located at HourTypes + 2:
+					;       [HourTypes + 0] = 0th entry
+					;       [HourTypes + 2] = 1st entry
+					;       [HourTypes + 4] = 2nd entry
+
+        call    dspmsg
+        mov     dx, EllipsesText
+        call    dspmsg
+        
+	shl	bx, 1			; The addresses for the schedule data
+        mov     si, [TableAddresses + bx]
+	shr	bx, 1
+
+        call    BuildSchedule		; Attempt to schedule some events
+        cmp     byte[SuccessfulSchedule], -1	; Check the return value
+        je      .Conflict		; to make sure there weren't any
+        inc     bx			; scheduling conflicts
+        loop    .MakeScheduleLoop
+
+	mov	al, 24
+	sub	al, byte[HoursArray]
+	sub	al, byte[HoursArray + 1]
+	sub	al, byte[HoursArray + 2]
+	mov	byte[HoursArray + 3], al
+
+        call    CalculatePercentages	; Calculate some statistics
+        call    DisplaySchedule		; Display the schedule
+        call    DisplayPercentages	; and statistics
+        mov     ax, 1
+        call    PauseAndClearScreen
+        jmp     .MainMenuTop
+
+.Conflict
+        mov     dx, UnableText		; Display an error message and
+        call    dspmsg			; return to the main menu
+        mov     ax, 1
+        call    PauseAndClearScreen
+        jmp     .MainMenuTop
+
+.Quit
+        call    mp1xit
+
+;====== SECTION 8: Subroutines ==============================================
+
+;=== Given Subrouties: PauseAndClearScreen, BuildSchedule, and CopyString ===
+
+
+;;; PauseAndClearScreen
+;;; PURPOSE: Possibly waits for any key to be pressed, then clears the screen
+;;;  INPUTS: ax = 0 if we should just clear the screen
+;;;          ax != 0 if we should pause and wait for a key, then clear
+;;; OUTPUTS: Clears the screen
+;;; RETURNS: Nothing
+
+PauseAndClearScreen:
+	pusha
+
+        cmp     ax, 0			; Check to see if we should pause first
+        je      .DoNotPause
+        
+        mov     dx, PauseText		; Display the pause message
+        call    dspmsg
+        call    kbdin			; Wait for a key to be pressed
+
+.DoNotPause
+        mov     cx, 25
+        mov     dx, CRLFString
+
+.Loop
+        call    dspmsg			; Display blank lines for 25 iterations
+        loop    .Loop			; This will in effect "clear" the screen
+
+        popa
+        ret
+
+
+;;; NOTE: You DO NOT have to implement BuildSchedule or CopyString to earn
+;;;       full credit for MP1.  The header and interface is given here for
+;;;       reference, or if you would like to attempt to implement it yourself.
+
+
+;;;       
+;;; CopyString
+;;; PURPOSE: Copies a '$'-terminated string from a source to a destination
+;;;  INPUTS: bx = address of the start of the source string
+;;;          di = address of the destination location
+;;; RETURNS: Nothing
+;;;   NOTES: When we hit a '$' character in the source string, we are done
+;;;          copying characters.  Place a '$' at the end of the destination
+;;;          string, and return.
+
+CopyString:
+	pusha
+	call libCopyString
+	popa
+	ret
+
+
+
+;;; BuildSchedule
+;;; PURPOSE: Create's a single day's schedule
+;;; INPUTS:  al = the code for the day we are creating
+;;;          (0 = Mon, 1 = Tues, 2 = Wed, 3 = Thurs, 4 = Fri)
+;;;
+;;;          bx = the type of data we're using
+;;;          (0 = Class, 1 = Work, 2 = Play)
+;;;
+;;;          si = the address of the start of the database we are using, i.e.
+;;;               ClassSchedule, WorkSchedule, or PlaySchedule
+;;;
+;;; RETURNS: [SuccessfulSchedule] =  0 if schedule was made successfully
+;;;          [SuccessfulSchedule] = -1 if there was a scheduling conflict
+;;;   NOTES: This function updates the DaySchedule array by copying a 
+;;;          description from the database entry into a slot in the
+;;;          DaySchedule array.  It also increments the appropriate byte
+;;;          in the 
+
+BuildSchedule:
+        pusha
+	call	libBuildSchedule
+	popa
+	ret
+
+
+; === Your own subrouties ===================================================
+
+;;; You MUST implement the following four subroutines to earn full credit
+;;; on this MP.
+
+;;; CheckEntry
+;;;
+CheckEntry:
+	pusha			; Preserve register values
+
+	call	libCheckEntry	; Comment out this call to libCheckEntry
+				; and add your own code here
+
+	popa			; Restore register values
+	ret
+
+;;; CalculatePercentages
+;;;
+CalculatePercentages:
+	pusha
+
+	call	libCalculatePercentages
+
+	popa
+	ret
+
+;;; DisplaySchedule
+;;;
+DisplaySchedule:
+
+        pusha
+
+	call	libDisplaySchedule
+
+        popa
+        ret
+
+;;; DisplayPercentages
+;;;
+DisplayPercentages:
+	pusha
+
+	call	libDisplayPercentages
+
+	popa
+	ret
+
+
+</pre>
+<hr>
+<h2>Makefile</h2>
+<pre>
+MPNAME=mp1
+
+all: $(MPNAME).exe
+
+clean: 
+	rm -f $(MPNAME).exe $(MPNAME).obj $(MPNAME).lst $(MPNAME).map
+
+%.exe: %.obj
+	tlink /c /v $<, $*.exe, $*.map, libmp1.lib lib291.lib
+
+%.obj: %.asm
+	nasm -g -f obj -o $*.obj $< -l $*.lst
+</pre>

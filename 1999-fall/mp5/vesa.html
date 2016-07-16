@@ -1,0 +1,514 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>High Resolution Graphics with VESA</title>
+</head>
+
+<body>
+
+<h1 align="center"><font size="+2"><b><i>High Resolution Graphics with
+VESA</i></b></font></h1>
+<p>320x200x256 was nice.&nbsp; You needed a palette, so that was kind of
+icky.&nbsp;&nbsp; If you ever opened up one of the .bmp files from MP4 in a
+windows image editor, you saw how small they really were:</p>
+<p align="center"><img border="0" src="paint_skin.gif" width="320" height="200"></p>
+<p>You want cool
+graphics, these days you use a high resolution, full color mode.&nbsp; That's
+what this section is all about.&nbsp; There is a good introduction
+to this stuff at <a href="http://www.osha.igs.net/~dandelong/nw/index.htm">http://www.osha.igs.net/~dandelong/nw/index.htm</a>
+under PC Graphics / SVGA.&nbsp; He's got stuff on Bresenham's Algorithm
+too!&nbsp; Spend at least ten minutes looking over this.&nbsp; Of course you <i>won't</i>
+look over it unless I ask you a <a href="questions.html">Question 12:</a>&nbsp;
+How would you set the Set VESA Video Mode to 1024*768*24bit color so that we
+could access the screen using a linear array?&nbsp; Give me numbers!&nbsp;
+Here's a table he has with the &quot;24bit&quot; modes labeled as 32bit modes because
+that's how much memory each pixel actually takes.&nbsp; These modes are also in
+bold because these are the modes that Pete's Library handles.</p>
+<div align="center">
+  <center>
+  <table border="1" width="500">
+    <tbody>
+      <tr>
+        <th colSpan="6">VBE SVGA Video Modes
+      <tr>
+        <td>Mode#
+        <td>Resolution
+        <td>BPP
+        <td># of Colors
+        <td>Bit Reservation
+        <td>Memory required
+      <tr>
+        <td>&nbsp;
+        <td colSpan="4" height="8"><font size="2">Palette Indexing Modes</font>
+        <td>&nbsp;
+      <tr>
+        <td>0x100
+        <td>640x400
+        <td>8
+        <td>256
+        <td>(N/A)
+        <td>250k
+      <tr>
+        <td>0x101
+        <td>640x480
+        <td>8
+        <td>256
+        <td>(N/A)
+        <td>300k
+      <tr>
+        <td>0x102
+        <td>800x600
+        <td>4
+        <td>16
+        <td>(N/A)
+        <td>235k
+      <tr>
+        <td>0x103
+        <td>800x600
+        <td>8
+        <td>256
+        <td>(N/A)
+        <td>469k
+      <tr>
+        <td>0x104
+        <td>1024x768
+        <td>4
+        <td>16
+        <td>(N/A)
+        <td>384k
+      <tr>
+        <td>0x105
+        <td>1024x768
+        <td>8
+        <td>256
+        <td>(N/A)
+        <td>768k
+      <tr>
+        <td>0x106
+        <td>1280x1024
+        <td>4
+        <td>16
+        <td>(N/A)
+        <td>640k
+      <tr>
+        <td>0x107
+        <td>1280x1024
+        <td>8
+        <td>256
+        <td>(N/A)
+        <td>1,280k
+      <tr>
+        <td>&nbsp;
+        <td colSpan="4" height="8"><font size="2">Direct-Color Modes</font>
+        <td>&nbsp;
+      <tr>
+        <td>0x10D
+        <td>320x200
+        <td>15
+        <td>32k
+        <td>1:5:5:5
+        <td>125k
+      <tr>
+        <td>0x10E
+        <td>320x200
+        <td>16
+        <td>64k
+        <td>5:6:5
+        <td>125k
+      <tr>
+        <td><b>0x10F</b>
+        <td><b>320x200</b>
+        <td><b>32</b>
+        <td><b>16.8M</b>
+        <td><b>x:8:8:8</b>
+        <td><b>188k</b>
+      <tr>
+        <td>0x110
+        <td>640x480
+        <td>15
+        <td>32k
+        <td>1:5:5:5
+        <td>600k
+      <tr>
+        <td>0x111
+        <td>640x480
+        <td>16
+        <td>64k
+        <td>5:6:5
+        <td>600k
+      <tr>
+        <td><b>0x112</b>
+        <td><b>640x480</b>
+        <td><b>32</b>
+        <td><b>16.8M</b>
+        <td><b>x:8:8:8</b>
+        <td><b>900k</b>
+      <tr>
+        <td>0x113
+        <td>800x600
+        <td>15
+        <td>32k
+        <td>1:5:5:5
+        <td>992k
+      <tr>
+        <td>0x114
+        <td>800x600
+        <td>16
+        <td>64k
+        <td>5:6:5
+        <td>992k
+      <tr>
+        <td><b>0x115</b>
+        <td><b>800x600</b>
+        <td><b>32</b>
+        <td><b>16.8M</b>
+        <td><b>x:8:8:8</b>
+        <td><b>1,488k</b>
+      <tr>
+        <td>0x116
+        <td>1024x768
+        <td>15
+        <td>32k
+        <td>1:5:5:5
+        <td>1,536k
+      <tr>
+        <td>0x117
+        <td>1024x768
+        <td>16
+        <td>64k
+        <td>5:6:5
+        <td>1,536k
+      <tr>
+        <td><b>0x118</b>
+        <td><b>1024x768</b>
+        <td><b>32</b>
+        <td><b>16.8M</b>
+        <td><b>x:8:8:8</b>
+        <td><b>2,304k</b>
+      <tr>
+        <td>0x119
+        <td>1280x1024
+        <td>15
+        <td>32k
+        <td>1:5:5:5
+        <td>2,560k
+      <tr>
+        <td>0x11A
+        <td>1280x1024
+        <td>16
+        <td>64k
+        <td>5:6:5
+        <td>2,560k
+      <tr>
+        <td><b>0x11B</b>
+        <td><b>1280x1024</b>
+        <td><b>32</b>
+        <td><b>16.8M</b>
+        <td><b>x:8:8:8</b>
+        <td><b>3,840k</b>
+      </tr>
+    </tbody>
+  </table>
+  </center>
+</div>
+<p align="left">When you get into a mode, VESA does all sorts of complicated
+stuff to get you a linear chunk of memory that represents the screen. The goal
+is to get a big linear piece of memory that you can access just like you
+accessed segment 0A000h in mode 13h.&nbsp; The VESA bios creates a new <i> selector</i> for this memory and Pete's
+<b><samp>SetVESA</samp></b>
+code returns this selector in ES.&nbsp; To access the linear chunk of screen
+memory, just write to offsets in this <i> selector</i> just like you did for 320x200's
+0A000h <i>segment</i>.</p>
+<p align="center">Remember your little Endian!<br>
+These two are the same even though they might look opposite....</p>
+<div align="center">
+  <center>
+  <table border="1">
+    <tr>
+      <td width="50%" valign="top"><samp>mov eax, xx_RR_GG_BBh<br>
+        mov dword [gs:4*edx], eax</samp></td>
+      <td width="50%" valign="top"><samp>mov byte [gs:4*edx+0], BBh<br>
+        mov byte [gs:4*edx+1], GGh<br>
+        mov byte [gs:4*edx+2], RRh<br>
+        mov byte [gs:4*edx+3], xxh</samp></td>
+    </tr>
+  </table>
+  </center>
+</div>
+&nbsp;
+<p><font size="+2"><a name="Task 15:  Write Pixels in VESA Mode">Task 15:&nbsp; Write Pixels in
+VESA Mode</a></font></p>
+<ul>
+  <li>Make the <b><samp>KeyJumpTable</samp></b> function to write VESA
+    pixels.&nbsp; (You should be making separate inviolable procedures for all
+    these things and just invoking them in a 2-line <b><samp>KeyJumpTable</samp></b>
+    destination.)</li>
+  <li><b><samp>invoke CheckVESA</samp></b> for mode 640*480*32bit mode <samp><b>112h</b></samp>
+    and exit if there's an error.&nbsp; (<b>Note:</b> The library is kind of
+    screwy since it was originally a hack for Pete's final project.&nbsp; It turns
+    out that right now, <samp><b>112h</b></samp>
+    is the <i>only</i> mode you can get into without changing the <b><samp>WINDOW_W</samp></b>
+    and <b><samp>WINDOW_H</samp></b> constants defined in <b><samp>constant.inc</samp></b>.&nbsp; This will only affect you if
+    you decide to use a different mode in your final project.&nbsp; New libraries are on the
+    way.)</li>
+  <li><b><samp>invoke SetVESA</samp></b> for mode and exit if there's an error.</li>
+  <li>Do some graphics stuff directly into the VESA selector that <b><samp>SetVESA</samp></b>
+    put in ES
+    <ul>
+      <li>Draw shades of red on the screen by looping EDX from 0 to 640x480 and
+        directly setting <samp>[gs:4*edi+2]</samp> to DL.</li>
+      <li>Wait for a key so you can see the pretty screen.</li>
+      <li>Draw shades of blue/green on the screen by looping EDX from 0 to
+        640x480 and setting <samp>[gs:4*edi]</samp> to EDX.</li>
+      <li>Wait for a key.</li>
+    </ul>
+  </li>
+  <li><b><samp>invoke UnsetVESA</samp></b> to go back to text mode</li>
+</ul>
+<p><font size="+2"><a name="Task 16:  Load Full Color BMP">Task 16:&nbsp; Load Full Color
+BMP</a></font></p>
+<p align="center"><img border="0" src="inside.jpg" width="400" height="300">
+<p>
+For each routine you call, look at the library source code to see what it's
+doing.</p>
+<ul>
+  <li>Define three strings for the names of the three Everitt BMP files. </li>
+  <li><b><samp>CheckVESA</samp></b> (exit if error) </li>
+  <li><b><samp>SetVESA</samp></b> (exit if error) </li>
+  <li><b><samp>LoadBMP</samp></b> into the globally defined double buffer that <samp><b>m</b><b>yloader.asm</b>'s</samp>
+    <b><samp>_main</samp></b>
+    allocated with a DPMI call.
+    <ul>
+      <li>What's stored in the <i>variable</i>   <samp><b>VideoBlock </b></samp>is
+        a selector.&nbsp;</li>
+    </ul>
+ </li>
+  <li><b><samp>RefreshVideoBuffer</samp></b></li>
+  <li>Wait for a key</li>
+  <li>Load, Display, and Wait on the other two bitmaps.</li>
+  <li><b><samp>UnsetVESA</samp></b></li>
+</ul>
+<p>If you're loading the huge, full color BMPs off the network drive on lab
+machines, they will take a LONG time to come up.&nbsp; Give it at least a full
+minute before you reboot.&nbsp; :-)</p>
+<p><font size="+2"><a name="Managing Memory Buffers">Managing Memory Buffers</a></font></p>
+Look at how <samp><b>m</b><b>yloader.asm</b>'s</samp> <b><samp>_main </samp></b>allocated space for it's double buffer,
+pointed to by <b><samp>VideoBlock</samp></b>.<p>To do this, Pete calls <b><samp>AllocMem</samp></b> which returns a <i>handle</i><b>
+    </b>to a piece of memory.&nbsp; Like a file handle, it's value is really
+    pretty meaningless to anyone but the library because it's an index into his
+own table.&nbsp; Look at <b><samp>dpmi_mem.asm</samp></b> under the code for <b><samp>AllocMem</samp></b> .<p><a href="questions.html#Question13">Question 13:</a>&nbsp; What interrupt and
+    subfunction does <b><samp>AllocMem</samp></b> call to actually allocate the
+    memory?&nbsp; Look them up in the <a href="http://www.ece.uiuc.edu/ece291/class-resources/pmode/dpmi/ch5.g.html">DPMI
+    Functions by Functional Group</a> and write down names.&nbsp; What does the
+    description of this interrupt say about DPMI hosts that support virtual
+    memory?<p>Then he calls <b><samp>LockMem</samp></b> which does what's necessary to
+    set up a selector that you can use to access your memory.<p><a href="questions.html#Question14">Question 14:</a>&nbsp; What interrupts and
+    subfunctions does <b><samp>LockMem</samp></b> call?&nbsp; There are quite a
+    few here.<p>Would you ever <b><samp>AllocMem</samp></b> without <samp><b>LockMem</b></samp>?&nbsp;
+No.&nbsp; Why are these separate?&nbsp; It has to do with the
+    LDTs and the information Pete stores in his local tables (index into through
+handles.). <b><samp>AllocMem</samp></b>&nbsp;
+    only allocates a buffer -- it does not allow you to access it.&nbsp; To do
+    this, you need to set up a descriptor in the
+    Local Descriptor Table that describes this memory.&nbsp; Once this descriptor is in the
+LDT, its index
+    into the table is the <i>selector</i> of that descriptor.&nbsp; To access
+the memory, you put this selector in a
+    selector register and offset from this selector.<p>At the end, he calls <b><samp>UnlockMem</samp></b> and
+<samp><b>FreeMem</b></samp>
+    with the handles to reverse the process.
+<p><font size="+2"><a name="Task 17:  Blur Loop">Task 17:&nbsp; Blur Loop
+(Optional)</a></font></p>
+<p>Use this method to allocate a <b><samp>blur_buffer</samp></b> in <b><samp>_mymain</samp></b>.&nbsp;
+Make it <b><samp>WINDOW_W</samp></b>
+ by&nbsp; <b><samp>WINDOW_H</samp></b>  pixels big.&nbsp; (How many bytes big is
+this?)
+The allocation and locking should happen in the beginning, and the unlocking and
+freeing should happen
+when you hit ESC to quit.&nbsp; We need this buffer because the blur algorithm
+cannot really be done &quot;in place.&quot;&nbsp; We want to blur the double
+buffer into this <b><samp>blur_buffer</samp></b> pixel by pixel and then copy it
+back.&nbsp; Your KeyJumpTable's Image Blur handler:</p>
+<ul>
+  <li><b><samp>CheckVESA</samp></b> (exit if error) </li>
+  <li><b><samp>SetVESA</samp></b> (exit if error) </li>
+  <li><b><samp>LoadBMP</samp></b> into <b><samp>blur_buffer</samp></b> 
+ </li>
+  <li>Loop until a key is pressed:
+    <ul>
+      <li><b><samp>blur(blur_buffer &lt;= double_buffer);</samp></b>&nbsp;&nbsp; The
+        information goes &lt;= that way.&nbsp; (Because of the way you're
+        allocating the memory, <samp><b>blur </b></samp>and <samp><b>memcpy32</b></samp>'s&nbsp;
+        <samp><b>dest_offset </b></samp>and <samp><b>
+source_offset</b></samp> will both be zero.)</li>
+      <li><b><samp>memcpy32(double_buffer &lt;= blur_buffer);</samp></b> The
+        information goes &lt;= that way</li>
+      <li><b><samp>RefreshVideoBuffer</samp></b></li>
+    </ul>
+  </li>
+  <li><b><samp>UnsetVESA</samp></b></li>
+</ul>
+<p>Write a&nbsp; <samp><b>memcpy32(dest_seg, dest_offset, source_seg,
+source_offset, length_in_bytes)</b></samp></p>
+<ul>
+  <li>This is your first function with arguments, so be very careful about
+    corrupting the stack.&nbsp; Be sure the properly define your <b><samp>memcpy32</samp></b><b><samp>_arglen</samp></b>
+    correctly as the sum of the sizes of all the arguments.&nbsp; Look at <a href="lib_intro.html#Pete's Proc and Invoke Macros">Pete's
+    Proc and Invoke Macros</a> if you don't recall.</li>
+  <li>Remember to save your non-general-purpose registers.</li>
+  <li>Use can assume that you'll only be copying over sizes that are multiples
+    of four, so you can transfer double words at a time without worrying about
+    &quot;edge cases.&quot;</li>
+</ul>
+<p>&nbsp;Write&nbsp; <samp><b>blur(dest_seg, dest_offset, source_seg,
+source_offset, width, height)</b></samp></p>
+<ul>
+  <li>Read RBG values from source</li>
+  <li>Do the blur calculation by taking a weighted average of the colors around
+    it.</li>
+  <li>Write into the destination.</li>
+</ul>
+<p>The pixels on the edges and corners need to be treated differently because
+there are not pixels on every side to average with.&nbsp; Pictures are good:</p>
+<p align="center"><img border="0" src="borders.jpg" width="451" height="334"></p>
+<p align="left">If you go the &quot;brute force&quot; method, the blur code will
+be quite long.&nbsp; You will have a lot of different cases to go all the way
+around, and calculate a lot
+of different averages:&nbsp; You have to look at nine pixels per location.&nbsp;
+You have to look at
+three colors per pixel.&nbsp; There's nothing stopping you from using your knowledge
+of assembly (doesn't matter if that knowledge came from 16-bit) to make the code
+shorter.&nbsp; Tables are usually helpful.&nbsp; You can make a &quot;screen
+offset to add to center offset&quot; table like so:</p>
+<div align="center">
+  <center>
+  <table border="1">
+    <tr>
+      <td align="center"><samp>-width - 1</samp></td>
+      <td align="center"><samp>-width</samp></td>
+      <td align="center"><samp>-width + 1</samp></td>
+    </tr>
+    <tr>
+      <td align="center"><samp>-1</samp></td>
+      <td align="center"><samp><b>0</b></samp></td>
+      <td align="center"><samp>+1</samp></td>
+    </tr>
+    <tr>
+      <td align="center"><samp>+width - 1</samp></td>
+      <td align="center"><samp>+ width</samp></td>
+      <td align="center"><samp>+width +1</samp></td>
+    </tr>
+  </table>
+  </center>
+</div>
+<p align="left">When looking at a pixel in the center, you want to take a
+weighted average that &quot;adds up to one&quot; otherwise your image would get
+brighter or dimmer instead of just blurring.&nbsp; We'd also like to have
+fractions of two so we can divide by shifting.&nbsp; Good weights for the pixels
+around the center are:</p>
+<div align="center">
+  <center>
+  <table border="1">
+    <tr>
+      <td width="33%">1/16</td>
+      <td width="33%">1/8</td>
+      <td width="34%">1/16</td>
+    </tr>
+    <tr>
+      <td width="33%">1/8</td>
+      <td width="33%"><b>1/4</b></td>
+      <td width="34%">1/8</td>
+    </tr>
+    <tr>
+      <td width="33%">1/16</td>
+      <td width="33%">1/8</td>
+      <td width="34%">1/16</td>
+    </tr>
+  </table>
+  </center>
+</div>
+<p align="left">&quot;But Jason, how do I create and access these 2D
+arrays.&nbsp; We never learned about that!&nbsp; This MP sucks!&quot;&nbsp; Come
+<i>on</i> guys, I gave you practically everything else.&nbsp; Nobody says you
+can't stretch these out into two 9 element 1D arrays and loop through those.</p>
+<p align="left">One more thing I will give you, though:&nbsp; Because this is already the longest thing in the tutorial, you
+can &quot;cheat&quot; on the borders.&nbsp; Instead of coming up with a special
+weight matrix for them, you can say, &quot;If I look at some pixel around my
+center pixel, and the offset I get is out of range, just take the <i>center</i>
+pixel and multiply it by the out-of-range pixel's weight instead.&quot;&nbsp;
+This way you never try to access memory that's out of range, and your
+&quot;total weight&quot; still adds up to one.&nbsp; The corner pixels will be
+very stubborn about changing their values because of their high weights, but the
+world's not going to end because of it.&nbsp; Out of range for a screen offset
+is, of course:&nbsp; <b><samp>&quot;offset &lt; 0 or offset &gt;= width *
+height&quot;</samp></b></p>
+<p><font size="+2"><a name="Task 18:  Draw Blob / Blur Loop">Task 18:&nbsp; Draw Blob /
+Blur Loop (Optional)</a></font></p>
+<p>Write a KeyJumpTable handler that:</p>
+<ul>
+  <li>Draw a few square blobs with at random places with random colors into the double buffer.</li>
+  <li>Blur the double buffer into the blur_buffer</li>
+  <li>Copy the blur_buffer back to the double buffer and onto the screen.</li>
+  <li>Loop until a key is pressed.</li>
+</ul>
+<p>Instead of being completely random, try a few blobs of one color (try bright red) and a few
+    blobs of another
+    color (try black)</p>
+<p>Try putting one of the Everitt pictures on the screen and doing the draw /
+blur thing over it so that it &quot;fades away&quot; under the lines.</p>
+<p>The goal if, of course, to get something that looks cool.</p>
+<p><font size="+2"><a name="Task 19:  Draw Line / Blur Loop">Task 19:&nbsp; Draw Line /
+Blur Loop (Optional)</a></font></p>
+<p>Port your 16-bit Draw Line code from MP4.</p>
+<p>Make another Draw / Blur Loop that does the same thing with lines instead of
+blobs.</p>
+<p><font size="+2"><a name="Task 20:  Draw Dots / Smoke Loop">Task 20:&nbsp; Draw Dots /
+Smoke Loop (Optional)</a></font></p>
+<ul>
+  <li>Draw random dots to a small part of the center of the bottom line of the
+    screen</li>
+  <li>Do a &quot;blur up&quot; into the blur_buffer where each pixel is
+    calculated to be a weighted average of only the three pixels below it.</li>
+  <li>Copy the blur_buffer into the double buffer, draw the screen, loop, etc.</li>
+</ul>
+<p><font size="+2"><a name="Task 21:  Conway's Game of Life">Task 21:&nbsp; </a><a name="How to Do this MP">Conway's
+Game of Life (Optional)</a></font></p>
+
+<table cellPadding="3" cellSpacing="0" border="1">
+  <tbody>
+    <tr>
+      <th align="left">Death</th>
+      <td>If an occupied cell has 0, 1, 4, 5, 6, 7, or 8 occupied neighbors, the
+        cell dies<br>
+        (0, 1 neighbors: of loneliness; 4 thru 8: of overcrowding).</td>
+    </tr>
+    <tr>
+      <th align="left">Survival</th>
+      <td>If an occupied cell has two or three neighbors, the cell survives
+        to the next generation.</td>
+    </tr>
+    <tr>
+      <th align="left">Birth</th>
+      <td>If an unoccupied cell has three occupied neighbors, it becomes
+        occupied.</td>
+    </tr>
+  </tbody>
+</table>
+<p>Calculate this for each cell..&nbsp; You've already got most of the code to do
+the boundary stuff in your blur, so all that needs to be changed is the
+&quot;average&quot; calculation.</p>
+
+<p>If you want to be really good, you can &quot;age&quot; the cells by making
+their color brighter or darker the longer they stay alive.</p>
+
+<p><font size="+2"><a name="Task 22:  Take a Screen Shot">Task 22:&nbsp; Take a Screen
+Shot (Optional)</a></font></p>
+
+<p>Pete whipped together a screen shot routine.&nbsp; Go nuts with it.</p>
+
+</body>
+
+</html>

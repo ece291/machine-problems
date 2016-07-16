@@ -1,0 +1,111 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 1</title>
+</head>
+
+<body>
+<p>
+<table cellpadding=3 width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Lockwood, Spring 1997</td></tr></table>
+
+
+<center><h1>Machine Problem 1: Grading Report</h1></center>
+<p>
+<center><i>Please print this page and provide it to the TA when you
+demonstrate your machine problem.  The TA should verify each functionality
+item, initial the 'Demo' box, assign functionality and bonus points,
+then copy your files to the HANDIN floppy.  
+This page should be stapled to the front of your printed .ASM program.
+</i>
+<p>
+
+<form>
+<table border=0 cellpadding=7><tr><td>
+<table border=0 cellpadding=1>
+<tr><td align=right>Name: </td><td><input name="name" size=30>
+<tr><td align=right>Date Submitted: </td><td><input name="submitted" size=20>
+<tr><td align=right>Demo To: </td><td><input name="demoto" size=6>
+ Graded By: <input name="gradedby" size=6>
+</td></tr></table>
+</td><td>
+<table border=1>
+<tr><Td><input type=checkbox name="gradebook">Handin to floppy 
+<tr><Td><input type=checkbox name="gradebook">Score recorded
+<tr><Td><input type=checkbox name="gold_star">Gold Star<br>
+        <i>Programming Excellence</i></td></tr>
+</td></tr>
+</table>
+</td></tr></table>
+</form>
+</center>
+
+<table border=1 cellpadding=3 width=100%>
+<tr><Th>Category</th><th>Points</th><th>Min</th><th>Max</th></tr>
+<tr><td><b>Functionality</b>  <br>
+  <ul>
+  <li>Programs generates correct list of events: +50  
+      <i>(Features that must work)</i>
+    <ul>
+    <li>Properly prints list of events 
+        in <i>Date</i>, <i>Event</i>, and <i>Days</i> columns either in
+        order of list or in order of days.
+    <li>Selects only those events between 0 =< 
+        <i>Days</i> =< <i>Lookahead</i>
+    <li>Program assembles, runs, and terminates without errors or crashing 
+        <i>(Ignore LIB291 message)</i>
+    </ul>
+  <li>Deductions:
+    <ul>
+    <li>Miscomputes <i>Days</i> for yearly wrap-around: -10 <br>
+        <i>Check that <i>Days</i> > 300 
+        for "New years (1/1)" with <i>Lookahead</i> = 350 <Br>
+        Note: New Years is 7 days after Xmas (not 6)</i> 
+    <li>Fails for other values of numrec: -10 <br> 
+        <i>Remove a record in events.inc and reassemble</i>
+    <li>Fails for other data sets: -10 <br>
+        <i>Add new records in events.inc and reassemble</i>
+    <li>Assumes hardcoded variable addresses: -10 <br>
+        <i>Add 'junkvar db 0' at start of variable
+         section and reassemble</i>
+    </ul>
+  </ul>
+
+
+    </td><td><pre> </pre></td>  <td>0</td><td>50</td></tr>
+<tr><td><b>Modularity</b> <i>(* percentage of code written)</i> <br>
+  <ul>
+  <li>Follows all specifications of Assignment: +5
+  <li>Awkward use of conditional jumps or loops: -2
+  <li>Use of hardcoded addresses rather than pointers: -3 <br>
+  <li>Use of hardcoded structure offsets: -0  <br>
+      <i>No deduction on this assignment.  
+         Topic will be covered later in the semester</i>
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+<tr><td><b>Technique & Style</b>  <i>(* percentage of code written)</i><br>
+  <ul>
+  <li>Compact and Efficient code: +5
+  <li>Extraneous of registers and/or variables: -3 <Br>
+  <li>Excessive coding (More than 2 pages): -2
+  </ul>
+
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+<tr><td><b>Comments</b> <i>(* percentage of code written)</i> <br>
+  <ul>
+  <li>Clear and precise comments: +5
+  <li>Sports Announcer-type comments: -1
+  <li>Sparse and/or unclear comments: -3
+  </ul>
+
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+<tr><td><b>Penalty/Bonus</b> <br>
+    <i>Before Tue 2/11: +1 pt/day</i><br>
+    <i>Deadline after 2/11: -5 pts/day </i>
+    </td><td><pre> </pre></td><td>-50</td><td>5</td></tr>
+<tr><td><b>Total</b> </td><td><pre> </pre></td>  <td>0</td><td>50</td></tr>
+</table>
+<p>
+</center>
+</body>

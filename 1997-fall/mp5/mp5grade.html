@@ -1,0 +1,157 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 5</title>
+</head>
+
+<body>
+<font size=-1>
+<p>
+<table cellpadding=3 width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Lockwood, Fall 1997</td></tr></table>
+
+<center><h1>Machine Problem 5: Grading Report</h1></center>
+<p>
+<center><i>Please print this page and provide it to the TA when you
+demonstrate your machine problem. <br>
+The TA should verify each functionality
+item, initial the 'Demo' box, assign functionality and bonus points,<br>
+then copy your files to the HANDIN floppy.  
+This page should be stapled to the front of your printed .ASM program.
+</i>
+<p>
+
+<form>
+<table border=0 cellpadding=7><tr><td>
+<table border=0 cellpadding=1>
+<tr><td align=right>Name: </td><td><input name="name" size=30>
+<tr><td align=right>Date Submitted: </td><td><input name="submitted" size=20>
+<tr><td align=right>Demo To: </td><td><input name="demoto" size=6>
+ Graded By: <input name="gradedby" size=6>
+</td></tr></table>
+</td><td>
+<table border=1>
+<tr><Td><input type=checkbox name="gradebook">Handin to floppy 
+<tr><Td><input type=checkbox name="gradebook">Score recorded
+<tr><Td><input type=checkbox name="gold_star">Gold Star<br>
+        <i>Programming Excellence</i></td></tr>
+</td></tr>
+</table>
+</td></tr></table>
+</form>
+</center>
+
+<h3>General Notes</h3>
+  <ul>
+  <li>All procedures should preserve required registers <br>
+      (C Calls must preserve DS, SS, SI, DI)<Br>
+      (ASM Calls should preserve all registers)
+  <li>Results should exactly match those for the library-based code.
+  <li>Use of MASM dot commands (.if .else .while ..) is prohibited.
+  <li>Points are only awarded for routines that work completely.
+  </ul>
+
+<table border=1 cellpadding=3 width=100%>
+<tr><Th>Category</th><th>Points</th><th>Min</th><th>Max</th></tr>
+
+<tr><td><b>ScaleTank</b>  <ul>
+    <li>Draws a scaled tank into the ScreenBuffer,
+        centered at the location specified by XPos, YPos. 
+        Rotation determines the view of the tank. 
+        PlayerNum determines which tank is drawn. 
+    
+    <li>Works like library case for 'MAIN 1', 'MAIN 2', and 'MAIN 3'  
+    <li>Provides smooth, linear scaling betwen all possible scale values <br>
+        (1..99 = reduction, 100=same, >100=increase) <br>
+         <i>-10 for implementation that cannot support ALL fractions</i>
+    <li>Clips boundries of tank when partially (or completely) off screen
+         <i>-10 for implementations that wrap or crash</i>
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>20</td></tr>
+
+<tr><td><b>Program Execution Speed</b>  <ul>
+    <li>To receive credit for speed in this section, the student's 
+        scaletank must be functional.  Students may use LIBMP5 calls
+        for other functions.
+    <li>Compare the code of the first test case ('MAIN 1') to that of
+        the lab manual.  Students should not modify any lines of 
+        code for this testcase.
+    <li>Run 'MAIN 1' with student's executable.  Use the best number of
+        three runs<Br>
+        Running Time = ___________ 1/18 s <br>
+    <li>Run 'I:\ECE291\MP5\MAIN 1' with library-based executable:
+        Use the best number of three runs<br>
+        Running Time = ___________ 1/18 s <br>
+    <li>Divide student time by library time.  and multiply by 100%
+        Speed Fraction = ___________ %
+    <li>Assign points as follows:
+        <ul>
+        <li>Faster than library (less than 71 ticks): +12 (2 point bonus) 
+        <li>Just as fast as library (equal to 71 ticks): +10 (full credit)
+        <li>Within 75% of library speed (less than 100 ticks): +8
+        <li>Within 50% of library speed (less than 142 ticks): +6
+        <li>Within 25% of library speed (less than 284 ticks): +4 
+        <li>Within 10% of library speed (less than 710 ticks): +2 
+        <li>More than 10 times slower (more than 710 ticks): 0 
+        </ul>
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>10</td></tr>
+
+
+<tr><td><b>HallDemo</b>  <ul>
+    <ul>
+    <li>Moves three tanks in a long hallway. 
+        Green tank is moving towards the camera, 
+        Illini tank is moving away. A second Illini  
+        tank scrolls along the bottom. 
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>10</td></tr>
+
+<tr><td><b>MyDemo</b>  <ul>
+    <ul>
+    <li>Exercises scalable bitmaps, walls, and motions in a student-created
+        animation.
+    <li>Award students for imagination and creativity.
+    </ul>
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>10</td></tr>
+
+<tr><td><b>Functionality SubTotal</b>  
+  </td><td><pre> </pre></td>  <td>0</td><td>50</td></tr>
+
+<tr><td><b>Comments</b> <i>(* percentage of code written)</i> <br>
+  <ul>
+  <li>Clear and precise line & procedure comments <Br>
+      (describes all major routines): -0
+  <li>Sports Announcer comments (line-by-line): -1
+  <li>Unclear comments: -1
+  <li>Sparse comments: -3
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>Technique & Style</b>  <i>(* percentage of code written)</i><br>
+  <ul>
+  <li>Compact and Efficient code: -0 <Br>
+       <i>Really bad code in DrawPoly: -3 </i>
+  <li>Contains repeated code (lacks loops): -3 
+  <li>Makes poor use of registers and/or variables: -2 <Br>
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>I/O Specs & Modularity</b> <i>(* percentage of code written)</i> <br>
+  <ul>
+  <li>Violates specifications for given subroutines: -5 (all points)
+  <li>Preserves valus of registers: -5 (all points)
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>Penalty/Bonus</b> <br>
+    <i>Before 5pm, Tue 11/25/97: +1 pt/weekday</i><br>
+    <i>After 5pm, Tue 11/25/97: -5 pts/weekday (exclude WED/THR/FRI/SAT/SUN/MON)</i><br>
+    </td><td><pre> </pre></td><td>-50</td><td>5</td></tr>
+
+<tr><td><b>Total</b> </td><td><pre> </pre></td>  <td>0</td><td>55</td></tr>
+
+</table>
+</font>
+<p>
+</center>
+</body>
+

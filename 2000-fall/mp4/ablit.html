@@ -1,0 +1,276 @@
+<html>
+<head>
+<title>ECE291 MP4: Alpha-Blitting - A Compositing Copy</title>
+<style type="text/css"><!--
+body{ background:white; color:black; }
+P{ text-indent: -0.5em; margin-left: 3em; }
+H1{ margin-left: 0em; clear: right; }
+H2{ margin-left: 1em; clear: right; }
+H3{ margin-left: 2em; clear: right; }
+pre{ margin-left: 3em; clear: all }
+ol,ul{ margin-left: 5em; }
+sub{ font-style: italic; }
+.eqn { margin-left: 5em; font-family: times; }
+.decl{ font-weight: bold; }
+.int{ color: maroon; }
+.intv{ color: blue; }
+.func{ color: red; }
+.float{ color: maroon; }
+.floatv{ color: purple; }
+.keyw{ color: green; font-weight: bold; }
+.comment{ color: green; font-style: italic; }
+.innerul{ margin-left: 1em; }
+@media print {
+ //.noprint{ display:none; }
+}
+@media screen {
+ //.print{ display: none;}
+}
+--></style>
+</head>
+<body>
+<!--
+<h1 class="print">Muhahaha...</h1>
+<big class="print" style="font-size:xx-large; font-style: italic;">
+This document has been rendered <strong>unprintable</strong>.</big>
+-->
+<!-- Comments: check the margin: 30px thing - it seems to mess at least
+               one browser up.
+	     : consider more images leading up to the zoomed blue box'd
+	       @[A]B C
+	     : Mention blur vision (magic eye)
+	     + Clear out "emms?"
+	     : Don't circular link to anti.html
+	     : ALT tags
+-->
+
+<h1>Alpha-Blitting</h1>
+
+<p>First, let's start with an example to show why we want to use
+alpha-blitting.  The image on the left is a standard drop-shadow, drawn
+darkening a white background.  This is done directly, with a single-bit
+transparency: on or off.  The image on the right uses an "alpha" channel
+to represent the shadow as a dark spot with varying opacity.  They are
+both shown on a white and a grey background.  Which do you think
+looks better?</p>
+
+<div align="center">
+<img src="drop.png" width="407" height="300" align="middle" alt="Example
+Alpha compositions: Drop shadows on two backgrounds (capture)"><br>
+</div>
+
+<p>Okay, so the above is really just a screenshot of the <a
+href="drop.html">actual effect</a>, as IE doesn't yet display these
+correctly.  I guess this means you can outdo IE, by properly
+implementing the one on the right.</p>
+
+<p>Just take me to the <a href="#algo">algorithm</a>!  I don't care if I
+understand it!  Or scroll on for an explanation.</p>
+
+<h1>Theory Behind Alpha Blitting</h1>
+
+<p>There are two big pieces to the idea of alpha blitting.  If you're
+good at guessing your way to an A on multiple choice tests, you'll
+probably already have guessed them: alpha opacity and blitting.  I'm going to
+talk about blitting first, because it's simpler.  You've already done
+it.  You may wish to jump ahead to the idea of <a
+href="#alpha">alpha opacity</a> instead.</p>
+
+<h2>Blitting</h2>
+<p>Blitting is really easy.  You make a copy of an image in another
+place.  You do it really fast.  This is what allows you to draw a mouse
+cursor, or characters of a font, or just about anything you see in a
+graphical user environment.  The RefreshScreen of MP3 was a form of
+blitting.</p>
+
+<p>There's just one trick to a general blitting function: your source
+and destination formats may not be the same.  For instance, when you go
+to draw the characters of the font to the screen, if you try to draw
+16*16 pixels directly in order, the result will be awful.</p>
+
+<h2>Image Widths</h2>
+<p>Why?  Simple.  The widths of the source and destination images aren't
+actually 16.  Nope, neither of them.  In MP3, this kind of situation
+came up comparing the 4*4 piece with the 14*26 board, and again drawing
+the 14*26 board to the 80*25 screen.  In each of those cases, however,
+the source width corresponded to the width you wanted to draw.</p>
+
+<div style="float:right; margin:30px;">
+<img src="font-a.png" width="185" height="50"
+alt="@ABC of font.png, with a box around A">
+</div>
+<p>In this MP, this won't always be the case.  Back to the example of
+the font.  In the image you can see a small section of the actual png,
+enlarged to be extra-visible.  I've drawn a blue box around the section
+we want to copy.</p>
+
+<p>Once we find the address corresponding to the upper-left pixel of
+that box (which is easy--just see the section on <a
+href="text.html">drawing text</a>) and the address for the upper-left
+pixel of our destination, we're home free.  Almost.
+</p>
+
+<h2>Source Width</h2>
+<p>The address upper-left corner pixel (0,0) of the letter A is 1040.  If you
+have to ask how I got that, you haven't read the <a
+href="text.html">text</a> section yet.  (Have I given you the link
+enough yet?)  Through a little deduction, you can easily realize that
+(1,0) is at 1040+1.  But what about (0,1)?  That takes a bit more
+specialized knowledge--how wide is the image?  (Hint: it's 2048 pixels
+wide.)  So do you now know where (0,1) of the letter A is?  1040+2048?
+Good.</p>
+
+<p>Whoops!  Wrong.  But that's because I lied--the upper left corner is
+really at 4160 (1040*4), and the width is really 8192 (2048*4), because
+each pixel takes 4 bytes to describe.  Don't you forget it!</p>
+
+<h2>Destination Width</h2>
+<p>How about drawing it to the screen?  Simple.  Lets say we've found
+that address 41024 (0A040h) or (16,16) is where we want to start.
+The pixel (17,16) is pretty obviously at 0A044h (remember the 4 bytes
+per pixel), but where is (16,17)?</p>
+
+<p>Again, consider the width: 640*4.  So pixel (16,17) is at
+41024+640*4, or 0A040h+0A00h.  Think you can properly align all the
+pixels from the source to the destination yet?  I hope so!  Now it's
+time to talk about the meaning of that dreaded word "alpha."</p>
+
+<a name="alpha"><h2>Alpha Opacity</h2></a>
+<p>A lot of people think of transparency when they hear the word "alpha"
+in the context of graphics.  They're right, sorta.  Alpha really refers
+to the opacity of a pixel, which is derived generally from the coverage
+of a pixel.</p>
+
+<div style="float:right">
+<img src="triangle.png" width="360" height="270"
+alt="Figure A: Outlined Coverage of a Triangle on a pixel grid">
+</div>
+<p>What do I mean by the coverage of a pixel?  Simple.  Let's say you're
+drawing a triangle.  The bottom and the left of the triangle are
+horizontal and vertical, respectively.  The remaining side is at
+45&deg;.  Now fill this triangle with a blue color.  Now draw it to the
+screen.  The outline, zoomed in, is shown in Figure A.</p>
+
+<p>Uh-oh.  Where are the 45&deg; pixels?  For that matter, if all these
+lines go through the centers of pixels, chances are the left and bottom
+and upper-right include a lot of half-covered pixels; the lower-left
+corner has a one-quarter covered pixel and the two remaining corners
+have about a one-eighth covered pixel, as visualized in Figure A.
+Imagine how bad this gets when you slide the triangle up by a third of a
+pixel.</p>
+
+<h2>The Over Operation</h2>
+<p>So how do you turn this into actual pixels?  The simplest way, and
+the way we're using, is called the Over Operation.  To draw color A with
+coverage &alpha; over color B, the resulting color C is calculated as
+follows:</p>
+
+<div class="eqn">
+C<sub>r</sub> = (&alpha;<sub>r</sub> * A<sub>r</sub>) +
+((1-&alpha;<sub>r</sub>) * B<sub>r</sub>)<br>
+C<sub>g</sub> = (&alpha;<sub>g</sub> * A<sub>g</sub>) +
+((1-&alpha;<sub>g</sub>) * B<sub>g</sub>)<br>
+C<sub>b</sub> = (&alpha;<sub>b</sub> * A<sub>b</sub>) +
+((1-&alpha;<sub>b</sub>) * B<sub>b</sub>)
+</div>
+
+<p>Or more succinctly, as we only have one &alpha;, apply this to each
+channel independently:
+<div class="eqn">C = (&alpha; * A) + ((1-&alpha;) * B)</div>
+
+<div style="float:right">
+<img src="triangle-over.png" width="360" height="270"
+alt="Figure B: Triangle Drawn with Over Compositions, alpha by coverage">
+</div>
+<p>When we apply this to the case as listed above, with coverage
+values one, one-half, one-quarter, and one-eighth, we get something that
+looks like Figure B, only not quite so zoomed in, and no grid.</p>
+
+<p>Things like this are where alpha opacity values originally come from.
+Don't worry about how to calculate the alpha value, as we'll just be
+using images that come with an alpha value for you.  Concentrate on how
+to apply it using the over operator.</p>
+
+<p>Here's how the value for the lower-left corner pixel was calculated,
+assuming a white background (B) upon which you draw a pure blue pixel
+with 25% coverage:</p>
+
+<div class="eqn">
+C = (&alpha; * A) + ((1-&alpha;) * B)<br>
+C = (0.25 * {0.0, 0.0, 1.0}) + (0.75 * {1.0, 1.0, 1.0})<br>
+C = {0.0, 0.0, 0.25} + {0.75, 0.75, 0.75}<br>
+C = {0.75, 0.75, 1.0}
+</div>
+
+<p>As you can see, the math is simple.  But it does involve
+multiplications, and hence takes a long time.  In the next section, we
+cover an algorithm optimized to use MMX instructions, thus calculating
+all four channels of two pixels at once.</p>
+
+<a name="algo"><h1>The Actual Algorithm</h1></a>
+
+<p>The MMX enhanced algorithm does exactly what the sections above
+describe, only faster.  And the code is harder to read. Before that,
+though, let's make one important optimization.  Remember how multiplying
+takes a lot more time than adding?  Well, here's what we can do:</p>
+
+<div class="eqn">
+C = (&alpha; * A) + ((1-&alpha;) * B)<br>
+C = (&alpha; * A) + B - (&alpha; * B)<br>
+C = (&alpha; * (A-B)) + B
+</div>
+
+<p>Note how we changed two multiplies and two additions/subtractions
+into one multiply and two additions/subtractions.  This will speed
+things up noticeably.  Now that we've simplified our equation, let's
+harness the power of MMX (one of the few things it's good at!) for our
+algorithm.</p>
+
+<p>Here's the pseudocode, adapted from Intel's very own code to perform
+Alpha Compositing into a 15 bit image.  (Note: since the result in their
+code is 15 bits, and ours is 32, the code itself would likely be more
+confusing than helpful.)</p>
+
+<ul>
+ <li>Set up the range for your composite</li>
+ <ul class="innerul">
+  <li>Copies per row = width(pixels) / 2 <span class="comment">/* Watch out for going off the right side! */</span></li>
+  <li>Rows to copy = height(pixels) </li>
+  <li>Source Row Increment = (source width - destination width) * 4 <span class="comment">/* Unless truncated above */</span></li>
+  <li>Destination Row Increment = destination width <span
+  class="comment">/*640*/</span> * 4</li>
+ </ul>
+ <li>Perform a alpha compositing blit on two pixels</li>
+ <ul class="innerul">
+  <li>Load two source pixels into an MMX register (as eight bytes)</li>
+  <li>Load two destination pixels into an MMX register (as eight bytes)</li>
+  <li>Unpack (bytes to words) both into a register per pixel at 4 words each</li>
+  <li>Copy out the source alpha byte into four words in another MMX register</li>
+  <li>For each pixel:</li>
+  <ul class="innerul">
+   <li>Subtract the destination from the source, storing to the source register</li>
+   <li>Multiply by alpha</li>
+   <li>Shift left destination (in words) to align the following addition</li>
+   <li>Add [alpha * (source - destination)] to destination, storing in destination register</li>
+   <li>Add _RoundingFactor (in words) to destination to round the upcoming division</li>
+   <li>Shift right to divide by 256, thus fitting into a byte per channel</li>
+  </ul>
+  <li>Pack both halves back together with proper saturation - be sure to get the order right!</li>
+  <li>Store both destination registers into the destination image</li>
+ </ul>
+ <li>Loop properly over your image, according to your previously
+ calculated width and height increments</li>
+ <li>Reset the FPU/MMX registers to FPU with <tt>emms</tt> (empty mmx
+ state)</li>
+</ul>
+
+<p>So, what does this do?  It pleases a former TA immensely, as this
+algorithm uses PUNPCKLBW--his favorite MMX opcode.  No really!</p>
+
+<p>More importantly, though, it allows you to calculate the alpha
+compositing of two pixels in under the time it would have taken you to
+composite two <em>channels</em> without MMX.  You'll really get to see
+this when you calculate it per channel when drawing the <a
+href="anti.html">Anti Aliased Line</a>.
+
+</body>

@@ -1,0 +1,437 @@
+<%
+title = "ECE 291 - MP3"
+subtitle = "MP3"
+%>
+<!--#include file="headvb.asp"-->
+<h1 align="center">Machine Problem 3: Conway's Game of Life</h1>
+<p align="center">
+	<CENTER>
+		<TABLE id="Table2" width="513" border="1">
+			<TR>
+				<TD align="right" width="64">Assigned</TD>
+				<TD width="433">Thursday, 3/4/04</TD>
+			</TR>
+			<TR>
+				<TD align="right" width="64">Due Date</TD>
+				<TD width="433">Wednesday, 3/17/03</TD>
+			</TR>
+			<TR>
+				<TD align="right" width="64">Purpose</TD>
+				<TD width="433" Roman>Asyncrhonous I/O, Interrupts, Text Mode
+                  Video</TD>
+			</TR>
+			<TR>
+				<TD align="right" width="64">Points</TD>
+				<TD width="433">80</TD>
+			</TR>
+		</TABLE>
+	</CENTER>
+<H2>Introduction</H2>
+<p align="center"><img border="0" src="mp3.jpg" width="652" height="331"></p>
+<p>Conway's Game of Life is not that crappy board game you probably played as a 
+child.&nbsp; It's a cellular automaton invented by Cambridge mathematician John 
+Conway.&nbsp; The rules of the game are simple:</p>
+<dl>
+  <dt><b>For a cell that is 'occupied' or 'populated':</b></dt>
+  <dd>Each cell with one or no neighbors dies in the next generation because of
+    loneliness.
+  <dd>Each cell with four or more neighbors dies in the next generation because
+    of overpopulation.
+  <dd>Each cell with two or three neighbors survives in the next generation.
+  <dt><b>For a cell that is 'empty' or 'unpopulated':</b><dd>Each cell with three neighbors becomes populated in the next generation .</dd>
+</dl>
+<P>In this MP, you'll create a version of Conway's Game of Life.&nbsp; You will
+be obtaining user input through asynchronous I/O and writing interrupt handlers
+to process the input.&nbsp; You'll also display the game board with text mode
+video.</P>
+<H2>Problem Description</H2>
+<h3>Program Variables</h3>
+<p>The game board is modeled as a 25 row by 40 column array.&nbsp; There are two
+game boards: <i>CurrentBoard </i>contains the current generation and <i>
+NextBoard </i>contains the next generation.&nbsp; There are two possible values 
+for the locations in the game board: a 0 corresponds to an empty cell, and a 1 
+corresponds to an occupied cell.&nbsp; The border rows and columns of <i>
+CurrentBoard</i> should be ignored when
+calculating the next generation.</p>
+<p align="left">The <i>MPFlags</i> variable contains the status flags that are 
+used in the MP.&nbsp; It is a waste of space to create separate variables for 
+each of the status flags; the values of the flags will always be either 0 or 1, 
+so we can use a bit to represent the flag instead of a byte.&nbsp; The following 
+bullets describe how each bit in <i>MPFlags</i> is used.</p>
+<ul>
+  <li>Bit 0 - End Game</li>
+  <li>Bit 1 - Calculate Next Generation</li>
+  <li>Bit 2 - Auto-Calculate Next Generation</li>
+  <li>Bit 3 - Left Mouse Button Status (High if Held Down)</li>
+</ul>
+<p>You should familiarize yourself with the logical instructions so that you're 
+able to set, clear, or toggle one or more bits of a byte.</p>
+<h3>Text Mode Video</h3>
+<p>Section 11.1 of the lab manual discusses text mode video.&nbsp; In this MP, 
+you'll be writing directly to video memory.&nbsp; The lab manual has examples on 
+how to do this.&nbsp; Recall that the first page of
+video memory begins at segment B800h.&nbsp; &nbsp; Also, the colors you'll be working with in the MP are defined
+for you as constants, and the lookup table <i>ColorTable</i> has also been
+provided for your convenience.</p>
+<p>Double buffering is a technique used to eliminate screen flicker.&nbsp; If you've ever
+played any old-school Nintendo games, you most likely seen the screen flicker
+occasionally.&nbsp; With double buffering, you create a buffer equal to the size
+of the video memory screen buffer (we'll call this buffer <i>ScreenBuffer</i>), draw the next frame to the temporary buffer,
+then copy the entire temporary buffer to video memory when you're ready to
+update the screen.&nbsp; This process allows for smooth transitions between 
+frames, which solves the flicker problem.</p>
+<h3>Asynchronous I/O</h3>
+<p>In previous MPs, we used the library's kbdin/kbdine functions to get
+keyboard input. These functions continuously polled the keyboard until they received
+input. In many cases, we want our programs to accept input from other devices
+and/or execute other functions while waiting for user input. This is done by
+writing our own interrupt service routines (ISRs). For this MP, we will be
+obtaining user input from the keyboard and mouse asynchronously.  We'll also be using the system timer to automatically calculate the next generation of the current game board every second.</p>
+<H2>MP3 Program Assignment</H2>
+<P>You will replace these 
+	procedures from the LIBMP3 library by commenting out the statements calling the 
+	library procedure and adding your code. Each procedure that you write should 
+	match the output of the library code exactly. Each of the function calls and 
+	their functionality is described below in the <b>Subroutines</b> section. The 
+	best way to get a feel for the program is to run it to see how it is supposed 
+	to operate. You can also edit the test file to see how various changes will 
+	affect the program execution.&nbsp; The program can be run by typing <TT>mp3</TT> 
+at the command prompt.</P>
+
+<H2>Subroutines</H2>
+<P>This assignment has 14 subroutines. You will receive credit by replacing each 
+	of these 14 subroutines listed below with your own code.
+</P>
+<P><FONT size="+1"><B>MP3Main</B></FONT></P>
+				<UL>
+					<LI>
+					Installs/Removes ISRs and runs main game loop<LI>
+					Inputs: None<LI>
+					Outputs: None<LI>
+					Calls: InstallKeyboard, InstallMouse, InstallTimer, 
+                    UpdateBoard, NextGeneration, DrawScreen, RefreshScreen, 
+                    RemoveKeyboard, RemoveMouse, RemoveTimer<li>The MP3Main 
+                    pseudocode is given below:<br>
+                    <br>
+                    <font face="Courier" size="2">Install ISRs<br>
+                    While user does not want to exit the program<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If the game board needs 
+                    to be updated, do so and clear the appropriate flag<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If the next generation 
+                    needs to be updated, do so and clear the appropriate flag<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Draw the screen to the 
+                    buffer and refresh video memory with the contents of the 
+                    buffer<br>
+                    Remove ISRs</font><br>
+&nbsp;</li>
+                    <li>Points: 8</li>
+</UL>
+<P><font size="+1"><b>UpdateBoard</b></font></P>
+				<UL>
+					<LI>
+					Updates the game board by adding/removing cells<LI>
+					Inputs: <i>MouseXPos</i>, <i>MouseYPos</i>, <i>CurrentBoard</i><LI>
+					Outputs: <i>CurrentBoard</i> updated<LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>If the cell at (row,col) = ([<i>MouseYPos</i>],[<i>MouseXPos</i>]) 
+                    is empty, add a cell</li>
+                    <li>If the cell at (row,col) = ([<i>MouseYPos</i>],[<i>MouseXPos</i>]) 
+                    is occupied, remove the cell</li>
+                    <li>Do not add/remove cells of the border rows and columns</li>
+                    </UL>
+				    <li>Points: 10</li>
+</UL>
+<P><font size="+1"><b>NextGeneration</b></font></P>
+				<UL>
+					<LI>
+					Calculates the next generation of the current game board<LI>
+					Inputs: <i>CurrentBoard</i>, <i>NextBoard</i><LI>
+					Outputs: <i>CurrentBoard</i> updated with next generation<LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>Use the rules given in the introduction to calculate the 
+                    next generation</li>
+                    <li>Ignore the border rows and columns when calculating the 
+                    next generation</li>
+                    <li>Write your output to <i>NextBoard </i>- you cannot do an 
+                    in-place update on <i>CurrentBoard</i>!</li>
+                    <li>Copy <i>NextBoard </i>to <i>CurrentBoard</i> when you're 
+                    done calculating the next generation; use string 
+                    instructions for better performance</li>
+                    </UL>
+				    <li>Points: 12</li>
+</UL>
+<P><font size="+1"><b>DrawScreen</b></font></P>
+				<UL>
+					<LI>
+					Draws the next screen frame to the screen buffer<LI>
+					Inputs: <i>ScreenBuffer</i>, <i>Menu</i>, <i>CurrentBoard</i>,
+                    <i>ColorTable</i><LI>
+					Outputs: <i>ScreenBuffer</i> contains the next screen frame<LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>Copy the <i>Menu</i> to the <i>ScreenBuffer</i> first; 
+                    use string instructions for better performance</li>
+                    <li>Traverse through <i>CurrentBoard</i> to determine the 
+                    colors to draw at each location on the screen</li>
+                    <li>Use the <i>ColorTable</i> lookup table to easily draw 
+                    the colors to the buffer.&nbsp; Note that the values of the 
+                    border locations are 0s in the array, not 2s; you could 
+                    start out by setting your index to 2 and changing it if the 
+                    current location is within the border.</li>
+                    </UL>
+				    <li>Points: 15</li>
+</UL>
+<P><font size="+1"><b>RefreshScreen</b></font></P>
+				<UL>
+					<LI>
+					Updates the screen by coping the screen buffer to video 
+                    memory<LI>
+					Inputs: <i>ScreenBuffer</i><LI>
+					Outputs: Video memory updated with contents of <i>
+                    ScreenBuffer</i><LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>The segment of the first page of text mode video memory 
+                    is 0B800h</li>
+                    <li>Use string instructions for better performance</li>
+                    </UL>
+				    <li>Points: 5</li>
+</UL>
+<P><font size="+1"><b>InstallKeyboard</b></font></P>
+				<UL>
+					<LI>
+					Installs the keyboard ISR<LI>
+					Inputs: None<LI>
+					Outputs: <i>OldKeyboardV</i><LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>The keyboard uses interrupt number 9</li>
+                    <li>Read the current value of the ISR out of the interrupt 
+                    vector table and store to <i>OldKeyboardV</i> before updating the table with your keyboard 
+                    ISR</li>
+                    <li>You should read/write the interrupt vector table 
+                    directly; do not use int 21h subfunctions to do so!</li>
+                    </UL>
+				    <li>Points: 2</li>
+</UL>
+<P><font size="+1"><b>RemoveKeyboard</b></font></P>
+				<UL>
+					<LI>
+					Removes the keyboard ISR<LI>
+					Inputs: <i>OldKeyboardV</i><LI>
+					Outputs: None<LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>The keyboard uses interrupt number 9</li>
+                    <li>Write the original value back to the interrupt vector 
+                    table</li>
+                    <li>You should write the interrupt vector table directly; do 
+                    not use int 21h subfunctions to do so!</li>
+                    </UL>
+				    <li>Points: 2</li>
+</UL>
+<P><font size="+1"><b>KeyboardISR</b></font></P>
+				<UL>
+					<LI>
+					Obtains and processes keyboard input<LI>
+					Inputs: scancode waiting at port 60h<LI>
+					Outputs: <i>MPFlags</i><LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>Remember to set DS=CS</li>
+                    <li>The scancodes for the keys you'll be using in the MP are 
+                    defined as constants for you</li>
+                    <li>When the user presses the ESC key, set the &quot;End Game&quot; 
+                    flag</li>
+                    <li>When the user presses the N key, set the &quot;Calculate Next 
+                    Generation&quot; flag</li>
+                    <li>When the user presses the S key, toggle the 
+                    &quot;Auto-Calculate Next Generation&quot; flag</li>
+                    <li>Remember to ACK with the PIC on every keypress - the lab 
+                    manual contains the necessary code for this</li>
+                    </UL>
+				    <li>Points: 6</li>
+</UL>
+
+<P><font size="+1"><b>InstallMouse</b></font></P>
+				<UL>
+					<LI>
+					Installs the mouse callback<LI>
+					Inputs: None<LI>
+					Outputs: None<LI>
+					Calls: int 33h<LI>
+					Notes:<UL>
+					<li>Use interrupt 33h, subfunction 000Ch to install the mouse callback; refer to the Interrupt lists on the References section of the 291 web site for detailed information
+</li>
+                    <li>The mouse callback should be triggered on mouse movement and left mouse button presses and releases</li>
+                    </UL>
+				    <li>Points: 2</li>
+</UL>
+<P><font size="+1"><b>RemoveMouse</b></font></P>
+				<UL>
+					<LI>
+					Removes the mouse callback<LI>
+					Inputs: None </LI>
+					Outputs: None<LI>
+					Calls: int 33h<LI>
+					Notes:<UL>
+					<li>Use interrupt 33h, subfunction 000Ch with all register values of 0 to remove the callback        </UL>
+				    <li>Points: 2</li>
+</UL>
+<P><font size="+1"><b>MouseCallback</b></font></P>
+				<UL>
+					<LI>
+					Obtains and processes mouse input<LI>
+					Inputs: register values filled with mouse position and button status values<LI>
+					Outputs: <i>MouseXPos</i>, <i>MouseYPos</i>, <i>MPFlags</i><LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>Remember to set DS=CS</li>
+                    <li>The mouse coordinates are given in pixels, not screen coordinates; thus, you must divide the input X and Y values by 8 before storing them to the respective variables</li>
+                    <li>The BX register contains the status information for the mouse buttons: if bit 0 is set, the left mouse button is being held down</li>
+                    </UL>
+				    <li>Points: 6</li>
+</UL>
+<P>
+
+<P><font size="+1"><b>InstallTimer</b></font></P>
+				<UL>
+					<LI>
+					Installs the timer ISR<LI>
+					Inputs: None<LI>
+					Outputs: <i>OldTimerV</i><LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>The timer uses interrupt number 1Ch</li>
+                    <li>Read the current value of the ISR out of the interrupt 
+                    vector table and store to <i>OldTimerV</i> before updating the table with your timer
+                    ISR</li>
+                    <li>You should read/write the interrupt vector table 
+                    directly; do not use int 21h subfunctions to do so!</li>
+                    </UL>
+				    <li>Points: 2</li>
+</UL>
+<P><font size="+1"><b>RemoveTimer</b></font></P>
+				<UL>
+					<LI>
+					Removes the timer ISR<LI>
+					Inputs: <i>OldTimerV</i><LI>
+					Outputs: None<LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>The timer uses interrupt number 1Ch</li>
+                    <li>Write the original value back to the interrupt vector 
+                    table</li>
+                    <li>You should write the interrupt vector table directly; do 
+                    not use int 21h subfunctions to do so!</li>
+                    </UL>
+				    <li>Points: 2</li>
+</UL>
+<P><font size="+1"><b>TimerISR</b></font></P>
+				<UL>
+					<LI>
+					Processes system timer ticks<LI>
+					Inputs: <i>TimerTicks</i>, <i>MPFlags</i><LI>
+					Outputs: <i>TimerTicks</i>, <i>MPFlags</i><LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>Remember to set DS=CS</li>
+                    <li>If the "Auto-Calculate Next Generation" flag is set, set the "Calculate Next Generation" flag every second (18 timer ticks); otherwise, reset <i>TimerTicks</i> to zero </li>
+                    </UL>
+				    <li>Points: 6</li>
+</UL>
+
+<H2>Hints&nbsp;</H2>
+<UL>
+	<LI>
+		The LIBMP3 file contains executable library functions for each of the routines 
+		that you need to implement. This allows you to run the program and understand 
+		how it works before you implement it. You can test your program with any 
+		combinations of your own code and library functions. You will only receive 
+		credit, however, for the routines that you implement yourself.
+		<BR>
+	<LI>
+		When debugging your code in TD, you will find it helpful to use the memory 
+		window to show you the memory location of the file and strings. You can also 
+		use the watch window to keep track of variables in your code.<BR>
+	<LI>
+		Do not assume that the file starts at memory location 0.
+		<BR>
+	<LI>
+		You may define new variables as needed.
+		<BR>
+	<LI>
+		Be very careful if you call another procedure not to destroy registers that the 
+		calling procedure uses.
+		<BR>
+	<LI>
+        <b>START EARLY!</b>
+		There are a total of&nbsp;14 functions you have to write, including the <STRONG>main
+		</STRONG>function. You will be writing the main function in this MP, and points 
+		will be awarded accordingly to how you separate your functions.<BR>
+	<LI>
+		<P>You need to preserve <STRONG> </STRONG>register values in all of the procedures 
+			you write.&nbsp; To do this, push all the registers you use in the procedure at 
+			the beginning of the procedure.&nbsp; Then, pop them all in reverse order at 
+			the end of the procedure (right before you return).
+		</P>
+	<LI>
+		<P>You need to create function headers for each of the functions you write.&nbsp; 
+			Function headers should include the name of the function, the list of inputs to 
+			the function, the list of the outputs, and any functions that the function 
+			calls.&nbsp; You will lose points if you do not do this.
+		</P>
+	<LI>
+		Monitor the <A href="http://my.ece.uiuc.edu/secure/webboard.asp">webboard</A> for 
+		clarifications and help.</LI></UL>
+
+
+<H2>Procedure</H2>
+<UL>
+	<LI>
+		You will begin this MP with the following files:
+		<UL>
+			<LI>
+				<TT>MP3.ASM</TT>: Program Framework
+			<LI>
+				<TT>Makefile</TT>: Specifies how and when programs are assembled and 
+			linked.
+			<LI>
+				<TT>LIBMP3.LIB</TT>: Library functions for MP3
+			<LI>
+				<TT>LIB291.LIB</TT>: General-purpose library functions
+			</LI>
+		</UL>
+	<LI>
+		You may copy these files from the network drive to your home directory with the 
+		following command:
+		<BR>
+		<TT>xcopy /s V:\ece291\mp3 W:\mp3</TT><BR>
+		or download the files from this server as <a href="mp3.zip">mp3.zip</a>
+	<LI>
+		Add your code to <TT>MP3.ASM</TT>.
+	<LI>
+		Assemble and link your program by typing<TT> make.</TT>&nbsp; This command 
+	reads the Makefile then invokes NASM and TLINK to build an executable program.
+	<LI>
+		Use TD debugger to find and correct program errors.</LI>
+</UL>
+<H2>Final Steps</H2>
+<OL>
+	<LI>
+	Demonstrate your MP3.EXE to a TA or to the instructor.&nbsp; The TA or 
+	instructor will verify that your program produces the correct output.
+	<LI>
+	Be prepared to answer questions about any aspect of the operation of your 
+	program. The TAs will not accept an MP if you cannot fully explain the 
+	operation of your code and details of your implementation. Delayed MPs will be 
+	subject to late penalties as described in the course syllabus (10%/day).
+	<LI>
+		The TA will handin your MP online.
+	</LI>
+</OL>
+
+<HR>
+<h1><a href="mp3.asm">mp3.asm</a> (program framework)</h1>

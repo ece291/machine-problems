@@ -1,0 +1,485 @@
+<%
+title = "ECE 291 - MP1"
+subtitle = "MP1"
+%>
+
+<!--#include file="headvb.asp"-->
+
+
+
+
+<h1 align="center">Machine Problem 1: Gradebook Database</h1>
+<div align="center"><center>
+
+<table border=1 width=513>
+  <tr>
+    <td align=right width="64">Assigned</td>
+    <td width="433">Thursday, 6/19/03</td>
+  </tr>
+  <tr>
+    <td align="right" width="64">Due Date</td>
+    <td width="433">Thursday, 6/26/01</td>
+  </tr>
+  <tr>
+    <td align="right" width="64">Purpose</td>
+    <td Roman" width="433">Learn to write assembly code. Use looping
+               and branching.  Perform memory accesses and manipulation.</td>
+  </tr>
+  <tr>
+    <td align="right" width="64">Points</font></td>
+    <td width="433">75</td>
+  </tr>
+</table>
+</center></div>
+
+<h2>Introduction</h2>
+
+
+<p>Database systems play an integral part in the world of business.&nbsp; A simple example is the
+gradebook database for ECE 291.  It stores the records of the students and their performance on homeworks, exams, and projects.
+In this MP, you will be reading from a simple ECE 291 gradebook database to
+calculate each student's total score, storing this score in the database, and
+then displaying a histogram of the entire class to the screen, as shown below.
+</p>
+
+
+<p><center><img border="0" src="mp1.gif" width="668" height="331"></center>
+</p>
+
+<h2>Problem Description</h2>
+
+<p>Your program is required to:
+<ul>
+<li>Calculate the total score for each record 
+<li>Sort the total into its corresponding range 
+<li>Build a string of stars to represent the number of students whose scores
+  fall into one of the defined ranges
+<li>Display a histogram of the database distribution
+
+</ul>
+
+
+
+<p>This table depicts how the database records are stored in the data file.</p>
+
+<TABLE BORDER="1" CELLSPACING=1 CELLPADDING=7 WIDTH=535>
+<TR><TD WIDTH="57" VALIGN="TOP">
+<P>Field</TD>
+<TD WIDTH="40" VALIGN="TOP">
+<P>HWs</TD>
+<TD WIDTH="51" VALIGN="TOP">
+<P>MPs</TD>
+<TD WIDTH="69" VALIGN="TOP">
+<P>Quizzes</TD>
+<TD WIDTH="56" VALIGN="TOP">
+<P>Project</TD>
+<TD WIDTH="59" VALIGN="TOP">
+Total</TD>
+<TR><TD WIDTH="57" VALIGN="TOP">
+<P>Data</TD>
+<TD WIDTH="40" VALIGN="TOP">
+<P>BBBBBB</TD>
+<TD WIDTH="51" VALIGN="TOP">
+<P>BBBBB</TD>
+<TD WIDTH="69" VALIGN="TOP">
+<P>BBBBB</TD>
+<TD WIDTH="56" VALIGN="TOP">
+<P>B</TD>
+<TD WIDTH="59" VALIGN="TOP">
+W</TD>
+</TR>
+<TR><TD WIDTH="57" VALIGN="TOP">
+<P>Offset</TD>
+<TD WIDTH="40" VALIGN="TOP">
+<P>0-5</TD>
+<TD WIDTH="51" VALIGN="TOP">
+6-10</TD>
+<TD WIDTH="69" VALIGN="TOP">
+11-15</TD>
+<TD WIDTH="56" VALIGN="TOP">
+16</TD>
+<TD WIDTH="59" VALIGN="TOP">
+17-19</TD>
+</TR>
+</TABLE>
+
+<p> Each B in the table above represents a byte.&nbsp; So, there are six
+homeworks, five MPs, five quizzes, and one project that will compose a student's
+total score.&nbsp; There is a very good chance this value will be above 255, so
+we need to store the total score as a word (W).&nbsp; Below is an example of one
+of the entries in the database:</P>
+
+<p>25,75,75,75,75,75,25,74,50,48,70,80,80,80,80,80,134,0,0<P>Notice that there are <b>two</b>
+zeroes at the end since we need to reserve 2 bytes (1 word) for the total score.</P>
+<P>You compute the total score based on the equations in the course syllabus:</P>
+
+Total&nbsp; = (HW0+HW1+HW2+HW3+HW4+HW5)/4 +
+MP0+MP1+MP2+MP3+Quiz1+Quiz2+Quiz3+Quiz4+Quiz5+Project
+<p>After you calculate the total, you will need to store the result in the
+student's record in the database.</p>
+
+<H2>MP1 Program Assignment</H2>
+
+<p>The gradebook data is available in the <b>Grades </b>variable.&nbsp; Each
+student's total score will be used to update the corresponding cell in the <b>RangeCount
+</b>array into which it falls.&nbsp; Each string of
+stars will be stored in the <b>StarString </b>variable.&nbsp; When displaying the histogram to the screen, you
+need to display each of the strings in the <b>RangeStrings</b> variable with its
+corresponding <b>StarString</b>.</p>
+
+<p>In this machine problem, the main procedure is provided for you; however,
+you must write the code to replace the library proecedures.
+You will replace these procedures from the LIBMP1
+library by commenting out the statements calling the library procedure and adding your code.  Each
+procedure that you write
+should match the output of the library code exactly.  Each of the function calls and their functionality is described below in the
+<b>Procedures</b> section.
+The best way to get a feel for the program is to run it
+to see how it is supposed to operate.  You can also edit the test
+file to see how various changes will affect the program execution.</p>
+
+
+
+<p>The program can be run by typing <tt>mp1</tt> at the
+command prompt.
+</p>
+
+<h2>Hints</h2>
+<ul>
+<li>The LIBMP1 file contains executable library functions for each of the
+routines that you need to implement.  
+This allows you to run the program and understand how it works before you implement it.  You can test your program with any combinations of your own
+code and library functions.  You will only receive credit, however, for
+the routines that you implement yourself. <p>
+
+<li>When debugging your code in TD, you will find it helpful to use
+the memory window to show you the memory location of the file and strings.
+You can also use the watch window to keep track of variables in your code.<p>
+
+<li>Do not assume that the file starts at memory location 0.<p>
+
+<li>You may define new variables as needed.<p>
+
+<li>Be very careful if you call another procedure not to destroy registers
+that the calling procedure uses.<p>
+
+<li><span style="background-color: #FFFF00">START EARLY!</span>  This is the first MP that requires you to write your
+own program.  Composition is much more difficult than comprehension.
+</ul>
+
+<ul>
+<li>You need to preserve register values in all of the procedures you
+  write.&nbsp; To do this, push all the registers you use in the procedure at
+  the beginning of the procedure.&nbsp; Then, pop them all in reverse order at
+  the end of the procedure (right before you ret).</li>
+</ul>
+
+<ul>
+<li>You need to create function headers for each of the functions you
+  write.&nbsp; Function headers should include the name of the function, the
+  list of inputs to the function, the list of the outputs, and any functions
+  that the function calls.&nbsp; You will lose points if you do not do this!</li>
+<li>The is a commented out call to libDisplayScores in the main function.&nbsp; 
+If it is uncommented it will call a library function that will print out the 
+scores of each of the students, this may be helpful when debugging.&nbsp;
+<a href="mp1help.gif">This is a link</a> to screen shot of the output with the 
+line uncommented.</li>
+
+<li>Monitor the <a href="http://my.ece.uiuc.edu/secure/webboard.asp">webboard</a> for clarifications and help.
+</ul>
+
+<h2>Procedures</h2>
+
+<p>This assignment has four procedures. You will receive credit by replacing
+each of these four procedures listed below with your own code. </p>
+
+
+<table BORDER=1 >
+<tr VALIGN=TOP>
+<td valign="middle"><b><font SIZE=+1>CalculateScores</font></b></td>
+
+<td><ul>
+<li>Calculates the total score for each student
+<li>Total&nbsp; = (HW0+HW1+HW2+HW3+HW4+HW5)/4 +
+  MP0+MP1+MP2+MP3+MP4+Quiz1+Quiz2+Quiz3+Quiz4+Quiz5+Project.
+<li>Inputs:&nbsp; Grades
+<li>Outputs:&nbsp; Each student's total score is written to the appropriate
+  place in his record in the Grades variable</li>
+<li>Calls: None</li>
+<li>Notes:
+  <ul>
+    <li>NUMSTUDENTS is defined as a constant, and its value is the number of
+      students in the database.&nbsp; Use this constant when writing this
+      function.</li>
+    <li>To simplify calculations, do not worry about rounding up when
+      calculating the sum of the homeworks divided by 4.&nbsp; Just ignore the
+      remainder.</li>
+    <li>Store each student's total score in the appropriate place in the
+      database when you are finished calculating it</li>
+  </ul>
+<li>Points: 20</li>
+ </ul></td>
+</tr>
+
+
+<td valign="middle"><b><font size="+1">CalculateRanges</font></b></td>
+
+<td><ul>
+
+<li>Stores the score in the corresponding range
+
+<li>Inputs: Grades
+<li>Outputs: Each cell in the RangeCount array contains the number of students
+  that fall into that range
+
+<li>Calls: None
+<li>Notes:
+  <ul>
+    <li>Again, use the NUMSTUDENTS constant when writing this function</li>
+    <li>The ranges are:
+      <ul>
+        <li>A - 900-1000</li>
+        <li>B - 800-899</li>
+        <li>C - 700-799</li>
+        <li>D - 600-699</li>
+        <li>F - &lt; 600</li>
+      </ul>
+    </li>
+    <li>The A range corresponds to the first cell in the RangeCount array, and
+      the F range corresponds to the last cell.</li>
+  </ul>
+<li>Points: 20</li>
+</ul></td>
+
+<tr VALIGN=TOP>
+<td valign="middle"><b><font size="+1">ConstructStarString&nbsp;&nbsp;&nbsp;</font></b></td>
+
+<td><ul>
+       <li>Procedure to construct StarString
+<li>Inputs:
+        <ul>
+<li>        SI = Range number.
+               </ul>
+<li>Outputs:
+        <ul><li>StarString = string array to hold <i>n</i> number of stars, where each star
+            represents a student within that range, and <i>n</i> is the value stored at
+            RangeCount[SI]. </ul>
+<li>Calls: None
+<li>Notes:
+  <ul>
+    <li>Terminate the string with a '$'</li>
+  </ul>
+<li>Points: 15
+</ul>
+  <p>&nbsp;</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td valign="middle"><b><font size="+1">DisplayHistogram</font></b></td>
+
+<td><ul>
+<li>Displays the histogram of class scores to the screen
+<li>Inputs: RangeCount
+<li>Outputs:
+        <ul>
+        <li>Histogram correctly displayed on the screen
+</ul>
+<li>Calls: ConstructStarString, dspmsg
+<li>Notes:
+  <ul>
+    <li>NUMRANGES is defined as a constant, and its value is the number of
+      ranges into which a score can fall.&nbsp; Use this constant when writing
+      this function.</li>
+  </ul>
+<li>Points: 20
+</ul></td>
+</tr>
+                   
+</table>
+
+<h2>Procedure</h2>
+<ul>
+<li>You will begin this MP with the following files:
+    <ul>
+    <li><tt>MP1.ASM</tt>: Program Framework
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled
+        and linked.</li>
+    <li><tt>LIBMP1.LIB</tt>: Library functions for MP1</li>
+    <li><tt>LIB291.LIB</tt>: General-purpose library functions</li>
+    </ul>
+<li>You may copy these files from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s V:\ece291\mp1 W:\mp1</tt><br>
+    or download the files from this server as <a href="mp1.zip">mp1.zip</a> 
+</li>
+<li>Add your code to <tt>MP1.ASM</tt>.
+<li>Assemble and link your program by typing<tt> make.</tt>&nbsp; This command reads
+  the Makefile then invokes NASM and TLINK to build 
+    an executable program.  
+<li>Use TD debugger to find and correct program errors.
+</ul>
+
+<h2>Final Steps</h2>
+
+<ol>
+  <li>Demonstrate your MP1.EXE to a TA or to the instructor.&nbsp; The TA or
+    instructor will verify that your program produces the correct output. </li>
+  <li>Be prepared to answer questions about any aspect of the operation of
+   your program. The TAs will not accept an MP if you cannot fully explain
+   the operation of your code and details of your implementation. Delayed
+   MPs will be subject to late penalties as described in the course
+   syllabus (10pts/day).</li>
+  <li>The TA will handin your MP online.
+</ol>
+
+<hr>
+
+<h2>MP1.ASM (program framework)</h2>
+
+<pre>; MP1 - Gradebook
+;  Your Name
+;  Today's Date
+;
+; Josh Potts, Summer 2003
+; Guest Author: Ryan Chmiel
+; Minor Revisions: Derek King
+; University of Illinois, Urbana-Champaign
+; Dept. of Electrical and Computer Engineering
+;
+; Version 1.0</pre>
+<pre>	BITS	16</pre>
+<pre>;====== SECTION 1: Define constants =======================================</pre>
+<pre>        CR      	EQU     0Dh
+        LF      	EQU     0Ah
+	NUMSTUDENTS	EQU	30
+	NUMRANGES	EQU	5</pre>
+<pre>;====== SECTION 2: Declare external routines ==============================</pre>
+<pre>; Declare external library routines
+EXTERN dspmsg, mp1xit
+EXTERN libCalculateScores, libCalculateRanges, libConstructStarString, libDisplayHistogram, libDisplayScores</pre>
+<pre>; Declare local routines
+GLOBAL CalculateScores, CalculateRanges, ConstructStarString, DisplayHistogram</pre>
+<pre>; Make program variables global
+GLOBAL Grades, IntroString, EnterString, StarString, RangeStrings, RangeCount
+      </pre>
+<pre>;====== SECTION 3: Define stack segment ===================================</pre>
+<pre>SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        resb      64*8
+stacktop:
+        resb      0                     ; work around NASM bug</pre>
+<pre>;====== SECTION 4: Define code segment ====================================</pre>
+<pre>SEGMENT code                            ; *** CODE SEGMENT ***</pre>
+<pre>;====== SECTION 5: Declare variables for main procedure ===================</pre>
+<pre>; These are the grades obtained by 30 sample students in ECE 291.
+; Each row corresponds to one student.  The grades are listed as 
+; follows:
+;
+;  HW0,HW1,HW2,HW3,HW4,HW5,MP0,MP1,MP2,MP3,MP4,Q1,Q2,Q3,Q4,Q5,PROJECT,TOTAL
+;
+; Note that the total is initially 0,0 as you need to reserve a word for the
+; total (2 bytes), and you will need to calculate the total in your program.
+Grades	db	25,75,75,75,75,61,25,53,51,54,75,80,74,80,80,59,122,0,0
+	db	25,75,75,75,75,61,25,70,40,49,70,80,80,55,80,44,112,0,0
+	db	25,75,75,75,75,75,25,74,50,48,70,80,80,80,76,21,134,0,0
+	db	25,75,75,75,75,75,25,74,54,51,75,80,80,75,80,62,175,0,0
+	db	25,75,75,75,75,75,25,75,54,55,75,80,77,80,80,44,163,0,0
+	db	25,75,75,75,75,75,25,75,55,55,75,80,79,79,80,14,176,0,0
+	db	25,75,75,75,75,73,25,48,50,50,75,80,80,73,80,05,159,0,0
+	db	25,75,75,75,75,75,25,55,53,51,75,80,02,74,80,59,159,0,0
+	db	23,24,28,68,56,73,25,47,50,50,75,35,35,80,77,36,153,0,0
+	db	25,75,75,75,75,75,25,55,53,55,75,78,33,80,80,44,155,0,0
+	db	25,75,75,75,75,75,25,50,50,50,75,76,80,80,55,10,155,0,0
+	db	25,75,75,75,75,75,25,46,50,50,70,55,76,34,67,22,160,0,0
+	db	25,75,75,75,75,75,25,55,55,55,75,80,80,80,72,50,154,0,0
+	db	25,30,75,75,75,75,25,49,52,50,75,80,80,80,78,28,174,0,0
+	db	25,75,75,75,75,75,25,72,72,75,70,80,80,80,79,68,172,0,0
+	db	25,75,75,75,75,75,25,54,54,50,60,80,77,77,80,11,161,0,0
+	db	25,75,75,75,75,75,25,50,51,41,50,80,37,68,45,59,155,0,0
+	db	25,75,75,75,75,75,25,55,55,54,50,66,45,80,72,26,136,0,0
+	db	25,75,75,75,75,75,25,49,24,49,55,10,74,35,62,28,101,0,0
+	db	25,75,75,75,75,75,25,75,75,75,71,80,80,80,61,00,160,0,0
+	db	25,75,75,75,75,75,25,46,55,52,70,80,80,60,35,37,122,0,0
+	db	25,48,75,75,75,75,25,46,50,48,75,45,80,35,74,32,172,0,0
+	db	25,75,75,75,75,75,25,55,55,55,75,29,80,80,75,15,141,0,0
+	db	25,75,75,75,73,73,25,47,53,51,75,80,80,63,80,43,131,0,0
+	db	25,75,75,75,75,75,25,52,52,50,75,80,80,80,80,10,146,0,0
+	db	25,75,75,75,75,75,25,55,50,51,70,80,66,80,80,29,129,0,0
+	db	25,75,75,75,75,75,25,51,51,51,75,73,80,80,80,09,131,0,0
+	db	25,75,75,75,63,52,25,55,50,50,75,27,80,70,80,33,114,0,0
+	db	25, 0,75,75,75,75,25,48,50,49,75,00,80,80,79,31,149,0,0
+	db	25,75,75,75,75,75,25,75,75,75,75,80,79,80,80,06,150,0,0</pre>
+<pre>RowSum	times 30 dw 0
+NumBuf	db &quot;ABCDE$&quot;</pre>
+<pre>IntroString	db	CR,LF,'ECE 291 Summer 2003',CR,LF,'MP1 - Gradebook',CR,LF,CR,LF,'$'</pre>
+<pre>; Mimics hitting the enter key
+EnterString	db	CR,LF,'$'
+	 </pre>
+<pre>; String used to hold one bar of the histogram.  The string will
+; contain up to 30 stars (*) followed by a dollar sign to terminate
+; the string
+StarString	times 31 db 0</pre>
+<pre>; Strings to define the grade ranges
+RangeStrings	db	' (A) 900-1000  ','$'
+		db	' (B) 800-899   ','$'
+		db	' (C) 700-799   ','$'
+		db	' (D) 600-699   ','$'
+		db	' (F) &lt; 600     ','$'</pre>
+<pre>ScoresString	db	'Student Scores:',CR,LF,'$'</pre>
+<pre>; Array holding the number of scores that fall into each of the ranges above.
+; The A grades are in the first cell of the array, and the F grades are in
+; the last.
+RangeCount	times 5 db 0   </pre>
+<pre>;====== SECTION 6: Program initialization =================================</pre>
+<pre>..start:
+        mov     ax, cs                  ; Initialize Default Segment register
+        mov     ds, ax  
+        mov     ax, stkseg              ; Initialize Stack Segment register
+        mov     ss, ax
+        mov     sp, stacktop            ; Initialize Stack Pointer register</pre>
+<pre>;====== SECTION 7: Main procedure =========================================</pre>
+<pre>MAIN:
+	mov	dx, IntroString
+	call	dspmsg
+				       </pre>
+<pre>	call	CalculateScores
+	call	CalculateRanges
+	call	DisplayHistogram
+;the following can be uncommented to print out the scores of the students
+	;call	libDisplayScores 
+        call    mp1xit</pre>
+<pre>;====== SECTION 8: Your subroutines =======================================</pre>
+<pre>;--------------------------------------------------------------
+;--          Replace library calls with your code!           --
+;--          [Save all reg values that you modify]           --
+;--          Do not forget to add function headers           --
+;--------------------------------------------------------------</pre>
+<pre>;--------------------------------------------------------------
+;--                    CalculateScores()                     --
+;INPUTS:
+;--------------------------------------------------------------
+CalculateScores
+	call	libCalculateScores
+	ret
+</pre>
+<pre>;--------------------------------------------------------------
+;--                    CalculateRanges()                     --
+;--------------------------------------------------------------
+CalculateRanges
+	call	libCalculateRanges
+	ret
+</pre>
+<pre>;--------------------------------------------------------------
+;--                  ConstructStarString()                   --
+;--------------------------------------------------------------
+ConstructStarString
+	call	libConstructStarString
+	ret
+</pre>
+<pre>;--------------------------------------------------------------
+;--                   DisplayHistogram()                     --
+;--------------------------------------------------------------
+DisplayHistogram
+	call	libDisplayHistogram
+	ret</pre>
+
+<p>&nbsp;</p>

@@ -1,0 +1,482 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 0</title>
+</head>
+
+<body bgcolor=ffffff>
+<p>
+<table width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Lockwood, Spring 1999</td></tr></table>
+<center><h1>Machine Problem 0</h1></center>
+
+<!-- Copyright 1996-1999, John W Lockwood, All rights reserved
+     For usage information: contact lockwood@ipoint.vlsi.uiuc.edu or visit
+     http://ipoint.vlsi.uiuc.edu/~lockwood/
+-->
+
+<center><table border=1 cellpadding=2 width=60%>
+  <tr><td align=right><b>Assigned</b></td>  <td>Thursday 1/21/99</td></tr>
+  <tr><td align=right><b>Due Date</b></td>  <td>Thursday 1/28/99</td></tr>
+  <tr><td align=right><b>Purpose</b> </td>  <td>Introduction</td></tr> 
+  <tr><td align=right><b>Points</b>  </td>  <td>25</td></tr>
+</table>
+</center>
+
+<h2>Introduction</h2>
+  This machine problem will introduce you to the computers, 
+  network, and software in the ECE291 laboratory.
+  For this machine problem, you will learn how to edit, assemble, 
+  debug, and execute an existing, simple assembly  language  program.
+  A full listing of the program and a Makefile 
+  are given at the end of this assignment.  Electronic copies of the
+  program are available in the lab or on-line as 
+  <a href="mp0.zip">mp0.zip</a>.
+
+<h2>Preliminary Procedure</h2>
+<ol>
+<li>Visit the ECE291 laboratory in room 238 Everitt Lab.  You
+    will need an activated key card to open the door.
+<p>
+<li>Have a seat at any available computer in the laboratory. 
+    The machine should boot into Windows 98.
+<p>
+<li>Enter your login and password.  You can obtain your
+    login information from the TAs in the lab in exchange for
+    having your photo taken.  You can change your windows password 
+    from the  <i>settings - control panel - windows password</i>
+    menu.  
+<p>
+<li>Start a DOS shell.  This can be done by clicking on
+    the <i>start</i> button, navigating to <i>Programs</i>, then
+    releasing the mouse button on <i>MS-DOS Prompt</i>.
+<p>
+<li>For the machines in the
+    ECE291 lab, you will be using the following drive letters: <p> 
+    <table cellpadding=2 border=1 width=80%>
+    <tr><th>Drive</th><th>Description</th><th>Purpose</th></tr>
+    <tr><td>C:</td>
+        <td>Hard Drive (local)</td>
+        <td>Holds Windows98, MASM, and other applications<br>
+        <i>Do not store files here!</i></td></tr>
+    <tr><td>V:</td>
+        <td>Class Drive (network)</td>
+        <td>Class material, libraries, example code<br>(Read Only)</td></tr>
+    <tr><td>W:</td>
+        <td>Your personal home directory (network)</td>
+        <td>This drive will be mounted each time you log in,<br>
+            and is accessible from any machine in the lab.<br>
+           (Store your MPs here!)<br>
+           </td></tr>
+  </table>
+<p>
+<li>Copy the MP0 directory on the class drive to your private directory
+    by typing:<br> 
+    <tt>xcopy /s V:\ece291\mp0 W:\mp0</tt><br>
+    When prompted, respond with <tt>D</tt> to copy the entire directory.
+<p>
+
+<li>Go into your private directory
+  <ul>
+  <li>Switch to your drive by typing<br>
+      <tt>W:</tt>
+  <li>Switch to the mp0 directory by typing <br>
+      <tt>cd \mp0</tt>
+  </ul>
+<p>
+
+<li>From the start menu, run <i>Windows Explorer</i>.  Navigate to your
+    <tt>W:</tt> drive, open the <tt>mp0</tt> folder
+<p>
+
+<li>Double-click on the <tt>MP0</tt> ASM file to edit the program.
+    <i>(If you are working at home, you'll need to install your own
+    text editor.  Avoid Notepad and QuickEdit like the Plague)</i>.  
+    Scroll through the program, but don't make any changes yet. <p>
+
+   The code is
+   broken into several sections to illustrate the various components
+   in  an  assembly program.  This is certainly not the only way  to
+   organize an assembly program, but it gives a good starting point.
+   Again,  you  do  not  need  to  understand  precisely  what   the
+   statements  are  doing  at this point,  but  notice  the  overall
+   structure  of  the  program.  This will be a good  reference  for
+   future machine problems.<p>
+ 
+   <ul><li>Section  1  defines several constants to be used throughout
+   the program.  Each constant has a value that is associated with a
+   particular name using the EQU statement.
+
+   <li>Section  2 declares external procedures (meaning code  that
+   has already been written but is in a different file) that will be
+   used in this program.  External procedures are declared with  the
+   EXTRN statement.
+
+  <li>Section  3  defines a special required structure  called  a
+  stack segment.  You will discover why a stack is necessary in the
+  future.   The  stack segment is declared using the SEGMENT  STACK
+  ... ENDS statements.
+
+  <li>Section 4 declares the beginning of the code segment - that
+  part  of  the file which contains the program instructions.   The
+  code  segment  is  declared using the  SEGMENT  PUBLIC  ...  ENDS
+  statements.  (The ENDS statement appears at the end of the code -
+  - in section 6.)
+
+  <li>Section  5 initializes several variables to be  used.   For
+  this  program,  these variables are just sequences of  characters
+  called strings.  Variables can be defined using the DB statement.
+  It is important that variables are not defined in a part of your
+  program that is executed.
+ 
+  <li>Section  6  contains  the  code  for  the  main  procedure.
+  Procedures are declared using the PROC ... ENDP statements.
+   Execution begins with the MAIN procedure.
+ </ul><p>
+
+
+<li>From the DOS window, 
+    Assemble and link MP0 by typing <tt>NMAKE</tt>.  This command 
+    will read <tt>Makefile</tt> and invoke the following commands:  <br>
+      <tt>MASM /Zi MP0,,; </tt> <br>
+      <tt>LINK /co MP0,,,lib291/map; </tt> <br>
+    At this point, you should have just created the executable program
+    called MP0.EXE.
+<p>
+ 
+<li>Run the program by just typing its name, <tt>MP0</tt><br>
+  Try giving the program different input.  
+  <i>Remember: this program is looking for upper-case letters!</i>
+    <p>
+
+<li>Now examine your program by running the debugging tool CodeView (CV).<br>
+  <tt>CV /50 MP0</tt><br>
+    Codeview will read your MP0.EXE program and allow you to step 
+    and trace through the program as it executes.  The <tt>/50</tt> provides
+    you with a large (50-line) window to work in.  
+  <p>
+
+  <ul>
+  <li>Navigate to the <i>options</i> menu, and select the 
+      <i>Source1 Window...</i>.
+      Codeview allows you to view your program as either as raw assembled 
+      opcodes 
+      <i>(DisplayMode=assembly)</i> or referenced to your original source code.
+      Select  <i>DisplayMode=source</i> then hit OK.<p>
+
+  <li>If the <tt>reg</tt> window is not already open, open it.
+      From CodeView's <i>Windows</i> pulldown menu, select the options
+      to view <tt>Register</tt>. Resize
+      and adjust the locations of the windows on the screen as necessary. <p>
+
+  <li>Click on the function key <tt>F10</tt> to execute
+      the first instruction of your program.
+      Notice that register AX has changed value.  
+      The first instruction
+      of  the  program (MOV AX, CSEG) puts the offset of CSEG into  AX.
+      Also  notice  that  register  IP, the  instruction  pointer,  has
+      changed  value.   It  always specifies the  offset  of  the  next
+      instruction  to  be executed.  The instruction displayed  is  the
+      next  one  to  be  executed.   <p>
+
+  <li>Click <tt>F10</tt> again to execute the second line of code.
+      Notice that the DS register changes.<p>
+  
+  <li>If the <tt>Memory1</tt> window is not already open, open it.
+      From CodeView's <i>Windows</i> pulldown menu, select the options
+      to view <tt>Memory 1</tt>.  
+      Memory addresses are shown on the left in segment:offset format.
+      Check that the memory segment matches the value of the DS.
+      If not, you can enter the numeric value of DS directly in 
+      the memory window). 
+      Each data byte  appears in hexadecimal.  On the far right side  
+      of the screen are  the characters  whose ASCII codes are given 
+      by the bytes; the  period "."  appears  when  the 
+      corresponding character  is  unprintable.
+      The ASCII contents of the memory should look familiar.  <p>
+
+  <li>Click on <tt>F10</tt> a few more times to <i>step</i> through your code.
+      Stop <i>stepping</i> when you reach the input prompt.    <p>
+      
+      
+  <li>From the program's grade prompt, select a letter grade.  Use <tt>F10</tt>
+      to <i>step</i> through the rest of the program.  You toggle between
+      the debugger screen and program output by pressing <tt>F4</tt>.    <p>
+
+  <li>Once the program has terminated; Select <tt>Restart</tt> from
+      CodeView's <tt>Run</tt> menu.  Run the program again a few times with
+      different input until you understand how the program is executing. <p>
+
+  <li>Navigate to the <i>options</i> menu, and select the 
+      <i>Source1 Window...</i>,
+      Select  <i>DisplayMode=assembly</i>.  <p>
+
+  <li>Again select <tt>Restart</tt> from  CodeView's <tt>Run</tt> menu.  
+      Now, In CodeView's <i>source</i> window, you will see the machine code
+      for the same program.  In first column, you will
+      see where each line of code is located in memory 
+      (in segment:offset format).  In the second column, you 
+      will see the program bytes in hex.  In the third column,
+      you will see the human-readable opcodes of the program.
+      Notice that text labels have been replaced
+      with numeric values (pointers and constants) by the assembler
+      and linker.    <p>
+
+  <li>Again select <tt>Restart</tt> from  CodeView's <tt>Run</tt> menu.  
+      Run the program again a few more times with
+      different input. <p>
+                 
+  <li>To speed up the debugging process, 
+      CodeView allows the programmer to
+      execute large sections of code between <i>break-points</i>.
+      Double-click on the line at offset=00F4 to set a breakpoint 
+            in your program at the first compare statement.<p>
+
+  <li>Restart your program, then hit F5 to 
+      <tt>go</tt> through your code until the breakpoint.<p>
+
+  <li>When prompted for a grade, enter <tt>B</tt> then hit return. 
+      You should continue execution of the program.<p>
+
+  <li>Record the value in register AL.   <br>
+       <table border=1><tr><td>AL = ____</td></tr></table><p>
+
+  <li>From the memory window, change the byte at offset=0 to
+         44 (hex).  Continue running the program until it terminates.
+          Notice that the output message is grossly incorrect.   <p>
+
+  <li>In the space below, explain what the program is doing.<br>
+           <table border=1 width=75%><tr><td><xmp>  
+           
+           
+           </xmp></td></tr></table>           <p>
+
+   <li>Quit Codeview and return to the DOS prompt. <p>
+  </ul>
+
+   <li>Now return to your text editor (WinEdit) to modify MP0.ASM.  
+       You need to make the following changes: <p>
+
+     <ol>
+     <li>Put your name and the current date at the 
+         beginning of the program 
+     <li>Add a feature to the program
+         that prints a message of <i>your choice</i>
+         when the grade <tt>C</tt> is selected.  <br>
+     <li>Assemble and test your program with all possible inputs.  
+         Debug with CodeView  
+         as necessary until the program works as expected. 
+     </ol>   <p>
+     
+   <li>Now return to your text editor and add a line to MP0.ASM. 
+         <p>
+       
+       <ol>
+       <li>Add a new variable to your program called <i>mystery</i> that  
+           is initialized with the hex values of 0FEh,0C0h.  
+           <i>(This is MASM's method of entering hex values)</i>.
+       
+           Declare this variable at the location in your code
+           immediately after the input is read using the lib291 
+           <i>kbdine</i> function.
+       <li>Re-Assemble your code and run CodeView.
+       <li>Run your program a few more times and observe what happens.
+           Try Switching between <i>DisplayMode=Source</i> and <i>DisplayMode=Assembly</i>.
+       <li>Browse the source window in assembly mode and 
+           record what addresses the <i>mystery</i> bytes 
+           were stored in.     <br>
+           <table border=1><tr><td>Address= ______ : ______ </td></tr></table>
+       <li>In the space below, explain how the program behaves differently and why.    <br>
+           <table border=1 width=75%><tr><td><xmp>
+           
+           
+           
+           </xmp></td></tr></table>
+       <li>Finally, Move this variable declaration to where it belongs in the code.
+      </ol>  <p>
+ 
+                                                               
+ </ol>
+ </ol>
+
+
+
+
+<h2>Final Steps</h2>
+<ol>
+<li>Print a copy of the MP0 Grading report <i>(mp0gr)</i> from the MP
+    section of the ECE291 web pages.<p>
+<li>Demonstrate your updated MP0.EXE to a TA or to the instructor.
+  Review your solutions to the question with the TA.
+  Be prepared to be quizzed by the TA with additional questions 
+  about your codeview debugging experiences.    The TA will not allow you
+  to submit your MP until he or she is satisified that you have mastered 
+  Codeview.<p>
+
+<li>Once approved, make a printout of MP0.  This can be done in the ECE291
+    lab by dragging the mp0.asm file to the printer icon.  This will use
+    a program called <i>GreenPrint32</i>. This allows printing of multiple
+    pages per sheet.  All MP's <B>MUST</B> be printed using 
+    <i>GreenPrint32</i> or they will not be accepted.  Make sure that 
+    your name appears on the printout.    <p>
+
+<li>Staple the MP0 grading report to the front of your
+    modified MPO.ASM program.  Give this 
+  to the same TA which approved your demonstration.
+  <p>
+
+<li>Have the TA run the electronic handin program
+    from the floppy.
+  <p>
+
+<li>Log off by clicking on the <i>start</i> button and 
+    navigating to <i>Shutdown</i>.
+    <ul>
+    <li>If other students are waiting to use the computer, 
+        select <i>Close all programs and log on as another user</i>.
+    <li>If you will be the last to use the computer,
+        select <i>Shutdown</i>, wait for the computer to stop,
+        then turn off the power for both the CPU and monitor.
+    </ul>   
+  </ul>   
+  <p>
+
+<li>You are now finished!
+</ol>
+
+<hr>
+
+
+<h2>MP0.ASM</h2>
+<font size=-1><xmp>
+        TITLE   MP0     Your_Name     Todays_Date
+
+COMMENT *
+        This program illustrates a (very) basic assembly program and
+        the use of LIB291 input and output routines.
+        By working on this code, you will have the opportunity to 
+        exercise the tools for this class, namely the editor (WinEdit), 
+        the Assembler (MASM), and the debugger (CodeView).
+        Be sure to put your name in the places where it says 'Your Name' 
+        and also  change the date where it says 'current date'.  
+        The changes that you need to make to this program are 
+        described in the MP0 assignment page.
+        *
+
+;====== SECTION 1: Define constants =======================================
+
+        CR      EQU     0Dh
+        LF      EQU     0Ah
+        BEL     EQU     07h
+
+;====== SECTION 2: Declare external procedures ============================
+
+EXTRN   kbdine:near, dspout:near, dspmsg:near, dosxit:near
+
+;====== SECTION 3: Define stack segment ===================================
+
+STKSEG SEGMENT STACK                    ; *** STACK SEGMENT ***
+        db      64 dup ('STACK   ')
+STKSEG ENDS
+
+;====== SECTION 4: Define code segment ====================================
+
+CSEG SEGMENT PUBLIC 'code'              ; *** CODE SEGMENT ***
+ASSUME  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== SECTION 5: Declare variables for main procedure ===================
+mygrade  db      ? 
+question db      'What grade would you like in ECE291? ','$'
+Exitmsg  db      CR,LF,'Good Luck!',CR,LF,'$'
+invalid  db      CR,LF,'Not a valid choice! ',CR,LF,'$' 
+Amsg     db      CR,LF,'Learn all material and Submit MPs early.',CR,LF,'$'
+Bmsg     db      CR,LF,'Keep up in class and submit MPs on time.',CR,LF,'$'
+Dmsg     db      CR,LF,'Skip a few machine problems.',CR,LF,'$'
+Fmsg     db      CR,LF,'Sleep through exams.',CR,LF,'$'
+
+
+;====== SECTION 6: Main procedure =========================================
+
+MAIN PROC FAR
+     mov     ax, cseg                ; Initialize Default Segment register
+     mov     ds, ax  
+     mov     dx, offset question     ; Prompt user with the grade question
+     call    dspmsg                   
+     call    kbdine   
+     mov     mygrade,AL              ; Save result
+            
+CheckGrade:
+     cmp     mygrade, 'A'            ; Check if A student
+     jne     NotGradeA
+     mov     dx, offset Amsg         ; Print message for A students
+     call    dspmsg
+     jmp     mpExit
+
+NotGradeA:
+     cmp     mygrade, 'B'            ; Check if B student
+     jne     NotGradeB
+     mov     dx, offset Bmsg         ; Print message for B students
+     call    dspmsg
+     jmp     mpExit
+
+NotGradeB:
+     cmp     mygrade, 'D'            ; Check if D student
+     jne     NotGradeD
+     mov     dx, offset Dmsg         ; Print message for D students
+     call    dspmsg
+     jmp     mpExit
+
+NotGradeD:
+     cmp     mygrade, 'F'            ; Check if F student
+     jne     NotGradeF
+     mov     dx, offset Fmsg         ; Print message for F students
+     call    dspmsg
+     jmp     mpExit
+
+NotGradeF:
+     mov     dl, BEL                 ; Ring the bell if other character
+     call    dspout
+     mov     dx, offset invalid      ; Print invalid message
+     call    dspmsg
+     jmp     FinalExit
+
+mpExit:
+     mov     dx, offset Exitmsg      ; Type out exit message
+     call    dspmsg
+
+FinalExit:
+     call    dosxit                  ; Exit to DOS
+
+MAIN ENDP
+
+CSEG ENDS
+        END MAIN
+
+</xmp>
+</font>
+
+<hr>
+
+<h2>Makefile</h2>
+<font size=-1><xmp>
+all: mp0.exe
+
+mp0.exe: mp0.obj
+   link /co mp0,,,lib291/map;
+
+mp0.obj: mp0.asm
+   masm /Zi mp0,,;
+
+clean:
+   del mp0.exe
+   del *.obj
+   del *.map
+   del *.lst
+</xmp>
+</font>
+
+
+
+</body>
+</html>

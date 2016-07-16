@@ -1,0 +1,105 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>String Matching</title>
+</head>
+
+<body>
+
+<h2>String Matching</h2>
+
+<p>For this MP you will implement two different algorithms to match a word with
+a string of characters.&nbsp; The naive or brute force method is what comes to mind right
+away.&nbsp; The other method is the Knuth-Morris-Pratt (KMP) method.&nbsp; The
+source of the following algorithms and discussion is Professor <a href="http://compgeom.cs.uiuc.edu/~jeffe/">Jeff
+Erickson's</a> eighteenth lecture for cs373.</p>
+
+<h3>Naive</h3>
+
+<p>In my discussion of the algorithms, I will refer to the string the user typed
+in as P[1..m] and the search space as T[1..n].&nbsp; All comparisons are single
+character comparisons.&nbsp; Essentially start trying to match P[1..m] with the
+first <i>m</i> characters of the search space(T[1..n]).&nbsp; If in this
+process a mismatch occurs, then simply shift the search space one character and
+repeat, i.e. match P[1..m] with T[2..m+1].&nbsp; Keep repeating this process even if you get a
+match, because you want to find all possible matches.&nbsp; When you get to the
+end of the search space you have found all possible matches.&nbsp; Below is the
+algorithm I described. T[1..n] is the search space, whose length you may not know; but
+you do know it is terminated by a '$'.&nbsp; P[1..m] is your
+[testword+0..m-1].&nbsp; Since you do not always know <i>n</i>, its okay to
+change the bounds on <i>s</i>, so that it goes from 1 to when T[n] = '$'.&nbsp;
+Also remember that the arrays in memory are indexed starting at 0, while this
+the arrays in this algorithm are indexed starting at 1.&nbsp; You will also have
+to modify the algorithm slightly to find all occurrences of the [testword], not
+just one.</p>
+
+<p align="center"><img border="0" src="naive.gif" width="435" height="352"></p>
+
+<h3>ComputeFail</h3>
+
+<p>In the event of a character mismatch, the naive algorithm always restarts the
+comparison from the first letter of P[1..m].&nbsp; For example, let P[1..m] =
+&quot;anabanana&quot;.&nbsp; Assume that we are comparing P[1..m] with the first
+<i>m</i> characters of the search space(T[1..m]).&nbsp; Let P[1..7] = T[1..7],
+and let P[8] not equal T[8].&nbsp; The naive algorithm will try to compare
+P[1..m] to T[2..m+1], but clearly it will fail because we already know T[2] does
+not equal P[1].&nbsp; Knuth-Morris-Pratt is smarter.&nbsp; It will look to find
+the longest proper suffix of the matched portion(T[1..7]), that is also a proper
+prefix of it.&nbsp; In this case, T[1..3] = T[5..7].&nbsp; Thus the next set of
+comparisons it will perform will be P[4..m] with T[8..m+4].&nbsp; Notice that
+KMP is smart enough to never have to go back and compare T[1..7] all over again.</p>
+
+<p>So we know that if the mismatch occurs at P[8], then the next character we
+test is P[4].&nbsp; This is always true for this example.&nbsp; So why not
+compute this value in advance and save KMP the trouble of doing it possibly
+numerous times.&nbsp; Well, that is what the ComputeFail function does.&nbsp; It
+creates an array called the failure array of size <i>m</i>.&nbsp; If P[k]
+doesn't match, then the next thing that is compared is P[failarray[k]].&nbsp;
+Remember, if we failed at P[8], then T[1..7] = P[1..7].&nbsp; So we can just
+look for the longest proper suffix of P[1..7] that is also a proper prefix of
+it.&nbsp; Thus we do not even need T[1..n] for ComputeFail.&nbsp; If the first
+character of P[1..m] does not match with T[1..m], then we have no choice but to
+compare P[1..m] with T[2..m+1].&nbsp; This is represented as a zero in the
+failure array.&nbsp; Now you should be able to come up with the failarray for
+our example case.&nbsp; It is &quot;011212343&quot;.&nbsp; Now it is time for
+another observation. If we fail at P[3], then we will attempt to match
+P[failarray[3]] = P[1].&nbsp; Well, P[1] = P[3]!&nbsp; Obviously we will also
+fail trying to match P[1] to the same character.&nbsp; So we have another simple
+optimization; namely, if P[k] = P[failarray[k]], then failarray[k] should be set
+to failarray[failarray[k]].&nbsp; If we follow this rule for our example we get
+&quot;010201040&quot;.&nbsp;</p>
+
+<p>The function below computes the optimized failarray in one fell swoop.&nbsp; Watch out for the indices
+once again, as in the algorithm they range from 1...m, not 0..m-1.&nbsp; Try
+running the sample executable and selecting KMP and putting in a word.&nbsp; The
+failure array for the word will appear directly underneath the word.</p>
+
+<p>&nbsp;</p>
+
+<p align="center"><img border="0" src="fail.gif" width="375" height="312"></p>
+
+<h2>&nbsp;</h2>
+
+<h3>KMP</h3>
+
+<p>From the discussion of ComputeFail, it should be pretty clear how KMP
+works.&nbsp; Below is the algorithm that implements it.&nbsp; T[1..n] is your string and P[1..m] is your test word.&nbsp; Remember to check
+for '$' at each step so you don't go out of bounds of the word grid.&nbsp; Also
+it can be used to determine success instead of doing <i>j = m</i>.&nbsp; Of course you do
+have access to the length of the word <i>m</i>, namely [wordlen].&nbsp; The
+other important thing to note is that this algorithm's arrays start at index
+one, while the arrays in assembly will start at index zero.&nbsp; You also need
+to modify the algorithm slightly to find all instances of the word in the
+string, not just the first one.</p>
+
+<p align="center"><img border="0" src="kmp.gif" width="446" height="277"></p>
+
+<!--<p>See the <a href="rep.html">additional</a> information for detailed
+diagrams and several examples.</p>-->
+
+</body>
+
+</html>

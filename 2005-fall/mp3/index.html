@@ -1,0 +1,618 @@
+<HTML xmlns="http://www.w3.org/1999/xhtml"><HEAD><TITLE>ECE 390 Machine Problem 3</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=windows-1252"><LINK 
+href="/ece390/ece390.css" type=text/css rel=stylesheet></HEAD>
+<BODY>
+<TABLE class=header cellSpacing=0 cellPadding=0 width="100%">
+  <TBODY>
+  <TR>
+    <TD class=half vAlign=top align=left>
+      <P><A href="http://courses.engr.illinois.edu/ece390"><IMG 
+      src="/ece390/icon/ece390.jpg"></A><BR><B>  Computer 
+      Engineering II</B><BR><B>  <SPAN class=red>Machine Problem 
+      3</SPAN></B></P></TD>
+    <TD class=half vAlign=center align=right>
+      <TABLE class=maxheight cellSpacing=1 cellPadding=0 width="100%" 
+        border=0><TBODY>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/schedule.html">Schedule</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/labsched.html">Lab 
+            schedule</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/hw.asp">Homework</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/books/labmanual/">Lab 
+            Manual</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/mp.asp">Machine 
+            Problems</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/resources">Resources</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/mp/mp0/fp">Final 
+            Project</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/user/photos">Photos</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/grades">Gradebook</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/feedback.asp">Feedback</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/syllabus.html">Syllabus</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/archive">Archives</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/lecture">Lectures</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/resources/turbo.zip">Download 
+            NASM</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390">Home</A>  </TD>
+          <TD>  <A 
+            href="https://courses.engr.illinois.edu/ece390/admin">Restricted 
+            access</A></TD></TR></TBODY></TABLE></TD></TR>
+  <TR>
+    <TD class=spacer colSpan=2><IMG height=8 alt="" src="" 
+  width=100></TD></TR></TBODY></TABLE>
+<TABLE border=0 cellPadding=7 cellSpacing=1 width="100%">
+  <TBODY>
+  <TR>
+    <TD vAlign=top>
+      <H1 align=center>Machine Problem 3: Recursion</H1>
+      <DIV align=center>
+      <CENTER>
+      <TABLE border=1 width=513>
+        <TBODY>
+        <TR>
+          <TD align=right width=64>Assigned</TD>
+          <TD width=433>Tuesday, 27 September 2005</TD></TR>
+        <TR>
+          <TD align=right width=64>Due Date</TD>
+          <TD width=433>Wednesday, 12 October 2005, 5:00 p.m.</TD></TR>
+        <TR>
+          <TD align=right width=64>Purpose</TD>
+          <TD width=433 Roman?>To write recursive subroutines and to use various 
+          argument transmission methods.</TD></TR>
+        <TR>
+          <TD align=right width=64>Points</FONT></TD>
+          <TD width=433>60</TD></TR></TBODY></TABLE></CENTER></DIV>
+          
+<BLOCKQUOTE>
+To iterate is human; to recurse, divine. -- <i>L. Peter Deutsch</i>
+</BLOCKQUOTE>
+
+<P>You will write a program MP3 that compares a simple algorithm and a 
+recurisve algorithm algorithm for the Maximum 
+Subsequence Sum Problem.  In this problem, the input is an array of numbers 
+<i>A</i>[0], ..., <i>A</i>[<i>n</i>-1].  The output
+is the pair of indices <i>r, s</i> such that 
+0 <u><</u> <i>r</i> <u><</u> <i>s</i> <u><</u> <i>n</i> -1
+and maximizes the sum <i>A</i>[<i>r</i>] + ... + <i>A</i>[<i>s</i>].
+That is, the program finds the subsequence of values of <i>A</i> whose
+sum is maximized.  </P>
+
+<P>Files for MP3 are on the <tt>V:</tt> drive in the directory <tt>V:\ece390\mp3</tt>.
+In this directory are the program framework <tt>mp3.asm</tt> and a 
+running version of the program <tt>mp3lab.exe</tt>. Lab versions of subroutines
+are in <tt>libmp3.lib</tt>, which contains all subroutines of LIB291 plus 
+libDoFew, libTiming, libElapsed, libSimple, libRecursive, and libFixedEndSum.  You will use 
+mp3xit instead of dosxit.
+You should start by copying these files to your home directory with the following command: <BR>
+<TT>xcopy /s V:\ece390\mp3 W:\mp3</TT><BR>
+You may download the files from the server as 
+<A href="http://courses.engr.illinois.edu/ece390/mp/mp3/mp3.zip">mp3.zip</A>  </p>
+
+<H2>Program Specification</H2>
+
+<p>
+<p>The program prompts the user for two numbers: the number <i>n</i> of
+values in the array, and a seed for the random number generator.
+If <i>n</i> = 0, then the program exits to DOS.
+If <i>n</i> <u><</u> 10, then the program prints the array, runs the simple
+algorithm, prints the indices found by the simple algorithm, runs the recursive
+algorithm, and prints the indices found by the recursive algorithm.
+If <i>n</i> > 10, then the program determines the amount of time used by the 
+simple algorithm and the recursive algorithm on the list.
+Sample dialogue:</p>
+<pre> 
+Number of words to handle: 10
+
+Random seed: 789
+0   -204
+1    430
+2    -37
+3     45
+4    199
+5   -115
+6    768
+7    802
+8   -910
+9   -126
+
+With simple algorithm, indices and sum are         1     7   2092
+With recursive algorithm, indices and sum are      1     7   2092
+
+Number of words to handle: 20000
+
+Random seed: 8
+
+Number of repetitions: 10
+
+Elapsed time for simple algorithm:          7.86 seconds
+Elapsed time for recursive algorithm:       0.05 seconds
+
+</pre>
+<p>
+In each case, after producing these outputs, the program returns 
+to the beginning to prompt the user for <i>n</i> and the random seed again.
+If the user types "0" for the <i>n</i>, then the program exits to DOS.
+</p>
+
+<p>
+When calculating the subsequence sums, the program assumes that arithmetic
+overflow does not occur.
+</p>
+
+<p>
+The program assumes that <i>n</i> <u><</u> 30000 and that the amount of time
+taken by each algorithm is less than 60 seconds. Because our computers
+are so fast, the program runs the algorithms repeatedly, with the
+number of repetitions specified by the user,
+to obtain more accurate running times of the two algorithms.
+</p>
+<p>
+You may experiment with this program: try different values of <i>n</i> to
+compare the efficiencies of the two algorithms, and to see
+how the time increases as <i>n</i> increases.  According to theory, the amount
+of time taken by the simple algorithm is proportional to <i>n</i><sup>2</sup>, 
+and the time taken by the recursive algorithm  is proportional to <i>n</i> log <i>n</i>.
+Do your experiments confirm the theory?
+</p> 
+
+<h2>Program Organization</h2>
+
+<P>In this machine problem, the main procedure is provided for you; 
+however, you must write the code to replace the library subroutines 
+libDoFew, libTiming, libElapsed, libSimple, libRecursive, and libFixedEndSum.
+You will replace these subroutines from the libmp3 library by deleting the 
+statements that call the libmp3 subroutine and by adding your own code. 
+Each subroutine that you write should match the output of the library 
+subroutine exactly.</P>
+
+<p>
+The program uses the following global variables:
+<pre>
+N       DW      1       ; Number of words to handle, n
+Rnum    DW      1       ; Random number 
+Array   RESW    30000   ; Array of words 
+Secs    RESB    1       ; Initial time (seconds)
+Huns    RESB    1       ; Initial time (hundredths)
+</pre>
+</p>
+
+<p>
+In libmp3 are subroutines GetStr and GenRan, both of which you may use without 
+penalty.  GetStr is essentially the same as GetStr in MP2, except that it does not
+send a prompt character to the screen.  The string of characters typed by the user
+is stored in consecutive bytes in memory, starting at the byte whose offset is 
+in register <tt>BX</tt>. GetStr appends a zero-valued byte to the end of the input string
+to mark its end. GenRan uses <i>n</i> and the random seed to generate a list of
+random numbers from -1000 to +1000, which it stores in <i>n</i> consecutive words
+starting at <tt>Array</tt>.
+</p>
+
+<P>You will replace each of the subroutines listed below with your own code.
+Document each subroutine with a header. 
+</P>
+      <TABLE border=1>
+        <TBODY>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>DoFew</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Generates a list of random numbers, applies the two algorithms, and prints their results 
+              <LI>Inputs: 
+              <UL>
+                <LI><tt>N, RNum, Array</tt></LI></UL>
+              <LI>Outputs: 
+              <UL>
+                <LI>None</LI></UL>
+              <LI>Calls: 
+                  <UL>
+                   <LI>binasc, dspmsg, dspout, GenRan, Simple, Recursive</li> </UL>
+              <LI> 
+DoFew calls GenRan to generate <i>n</i> random numbers in <tt>Array</tt>, and displays the
+numbers on the screen on separate lines; at the beginning of each line it displays the 
+value of the corresponding index (from 0 to <i>n</i>-1). Then DoFew calls Simple
+to obtain the solution found by the simple algorithm: the two indices <i>r</i> and 
+<i>s</i> and the sum of the words from index <i>r</i> to index <i>s</i>.
+Finally, DoFew calls Recursive to obtain the solution found by the recursive algorithm.
+DoFew displays both solutions.
+              </LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Timing</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Determines running times of the two algorithms 
+              <LI>Inputs: 
+              <UL>
+                <LI><tt>N, Rnum, Array</tt></LI></UL>
+              <LI>Outputs: 
+              <UL>
+                <LI>None </li></ul>
+              <LI>Calls: 
+                 <UL><LI>ascbin, dspmsg, binasc, dspout, GenRan, Simple, Recursive, Elapsed</LI></UL>
+              <LI>
+Timing prompts the user for a number of repetitions <i>R</i>. The number <i>R</i> must
+be strictly positive. Timing calls GenRan to generate the array.  Then Timing calls Simple
+<i>R</i> times and calls Elapsed to display the total time taken by <i>R</i> repetitions
+of the simple algorithm.  Finally, Timing calls Recursive <i>R</i> times and calls Elapsed
+to display the total time taken by <i>R</i> repetitions of the recursive algorithm.
+</li>
+<li>Just before starting the repeated calls,
+Timing executes the following instructions:
+<pre>
+MOV AH, 2Ch ; Get current time: (CH) = hrs, (CL) = mins,
+INT 21h     ;   (DH) = secs, (DL) = hundredths of secs
+MOV [Secs], DH
+MOV [Huns], DL
+</pre>
+              </LI></UL></TD></tr>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Elapsed</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Calculates elapsed time since the time of day was last checked 
+              <LI>Inputs: 
+              <ul>
+                <li><tt>Secs, Huns</tt>: seconds and hundredths of previous time of day
+                </LI></ul>
+              </li>
+              <LI>Outputs: 
+              <UL>
+                <LI> None </li></UL>
+              <LI>Calls: 
+                 <UL><LI>binasc, dspmsg, dspout </LI></UL>
+              <li> 
+Elapsed calculates the time that has elapsed since the previous execution
+of <tt>INT 21h</tt>, which obtained the values in <tt>Secs</tt> and <tt>Huns</tt>.
+Elapsed executes
+<pre>
+MOV AH, 2Ch ; Get current time: (CH) = hrs, (CL) = mins
+INT 21h     ;   (DH) = secs, (DL) = hundredths of secs
+</pre>
+to obtain the new time of day.  If the value of (<tt>DH</tt>) is smaller than the value
+stored at Secs, then Elapsed assumes that the minutes (<tt>CL</tt>) have changed by at most 1;
+that is, Elapsed assumes that the elapsed time is at most 60 seconds.  Elapsed
+types out the elapsed time in the format x.yy, where x is the number of
+seconds (0 to 59), and yy is the hundredths.
+
+         </li></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Simple</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Determines solution to Maximum Subsequence Sum Problem: the indices
+                        <i>r</i>, <i>s</i> that maximize <tt>Array</tt>[<i>r</i>] + ... + <tt>Array</tt>[<i>s</i>]
+              <LI>Inputs: 
+              <UL>
+                <LI><tt>N, Array</tt></li>
+              </UL>
+              <LI>Outputs: 
+              <UL>
+                <LI> <tt>SI, DI</tt> = indices <i>r</i>, <i>s</i> </LI>
+                <li> <tt>AX</tt> = value of the sum <tt>Array</tt>[<i>r</i>] + 
+                          <tt>Array</tt>[<i>r</i>+1] + ... <tt>Array</tt>[<i>s</i>]</UL>
+              <LI>Calls: 
+                 <UL><LI>None</LI></UL>
+              <LI>      
+Here is the simple algorithm that Simple uses:
+<pre>
+r := 0
+s := 0
+m := Array[0]                           (Value of maximum subsequence sum)
+FOR i = 0 TO n-1 DO
+        z := 0                          (Running total)
+        FOR j = i TO n-1 DO
+                z := z + Array[j]       (z = Array[i] + ... + Array[j])
+                IF m < z THEN  
+                        r := i          (Replace current candidates for r, s)
+                        s := j
+                        m := z          (m = Array[r] + ... + Array[s])
+                END IF
+        END FOR
+END FOR
+</pre>
+</LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Recursive</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Determines solution to Maximum Subsequence Sum Problem for the subarray
+                        from <tt>Array</tt>[<i>p</i>] to <tt>Array</tt>[<i>v</i>]: Recursive finds the indices
+                        <i>r</i>, <i>s</i> such that <i>p</i> <u><</u> <i>r</i> <u><</u> <i>s</i> <u><</u> <i>v</i>
+                        and <i>r</i>, <i>s</i> maximize <tt>Array</tt>[<i>r</i>] + ... + <tt>Array</tt>[<i>s</i>]
+              <LI>Inputs: 
+              <ul>
+                <LI><tt>Array</tt></li>
+                <li><tt>SI</tt> = beginning index <i>p</i>
+                <li><tt>DI</tt> = ending index <i>v</i>
+                <li>Assumes <i>p</i> <u><</u> <i>v</i>
+                </LI></ul>
+              </li>
+              <LI>Outputs: 
+              <UL>
+                <LI> <tt>SI, DI</tt> = indices <i>r</i>, <i>s</i> </LI>
+                <li> <tt>AX</tt> = value of the sum <tt>Array</tt>[<i>r</i>] + 
+                     <tt>Array</tt>[<i>r</i>+1] + ... <tt>Array</tt>[<i>s</i>]</UL>
+              <LI>Calls: 
+                <UL>Recursive, FixedEndSum </LI></UL>
+              <li> 
+If <i>p</i> = <i>v</i>, then Recursive exits with (<tt>SI</tt>)=(<tt>DI</tt>)=<i>p</i> and (<tt>AX</tt>) = <tt>Array</tt>[<i>p</i>].
+Otherwise, Recursive allocates space on the stack for local variables to hold the results of recursive calls.
+Recursive defines the midpoint <i>t</i> = (<i>p</i> + <i>v</i>)/2 rounded down,
+and Recursive calls itself recursively to find the solutions in the left subarray from 
+<tt>Array</tt>[<i>p</i>] to <tt>Array</tt>[<i>t</i>] and in the right subarray from 
+<tt>Array</tt>[<i>t</i>+1] to <tt>Array</tt>[<i>v</i>]. 
+<li>
+Finally, Recursive calls FixedEndSum twice with two different lists of parameters.
+The first call to FixedEndSum finds the index <i>q</i> such that 
+<i>p</i> <u><</u> <i>q</i> <u><</u> <i>t</i> and <i>q</i> maximizes the sum 
+<tt>Array</tt>[<i>q</i>] + ... + <tt>Array</tt>[<i>t</i>] in the left subarray that ends at the fixed index <i>t</i>.
+The second call to FixedEndSum finds the index <i>u</i> such that
+<i>t</i>+1 <u><</u> <i>u</i> <u><</u> <i>v</i> and <i>u</i> 
+maximizes the sum <tt>Array</tt>[<i>t</i>+1] + ... + <tt>Array</tt>[<i>u</i>] in the right subarray
+that begins at the fixed index <i>t</i>+1.
+The subsequence from index <i>q</i> to index <i>u</i> maximizes
+the sum among subsequences that straddle the left and right subarrays.
+<li>
+The pair of indices <i>r</i>, <i>s</i> output by Recursive is either the pair of indices from the recursive call on
+the left subarray, or the pair of indices from the recursive call on the right subarray,
+or the pair of indices <i>q</i>, <i>u</i> for the subsequence that straddles
+the two subarrays.
+<li>
+The initial calls to Recursive in DoFew and in Timing are made
+with <i>p</i> = 0 and <i>v</i> = <i>n</i>-1. 
+</LI></UL></TD></tr>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>FixedEndSum</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Finds the maximum subsequence sum in <tt>Array</tt> with a fixed end index 
+              <li>BX points to a parameter list
+              <LI>Inputs: 
+              <UL>
+                <li> <tt>Array</tt></li>
+                <LI> <tt>WORD [BX]</tt> = index <i>f</i> of the fixed end</li>
+                <li> <tt>WORD [BX+2]</tt> = index <i>o</i> of other end</li>
+                <li> <tt>WORD [BX+4]</tt> = direction <i>d</i> (+1 to increase from fixed end, -1 to decrease)</li>
+              </UL>
+              <LI>Outputs: 
+              <UL>
+                <LI><tt>WORD [BX+6]</tt> = index <i>k</i> that maximizes subsequence sum</li>
+                <li><tt>WORD [BX+8]</tt> = value <i>w</i> of sum</li>
+                </UL>
+              <LI>Calls: 
+                 <UL><LI>None</LI></UL>
+              <LI>      
+Here is the algorithm used by FixedEndSum:
+<pre>
+k := f                                  (Initialize outputs)
+w := Array[f]
+i := f
+z := Array[f]                           (Running total)
+WHILE i does not equal o DO             (i increases or decreases from f to o)
+        i := i + d 
+        z := z + Array[i]
+        IF z > w THEN
+                k := i
+                w := z
+        END IF
+END WHILE
+</pre>
+</LI></UL></TD></TR>
+
+
+</TBODY></TABLE>
+<H2>Friendly Advice</H2>
+<UL>
+<LI>The <tt>libmp3.lib</tt> file contains executable library subroutines for each of 
+the routines that you need to implement. The library subroutines allow
+you to run the program and understand how it works before you implement it. 
+You can test your program with any combinations of your own code and library 
+subroutines. You will receive credit only for the subroutines that 
+you implement yourself. </li>
+<li>The resolution of the time of day clock is approximately 0.05 second.
+When the running time is less than 0.05 second, the clock may indicate
+that no time has elapsed.</li>
+<LI>You may define new memory variables as needed. Variables associated with a 
+subroutine should be declared between the header comments and name label of the
+subroutine.</li>
+<li>You may design and implement additional subroutines, such as a subroutine
+PrintArray to print out all <i>n</i> words in <tt>Array</tt>.  In that case, DoFew would call
+PrintArray, which would call binasc and dspmsg.</li>
+<li>Each subroutine should save and restore any registers that it uses,
+except for registers that deliver subroutine outputs.  The caller 
+may use registers without outputs and expect them to remain unchanged. </li>
+<li>Be careful when converting an array index into an offset.  In the 
+Data Segment, the offset of <tt>Array[k]</tt> is <tt>(Offset Array) + 2k</tt>. </li>
+<LI>Monitor the Web board for clarifications and help.</li>
+<LI>START EARLY!</LI>
+</UL>
+
+<h2>Demonstration, Documentation, and Grading</h2>
+<p>Demonstrate your program to an ECE 390 staff member.  He will ask
+you to use Turbo Debugger to show the stack as it grows with recursive calls.</p>
+<p>As in MP2, keep an MP development log and write a cover memo, which should
+be submitted with the program after the demonstration.
+The cover memo should address the following questions:
+<UL>
+<LI>How much time did you spend on each subroutine, from
+planning and design through final debugging? </LI>
+<LI>What kinds of defects (bugs) did you find during the development 
+of the program? When did you discover these defects (during
+code review or during testing)? How did you find them?</LI>
+<LI>What did you learn about design, coding, testing, and debugging
+in this MP?</LI>
+<LI>What went well in your work on this MP?  What did not?</LI>
+<LI>What you would do differently for the next MP?</LI>
+</UL>
+<p>Your program will be graded according to the clarity of your design
+and the quality of your documentation.</p>
+
+<p>Gradesheet:<br>
+DoFew 8 points, Timing 8 points, Elapsed 8 points, Simple 9 points, Recursive 12 points,
+FixedEndSum 6 points <br>
+Style and documentation 5 points, Cover memo 4 points</p>
+       <HR>
+
+      <H2>mp3.asm (program framework)</H2><FONT size=-1>
+      <PRE>
+; MP3
+; Your Name
+; Date
+
+; This program compares the running times of the a simple algorithm and
+; a recursive algorithm for the Maximum Subsequence Sum Problem.
+
+        BITS    16
+
+;====== SECTION 1: Define constants =======================================
+
+        CR      EQU     0Dh             ; Carriage return
+        LF      EQU     0Ah             ; Line feed
+        BS      EQU     08h             ; Backspace
+        SPACE   EQU     20h             ; Space
+        StrLen  EQU     60              ; Maximum length of input string,
+                                        ;   including '$'
+        MaxN    EQU     30000  
+        MaxVal  EQU     1000            ; Maximum value to generate                             
+        
+;====== SECTION 2: Declare external procedures ============================
+
+GLOBAL  N, Rnum, Array, Secs, Huns
+EXTERN  ascbin, binasc, kbdin, dspout, dspmsg, mp3xit, GetStr, GenRan
+EXTERN  libDoFew, libTiming, libElapsed, libSimple, libRecursive, libFixedEndSum.
+
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        RESB      512*8
+stacktop:
+        RESB    0                       ; NASM bug workaround 
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+
+N       DW      1                       ; Number of words to handle
+Rnum    DW      1                       ; Random number 
+Array   RESW    MaxN
+Secs    RESB    1                       ; Initial time (seconds)
+Huns    RESB    1                       ; Initial time (hundredths)
+
+NMsg    DB      CR,LF,LF,'Number of words to handle: ','$'
+SMsg    DB      CR,LF,'Random seed: ','$'
+InvMsg  DB      CR,LF,'Invalid input','$'
+String  RESB    StrLen                  ; Input string from user
+
+; You may declare additional variables here
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        MOV     AX, CS                  ; Initialize Data Segment register
+        MOV     DS, AX  
+        MOV     AX, stkseg              ; Initialize Stack Segment register
+        MOV     SS, AX
+        MOV     SP, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+main:
+.LoopN:
+        MOV     DX, NMsg                ; Get number of words n
+        CALL    dspmsg
+        MOV     BX, String
+        CALL    GetStr
+        CALL    ascbin                  ; Convert to binary
+        CMP     DL, 0                   ; Check for conversion error
+        JNE     .BadN
+        MOV     WORD [N], AX
+        CMP     AX, 0                   ; Check in range
+        JL      .BadN
+        JE      .MP3Exit                ; On zero, exit program
+        CMP     AX, MaxN
+        JLE     .LoopS
+.BadN:
+        MOV     DX, InvMsg              ; Print Invalid message   
+        CALL    dspmsg
+        JMP     .LoopN
+
+.LoopS:        
+        MOV     DX, SMsg                ; Get random seed
+        CALL    dspmsg  
+        MOV     BX, String
+        CALL    GetStr
+        CALL    ascbin                  ; Convert to binary
+        CMP     DL, 0                   ; Check for conversion error
+        JE      .Continue
+        MOV     DX, InvMsg              ; Print Invalid message
+        CALL    dspmsg
+        JMP     .LoopS        
+
+.Continue:
+        MOV     WORD [Rnum], AX         ; Initialize Rnum with seed
+        CMP     WORD [N], 10            ; If n > 10 then
+        JBE     .UpTo10
+        CALL    Timing                  ;   call Timing
+        JMP     .LoopN
+.UpTo10:
+        CALL    DoFew                   ;   else call DoFew
+        JMP     .LoopN
+        
+.MP3Exit:
+        CALL    mp3xit       
+        
+;====== SECTION 8: Your subroutines =======================================
+
+DoFew:
+        CALL    libDoFew
+        RET
+
+Timing:
+        CALL    libTiming
+        RET
+
+Elapsed:
+        CALL    libElapsed
+        RET
+
+Simple:
+        CALL    libSimple
+        RET
+        
+Recursive:
+        CALL    libRecursive
+        RET
+
+FixedEndSum:
+        CALL    libFixedEndSum
+        RET
+</PRE></FONT></TD></TR></TBODY></TABLE>
+      </PRE></FONT></TD></TR></TBODY></TABLE>
+<TABLE class=dark cellSpacing=0 cellPadding=0 width="100%">
+  <TBODY>
+  <TR>
+    <TD><A href="http://courses.engr.illinois.edu/ece390/"><IMG src="/ece390/icon/go-back.gif"> Return to ECE390 Home Page</A></TD>
+    <TD align=right>Fall 2005</TD></TR></TBODY></TABLE></BODY></HTML>

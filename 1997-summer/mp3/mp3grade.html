@@ -1,0 +1,335 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>ECE291 Machine Problem 4</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.01Gold (Win95; I) [Netscape]">
+</HEAD>
+<BODY>
+
+<TABLE CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TD align=left   width=33%>ECE291</TD>
+
+<TD align=center width=34%>Computer Engineering II</TD>
+
+<TD align=right  width=33%>Plavcan, Summer 1997</TD>
+</TR>
+</TABLE>
+
+<H1 ALIGN=CENTER>Machine Problem 3: Grading Report</H1>
+
+<CENTER><P><I>Please print this page and provide it to the TA when you
+demonstrate your machine problem. The TA should verify each functionality
+item, initial the 'Demo' box, assign functionality and bonus points, then
+copy your files to the HANDIN floppy. This page should be stapled to the
+front of your printed .ASM program. </I></P></CENTER>
+
+<CENTER><P><FORM></P></CENTER>
+
+<CENTER><TABLE CELLPADDING=7 >
+<TR>
+<TD>
+<TABLE>
+<TR>
+<TD align=right>Name: </TD>
+
+<TD><INPUT name="name" size=30></TD>
+</TR>
+
+<TR>
+<TD align=right>Date Submitted: </TD>
+
+<TD><INPUT name="submitted" size=20></TD>
+</TR>
+
+<TR>
+<TD align=right>Demo To: </TD>
+
+<TD><INPUT name="demoto" size=6>Graded By: <INPUT name="gradedby" size=6></TD>
+</TR>
+</TABLE>
+</TD>
+
+<TD>
+<TABLE BORDER=1 >
+<TR>
+<TD><INPUT type=checkbox name="gradebook">Handin to floppy </TD>
+</TR>
+
+<TR>
+<TD><INPUT type=checkbox name="gradebook">Score recorded </TD>
+</TR>
+
+<TR>
+<TD><INPUT type=checkbox name="gold_star">Gold Star<BR>
+<I>Programming Excellence</I></TD>
+</TR>
+</TABLE>
+</TD>
+</TR>
+</TABLE></CENTER>
+
+<P></FORM></P>
+
+<TABLE BORDER=1 CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TH>Category</TH>
+
+<TH>Points</TH>
+
+<TH>Min</TH>
+
+<TH>Max</TH>
+</TR>
+
+<TR>
+<TD><B>Main</B> 
+<UL>
+<LI>Saves Old Interrupt Vectors</LI>
+
+<LI>Installs Interrupt Vectors</LI>
+
+<LI>Program terminates properly</LI>
+
+<LI>Program will not allow multiple copies</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>6</TD>
+</TR>
+
+<TR>
+<TD><B>ClrScr</B> 
+<UL>
+<LI>Works with any background color</LI>
+
+<LI>Uses string instructions</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>5</TD>
+</TR>
+
+<TR>
+<TD><B>TextBox</B> 
+<UL>
+<LI>Draws box of any size, any location</LI>
+
+<LI>Accepts any attribute byte</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>8</TD>
+</TR>
+
+<TR>
+<TD><B>TextStr</B> 
+<UL>
+<LI>Writes String properly</LI>
+
+<LI>Works for any string, any location</LI>
+</UL>
+</TD>
+
+<TD></TD>
+
+<TD>0</TD>
+
+<TD>7</TD>
+</TR>
+
+<TR>
+<TD><B>Timer</B> 
+<UL>
+<LI>Communicates using sempahores</LI>
+
+<LI>Countdown functions properly</LI>
+
+<LI>Calls old 1Ch routine</LI>
+
+<LI>System Time OK</LI>
+</UL>
+</TD>
+
+<TD></TD>
+
+<TD>0</TD>
+
+<TD>9</TD>
+</TR>
+
+<TR>
+<TD><B>KeyHandler</B> 
+<UL>
+<LI>Processes Hot Key (F10)</LI>
+
+<LI>Communicates using semaphores</LI>
+
+<LI>Passes all other keys properly</LI>
+
+<LI>Calls old 09h routine</LI>
+</UL>
+</TD>
+
+<TD></TD>
+
+<TD>0</TD>
+
+<TD>8</TD>
+</TR>
+
+<TR>
+<TD><B>Kernel</B> 
+<UL>
+<LI>Saves and restores screen after executing</LI>
+
+<LI>Uses TextBox</LI>
+
+<LI>Uses TextStr</LI>
+
+<LI>Uses ClrScr</LI>
+
+<LI>Restores interrupts properly</LI>
+</UL>
+</TD>
+
+<TD></TD>
+
+<TD>0</TD>
+
+<TD>7</TD>
+</TR>
+
+<TR>
+<TD><B>Creativity</B> 
+<UL>
+<LI>Creates a more pleasant screen-saving state</LI>
+</UL>
+</TD>
+
+<TD></TD>
+
+<TD>0</TD>
+
+<TD>+3</TD>
+</TR>
+
+<TR>
+<TD><B>Functionality SubTotal</B> </TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>50</TD>
+</TR>
+
+<TR>
+<TD><B>Modularity</B> <I>(* percentage of code written)</I> 
+<UL>
+<LI>Violates specifications for given subroutines</LI>
+
+<LI>Lacks appropriate use of additional subroutines to avoid code duplication.
+</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>-5</TD>
+
+<TD>0</TD>
+</TR>
+
+<TR>
+<TD><B>Technique &amp; Style</B> <I>(* percentage of code written)</I><BR>
+
+<UL>
+<LI>Compact and Efficient code </LI>
+
+<LI>Extraneous use of code, registers and/or variables: -3 <BR>
+</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>-5</TD>
+
+<TD>0</TD>
+</TR>
+
+<TR>
+<TD><B>Comments</B> <I>(* percentage of code written)</I> <BR>
+
+<UL>
+<LI>Clear and precise comments</LI>
+
+<LI>Sports Announcer-type comments: -1 </LI>
+
+<LI>Sparse and/or unclear comments: -3 </LI>
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>-5</TD>
+
+<TD>0</TD>
+</TR>
+
+<TR>
+<TD><B>Penalty/Bonus</B> <BR>
+<I>Before Wed 7/16: +1 pt/day<BR>
+Deadline after Thur 7/16: -30% (up to -15pts)</I></TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>-15</TD>
+
+<TD>5</TD>
+</TR>
+
+<TR>
+<TD><B>Total</B> </TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>50</TD>
+</TR>
+</TABLE>
+
+</BODY>
+</HTML>

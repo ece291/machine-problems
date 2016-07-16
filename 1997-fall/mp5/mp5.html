@@ -1,0 +1,892 @@
+<HTML>
+<HEAD>
+   <TITLE>ECE291 Machine Problem 4</TITLE>
+</HEAD>
+
+<BODY BGCOLOR="#FFFFFF">
+<TABLE BORDER=0 CELLPADDING=3 WIDTH="100%" >
+<TR>
+  <TD ALIGN=LEFT WIDTH="33%">ECE291</TD>
+  <TD ALIGN=CENTER WIDTH="34%">Computer Engineering II</TD>
+  <TD ALIGN=RIGHT WIDTH="33%">Lockwood, Fall 1997</TD>
+</TR>
+</TABLE>
+
+<CENTER>
+<H1>Machine Problem 5: Battletank Simulator:<br> 
+  Part II (Scalable Images and Program Design)</H1>
+</CENTER>
+
+<!--
+<p>
+<center>
+<img src="../../icon/construct.gif"><b>This MP is under construction</B>
+</center>
+-->
+
+<p>
+
+<CENTER>
+<TABLE BORDER=1 WIDTH="60%">
+<TR>
+  <TD ALIGN=RIGHT><B>Assigned</B></TD>
+  <TD>Thursday, November 13, 1997</TD>
+</tr><TR>
+  <TD ALIGN=RIGHT><B>Due Date</B></TD>
+  <TD>Tuesday, November 25, 1997</TD>
+</TR><TR>
+  <TD ALIGN=RIGHT><B>Points</B></TD>
+  <TD>50</TD>
+</TR></TABLE>
+</CENTER>
+
+<h2>Introduction</h2>
+
+In this MP, we will complete our 3-Dimensional virtual tank simulator.
+We will write a subroutine that efficiently scales a bit-mapped
+image to any size then writes it to any location on (or partly on) the screen.
+This new feature enables us to render enemies at 
+any depth in the 3D world. 
+<p>
+Using this routine routine; along with the polygon rendering, animated 
+background, and keyboard control developed in MP4; we will then
+create animated missions for our tank(s) in our electronic,
+3D-battlefield.
+<p>
+<p>
+<p>
+A screen dump of one such mission is shown below:
+<p>
+
+<Center>
+<img src="tankhall.gif" width="651" height="458"><br>
+<i>Figure 1: Tanks moving up, down and across a hallway</i><p>
+</center>
+
+
+
+<H2>Scalable Images </h2>
+The ability to scale an image allows us to render a graphic object 
+at a distance.  As an object moves away it becomes smaller;
+as it approaches, it becomes larger.
+To draw a video screen, we will read pixels from the ForeGround segment
+then transfer a scaled version of the image to the ScreenBuffer.
+
+<p>
+For this MP, we will specify the scaling factor as a percentage.  
+For scaling factors above 100, the image becomes larger.  
+For scaling factors below 100, the image shrinks.
+<p>
+To provide smooth, continuous motion, we must be able to 
+render an image at all possible scaling factors.  This includes
+non-even multiples and divisors of 100.  
+<p>
+Image scaling involves resampling of the pixels
+(both in of the x and y directions).
+It is easy to reduce the size of an image by 50%,
+ (just plot one pixel for every other pixel in the original image).
+Likewise, it is magnify an image by 300% 
+ (plot three duplicate pixels for every pixel in the source).  
+Scaling at the in-between values, however,
+is more difficult.  
+A scaling factor 
+of 137, for example, requires that the image size increase by an akward 37%.
+Spend a moment to think how you would scale such an image...
+<i>(Really, I mean it - pause here and think about it.  Consider 
+a small image image with 4x4 pixels)</i>.  
+
+<H2>Scaling Algorithm</h2>
+In general, a scaled image will contain some columns with N
+pixels and some columns with N+1 pixels.
+The same is true for the rows.
+<p>
+For any given scaling factor (SF), 
+N is equal to the integer quotient of SF/100.  Each pixel in the source
+should be always be copied N times to the destination.
+The remainder of SF/100 to holds a value proportional to the Extra (E) 
+faction of pixel not copied.  As with Bresenham's algorithm, as we plot 
+each pixel, we can compute a sum of E.  When E reaches the width of a 
+pixel, we should plot an extra pixel and subtract a full pixel width from E.
+
+<h2>Boundry Conditions</h2>
+
+Scaled images do not always fit on the screen.  
+With a large scaling factor, an image can grow to become larger than the 
+screen (as shown below).  In such a case, parts of the image 
+need to be clipped.  
+
+<p>
+<center>
+<img src="tankbig.gif" width="649" height="457"><br>
+<i>Figure 2: Images larger than the screen are clipped</i><p>
+</center>
+<p>
+
+For the ScaleTank routine, (XPos,YPos) specify the center of the image.
+The position can be anywhere in the X-Y plane -- even at outside 
+of the (0,0)-(319,199) screen.  If any part of 
+the image is visible, it should be rendered on the screen.
+If the region is not visible; it should not be rendered.
+<p>
+
+The boundry conditions determine where to 
+start reading the source image and where to start writing the result.   
+Note that the left edge of the image can be determined as 
+One half of the scaled width of the tank.  The same 
+applies to the other edges.
+<p>
+The 'MAIN 3' test case exercises most aspects of scaling and boundries.
+
+
+<H2>Performance Considerations </h2>
+
+The vast majority of the time spent in an image scaling algorithm is on the 
+computation of the individual pixels. 
+The source image for our 64x40 tank, for example,  
+contains over 2,000 pixels.  
+When scaled to full screen,
+this image requires plotting up to 64,000 pixels on the screen.
+
+For optimal performance, it is critical to minimize 
+the number of clock cycles spent on each pixel calculation.
+The time required to perform a calculation is the
+sum of the number of clock cycles required for each instruction times the 
+number of times it is used.  Not all operations complete in the same 
+amount of time.  MUL on a pentium, for example, requires 11 clock cycles; 
+while ADD requires only 1.  
+(Complete instruction timings are listed in your textbook and are 
+available in the 'Pentium.txt' file in your MASM directory).
+<p>
+To optimize performance; start with your inner-most loops and
+work outward.  Think of ways to avoid performing long calculations
+on every pixel.
+<p>
+Ten points of this machine problem is based on the speed of your 
+ScaleTank routine.  You will receive full credit if and only if
+your code is as fast as Lockwood's cripled library version of
+the 'MAIN 1' benchmark.
+
+
+<h2>Images</h2>
+
+We will represent tanks as a 64x40-pixel/256-color bitmap image.
+We will store tank images in our ForeGround memory segment.
+Using screen-sized segment of 320x200=64,000 bytes, we 
+can store up to 25 images in a 2-D matrix.
+(10/25 images are shown in the example below).
+Using the LoadPCX routine of MP4, all images are loaded and decoded
+at once.
+<p>
+
+In the columns of the matrix, we can store 5 images of each tank, 
+to representing 4 rotations and one explosion (rotation 0 referes to 
+the head-on view of the tank).  In the rows of the matrix,
+we can represent different players. 
+In 'tankview.pcx' file (shown below), player 0 referes to the green tank,
+while player 1 refers to the orange and blue tank.
+<p>
+
+
+
+<center>
+<table border=1><tr><td><img src="tankview.gif" width="320" height="200"></td></tr></table>
+<i>Foreground image data (tankview.pcx)</i><p>
+</center>
+<p>
+
+The pixels around the tanks were assigned to palette number 255.  
+In order to draw non-rectangular objects in ScreenBuffer,
+interprete this as an <i>invisible pixel</i>.  
+Do not plot this pixel from within the ScaleTank routine.
+
+
+<h2>Program Debugging</h2>
+For your convenience, the program provides several debugging modes.
+The first command line option specifies a test case; the second
+option adds a delay to each video frame of <i>d/18</i> seconds,
+allowing you to see what's going on even on a fast computer.
+<p>
+
+<center>
+<table border=1><tr><th>Command<br>Line</th><th>Test Case </th></tr>
+
+<tr><Td><tt>MAIN 1 d</tt><td>Illini tank in meadow <Br>(benchmark with d=0)
+<tr><td><tt>MAIN 2 d</tt><td>Green Tanks vs. Illini Tanks battlefield
+<tr><td><tt>MAIN 3  </tt><td>Interactive Demo <br>
+                               (ESC=exit, +/- Zoom, Arrows=Move)
+<tr><td><tt>MAIN 4 d</tt><td>Hall Demo (your code)
+<tr><td><tt>MAIN 5 d</tt><td>Your Demo (your code)
+<tr><td><tt>MAIN 6  </tt><td>TestRoutine 
+</table></center>
+
+
+
+
+<h2>Procedures</H2>
+
+<ul>
+
+<LI><B><FONT SIZE=+1>ScaleTank</FONT></b>
+<UL>
+<LI><B>Purpose</B>: 
+    Draws a scaled tank into the ScreenBuffer.
+    centered at the location specified by XPos, YPos.
+    Rotation determines the view of the tank.
+    PlayerNum determines which tank is drawn.
+  <LI><B>Inputs</B>
+    <UL>
+    <li>XPos: Horizontal position (image center) 
+    <li>YPos: Vertical position (image center) 
+    <LI>ScaleF: Scaling Factor Percentage.  
+        (100:Full size, <100=smaller, >100=larger)
+    <LI>Rotation: Selects which view to display (0..4)
+    <li>PlayerNum: Selects which tank to display (0..4)
+    </UL>
+  <LI><B>Requirements</B>
+    <ul>
+    <li><i>Everything discussed above and implemented in library</i>
+    <li>Smooth Scaling (smooth transition between scale values)
+    <li>Boundry Clipping (works for all possible XPos, YPos)
+    <li>Must be 100% Assembly Code
+    </ul>
+  <LI><B>Outputs</B>
+    <ul>
+    <li>Writes to ScreenBuffer 
+    </ul>
+  <li><B>Points</B>
+    <ul>
+    <li>Functionality: 20 
+    <li>Performance: 10 (Benchmarked against library with <tt>MAIN 1</tt>)
+      <ul>
+      <li>Faster than library: +12 (2 point bonus)
+      <li>As fast as library: +10 (full credit)
+      <li>Within 75% of library speed: +8
+      <li>Within 50% of library speed: +6
+      <li>Within 25% of library speed: +4
+      <li>Within 10% of library speed: +2
+      <li>More than 10 times slower: 0 
+      </ul>
+    </ul>
+
+</ul><p>
+
+<LI><B><FONT SIZE=+1>HallDemo</FONT></b>
+<UL>
+<LI><B>Purpose</B>: 
+    Moves three tanks in a long hallway.  Green tank is moving towards
+    the camera, Illini tank is moving away.  A second Illini tank
+    scrolls along the bottom.
+<li><b>Requirements</b>: 
+    <ul>
+    <li>Similar to <tt>Main 4</tt>
+    </ul>
+<li><b>Notes</b>:
+    <ul>
+    <li>You may write this routine in ASM or C
+    <li>This should be easy and short 
+    </ul>
+<li><B>Points</B>: 10
+</ul><p>
+
+<LI><B><FONT SIZE=+1>MyDemo</FONT></b>
+<UL>
+<LI><B>Purpose</B>: 
+    An animation of your own imagination.  Whatever you want.
+    Just be sure to incorporate scalable bitmaps, walls, and motion.
+<li><b>Requirements</b>: 
+    <ul>
+    <li>Impress your TA to get a gold star
+    </ul>
+<li><b>Notes</b>:
+    <ul>
+    <li>You may write this routine in ASM or C
+    </ul>
+<li><B>Points</B>: 10
+</ul>
+</ul>
+
+<!-- OK -->
+<H2>Preliminary Procedure</H2>
+
+<UL>
+<LI>Copy the MP5 framework program (MP5.ASM), main C program (main.c), 
+libraries (libmp5.lib, lib291.lib), background image file  (horizon.pcx), 
+foreground image file (tankview.pcx) and Makefile from the network drive 
+to your home directory with the following command: <BR>
+
+<TT>xcopy /s I:\ece291\mp5 F:\mp5</TT><br>
+or download the same files from the web as <a href="mp5.zip">mp5.zip</a>.
+
+<LI>As with the other MP's, run NMake to build an executable program using
+the given MP5 library functions.</LI>
+  <ul>
+  <li>You are required to write the ScaleTank routine 
+      in assembler.  You may write the ScaleTank HallDemo using either 
+      C or ASM.  You do not need a C compiler for this assignment.
+  <li>The C compiler used to compile main is Microsoft C600.
+      If you are working from home and do not have C600, just 
+      ignore (or remove) the reference to CL in the makefile
+      and link your code with MAIN.OBJ.
+  </ul>
+
+<li>Read through the given code (below).  You will implement three the 
+three procedures: ScaleTank, HallDemo, and MyDemo.  ScaleTank is the
+most challenging.  It is worth 30 points (20 for functionality plus 
+10 for performance).  
+The HallDemo and MyDemo routines illustrate 
+easy it can be to put together a nifty 3D simulator once you've written
+the routines.  As always, start early!  This assignment
+is due before thanksgiving.
+
+  </ul>
+
+<H2>Errata</H2>
+<ul>
+<li><i>Will be listed here and/or discussed in the newsgroup</i>
+</ul>
+
+
+<H2>Final Steps</H2>
+<OL>
+<LI>Demonstrate MP5.EXE to a TA or to the instructor.
+Be sure that you can run the all the test cases
+that exercise each routine.
+
+<LI>Be prepared to answer questions about any aspect of the operation of your
+program.&nbsp; The TA's will not accept an MP if you cannot fully explain
+the operation of any part of your algorithm or code.</LI>
+
+<LI>Copy you programs to the handin floppy: 
+  <TT>A:\HANDIN <I>YourWindowsLogin</I></TT></LI>
+
+<LI> Print MP5.ASM (and the relevant part of MAIN.C, if you modified it).  
+Use small fonts to save paper.</LI>
+</OL>
+
+</ul>
+
+<!-- ---------------------------------------------------------------- -->
+<!-- ---------------------------------------------------------------- -->
+
+<HR WIDTH="100%">
+<H2>MAIN.C (Program framework)</H2>
+<font size=-1><pre>
+//        Battletank Simulator : Part II
+//        ------------------------------
+//        ECE291: MP5
+//        Prof. John W. Lockwood
+//        Unversity of Illinois, Dept. of Electrical & Computer Engineering
+//        ; Assistant Guest Authors: Mike Carter, Johanna Canniff
+//        Fall 1997
+//        Revision 1.0
+
+
+// ------------------- New ScaleTank Procedure for MP5 ----------------------
+
+// (You need to write the Assembly code for these routines in MP5.ASM)
+
+extern void far ScaleTank(int  XPos, int YPos,  /* X,Y Position on Scren  */ \
+                          int  ScaleF,          /* Scale Factor: 100=100% */ \
+                          char Rotation,        /* Rotational View (0..4) */ \
+                          char PlayerNum );     /* PlayerNum (0..4)       */
+
+extern void far HallDemo(int delay);  /* Hallway Demo */
+
+extern void far MyDemo  (int delay);  /* Demo of your own invention */                      
+
+// -------------- Existing MP4/MP5 Procedures defined in MP5.ASM ------------
+
+extern void far TestRoutine();
+extern void far DrawPoly(int x1, int y1, int y3, \
+                         int x2, int y2, int y4, \
+                         unsigned char color);
+extern void far LoadBackgroundPCX(char far *Fname);
+extern void far LoadForegroundPCX(char far *Fname);
+extern void far DelayTick(int clocks);
+extern void far DrawBufferToScreen();
+extern void far AnimateBackgroundToBuffer(int Horshift);
+extern void far InstKey();
+extern void far DeInstallKey();
+extern void far ModeText();
+extern void far ModeGraph();
+
+// Procedures defined in LIBMP5
+
+extern void far SetStart(); // From libmp5
+extern void far mp5xit();
+
+// External Variables
+
+extern int  far ExitFlag;  //  Variables defined in mp5.asm, Set in MyKeyInt
+extern int  far Xoffset;   
+extern int  far Yoffset;   //  Note: _Underscore added to var names in ASM
+extern int  far Zoom;      //  Note: _Zoom is new: responds to '+' & '-' keys
+
+// -------------------- Global variables in C routine ----------------------
+
+int CloudPos = 0;
+
+void TankScreen (int x, int y, int scale, \
+                 unsigned char  rotation, unsigned char tanknum) {
+  AnimateBackgroundToBuffer( CloudPos = (CloudPos+1) % 320 ); // Move clouds
+  ScaleTank(x,y,scale,rotation,tanknum); // Draw our tank in ScreenBuffer
+  DrawBufferToScreen(); // Write to screen
+}
+
+
+main(int argc, char* argv[]) { // Program Usage :  'MAIN testcase delay'
+
+    // Test Cases: 'MAIN 1 d ' : Illini tank in meadow (benchmark with d=0)
+    //             'MAIN 2 d ' : 4 Tank vs. 4 Tank battlefield
+    //   d=delay   'MAIN 3   ' : Interactive (ESC=exit, +/- Zoom, Arrows=Move)
+    //  (1/18sec)  'MAIN 4 d ' : Hall Demo (your code)
+    //   0=fast    'MAIN 5 d ' : Your Demo (your code)
+    //             'MAIN 6   ' : TestRoutine 
+
+  int i=0;
+  int CloudPos=0;      // Local variables in Main
+  int  x,  y,  scale;
+  int x0, y0, scale0;
+  int choice;
+  int delay;
+
+  SetStart(); // Start Clock Timer  (LIBMP5 call)
+
+  ModeGraph(); // Switch to 320 x 200 graphics
+
+  LoadBackgroundPCX( "horizon.pcx" );  // Load Graphics Data
+  LoadForegroundPCX( "tankview.pcx" );
+
+  if (argc == 3)
+    delay = argv[2][0] - '0';   // Set user-specified delay (3rd argument)
+  else                          
+    delay = 0;
+
+
+  if (argc >  1) switch (argv[1][0]) { // Read command line arguments
+
+
+    case '1': // Single Tank Demo (high speed)
+
+        x =  -40;      // Initially: Illini Tank on Left of screen (not visible)
+        y =  100;      // Vertically Center 
+        scale = 100;   // Scaled at 100%
+
+        for ( ; x<120; x++) { // Enter screen from the left
+          TankScreen ( x, y, scale, 3 , 1); DelayTick(delay); }
+
+        for ( ; scale<750 ; scale+=5 ) { // Turn toward camera and advance
+          TankScreen ( x, y, scale, 0 , 1); DelayTick(delay); }
+
+        for ( ; x<220 ; x++) { // Move more to the right
+          TankScreen ( x, y, scale, 3 , 1); DelayTick(delay); }
+
+        for ( ; scale>10; scale-=5) { // Turn away and move back
+          TankScreen ( x, y, scale, 2 , 1); DelayTick(delay); }
+
+        for ( ; scale<100; scale+=1) { // Turn away and move back
+          TankScreen ( x, y, scale, 0 , 1); DelayTick(delay); }
+
+        for ( ; x<320 ; x++) { // Move more to the right
+          TankScreen ( x, y, scale, 3 , 1); DelayTick(delay); }
+
+        break;
+
+    case '2': // Two Tank Demo
+
+          for ( x=1 ; x<110 ; x++, x0--) {
+            AnimateBackgroundToBuffer( CloudPos = (CloudPos+1) % 320 );
+            for (y=0; y<4; y++ ) {
+              ScaleTank(    x, y*40+10 , 31*y+27 , 3, 0); // Left Tanks 
+              ScaleTank(320-x, y*40+10 , 35*y+17 , 1, 1); // Right Tanks 
+            }
+
+            DrawBufferToScreen(); // Write to screen
+            DelayTick(delay);
+          }
+
+        AnimateBackgroundToBuffer( CloudPos = (CloudPos+1) % 320 );
+            for (y=0; y<4; y++ ) {
+              ScaleTank(    x, y*40+10 , 31*y+27 , 4, 0); // Left Tanks 
+              ScaleTank(320-x, y*40+10 , 35*y+17 , 1, 1); // Right Tanks 
+            }
+
+        DrawBufferToScreen(); // Write to screen
+        DelayTick(30*delay);
+
+        break;
+
+    case '3': // Move around the screen using [LEFT], [RIGHT], [UP], [DOWN]
+
+        x = 160;      
+        y = 100;      // Start at Middle of screen
+        scale = 100;
+
+        InstKey();
+        while (ExitFlag!=1) {
+
+          x += Xoffset;
+          y += Yoffset;
+          scale += Zoom;
+
+          TankScreen ( x, y, scale, 0 , 1); // Illini tank at zero rotation
+
+        }
+        DeInstallKey();
+
+        break;
+
+    case '4': // Hallway Demo 
+
+        HallDemo( delay ); // Call ASM Routine
+        break;
+
+    case '5':
+
+        MyDemo( delay ); // Your Demo (You may write this in ASM or C)
+        break;
+
+    case '6':
+
+        TestRoutine(); // Useful For debugging (Use as you wish)
+        break;
+
+    default: ; 
+  }
+
+  ModeText();
+  mp5xit();
+ 
+}
+</pre></font> </BODY>
+</HTML>
+
+<!-- ---------------------------------------------------------------- -->
+<!-- ---------------------------------------------------------------- -->
+
+<HR WIDTH="100%">
+<H2>MP5.ASM (Program framework)</H2>
+<font size=-1><pre>
+        PAGE 75, 132
+        TITLE Tank Simulation (Part II) - Your Name - Current Date
+
+.MODEL LARGE  ; Allow multiple segments
+.486          ; Enable use of 32-bit registers (EAX, EBX, etc.) 
+
+COMMENT %
+        Battletank Simulator : Part II
+        ------------------------------
+        ECE291: MP5
+        Prof. John W. Lockwood
+        Unversity of Illinois, Dept. of Electrical & Computer Engineering
+        ; Assistant Guest Authors: Mike Carter, Johanna Canniff
+        Fall 1997
+        Revision 1.0
+        %
+
+;====== Constants =========================================================
+
+VIDGRSEG   EQU 0A000h    ; VGA Video Graphics Segment Adddress
+VIDTEXTSEG EQU 0B800h    ; VGA Video Text Segment Adddress
+
+CR         EQU 13
+LF         EQU 10
+
+
+GMODE MACRO ; Switch to 320x200 - 256 colors graphics (Mode 13h)
+          mov     ax, 0013h     ; Set VGA to Mode 13 graphics
+          int     10h
+ENDM
+
+TMODE MACRO ; Switch to 80x50 Text Mode Video
+          MOV  AX, 1202h
+          MOV  BL, 30h
+          int  10h
+          MOV  AX, 3
+          INT  10h
+          MOV  AX, 1112h
+          MOV  BL, 0
+          INT  10h
+ENDM
+
+;====== Externals =========================================================
+
+; -- LIB291 Routines (Free) ---
+extrn rsave:near, rrest:near, dspout:near, dspmsg:near, binasc:near, kbdin:near
+
+; extrn __DrawPoly
+;extrn __LoadPCX
+;extrn __MoveScreen
+;extrn __AnimateScreen
+;extrn __InstKey
+;extrn __DeInstallKey
+;
+; -- LIBMP4 Routines (From Part I of assignment) --
+
+; Consult MASM Programmers guide or use 'MASM /h' for help on command syntax
+;   for the INVOKE and PROTO directives.
+
+_DrawPoly PROTO far C \
+  X1:word, Y1:word, Y3:word, X2:word, Y2:word, Y4:word, Color:byte
+
+_LoadPCX  PROTO far C      DestSeg:word, Fname:far ptr byte
+
+_MoveScreen PROTO far C    DestSeg:word, SourceSeg:word
+
+_AnimateScreen PROTO far C DestSeg:word, SourceSeg:word, HorShift:word
+
+_InstKey PROTO far C
+
+_DeInstallKey PROTO far C
+
+; -- New LIBMP5 Routine ---
+
+_ScaleTank PROTO far C \
+  XPos:word, YPos:word, Scalef:word, Rotation:byte, PlayerNum:byte
+
+_HallDemo PROTO far C Delay:word
+
+_mp5xit PROTO far C
+
+;====== Additional Data Segments ==========================================
+
+
+SBSeg segment PUBLIC 'DATA1'
+    ScreenBuffer DB 65535 dup(?)  ; Buffered Screen Segment
+SBSeg ENDS
+
+BGSeg segment PUBLIC 'DATA2'
+    Background   DB 65535 dup(?)  ; Background Graphics Buffer
+BGSeg ENDS
+
+FGSeg segment PUBLIC 'DATA3'
+    ForeGround   DB 65535 dup(?)  ; Foreground Graphics Buffer
+FGSeg ENDS
+
+ScrSeg segment PUBLIC 'DATA4'
+    ScratchPad   DB 65535 dup(?)  ; Scratch (temporary) buffer
+ScrSeg ENDS
+
+;====== Code/Data segment ================================================
+cseg    segment public 'CODE' 
+        assume  cs:cseg, ds:cseg, es:nothing
+
+;====== Variables ========================================================
+
+CRLF      db CR, LF, '$'
+pbuf      db 7 dup(?)   
+                             
+OldVector dd ?          ; Pointer to old keyboard routine  ; Set by InstKey
+
+; Variables Set by MyKeyInt (Note that _ added for C compatibilty)
+_ExitFlag    db 0   ; 0=Play, 1=Exit - Set by MyKeyInt ; Set by MyKeyInt
+_Xoffset     dw 0   ; {-1,0,1} for left, stop, right   ; Set by MyKeyInt
+_Yoffset     dw 0   ; {-1,0,1} for forward, stop, back ; Set by MyKeyInt
+_Zoom        dw 0   ; {-1,0,1} for '-', stop, '+'      ; Set by MyKeyInt
+
+PUBLIC _ExitFlag, _Xoffset, _Yoffset, _Zoom
+
+PUBLIC OldVector
+PUBLIC ScreenBuffer, BackGround, ForeGround, ScratchPad
+
+; ======== Your Code ======================================================
+
+ScaleTank proc far C PUBLIC uses DI SI ES DS ,
+        XPos:word, YPos:word, Scalef:word, Rotation:byte, PlayerNum:byte
+
+        ; Write 'PlayerNum' tank image from ForeGround to ScreenBuffer.
+        ; Image should be *centered* at XPos, YPos,
+        ; Scaled by Scalef % (any possible value between 0 and 2^16-1)
+        ; and viewed at 'Rotation' (0..5)
+
+
+        ; Insert your new code here then comment line below !
+
+        Invoke _ScaleTank, XPos, YPos, Scalef, Rotation, PlayerNum ; lib call
+
+        ; (Note: Efficiency matters!  It is worth an extra 10 points!)
+
+        RET
+ScaleTank ENDP
+
+; ------------------------------------------------------------------------
+
+HallDemo proc far C PUBLIC uses DI SI ES DS , Delay:word
+
+        ; Draws one scaled tank moving down a hallway,
+        ;       one scaled tank moving  up  a hallway,
+        ;       and a little tank moving across a hallway
+        ;
+        ; Calls 'Delay' between video frames to slow animation for humans
+        ;
+        ; Test Case: 'MAIN 4'
+
+        ; Insert your new code here then comment line below !
+
+        Invoke _HallDemo, Delay ; lib call
+
+        RET
+HallDemo ENDP
+
+; ------------------------------------------------------------------------
+
+MyDemo proc far C PUBLIC uses DI SI ES DS , Delay:word
+
+        ; Use your imagination to create an interesting tank battle.
+        ; Try including walls, multiple tanks, and movement.
+        ;
+        ; Test Case: 'MAIN 5'
+
+        ; Insert your new code here then comment line below !
+
+
+        RET
+MyDemo ENDP
+
+
+; ======== Calls to LIBMP4 Routines =======================================
+
+; For MP5, you may use MP4 library routines or insert your own code
+;             (there is no penalty for using libmp4 routines)
+
+DrawPoly proc far C PUBLIC uses BX CX DX SI DI DS ES,
+        X1:word, Y1:word, Y3:word, X2:word, Y2:word, Y4:word, Color:byte
+        ; Insert your Part I code here, if you wish, and comment line below.
+        Invoke _DrawPoly, X1, Y1, Y3, X2, Y2, Y4, Color ; ; Library Call
+        RET
+DrawPoly endp
+
+LoadBackgroundPCX  proc far C PUBLIC   , Fname:far ptr byte
+        ; Insert your Part I code here, if you wish, and comment line below.
+        ; Call with DestSeg = Seg Background.
+        Invoke _LoadPCX, Seg BackGround , FName
+        RET
+LoadBackgroundPCX endp
+
+LoadForegroundPCX  proc far C PUBLIC   , Fname:far ptr byte
+        ; Insert your Part I code here, if you wish, and comment line below.
+        ; Call with DestSeg = Seg ForeGround.
+        Invoke _LoadPCX, Seg ForeGround , FName
+        RET
+LoadForegroundPCX endp
+
+DrawBufferToScreen proc far C PUBLIC    DestSeg:word, SourceSeg:word
+        ; Insert your Part I code here, if you wish, and comment line below.
+        ; Call with DestSeg = VidGrSeg, SourceSeg = Seg ScreenBufer
+        Invoke _MoveScreen, VidGrSeg , Seg ScreenBuffer
+        RET
+DrawBufferToScreen endp
+
+AnimateBackgroundToBuffer proc far C PUBLIC, HorShift:word
+        ; Insert your Part I code here, if you wish, and comment line below.
+        ; Call with DestSeg = Seg ScreenBuffer, SourceSeg = Seg Background
+        Invoke _AnimateScreen, SEG ScreenBuffer, SEG Background, HorShift
+        RET
+AnimateBackgroundToBuffer endp
+
+InstKey proc far C PUBLIC 
+        ; Insert your Part I code here, if you wish, and comment line below.
+        ; Add code to set Zoom = {-1,0,1} for '-' or '+'
+        ; Prefix _XOffset, _YOffset, _ExitFlag, and _Zoom with _Underscore
+        Invoke _InstKey
+        RET
+InstKey endp
+
+DeInstallKey proc far C PUBLIC
+        ; Insert your Part I code here, if you wish, and comment line below.
+        Invoke _DeInstallKey
+        RET
+DeInstallKey endp
+
+; ======== Given Procedures ===============================================
+
+WaitRetrace proc near
+       ; Waits for the monitor beam to make one full pass of the screen.
+       ; Combats flicker, but also slows down the redraw rate considerably.
+       ; (Free code)
+
+        push    dx
+        push    ax
+
+        mov     dx, 3DAh ; VGA Refresh Status Register
+
+WRLoop: in      al, dx
+        and     al, 08h  ; Vertical Refresh bit
+        jnz     WRLoop
+
+        pop     ax
+        pop     dx
+
+        ret
+WaitRetrace endp
+
+
+DelayTick proc far C PUBLIC uses ES , Clocks:word
+        ; Delays Clocks/18 seconds, clock cycles.
+
+        MOV CX,Clocks
+        CMP CX,0
+        JE DTDone
+
+        MOV AX,0000h
+        MOV ES,AX
+
+        DTMain:             ; Read Timer Tick at 0000:046Ch (See Brey, p 399)
+          MOV AX,ES:[046Ch]
+
+        DTAgain:
+          CMP AX,ES:[046Ch] ; Look until it changes
+          JE DTAgain
+
+        LOOP DTMain
+  DTDone:
+        RET
+DelayTick ENDP
+
+ModeGraph proc far C PUBLIC ; Switch to Graphics Mode
+        GMODE
+        ret
+ModeGraph endp
+
+ModeText proc far C PUBLIC  ; Switch to Text Mode
+        TMODE
+        ret
+ModeText endp
+
+; ======== Test Cases =====================================================
+
+TestMsg  db 'TestRoutine is handy for debugging',CR,LF,'$'
+TestMsg2 db '[Press any key to continue]',CR,LF,'$'
+
+TestRoutine proc far C PUBLIC uses ES DS SI DI
+
+        mov ax,cs  ; Be sure to set DS for our segment
+        mov ds,ax
+
+        ; This routine is called when you type 'MAIN 6'
+
+        TMODE
+
+        MOV dx, offset TestMsg
+        CALL DSPMSG
+
+        MOV dx, offset TestMsg2
+        CALL DSPMSG
+
+        CALL KBDIN ; Wait for keypress ...
+
+        RET
+TestRoutine endp
+
+; ======== END of Program =================================================
+
+; Note that there is no MAIN routine in this ASM file.
+; All procedures were called from main.c
+
+cseg    ends
+        end
+</pre></font> </BODY>
+</HTML>
+
+
+

@@ -1,0 +1,441 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>Differences between MASM and NASM</title>
+</head>
+
+<body>
+
+<h1 align="center"><FONT size=+2><b><i> MASM vs. NASM</i></b></FONT></h1>
+<P>Notice that NASM directives are much different than MASM ones.  While the NASM help files provide very detailed information
+about all of the NASM directives as well as the macro system, here's a short overview of most of
+the ones used here:</P>
+<TABLE border=2><TR>
+<TD><CODE>%include</CODE></TD>
+<TD colspan=2>This preprocessor command works just like <CODE>#include</CODE> in C.&nbsp;
+  It just inserts the file you tell it into your code in it's place.</TD>
+</TR><TR>
+<TD><CODE>BITS 32</CODE></TD>
+<TD colspan=2>This directive tells NASM this is a 32-bit assembly file.</TD>
+</TR><TR>
+<TD><CODE>SECTION</CODE></TD>
+<TD colspan=2>This directive tells NASM what section everything between it and the next
+SECTION directive will go into.  There are three sections most commonly used:</TD>
+</TR><TR>
+<TD>&nbsp;</TD>
+<TD><CODE>.bss</CODE>:</TD>
+<TD>Uninitialized data (similar to <CODE>dw(?)</CODE> in MASM)</TD>
+</TR><TR>
+<TD>&nbsp;</TD>
+<TD><CODE>.data</CODE>:</TD>
+<TD>Initialized data</TD>
+</TR><TR>
+<TD>&nbsp;</TD>
+<TD><CODE>.text</CODE>:</TD>
+<TD>Program code</TD>
+</TR><TR>
+<TD><CODE>resb</CODE>, <CODE>resw</CODE>, <CODE>resd</CODE></TD>
+<TD colspan=2>The uninitialized versions of <CODE>db</CODE>, <CODE>dw</CODE>, and <CODE>dd</CODE>.</TD>
+</TR><TR>
+<TD><CODE>times</CODE></TD>
+<TD colspan=2>NASM version of MASM's <CODE>dup</CODE>.</TD>
+</TR></TABLE>
+
+<P><B>NASM Is Case-Sensitive</B>
+<BR>One simple difference is that NASM is case-sensitive. It makes a difference whether you call
+your label <CDOE>foo, <CODE>Foo</CODE> or <CODE>FOO</CODE>.
+
+<P><b>Uninitialized (.bss) Section</b>
+<BR>Sure MASM could have uninitialized variables with &quot;dw ?&quot; but this
+was totally stupid because everyone knew it started out with a value of
+zero.&nbsp; Why have an uninitialized section?&nbsp; Let me Answer that question with another:&nbsp; Where are the initial values for the
+initialized variables stored?&nbsp; They must be assembled and linked into the
+executable, and so they must take up space on disk there.&nbsp; In MASM, if you declare a
+bunch of data, it will devote part of the executable to that data.&nbsp; All
+those BufferSegs and FontSegs and ScratchSegs and everyting else all were
+included in the .exe file.&nbsp; This is pretty stupid because there's no reason
+64k of zeros need to be stored in the .exe file.&nbsp; The situation is even
+worse in protected mode where you'll want to declare 4MB buffers for
+high-resolution images.&nbsp; Not only does this data take up space on disk, but
+it takes forever to load it all into memory.<P>So back to the uninitialized Section.&nbsp; When the
+protected-mode program gets loaded, the loader reads all the initialized data right from the
+file into memory.&nbsp; It also reads <i>one number</i> telling it how much
+uninitialized data there was and allocates that much space for it in
+memory.&nbsp; Much smarter, eh?&nbsp; If a variable doesn't need an initial
+value, put it in the uninitialized section.<P>Why is the code section called
+.text and the uninitiated section called .bss?&nbsp; Standard UNIX / C names for
+things don't make a whole lot of sense:&nbsp; A guy asks his wife, &quot;Why do
+you always cut the ends off your pot roast?&quot;&nbsp; She responds,
+&quot;Because that's what my mother always did.&quot;&nbsp; He asks her mother
+who replies, &quot;That's what <i>my</i> mother always did.&quot;&nbsp; Luckily
+enough the grandma is still alive and when the guy asks her, she laughs and
+replies, &quot;Because I never had a pot big enough for it.&quot;
+
+<P><b>Labels are Everything.</b>
+<BR>This was true in MASM too, but people for some reason believe that the
+&quot;proc&quot; stuff was magical.&nbsp; NASM has no build in proc, so
+everything is a label.&nbsp; A subroutine can be nothing but a label that you
+&quot;call&quot; to instead of &quot;jmp&quot; to.&nbsp; Of course the call will
+push the return address on the stack, and the &quot;ret&quot; a the end of your
+subroutine will pop it, so you can't just &quot;jmp&quot; to your subroutine or
+it will return to some random value that just happened to be on the stack.
+
+<P>Also, you may notice the widespread use of <CODE>.label</CODE>'s.  These are "local" labels that are local to
+the last label without a dot before it.&nbsp; This is so you don't have to worry
+about having two labels with the same name. You also don't need a colon after the
+label name, but it has to appear on a line by itself.
+
+<P><B>NASM Requires Square Brackets For ALL Memory References</B>
+<BR>NASM was designed with simplicity of syntax in mind. One of the design goals of NASM is that
+it should be possible, as far as is practical, for the user to look at a single line of NASM code and
+tell what opcode is generated by it. You can't do this in MASM.&nbsp; If you declare, for example,<br>
+<table border="1" width="100%">
+  <tr>
+    <td width="100%">
+
+<P><samp>foo&nbsp;&nbsp;&nbsp;&nbsp; equ 1<br>
+bar&nbsp;&nbsp;&nbsp;&nbsp; dw 2<br>
+<br>
+mov ax, foo&nbsp;&nbsp; <font color="#808080">; MASM spits out <b>mov ax, 1</b></font><br>
+mov ax, bar&nbsp;&nbsp; <font color="#808080">; MASM spits out <b>mov ax, word ds:[12]</b>  &nbsp;</font><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#808080">;
+if offset
+bar happens to be 12.</font></samp></td>
+  </tr>
+</table>
+<P>The bottom two lines generate completely different opcodes, despite having identical-looking syntaxes.</P>
+<P>NASM avoids this undesirable situation by having a much simpler syntax for memory
+references. The rule is simply that any access to the <I>contents</I> of a memory location requires
+square brackets around the address, and any access to the <I>address</I> of a variable doesn't. So an
+instruction of the form <CODE>mov ax, foo</CODE> will <I>always</I> refer to a compile-time constant, whether it's an
+<CODE>EQU</CODE> or the address of a variable; and to access the <I>contents</I> of the variable bar, you must code
+<CODE>mov ax, [bar]</CODE>. This sounds nice here, and it is, but <b>You <i> will</i> forget this when you code!</b></P>
+<P>This also means that NASM has no need for MASM's <CODE>OFFSET</CODE> keyword, since the
+MASM code <CODE><b>mov ax, offset bar</b></CODE> means exactly the same thing as NASM's <CODE><b>mov ax, bar</b></CODE>. </P>
+<table border="1" width="100%">
+  <tr>
+    <td width="50%">MASM Syntax</td>
+    <td width="50%">NASM Syntax</td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><samp>bob db&nbsp; 12h<br>
+      <br>
+      mov dx, <b> offset bob</b>&nbsp;&nbsp;<br>
+      </samp>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<font color="#808080"> </font> <samp><font color="#808080">; 16-bit, so address is 16-bit</font><br>
+      mov al, <b> bob</b><br>
+      &nbsp;&nbsp; <font color="#808080">; MASM remembers variable types,<br>
+      &nbsp;&nbsp; ; so you don't need &quot;byte ptr&quot;&nbsp;</font></samp></td>
+    <td width="50%" valign="top"><samp>bob db&nbsp; 12h<br>
+      <br>
+      mov edx, <b> bob</b>&nbsp;&nbsp;<br>
+      &nbsp;&nbsp;&nbsp; <font color="#808080">; 32-bit address.&nbsp; No offset keyword</font><br>
+      mov al, <b> byte [bob]</b><br>
+      &nbsp;&nbsp;&nbsp; <font color="#808080">; Memory accesses require []'s.<br>
+      &nbsp;&nbsp;&nbsp; ; You need the &quot;byte&quot; keyword always.</font></samp></td>
+  </tr>
+</table>
+<P>NASM, in the interests of simplicity, also does not support the hybrid syntaxes supported
+by MASM and its clones, such as <CODE>mov ax, table[bx]</CODE>, where a memory reference is denoted by one
+portion outside square brackets and another portion inside. The correct syntax for the above is
+&quot;<CODE>mov ax, [table+bx]</CODE>&quot;&nbsp; This is what it looks like
+when you disassemble MASM generated objects anyway, right?&nbsp; Likewise, &quot;<CODE>mov ax,
+es:[di]</CODE>&quot; is wrong and &quot;<CODE>mov ax, [es:di]</CODE>&quot; is right.</P>
+
+<P>It's <b>very</b> important to understand how NASM works.&nbsp; If nothing
+else shows up about protected mode on an exam, this will:</P>
+
+<ul>
+  <li>Names you declare with <b><samp>equ</samp></b> are &quot;searched and
+    replaced&quot; by a constant -- the <i><b>value</b></i> you give them.</li>
+  <li>Names you declare with <b><samp>db</samp></b>, <b><samp>dw</samp></b>, and
+    <b><samp>dd</samp></b> are &quot;searched and replaced&quot; by a constant
+    -- the <i><b>address</b></i> of the memory it allocated for you.</li>
+  <li><b><samp>mov ax, 42h</samp></b> will move the 42h into ax.&nbsp; This
+    constant might be a <i>value</i> that came from an <b><samp>equ</samp></b>,
+    an <i>address</i> that came from <b><samp>db</samp></b>, <b><samp>dw</samp></b>,
+    or <b><samp>dd</samp></b> , or just a plain old number that you typed.</li>
+  <li><b><samp>mov ax, [42h]</samp></b> will move the value in memory at address
+    42h.&nbsp; This constant also might be a <i>value</i> that came from an <b><samp>equ</samp></b>,
+    an <i>address</i> that came from <b><samp>db</samp></b>, <b><samp>dw</samp></b>,
+    or <b><samp>dd</samp></b> , or just a plain old number that you typed.</li>
+</ul>
+
+<P><B>NASM Doesn't Store Variable Types</B>
+<BR>NASM, by design, chooses not to remember the types of variables you declare. Whereas MASM
+will remember, on seeing <CODE><b>var dw 0</b></CODE>, that you declared var as a word-size variable, and will then
+be able to fill in the ambiguity in the size of the instruction <CODE><b>mov var, 2</b></CODE>, NASM will deliberately
+remember nothing about the symbol var except where it begins, and so you must <i> explicitly</i> code<b>
+<CODE>mov word [var], 2</CODE></b>.&nbsp; Again, this has to do with the ability
+to look at any single line of NASM code and know exactly what is going on.
+<P>For this reason, NASM doesn't support the <CODE>LODS</CODE>, <CODE>MOVS</CODE>,
+<CODE>STOS</CODE>, <CODE>SCAS</CODE>, <CODE>CMPS</CODE>, <CODE>INS</CODE>, or
+<CODE>OUTS</CODE> instructions, but only supports the forms such as
+<CODE>LODSB</CODE>, <CODE>MOVSW</CODE>, and <CODE>SCASD</CODE>, which
+explicitly specify the size of the components of the strings being manipulated.</P>
+
+<P><B>NASM Doesn't ASSUME</B>
+<BR>As part of NASM's drive for simplicity, it also does not support the ASSUME directive.
+NASM will not keep track of what values you choose to put in your segment registers, and will
+never <I>automatically</I> generate a segment override prefix.
+
+<P><B>Floating-Point Differences</B>
+<BR>NASM uses different names to refer to floating point registers from MASM: where MASM
+would call them <CODE>ST(0)</CODE>, <CODE>ST(1)</CODE> and so on, NASM chooses to call them
+<CODE>st0</CODE>, <CODE>st1</CODE> etc.
+<P>NASM does not declare uninitialized storage in the same way as MASM: where a
+MASM programmer might use <CODE>stack db 64 dup (?)</CODE>, NASM requires <CODE>stack resb 64</CODE>, intended to be
+read as `reserve 64 bytes'. </P>
+
+<P><b>How this Effects 291</b><br>
+NASM syntax is <i>much</i> better than MASM syntax.&nbsp; It we had started you
+out with NASM, variables and such would have made much more sense.&nbsp; You
+aren't used to NASM, though.&nbsp; You <i>will</i> have problems.&nbsp; You <i>will</i>
+try to move the contents of a variable without []'s and it will move the
+variable's offset instead.&nbsp; Read this section many times.&nbsp; If
+something doesn't seem to work, read this section.&nbsp; Before you call over a
+TA, read this section.&nbsp; Remember both syntaxes for your exam coding
+questions -- we'll tell you which to use. </P>
+
+<P><font size="+2"><a name="Task 3: A More Interesting Program">Task 3: A More
+Interesting Program</a></font> </P>
+
+<P>Type this into a &quot;<samp><b>var.asm</b></samp>&quot; file:&nbsp; Actually type it in or you won't
+&quot;feel&quot; the different syntax.&nbsp; I know this sounds lame, but was
+either this or I make you write another Parse!&nbsp; <i>(Be sure to at least <b>look</b>
+at it before you build it!)</i> </P>
+
+<table border="1">
+  <tr>
+    <td width="100%"><samp><font color="#FF0000">BITS</font> 32 <font color="#808080">          ; Tell NASM we're using 32-bit protected mode.</font><br>
+      <br>
+      <font color="#FF0000">
+      GLOBAL</font> _main&nbsp;&nbsp; <font color="#808080">; Tells the linker about the label called _main<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      ; This is because crt0.o references _main and must<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      ; be linked to it.</font><br>
+      <br>
+      <font color="#FF0000">
+      SECTION</font> .bss&nbsp;&nbsp; <font color="#808080">; Uninitialized Data Section</font><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; Mike&nbsp; resw   2 <font color="#808080">       ; Reserve 2 words (2*2=4 bytes)</font><br>
+      &nbsp;&nbsp;&nbsp; Pete&nbsp; resd   3 <font color="#808080">       ; Reserve 3 doubles (3*4=12 bytes)</font><br>
+      <br>
+      <font color="#FF0000">
+      SECTION</font> .data&nbsp; <font color="#808080">; Initialized Data Section</font><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; Bob_Constant        equ   87654321h&nbsp;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#808080">; Assembly-style hex constant.<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; Remember that when this is assembled, NASM just does a<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; "search and replace", replacing &quot;Bob_Constant&quot; with&nbsp;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ;   87654321h.  This is not a variable.  No memory is&nbsp;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; allocated.  It has no offset.  You can't change it's value.</font><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; Jim_Double           dd   0x12345678<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#808080">; C-style hex constant put in variable.<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; This is the first variable we've declared in this section,<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; so it will have the first address.  Since this is a variable<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; instead of a constant, NASM will "search and replace"&nbsp;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; Jim_Double by it's offset.</font><br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#808080">; This is where things get a bit more tricky than with
+      MASM.<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; In MASM, this address would be an offset relative to some<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; segment.  Since this was the first variable declared in<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; the .data section, in MASM it would have an offset 0<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; and the "search and replace" would replace Jim_Double with<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; the constant 0.<br>
+      <br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; Now, we're going all out and useing C-style object files and linkers<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; The addresses of variables aren't determined at assembly time, but<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; are actually set to a constant at link-time.  You will see
+      this later.</font><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; _Viewable_Variable   dd   0xBADBEEF&nbsp;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#808080">; C compilers put an underscore before all the names<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; when they "blindly output" their object files.<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; If you want your routines to be callable
+      by C, you&nbsp;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; have to put an&nbsp;underscore before them
+      yourself.</font><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; Jason_String         db   'Hi guys!', 0&nbsp;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#808080">; C-style zero-terminated string.<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; Remember that NASM handles variables a bit differently.<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; mov eax, Jason_String&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      -- eax &lt;= 0x8234 (some address)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; mov al, byte [Jason_String]&nbsp; --  al &lt;= 'H'</font><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; Dollar              equ   $&nbsp;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#808080">; $ means the current offset into the output file<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; that NASM "blindly types out."  (It's the
+      $th character<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; NASM has "typed" into the object file.)</font><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; Jason_String_len    equ $-Jason_String&nbsp;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#808080">; Dollar is really pretty  useless by itself, but to&nbsp;<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; declare a constant for the length of the string (instead of<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; just hard coding 9) you subtract the offset of the current output<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ; position from the offset of Jason_String's output position.&nbsp;</font><br>
+      <br>
+      <font color="#FF0000">
+      SECTION</font> .text <font color="#808080">    ; Says that this is the start of the code section.</font><br>
+      <br>
+      _main: <font color="#808080">           ; Code execution will start at the label called _main</font><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; mov eax,   42&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <font color="#808080">; As simple as could be.</font><br>
+      &nbsp;&nbsp;&nbsp; mov ebx,   Dollar&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <font color="#808080">; Gets replaced by an assemble-time constant.</font><br>
+      &nbsp;&nbsp;&nbsp; mov ecx,   Jason_String&nbsp;&nbsp;&nbsp; <font color="#808080">; Moves the address of Jason_String (a constant set by the linker)</font><br>
+      &nbsp;&nbsp;&nbsp; mov edx,   Jason_String_len&nbsp; <font color="#808080">; Gets replaced by assemble-time constant.</font><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; mov eax,   Pete&nbsp;&nbsp; <font color="#808080">; The address of Pete</font><br>
+      &nbsp;&nbsp;&nbsp; mov ebx,   [Pete] <font color="#808080">             ; This is supposed to be
+      uninitialized.</font><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; mov esi, 0<br>
+      &nbsp; .Jason_Loop <font color="#808080"> ; It's a local label with the "."
+      and with no ending colon. It works.&nbsp;</font><br>
+      &nbsp;&nbsp;&nbsp; mov al, byte [Jason_String + esi] <font color="#808080"> ; Like MASM's
+      Jason_String[esi]</font><br>
+      &nbsp;&nbsp;&nbsp; inc esi<br>
+      &nbsp;&nbsp;&nbsp; cmp esi, Jason_String_len<br>
+      &nbsp;&nbsp;&nbsp; jb .Jason_Loop<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; ret <font color="#808080">           ; Return to DJGPP's crt0 library startup code</font></samp></td>
+  </tr>
+</table>
+
+<P>Go back and do the &quot;<b><samp>nasm</samp></b>&quot; &quot;<b><samp>ld</samp></b>&quot;
+&quot;<b><samp>objdump</samp></b>&quot; &quot;<b><samp>stubify</samp></b>&quot;
+and &quot;<b><samp>cv32</samp></b>&quot; steps for &quot;<samp><b>var.asm</b></samp>&quot;&nbsp;
+Look at where all the variables and labels are in the object dump.&nbsp; <a href="questions.html#Question4">Question
+4:</a>&nbsp; How does NASM treat labels with a dot before them to keep those local
+      names form interfering with each other?&nbsp; It renames them in order to
+keep all the names unique.&nbsp; <i>How</i> does it rename them?</P>
+<P><font size="+2"><a name="Task 4: Setting up a Makefile">Task 4: Setting up a Makefile</a></font></P>
+<P>Typing in all those commands every time would be a pain, so smart people
+started putting all those commands in a script so you only had to type them in
+once and just run the script.&nbsp; Even smarter came up with this concept of
+Makefiles.&nbsp; Makefiles have rules that tell how to make different types of
+files.&nbsp; You want to make a <b><samp> .o</samp></b> file?&nbsp; Well you need to run NASM on the
+<b><samp>
+.asm</samp></b> file.&nbsp; You want to make a <b><samp> .exe</samp></b> file?&nbsp; Well you have to link a
+bunch of <b><samp>.o</samp></b> files together and stubify the sucker.&nbsp; The other big thing
+about make files is that they do dependency checking.&nbsp; You want to make the
+<b><samp>
+bob.o</samp></b> file?&nbsp; That file requires the <b><samp>bob.asm</samp></b> file, so let's check to see if
+the <b><samp> bob.asm</samp></b> file is newer than our current <b><samp> bob.o</samp></b> file.&nbsp; If it's not, we
+don't have to remake it.&nbsp; This way you only remake the things that have
+changed.&nbsp; The Makefiles we will use are standard UNIX GCC Makefiles, which
+is something that is just good to know about.&nbsp; When you type &quot;make,&quot; the make program will look in the &quot;Makefile.&quot;&nbsp;
+We want the Makefile to do what we did up there, only better.</P>
+<P>The Makefile used by DJGPP is in the GNU (Unix) format, which among other things requires
+command lines to start with <b>tabs</b>, so if you edit the Makefile, be sure to use a text editor which
+preserves tabs.&nbsp; WinEdit does not do this, so you have to use something
+like Notepad.&nbsp; (Gasp.)</P>
+<P>In your tutorial folder, make a file called &quot;Makefile&quot; (with no
+extension) and type this in it.&nbsp; Notepad will automatically stick a .txt
+extension on your file, so be sure to take it off.&nbsp; Remember, those have to be TABS, not spaces!&nbsp; Also, the ld line
+is too long to fit on one line in the browser, so it probably wraps, but
+has to be all on one line in your Makefile.</P>
+
+<table border="1" width="100%">
+  <tr>
+    <td width="100%"><samp>all: var.exe<BR>
+<BR>
+      clean:<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; rm -f *.o var.exe *.lst
+      *.map<br>
+      <BR>
+
+      var.exe: var.o<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ld -o var --cref -Map var.map
+      $(DJDIR)/lib/crt0.o var.o -L$(DJDIR)/lib -L$(DJDIR)/lib/gcc-lib/djgpp/2.81
+      -L$(DJDIR)/bin -Tdjgpp.djl -lgcc -lc -lgcc<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; stubify var<BR>
+
+      <br>
+      %.o: %.asm<BR>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; nasm -f coff -iinclude/ $&lt;
+      -l $*.lst</samp></td>
+  </tr>
+</table>
+
+<P>Here is how a Makefile works:</P>
+<ul>
+  <li>When you type &quot;<b><samp>make BOB</samp></b>&quot; it will look in the file for a line
+    that begins with &quot;<b><samp>BOB:</samp></b>&quot; and runs the next line.</li>
+  <li>For example, when you type &quot;<b><samp>make clean</samp></b>&quot; it will look for the
+    <b>
+    &quot;<samp>clean:</samp></b>&quot; line and run &quot;<b><samp>rm *.o
+    var.exe *.lst *.map</samp></b>&quot; which just removes your
+    temporary files.&nbsp; ( rm happens
+    to be built into the make program for those of you who noticed this wouldn't
+    normally work under DOS.)</li>
+  <li>When you type &quot;<b><samp>make var.exe</samp></b>,&quot; it will look at the
+    &quot;<samp><b>var.</b></samp><samp><b>exe</b>:</samp>&quot; line.
+    <ul>
+      <li>This line has a dependency after the colon, which we put in there to tell
+        make that you need to have an <b><samp>var.</samp></b><b><samp>o</samp></b> before you can make
+        <samp><b>var.</b></samp><samp><b>exe</b></samp>.&nbsp; Also, it
+        tells make that <b><samp>var.</samp></b><b><samp>exe</samp></b>
+        doesn't need to be remade if the <b><samp>var.</samp></b><b><samp>o</samp></b>
+        file doesn't need to be remade.&nbsp; (It checks the dependency's of <b><samp>var.</samp></b><b><samp>o</samp></b>)</li>
+      <li>If <b><samp>var.</samp></b><b><samp>o</samp></b> doesn't exist yet or if
+        it's dependencies (<b><samp>var.</samp></b><b><samp>asm</samp></b>)
+        have changed, make does the equivalent of &quot;<b><samp>make var.o</samp></b>&quot;</li>
+      <li>This looks for a &quot;<b><samp>var.</samp></b><b><samp>o:</samp></b>&quot; rule.&nbsp; It finds one in the
+        &quot;<b><samp>%.o:</samp></b>&quot; rule.</li>
+      <li><b><samp>var.</samp></b><b><samp>o</samp></b> depends on <b><samp>var.</samp></b><b><samp>asm</samp></b>, so if
+        <b><samp>var.</samp></b><b><samp>asm</samp></b> is newer than <b><samp>var.</samp></b><b><samp>o</samp></b> or if
+        <b><samp>var.</samp></b><b><samp>o</samp></b> doesn't exist, it will run
+        NASM.</li>
+      <li>On the NASM line there is a &quot;<b><samp>$&lt;</samp></b>&quot;, which
+        gets replaced first item after the colon, which is &quot;<b><samp>var.</samp></b><b><samp>asm</samp></b>&quot;
+        in this case.</li>
+      <li> &quot;<b><samp>$*</samp></b>&quot; gets replaced by the first item after the
+        colon, but without the extension, so just &quot;<b><samp>var</samp></b>&quot; in this case.</li>
+    </ul>
+  </li>
+  <li>If you type &quot;<b><samp>make</samp></b>&quot; with no arguments, it looks for the first
+    rule and does it.&nbsp; In this case it's the &quot;<b><samp>all:</samp></b>&quot; rule, which
+    will depends on <b><samp>var.</samp></b><b><samp>exe</samp></b>&nbsp; If <b><samp>var.</samp></b><b><samp>exe</samp></b> needs updating,
+    it will execute the &quot;<b><samp>var.</samp></b><b><samp>exe:</samp></b>&quot; rule. etc, etc, etc...</li>
+  <li>You can make a huge build tree and all sorts of complicated dependencies
+    with Makefiles.&nbsp; These huge build trees are usually made every night
+    for large coding projects.&nbsp; If someone does something stupid which
+    causes an error in everyone's build, they've &quot;broken the build
+    tree&quot; and at the very least are often forced to buy beer for everyone.</li>
+</ul>
+<ul>
+  <li>Pull up a DOS window, go into your tutorial directory, and type &quot;<samp><b>make
+    clean</b></samp>&quot; which run's your &quot;<b><samp>clean:</samp></b>&quot;
+    rule.&nbsp; What does this do again? It deletes all the <b><samp>var.*</samp></b>
+    files except <samp><b>var.asm</b></samp>. We do this because unless you
+    change your <b><samp>var.asm</samp></b> file, make won't do anything because
+    it will know that everything is current.&nbsp; If you still have spaces instead of
+tabs, you'll get an error like &quot;<b><samp>Makefile:8: *** missing separator.
+Stop</samp></b>&quot;</li>
+  <li>Type &quot;<samp><b>make var.o</b></samp>&quot; to make run NASM and make
+    the <b><samp>.o</samp></b> &nbsp; This was just to show you that you
+    actually could run individual make rules.&nbsp; Watch the screen and see how it translated the &quot;<b><samp>$*</samp></b>&quot;
+and &quot;<b><samp>$&lt;</samp></b>&quot; into the command lines we typed by
+hand.</li>
+  <li>Type just plain&nbsp; &quot;<samp><b>make</b></samp>&quot;&nbsp;&nbsp; This will run the make program
+    on the first rule.&nbsp; This rule runs &quot;<samp><b>make var.exe&quot;</b></samp>
+    which runs other rules until everything is made.</li>
+  <li>Type &quot;<b><samp>dir</samp></b>&quot; to see all the stuff that got spit out.</li>
+  <li>Type &quot;<b><samp>var</samp></b>&quot; to run your program.&nbsp;
+Nothing?&nbsp; Good.</li>
+  <li>Type &quot;<samp><b>cv32 var</b></samp>&quot; to debug your program.&nbsp;
+(<b>Alt-H</b> is your friend.&nbsp; <b>F8</b> will get you started.)</li>
+</ul>
+
+</body>
+
+</html>

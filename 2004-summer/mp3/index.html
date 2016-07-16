@@ -1,0 +1,619 @@
+<%
+title = "ECE 291 - MP3"
+subtitle = "MP3"
+%>
+<!--#include file="headvb.asp"-->
+<h1 align="center">Machine Problem 3: Pong 291</h1>
+<p align="center">
+	<CENTER>
+		<TABLE id="Table2" width="513" border="1">
+			<TR>
+				<TD align="right" width="64">Assigned</TD>
+				<TD width="433">Thursday, July 1, 2004</TD>
+			</TR>
+			<TR>
+				<TD align="right" width="64">Due&nbsp;Date </TD>
+				<TD width="433">Friday, July 9, 2004</TD>
+			</TR>
+			<TR>
+				<TD align="right" width="64">Purpose</TD>
+				<TD width="433" Roman>Asynchronous I/O, Interrupts, Text Mode
+                  Video</TD>
+			</TR>
+			<TR>
+				<TD align="right" width="64">Points</TD>
+				<TD width="433">85</TD>
+			</TR>
+		</TABLE>
+	</CENTER>
+<H2>Introduction</H2>
+<p align="left">In this MP, you'll be writing the video game that started it all -&nbsp; 
+good ol' Pong.&nbsp; You'll be processing hardware interrupts to perform 
+asynchronous I/O, drawing in text mode video, and even doing a little artificial 
+intelligence to move the computer player's paddle.</p>
+<p align="center"><img border="0" src="mp3.jpg" width="652" height="331"></p>
+<H2>Problem Description</H2>
+<h3>Program Variables</h3>
+<p align="left">The <i>MPFlags</i> variable contains the status flags that are 
+used in the MP.&nbsp; It is a waste of space to create separate variables for 
+each of the status flags; the values of the flags will always be either 0 or 1, 
+so we can use a bit to represent the flag instead of a byte.&nbsp; The following 
+bullets describe how each bit in <i>MPFlags</i> is used.</p>
+<ul>
+  <li>Bit 0 - Direction to move the user's paddle (0=up, 1=down)</li>
+  <li>Bit 1 - Indicates the user wants to move his or her paddle (set when the
+    user presses the UP or DOWN arrow key)</li>
+  <li>Bit 2 - Exit Game (set when the user presses the ESC key)</li>
+</ul>
+<p>In using these flags, you should familiarize yourself with the logical instructions so that you're 
+able to set, clear, or toggle one or more bits of a byte.</p>
+<p>We need to keep multiple pieces of info for each of the NUMBALLS balls in the
+game, namely position on the screen, direction of travel, and visibility.&nbsp;
+To make things easier for you, a <i>Ball</i> structure has been defined as
+follows:</p>
+<p><font face="Courier New" size="2">STRUC Ball<br>
+.X&nbsp;&nbsp;&nbsp;&nbsp; resb	1<br>
+.Y&nbsp;&nbsp;&nbsp;&nbsp; resb	1<br>
+.Flags	resb	1<br>
+ENDSTRUC</font></p>
+<p>Where Ball.X holds the X coordinate, Ball.Y holds the Y coordinate, and
+Ball.Flags is a flags variable which holds direction and visibility information
+as follows:</p>
+<ul>
+  <li>Bit 0 - Visibility flag (0=not visible, 1=visible)</li>
+  <li>Bit 1 - Horizontal direction flag (0=left, 1=right)</li>
+  <li>Bit 2 - Vertical direction flag (0=up, 1=down)</li>
+</ul>
+<p>This structure definition creates the following constants:</p>
+<p><font face="Courier New" size="2">	Ball.X&nbsp;&nbsp;&nbsp;&nbsp; EQU	0<br>
+	Ball.Y&nbsp;&nbsp;&nbsp;&nbsp; EQU	1<br>
+	Ball.Flags	EQU	2<br>
+	Ball_size&nbsp; EQU	3</font></p>
+<p>The constants correspond to offsets of where the information will be
+stored.&nbsp; So, the first thing stored in the Ball structure will be the X
+coordinate, so Ball.X is offset 0 from the beginning of the structure.&nbsp;
+Since we're reserving a byte for the X coordindate, Ball.Y, the next value to be
+stored, will be at offset 1.&nbsp; Ball.Flags is at offset 2 for similar
+reasons.&nbsp; Ball_size is also defined as the number of bytes taken up by the
+structure, so in our case, Ball_size = 3.&nbsp; If we used words to hold the X
+and Y coordinates, for instance, the constants would change as follows:</p>
+<p><font face="Courier New" size="2">	Ball.X&nbsp;&nbsp;&nbsp;&nbsp; EQU	0<br>
+	Ball.Y&nbsp;&nbsp;&nbsp;&nbsp;		EQU 2<br>
+	Ball.Flags	EQU 4<br>
+	Ball_size&nbsp;	EQU 5</font></p>
+<p>For some reason, though, NASM doesn't like the use of structures with 16-bit
+programs, so I had to define the constants as well as the structure for
+you.&nbsp; In 32-bit programs, you only have to declare the structure, and NASM
+will take care of defining the constants.</p>
+<p>In order to actually reserve space in memory for the balls, we use a
+declaration such as:</p>
+<p><font face="Courier New" size="2">Balls		times NUMBALLS*Ball_size db 0</font></p>
+<p>We need to reserve a Ball structure for each ball we want in the game, so the
+expression NUMBALLS*Ball_size corresponds to the number of bytes required to
+hold NUMBALLS Ball structures.&nbsp; The declaration above creates <i>Balls</i>
+as an array of <i>Ball</i> structures.</p>
+<p>In order to use the structure to read/write parts of the <i>Balls </i>array,
+you could use instructions such as:</p>
+<p><font face="Courier New" size="2">mov&nbsp;&nbsp;&nbsp; al, [Balls+Ball.X]&nbsp;&nbsp;&nbsp;
+; Reads the X coordinate of the first ball and stores it to al<br>
+mov&nbsp;&nbsp;&nbsp; [bx+Ball.Y], ah&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ;
+Writes ah to the Y coordinate of the Balls array element pointed to by bx</font></p>
+<p>As you can see, the use of structures makes your code much more readable, as
+it is easier to equate Ball.Y with the offset of the Y coordinate than it is to
+equate 1 with the offset.</p>
+<h3>Text Mode Video</h3>
+<p>Section 11.1 of the lab manual discusses text mode video.&nbsp; In this MP, 
+you'll be writing directly to page 0 of video memory, which we'll keep at the
+standard size of 25 rows and 80 columns.&nbsp; The lab manual has examples on 
+how to do this.&nbsp; Recall that page 0 of
+video memory begins at segment:offset B800:0000h.&nbsp; &nbsp; Also, the colors you'll be working with in the MP are defined
+for you as constants.</p>
+<p>Double buffering is a technique used to eliminate screen flicker.&nbsp; If you've ever
+played any old-school Nintendo games, you most likely seen the screen flicker
+occasionally.&nbsp; With double buffering, you create a buffer equal to the size
+of the video memory screen buffer (we'll call this buffer <i>ScreenBuffer</i>), draw the next frame to the temporary buffer,
+then copy the entire temporary buffer to video memory when you're ready to
+update the screen.&nbsp; This process allows for smooth transitions between 
+frames, which solves the flicker problem.</p>
+<h3>Asynchronous Keyboard I/O</h3>
+<p>In previous MPs, we used the library's kbdin/kbdine functions to get
+keyboard input. These functions continuously polled the keyboard until they received
+input. In many cases, we want our programs to accept input from other devices
+and/or execute other functions while waiting for user input. This is done by
+writing our own interrupt service routines (ISRs). For this MP, we will be
+obtaining user input from the keyboard asynchronously.  We'll also be using the system timer to  calculate 
+when the balls and the paddles are able to move and to keep track of the running
+time of the program.</p>
+<h3>System Timer</h3>
+<p>We'll be using the system timer interrupt in this MP to keep track of when
+the balls and paddles are allowed to move.&nbsp; We'll also keep track of the
+running time of the program in seconds.&nbsp; The default setup of the system
+timer causes it to trigger an interrupt 18.2 times per second.&nbsp; Thus, well
+increment a variable which is keeping track of the number of timer ticks, or
+number of times the interrupt is called.&nbsp; Then, when this variable reaches
+18, we'll reset it back to 0 and increment the number of seconds.</p>
+<h3>String Instructions</h3>
+<p>For certain parts of the MP, you can use the string instructions to improve 
+the performance of your code.&nbsp; Like instructions that we've discussed 
+already, the string instructions combine the functionality of multiple 
+instructions into a single instruction.&nbsp; The string instructions are used 
+to do the following:</p>
+<ul>
+  <li>Move a string from one location to another (MOVSB, MOVSW, MOVSD)</li>
+  <li>Store a single piece of data to a string (STOSB, STOSW, STOSD)</li>
+  <li>Compare strings (CMPSB, CMPSW, CMPSD)</li>
+  <li>Scan a string for a specific value (SCASB, SCASW, SCASD)</li>
+</ul>
+<p align="left">For specific details and usage of these instructions, refer to 
+Appendix B.4 of the <a href="/ece291/books/labmanual">lab manual</a>.&nbsp; With 
+each of the above instructions, you can also use the REP instruction with the CX 
+register, which repeats the execution of the instruction CX times.</p>
+<H2>MP3 Program Assignment</H2>
+<P>You will replace these 
+	procedures from the LIBMP3 library by commenting out the statements calling the 
+	library procedure and adding your code. Each procedure that you write should 
+	match the output of the library code exactly. Each of the function calls and 
+	their functionality is described below in the <b>Subroutines</b> section. The 
+	best way to get a feel for the program is to run it to see how it is supposed 
+	to operate. You can also edit the test file to see how various changes will 
+	affect the program execution.&nbsp; The program can be run by typing <TT>mp3</TT> 
+at the command prompt.</P>
+
+<H2>Subroutines</H2>
+<P>This assignment has 15 subroutines. You will receive credit by replacing each 
+	of these 15 subroutines listed below with your own code.
+</P>
+<P><FONT size="+1"><B>MP3Main</B></FONT></P>
+<ul>
+  <li>Installs/Removes ISRs and runs main game loop</li>
+  <li>Inputs: None</li>
+  <li>Outputs: None</li>
+  <li>Calls: InstallKeyboard, InstallTimer, CheckGameEnd, DrawBackground,
+    MovePlayer, MoveComputer, DrawPaddles, MoveBalls, DrawBalls, DrawStats,
+    RefreshScreen, RemoveKeyboard, RemoveTimer</li>
+  <li>Main game loop pseudocode:
+    <br>
+    <font face="Courier New" size="2">Install ISRs<br>
+    while the program should not exit<br>
+    &nbsp;&nbsp;&nbsp; call <i>DrawBackground</i><br>
+    &nbsp;&nbsp;&nbsp; if ( <i>MovePaddleTime</i> = 3 )<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <i>MovePaddleTime </i>= 0<i><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </i>If the user wants to move his
+    or her paddle, call <i>MovePlayer<br>
+    </i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; call <i>MoveComputer<br>
+    &nbsp;&nbsp;&nbsp; </i>end if<br>
+    &nbsp;&nbsp;&nbsp; call <i>DrawPaddles<br>
+    &nbsp;&nbsp;&nbsp; </i>if ( <i>MoveBallTime</i> = 2 )<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <i>MoveBallTime </i>= 0<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; call <i>MoveBalls<br>
+    &nbsp;&nbsp;&nbsp;</i> end if<br>
+    &nbsp;&nbsp;&nbsp; call <i>DrawBalls<br>
+    &nbsp;&nbsp;&nbsp; </i>call <i>DrawStats<br>
+    &nbsp;&nbsp;&nbsp; </i>call <i>RefreshScreen<br>
+    </i>end while<br>
+    Remove ISRs
+    </font></li>
+  <li>Points: 10</li>
+</ul>
+<p><font size="+1"><b>MoveBalls</b></font></p>
+<ul>
+  <li>Updates the position and visibility of each ball</li>
+  <li>Inputs: <i>Balls, PlayerScore, ComputerScore</i>, <i>CoordTable</i>,
+    NUMBALLS</li>
+  <li>Outputs: <i>Balls, PlayerScore, ComputerScore</i></li>
+  <li>Calls: CheckCollision</li>
+  <li>MoveBalls pseudocode:<br>
+    <font face="Courier New" size="2">for each visible ball<br>
+    &nbsp;&nbsp;&nbsp; if the ball reaches the rightmost column<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; increment <i>PlayerScore </i>and
+    set the ball's visibility flag to 0<br>
+    &nbsp;&nbsp;&nbsp; else if the ball reaches the leftmost column<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; increment <i>ComputerScore </i>and
+    set the ball's visibility flag to 0<br>
+    &nbsp;&nbsp;&nbsp; else if there is no collision between the ball and the
+    game board<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Update the ball's X and Y
+    position based on its direction of travel<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (Use the <i>Ball.Flags</i> and <i>CoordTable</i>
+    to perform this step)<br>
+    <i>&nbsp;&nbsp;&nbsp;</i> end if<br>
+    end for
+    </font></li>
+  <li>Points: 13</li>
+</ul>
+<P><font size="+1"><b>MovePlayer</b></font></P>
+				<UL>
+					<LI>
+					Moves the player's paddle<LI>
+					Inputs: <i>MPFlags</i>, <i>PlayerPaddle</i><LI>
+					Outputs: <i>MPFlags</i>, <i>PlayerPaddle</i><LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>Increment the value of <i>PlayerPaddle</i> if the user
+                      wants to move down; make sure that the user cannot move
+                      the paddle past the bottom border</li>
+					<li>Decrement the value of <i>PlayerPaddle </i>if the user
+                      wants to move up; make sure that the user cannot move the
+                      paddle past the top border</li>
+                    </UL>
+				    <li>Points: 6 </li>
+</UL>
+<P><font size="+1"><b>MoveComputer</b></font></P>
+				<UL>
+					<LI>
+					Moves the computer's paddle<LI>
+					Inputs: <i>ComputerPaddle</i><LI>
+					Outputs: <i>ComputerPaddle</i><LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>You should come up with your own algorithm to move the 
+                    computer paddle.&nbsp; For example, the library code 
+                    determines which ball is closest to the computer's paddle 
+                    and follows that ball so it can block it.&nbsp; Feel free to 
+                    use or improve upon this algorithm, or come up with 
+                    something different.&nbsp; Your algorithm doesn't have to be 
+                    perfect, but it should make a noticeable attempt to defend 
+                    against the balls.</li>
+					<li>To keep things fair, only increment or decrement <i>ComputerPaddle</i>
+                      each time the function is called</li>
+					<li>Make sure that the computer paddle doesn't move past the
+                      top or bottom borders</li>
+                    </UL>
+				    <li>Points: 8 </li>
+</UL>
+<P><font size="+1"><b>DrawBackground</b></font></P>
+				<UL>
+					<LI>
+					Draws the background to the screen buffer<LI>
+					Inputs: <i>Background</i><LI>
+					Outputs: <i>ScreenBuffer</i> <LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>Copy each word in the <i>Background</i> to the <i>ScreenBuffer</i></li>
+					<li>Use string instructions for better performance</li>
+                    </UL>
+				    <li>Points: 4 </li>
+</UL>
+<P><font size="+1"><b>DrawPaddles</b></font></P>
+				<UL>
+					<LI>
+					Draws the player and computer's paddle to the screen buffer<LI>
+					Inputs: <i>PlayerPaddle, ComputerPaddle, </i>PADDLELENGTH<LI>
+					Outputs: <i>ScreenBuffer</i> contains the paddles<LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li><i>PlayerPaddle </i>and <i>ComputerPaddle</i> contain
+                      the row in which each paddle should begin on the screen</li>
+					<li>Each paddle should have a vertical length of
+                      PADDLELENGTH</li>
+                    </UL>
+                    <li>Points: 6</li>
+</UL>
+<P><font size="+1"><b>DrawBalls</b></font></P>
+				<UL>
+					<LI>
+					Draws the balls to the screen<LI>
+					Inputs: <i>Balls</i>, NUMBALLS, BALL<LI>
+                    Outputs: <i>ScreenBuffer</i> contains the balls<LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>For each visible ball, calculate its byte offset in the
+                      screen buffer and write the BALL constant to that location</li>
+                    </UL>
+				    <li>Points: 6 </li>
+</UL>
+<P><font size="+1"><b>DrawStats</b></font></P>
+				<UL>
+					<LI>
+					Draws the player's score, computer's score, and elapsed time
+                    in seconds to the screen<LI>
+					Inputs: <i>PlayerScore, ComputerScore, NumSeconds</i><LI>
+					Outputs: <i>ScreenBuffer</i> contains the stats<LI>
+					Calls: binasc<LI>
+					Notes:<UL>
+					<li>The player's score should be written to (row,col) =
+                      (24,8)</li>
+					<li>The computer's score should be written to (row,col) =
+                      (24,78)</li>
+					<li>Don't forget to convert each numeric score to its ASCII
+                      equivalent before writing it to the buffer; each is only a
+                      single digit, so you can just add a value to each to
+                      convert it to ASCII instead of calling binasc</li>
+					<li>Use binasc to convert <i>NumSeconds</i> to an ASCII
+                      string and loop over the string to copy it to the buffer</li>
+					<li>Use 79h as the attribute byte when writing the scores
+                      and number of seconds</li>
+                    </UL>
+				    <li>Points: 8 </li>
+</UL>
+<P><font size="+1"><b>RefreshScreen</b></font></P>
+				<UL>
+					<LI>
+					Updates the screen by coping the screen buffer to video 
+                    memory<LI>
+					Inputs: ScreenBuffer<LI>
+					Outputs: Video memory updated with contents of
+                    ScreenBuffer<LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>The segment:offset of page 0 of text mode video memory 
+                    is B800:0000h</li>
+                    <li>Use string instructions for better performance</li>
+                    </UL>
+				    <li>Points: 4 </li>
+</UL>
+<P><font size="+1"><b>InstallKeyboard</b></font></P>
+				<UL>
+					<LI>
+					Installs the keyboard ISR<LI>
+					Inputs: None<LI>
+					Outputs: <i>OldKeyboardV</i><LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>The keyboard uses interrupt number 9</li>
+                    <li>Read the current value of the ISR out of the interrupt 
+                    vector table and store to <i>OldKeyboardV</i> before updating the table with your keyboard 
+                    ISR</li>
+                    <li>You should read/ write the interrupt vector table
+                      directly as done in class</li>
+                    </UL>
+				    <li>Points: 2 </li>
+</UL>
+<P><font size="+1"><b>RemoveKeyboard</b></font></P>
+				<UL>
+					<LI>
+					Removes the keyboard ISR<LI>
+					Inputs: <i>OldKeyboardV</i><LI>
+					Outputs: None<LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>The keyboard uses interrupt number 9</li>
+                    <li>Write the original value back to the interrupt vector 
+                    table</li>
+                    <li>You should write the interrupt vector table directly as
+                      done in class</li>
+                    </UL>
+				    <li>Points: 2 </li>
+</UL>
+<P><font size="+1"><b>KeyboardISR</b></font></P>
+				<UL>
+					<LI>
+                    Processes keyboard interrupts<LI>
+					Inputs: scancode waiting at port 60h<LI>
+					Outputs: <i>MPFlags</i><LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>Remember to set DS=CS</li>
+                    <li>The scancodes for the keys you'll be using in the MP are 
+                    defined as constants for you</li>
+                    <li>When the user presses the ESC key, set the &quot;End Game&quot; 
+                    flag</li>
+                    <li>When the user presses the UP key, set <i>MPFlags</i> to move the 
+                    user's paddle up</li>
+                    <li>When the user presses the DOWN key, set <i>MPFlags&nbsp;</i>
+                      to move 
+                    the user's paddle down</li>
+                    <li>When the user releases the UP or DOWN keys, reset the
+                      &quot;Player wants to move the paddle&quot; flag</li>
+                    <li>Keyboard scancode releases differ from presses in that
+                      their most significant bits are set; thus the scancode for
+                      a UP key press is 48h, and the scancode for an UP key
+                      release is C8h (48h+80h)</li>
+                    <li>Remember to send the end-of-interrupt signal to the PIC
+                      (write the value 20h to port 20h) every time the ISR 
+                    is called</li>
+                    </UL>
+                    <li>Points: 6</li>
+</UL>
+
+<P><font size="+1"><b>InstallTimer</b></font></P>
+				<UL>
+					<LI>
+					Installs the timer ISR<LI>
+					Inputs: None<LI>
+					Outputs: <i>OldTimerV</i><LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>The timer uses interrupt number 8</li>
+                    <li>Read the current value of the ISR out of the interrupt 
+                    vector table and store to <i>OldTimerV</i> before updating the table with your timer
+                    ISR</li>
+                    <li>You should read/write the interrupt vector table
+                      directly as done in class</li>
+                    </UL>
+				    <li>Points: 2 </li>
+</UL>
+<P><font size="+1"><b>RemoveTimer</b></font></P>
+				<UL>
+					<LI>
+					Removes the timer ISR<LI>
+					Inputs: <i>OldTimerV</i><LI>
+					Outputs: None<LI>
+					Calls: None<LI>
+					Notes:<UL>
+					<li>The timer uses interrupt number 8</li>
+                    <li>Write the original value back to the interrupt vector 
+                    table</li>
+                    <li>You should write the interrupt vector table directly as
+                      done in class</li>
+                    </UL>
+				    <li>Points: 2 </li>
+</UL>
+<P><font size="+1"><b>TimerISR</b></font></P>
+				<UL>
+					<LI>
+					Processes system timer interrupts<LI>
+					Inputs: <i>MoveBallTime, MovePaddleTime, TimerTicks,
+                    NumSeconds</i><LI>
+					Outputs: <i>MoveBallTime, MovePaddleTime, TimerTicks,
+                    NumSeconds</i><LI>
+					Calls: [<i>OldTimerV</i>]<LI>
+					Notes:<UL>
+					<li>Remember to set DS=CS</li>
+					<li>Increment <i>MoveBallTime, MovePaddleTime, and
+                      TimerTicks</i></li>
+					<li>If <i>TimerTicks </i>= 18, reset it to 0 and increment <i>NumSeconds</i></li>
+                    <li>Make sure you chain the original handler inside your
+                      custom TimerISR</li>
+                    </UL>
+                    <li>Points: 6</li>
+</UL>
+
+<H2>Given Code</H2>
+<P><font size="+1"><b>Random</b></font></P>
+				<UL>
+					<LI>
+                    Generates a random number<LI>
+					Inputs: <i>RandomSeed, </i>CX = exclusive upper bound on
+                    random number (e.g. CX = 10, number returned is in range
+                    0...9)<LI>
+					Outputs: <i>RandomSeed, </i>AX = random number in range
+                    0...CX-1<LI>
+					Calls: None
+</UL>
+
+<P><font size="+1"><b>CheckEndGame</b></font></P>
+				<UL>
+					<LI>
+                    Checks the end of game conditions: user presses ESC key to
+                    exit, or no more balls are visible<LI>
+					Inputs: <i>MPFlags, Balls</i><LI>
+					Outputs: AL = 1 if the program should exit, 0 otherwise<LI>
+					Calls: None
+</UL>
+
+<P><font size="+1"><b>CheckCollision</b></font></P>
+				<UL>
+					<LI>
+                    Checks for collisions between a ball and a barrier in the
+                    game board <b>AND</b> updates the ball direction flags if 
+                    there is a collision<LI>
+					Inputs: BX = pointer to <i>Ball</i> structure, i.e., one of
+                    the elements of the <i>Balls</i> array<LI>
+					Outputs: If there is a collision, the <i>Ball </i>
+                    structure's direction flags are updated and AL = 1; 
+                    otherwise, the<i> Ball</i> structure remains the same and AL 
+                    = 0<LI>
+                    Calls: None
+</UL>
+
+<h2>Development Log and Cover Memo</h2>
+<p>As you work on the MP, you will keep a simple MP development log. The log
+will document your design decisions, development plan, and debugging
+experiences, including the time you spent on different parts of the machine
+problem. The log may be kept in any form. In general, whenever you work on a
+machine problem, briefly record the starting time, significant design decisions,
+progress in coding and testing, bugs you discovered, and the ending time. Do <i>not</i>
+record simple syntax errors detected by NASM at assembly time; these are not
+considered to be bugs.</p>
+<p>Then, you will submit a cover memo of 200 to 400 words (up to one page,
+single spaced). The cover memo should answer the following questions, based on
+the information that you record in your MP development log.</p>
+<ul>
+  <li>How much time did you spend on the design, coding, and testing of each
+    part or subroutine?
+  <li>What kinds of defects (bugs) did you find during the development of the
+    program? When did you discover these defects (during code review or during
+    testing)? How did you find them?
+  <li>What you would do differently for the next MP?</li>
+</ul>
+<p>Type your cover memo into a plain text file in your MP3 directory.</p>
+
+<H2>Hints</H2>
+<UL>
+	<LI>
+		<P>
+		The LIBMP3 file contains executable library functions for each of the routines 
+		that you need to implement. This allows you to run the program and understand 
+		how it works before you implement it. You can test your program with any 
+		combinations of your own code and library functions. You will only receive 
+		credit, however, for the routines that you implement yourself.
+		</P>
+	<LI>
+		<P>
+		When debugging your code in TD, you will find it helpful to use the memory 
+		window to show you the memory location of the file and strings. You can also 
+		use the watch window to keep track of variables in your code.
+		</P>
+	<LI>
+		<P>
+		Do not assume that the file starts at memory location 0.
+		</P>
+	<LI>
+		<P>
+		You may define new variables as needed.
+		</P>
+	<LI>
+		<P>
+		Be very careful if you call another procedure not to destroy registers that the 
+		calling procedure uses.
+		</P>
+	<LI>
+		<P><b>START EARLY!</b>
+		</P>
+	<LI>
+		<P>You need to preserve <STRONG> </STRONG>register values in all of the procedures 
+			you write.&nbsp; To do this, push all the registers you use in the procedure at 
+			the beginning of the procedure.&nbsp; Then, pop them all in reverse order at 
+			the end of the procedure (right before you return).
+		</P>
+	<LI>
+		<P>You need to create function headers for each of the functions you write.&nbsp; 
+			Function headers should include the name of the function, the list of inputs to 
+			the function, the list of the outputs, and any functions that the function 
+			calls.&nbsp; You will lose points if you do not do this.
+		</P>
+	<LI>
+		<P>Monitor the <A href="http://my.ece.uiuc.edu/secure/webboard.asp">webboard</A> for 
+		clarifications and help.
+		</P>
+</UL>
+
+
+<H2>Procedure</H2>
+<UL>
+	<LI>
+		You will begin this MP with the following files:
+		<UL>
+			<LI>
+				<TT>MP3.ASM</TT>: Program Framework
+			<LI>
+				<TT>Makefile</TT>: Specifies how and when programs are assembled and 
+			linked.
+			<LI>
+				<TT>LIBMP3.LIB</TT>: Library functions for MP3
+			<LI>
+				<TT>LIB291.LIB</TT>: General-purpose library functions
+			</LI>
+		</UL>
+	<LI>
+		You may copy these files from the network drive to your home directory with the 
+		following command:
+		<BR>
+		<TT>xcopy /s V:\ece291\mp3 W:\mp3</TT><BR>
+		or download the files from this server as <a href="mp3.zip">mp3.zip</a>
+	<LI>
+		Add your code to <TT>MP3.ASM</TT>.
+	<LI>
+		Assemble and link your program by typing<TT> make.</TT>&nbsp; This command 
+	reads the Makefile then invokes NASM and TLINK to build an executable program.
+	<LI>
+		Use TD debugger to find and correct program errors.</LI>
+</UL>
+<H2>Final Steps</H2>
+<OL>
+	<LI>
+	Demonstrate your MP3.EXE to a TA or to the instructor.&nbsp; The TA or 
+	instructor will verify that your program produces the correct output.
+	<LI>
+	Be prepared to answer questions about any aspect of the operation of your 
+	program. The TAs will not accept an MP if you cannot fully explain the 
+	operation of your code and details of your implementation. Delayed MPs will be 
+	subject to late penalties as described in the course syllabus (10%/day).
+	<LI>
+		The TA will handin your MP online.
+	</LI>
+</OL>
+
+<HR>
+<h1><a href="mp3.asm">mp3.asm</a> (program framework)</h1>

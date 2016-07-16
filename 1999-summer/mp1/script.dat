@@ -1,0 +1,29 @@
+# This is a test script
+        newline:
+printtext:***Begin Script Parser***$
+        newline:
+# Output register values
+        # Output register ax
+        printreg:ax
+        printtext:,$
+        printreg:AX
+                newline:
+        # Output register bx
+        printreg:bx
+                newline:
+        # Output register DX
+        printtext:The register DX = $
+        printreg:DX
+                newline:
+        # Output register di
+        printtext:di = $
+        printreg:di
+# Invalid command check
+printsomething: Line 22
+# Invalid register check
+printreg:ss
+        newline:
+printtext:***Now exiting script parser***$
+pause:
+newline:
+end:

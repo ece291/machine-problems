@@ -1,0 +1,989 @@
+<%
+title = "ECE 291 - MP2"
+subtitle = "MP2"
+%>
+
+<!--#include file="headvb.asp"-->
+
+<h1 align="center">Machine Problem 2: Sorting Efficiency</h1>
+<div align="center"><center>
+
+<table border=1 cellpadding=2 width=545>
+  <tr>
+    <td align=right width="78">Assigned </td>
+    <td width="451">Tuesday, September 16, 2003</td>
+  </tr>
+  <tr>
+    <td align="right" width="78">Due Date </td>
+    <td width="451">Wednesday, October 1, 2003</td>
+  </tr>
+  <tr>
+    <td align="right" width="78">Purpose </td>
+    <td Roman" width="451">User I/O, Sorting Algorithms, C-style Procedures</td>
+  </tr>
+  <tr>
+    <td align="right" width="78">Points </font></td>
+    <td width="451">80</td>
+  </tr>
+</table>
+</center></div>
+
+
+<h2 align="left">Introduction
+</h2>
+
+<p align="left">In this MP, you'll be analyzing the efficiency of two different 
+sorting algorithms by counting the number of comparisons and swaps that each 
+algorithm makes on a given array of input numbers.</p>
+
+<p align="center"><img src="mp2.jpg"></p>
+
+<h2>Problem Description</h2>
+
+<p>
+Your program will be:
+<ul>
+<li>Obtaining user input from the keyboard
+<li>Parsing the string of numbers into an array 
+<li>Analyzing two different sorting algorithms
+</ul>
+</p>
+
+<h2>Obtaining User Input</h2>
+<p>
+User input will be taken from the keyboard. As the user types characters, 
+they will be added to the input buffer and displayed on the screen.  The 
+input buffer can hold MAXCHARS characters; if the user attempts to type 
+more characters, they should not be added to the buffer or displayed on
+the screen.  Also, you should handle backspacing properly.  If the user
+hits the Backspace key, a character should be removed from the buffer 
+(allowed to be overwritten with the next typed character) and removed 
+from the screen.  Make sure that the user does not backspace before the
+beginning of the input buffer: this will incorrectly overwrite locations
+on the screen, and worse, it could potentially corrupt variables in memory.
+You must also handle ESC keypresses.  If the user hits ESC, the input 
+loop should terminate, and you should return -1, which will tell the main 
+function that the user wants to quit the program. Last, you should also terminate 
+the input loop when the user hits the Enter key.  At this time, place a '$' at the 
+end of the input string and return 0.
+
+<h2>Parsing Input</h2>
+<p>
+Once you have the string in the input buffer, you need to parse it into an
+array of numbers. This is much easier as it seems, thanks to the library
+ASCBIN function. Take a look at the lab manual to see how it works - it
+will save you a great deal of time.
+</p>
+
+<p>
+To parse the input string, you need to traverse the entire string, pull
+out one number at a time, convert it from ASCII to binary, and then store the
+number into the array. Make sure to keep track of how many numbers you parse,
+as the array can only hold MAXNUMBERS numbers.  If you parse MAXNUMBERS numbers
+from the input string, do not parse any more.  Also, remember that the input 
+string is '$' terminated, so you should also stop parsing when you reach a '$'.
+If ASCBIN returns an error code (dl is nonzero), return -1 to indicate there 
+was an error in parsing the input; otherwise, you should return either 'H' or 'I' 
+depending on whether the user wants to perform a heap sort or an insertion sort.
+</p>
+
+<h2>Analyzing Sorting Algorithms</h2>
+
+The following algorithm descriptions were taken from 
+<a href="http://linux.wku.edu/~lamonml/algor/sort/">http://linux.wku.edu/~lamonml/algor/sort/</a>.
+
+<h3>Heap Sort</h3>
+
+<a href="http://www.math.luc.edu/~van/cs460/lecture13/">INFO ON HEAPS</a>
+
+<p>
+The heap sort is the slowest of the O(n log n) sorting algorithms, but unlike 
+the merge and quick sorts it doesn't <em>require</em> massive recursion or multiple arrays
+to work.  Recursion is fun, though, so we'll make you do it anyway.
+</p>
+
+<p>
+The heap sort works as it name suggests - it begins by building a <a href="http://www.math.luc.edu/~van/cs460/lecture13/">heap</a> out of the data set, and then removing the largest item and placing it at the end of the sorted array. After removing the largest item, it reconstructs the heap and removes the largest remaining item and places it in the next open position from the end of the sorted array. This is repeated until there are no items left in the heap and the sorted array is full. Elementary implementations require two arrays - one to hold the heap and the other to hold the sorted elements. 
+</p>
+
+<p>
+We will use in-place implementation to save the space the second array would require.
+The algorithm "cheats" by using the same array to store both the heap and the sorted array.
+Whenever an item is removed from the heap, it frees up a space at the end of the array 
+in which the removed item can be placed. 
+</p>
+
+Here is the heap sort pseudocode:
+<pre>
+HeapSort(Array,Length)
+begin
+ int i
+
+ // convert the array to a heap
+ for i = Length/2 downto 1
+ begin
+  Heapify(Array,i,Length)
+ end
+
+ // sort the array by removing the largest value
+ // from the heap and reconstructing the heap
+ for i = Length-1 downto 1
+ begin
+  Swap(Array[1],Array[i+1])
+  Heapify(Array,1,i)
+ end
+end
+
+Heapify(Array,Current,Length)
+begin
+ int Left, Right, Largest
+ 
+ Left  = Current*2
+ Right = Left+1
+
+ // set Largest to the index of the largest value between
+ // the current location and its child locations
+ if Left <= Length and Compare(Array[Left] > Array[Current]) then
+  Largest = Left
+ else 
+  Largest = Current
+
+ if Right <= Length and Compare(Array[Right] > Array[Largest]) then
+  Largest = Right
+ 
+ // if a child is larger than the current location, 
+ // swap the values and continue construcing the heap
+ if Largest != Current then
+  Swap(Array[Largest],Array[Current])
+  Heapify(Array,Largest,Length)
+ end
+end
+</pre>
+
+<p>
+Notice that the heap sort pseudocode considers the array locations to be from 1 to Length, not from 0 to Length-1. 
+This is required in order to calculate the child nodes of the heap properly - if you attempted to calculate the 
+child indices of array location 0, you would obtain 0*2 = 0 and 0*2+1 = 1, which is incorrect (you should obtain 1 and 2, 
+respectively).  You could modify the index calculations to handle an array indexed from 0 to Length-1, but it is 
+conceptually easier to have the array indexed from 1 to Length, where the left child index is 2*i and the right child index is 2*i+1.
+</p>
+
+<p>
+One more caveat about the pseudocode: the array indices are given in terms of locations in the array.  Remember that
+the x86 ISA is byte addressable, meaning that each address corresponds to one byte in memory.  The array you will
+be sorting, however, is an array of words.  Keep these facts in mind when writing your code.
+</p>
+
+<h3>Insertion Sort</h3>
+
+<p>
+The insertion sort works just like its name suggests - it inserts each item into its proper place in the final list. 
+The simplest implementation of this requires two list structures - the source list and the list into which sorted 
+items are inserted. To save memory, we will use an in-place implementation that works by moving the current item past 
+the already sorted items and repeatedly swapping it with the preceding item until it is in place.
+</p>
+
+<p>
+Like the bubble and selection sorts, the insertion sort has a complexity of O(n<sup>2</sup>). 
+Although it has the same complexity, the insertion sort is a little over twice as efficient as the bubble sort. 
+</p>
+
+Here is the insertion sort pseudocode:
+<pre>
+InsertionSort(Array,Length)
+begin
+ int i, j, Index
+
+ for i = 0 to Length-1 
+ begin
+  Index = Array[i]
+  j = i
+
+  // determine where the value should be placed in the array
+  while j > 0 and Compare(Array[j-1] > Index)
+  begin
+   Array[j] = Array[j-1] // don't swap values but count as swap
+   j = j - 1
+  end
+
+  // place the value in its proper location in the array
+  Array[j] = Index // don't swap values but count as swap
+ end
+end
+</pre>
+
+<p>
+Notice that the insertion sort pseudocode considers the array locations to be from 0 to Length-1 as usual. 
+However, the array index caveat from the heap sort pseudocode applies to the insertion sort pseudocode as well.
+</p>
+
+<h3>Analyzing the Algorithm Efficiencies</h3>
+
+<p>
+As previously stated, you will analyze the efficiencies of the two sorting algorithms by counting the number
+of compares and swaps that each algorithm makes.  Note that you will only be counting compares and swaps
+of array locations; other comparisons that do not deal with array locations, such as the j > 0 in the insertion 
+sort pseudocode, should not be counted.  The compares and swaps that you should consider are identified by
+Compare(...) and Swap(...), respectively.  There are two exceptions in the insertion sort pseudocode where you
+do not swap the numbers but you treat the array modification as a swap anyway.  Use the <em>CompareCount</em> and 
+<em>SwapCount</em> variables to keep track of the number of comparisions and swaps, respectively.
+</p>
+
+<h2>C-Style Procedures</h2>
+<p>
+Each of the subroutines you will write in this MP are C-Style procedures.  Check out John Lockwood's
+<a href="http://courses.engr.illinois.edu/ece291/lecture/lockwood/l8.html">lecture on C-Style Procedures</a> for 
+a description on how they work.  Some notes on his lecture:
+
+<ul>
+ <li>NASM by default makes NEAR calls, not FAR calls. Thus, only the IP gets pushed onto the stack. As a result,
+     the leftmost parameter will be located at <strong>[bp+4]</strong>, not <strong>[bp+6]</strong> as indicated in the lecture.
+     The next parameter will then be available at <strong>[bp+6]</strong>, and so on.</li><p>
+ <li>You can disregard discussion of the allocation of local variables in the procedures.  You will not have to do so for this MP.</li><p>
+ <li>It is not necessary to set DS=CS as is done in the example code.</li><p>
+ <li>Only PUSH and POP SI, DI, SS, or DS if you use them.</li><p>
+
+</ul>
+
+<h2>&quot;Features&quot;</h2>
+<ul>
+  <li>The ASCBIN library function has a feature (not a bug) which incorrectly 
+  sets the BX output when converting the number -32,768. Specifically, it points 
+  BX to the 8 instead of the first character after the 8 as expected.
+  This results in an extra 8 being added to the array when the input string is 
+  parsed. So far, this is the only number that causes this error. If we 
+  find others, we will list them here. These numbers will not be used when 
+  testing your MP.</li>
+</ul>
+
+<h2>Hints</h2>
+<ul>
+<li>The LIBMP2 file contains executable library functions for each of the
+routines that you need to implement.  
+This allows you to run the program and understand how it works before you implement it.  You can test your program with any combinations of your own
+code and library functions.  You will only receive credit, however, for
+the routines that you implement yourself.</li><p>
+
+<li>When debugging your code in TD, you will find it helpful to use
+the memory window to show you the memory location of the file and strings.
+You can also use the watch window to keep track of variables in your code.</li><p>
+
+<li>Do not assume that the file starts at memory location 0.</li><p>
+
+<li>You may define new variables as needed.</li><p>
+
+<li>Be very careful if you call another subroutine not to clobber the SI or DI registers
+that the calling subroutine uses.</li><p>
+
+<li>You need to create function headers for each of the functions you
+  write.&nbsp; Function headers should include the name of the function, a description of the function's purpose, the list of inputs to the function, the list of the outputs, and any functions
+  that the function calls.&nbsp; You will lose points if you do not do this!</li><p>
+
+<li>START EARLY!</li><p>
+
+
+<li>Monitor the <a href="http://my.ece.uiuc.edu/secure/webboard/select.asp?bid={38D8D827-70BA-4FB6-A186-3C9AD02FC672}">ECE291 Web Board</A> for clarifications and help.</li><p>
+
+</ul>
+
+<h2>Subroutines</h2>
+
+<p>This assignment has six subroutines. You will receive credit by replacing 
+each of these six subroutines listed below with your own code. </p>
+
+
+<p>Each of the subroutines you will write in this MP are C-style. That
+means the inputs to the subroutines (if any) are passed on the
+stack. If the subroutine returns a value, the value will be in al or
+ax, depending on the size. Also, any general purpose register other than SI and DI may be
+overwritten: you do not have to preserve their vales, and you cannot assume the 
+other subroutines (including the library subroutines) preserve them, either. 
+Keep this in mind when writing your code - make sure that you preserve any necessary register 
+values around subroutines calls that occur within other subroutines!</p>
+
+
+<p>The size of the inputs, as well as the size of the return value, are included
+in each subroutine definition. Pointers are denoted with asterisks (*), whereas
+values do not have asterisks. If a subroutine does not have any inputs, <b>void</b>
+will be present in the parentheses. Similarly, if the subroutine does not
+return a value, it will be declared as <b>void</b> before the name of the
+subroutine. </p>
+
+
+<h3><b>word GetInput(word *Buffer)</b> </h3>
+<ul>
+<li>Obtains input from the user</li>
+<li>Inputs:<ul>
+<li>Buffer - Pointer to buffer in memory</li>
+ </ul>
+<li>Outputs:
+<ul>
+<li>Input string written to Buffer</li>
+ </ul></li>
+<li>Returns: -1 if the user presses ESC to quit the program, 0 otherwise</li>
+<li>Calls: kbdin, dspout</li>
+<li>Notes:
+  <ul>
+    <li>The input buffer can hold up to MAXLENGTH characters (includes spaces). Stop adding 
+    characters to the input buffer when this limit is reached.</li>
+    <li>You should correctly handle backspacing. If the user hits
+      backspace, you should move the cursor back to the previous spot, and the
+      character at that spot should be cleared from the screen. Also, make 
+    sure that the user does not backspace past the beginning of the input 
+    buffer.</li>
+    <li>Terminate the input loop only when user presses the Enter key. 
+    Also, add a '$' to the end of the input string when the input loop 
+    terminates.</li>
+  </ul>
+<li>Points: 10</li>
+ </ul>
+
+<h3><b>byte ParseInput(word *Buffer, word *Array, word *Length)</b> </h3>
+<ul>
+<li>Parses the input buffer and stores&nbsp;numbers to an array in memory</li>
+<li>Inputs:
+  <ul>
+    <li>Buffer - Pointer to buffer in memory</li>
+    <li>Array - Pointer to array in memory</li>
+    <li>Length - Pointer to word-sized variable in memory</li>
+  </ul>
+<li>Outputs:&nbsp;<ul>
+<li>Array contains numbers parsed from Buffer</li>
+<li>Array length written to Length</li>
+ </ul></li>
+<li>Returns:
+  <ul>
+    <li>The ASCII character corresponding to the type of sort to be performed, 
+    or -1 if there is an error in parsing the input buffer</li>
+  </ul>
+</li>
+<li>Calls: ascbin</li>
+<li>Notes:
+  <ul>
+    <li>The buffer is terminated with a '$'</li>
+    <li>Read the lab manual on how ascbin works - it will make your life <b>much</b>
+      easier</li>
+    <li>The array can hold up to MAXNUMBERS integers - if you encounter more than 
+    MAXNUMBERS in
+      the buffer, do not add the extra ones to the array.</li>
+    <li>Each location in the array is one word in size, not
+      one byte</li>
+  </ul>
+<li>Points: 12</li>
+ </ul>
+
+<h3><b>void PrintArray(word *Array, word Length)</b> </h3>
+<ul>
+<li>Displays an array in memory to the screen</li>
+<li>Inputs:&nbsp;&nbsp;
+  <ul>
+    <li>Array - Pointer to an array in memory</li>
+    <li>Length - Length of the array</li>
+  </ul>
+<li>Outputs:&nbsp; Array displayed to screen</li>
+<li>Returns: None</li>
+<li>Calls: binasc, dspmsg, dspout</li>
+<li>Notes:
+  <ul>
+    <li>Use binasc to obtain an ASCII representation of each number in the array</li>
+    <li>Use the binascBuf buffer when calling binasc and displaying the number 
+    to the screen</li>
+    <li>Separate each number on the screen by a space</li>
+    <li>Each location in the array is one word in size, not
+      one byte</li>
+  </ul>
+<li>Points: 10</li>
+ </ul>
+
+<h3><b>void HeapSort(word *Array, word Length)</b> </h3>
+<ul>
+<li>Sorts an array in memory with the heap sort algorithm</li>
+<li>Inputs:&nbsp;&nbsp;
+  <ul>
+    <li>Array - Pointer to a heap (stored as an array) in memory</li>
+    <li>Length - Length of the array</li>
+  </ul>
+<li>Outputs:&nbsp; CompareCount, SwapCount</li>
+<li>Returns: None</li>
+<li>Calls: Heapify</li>
+<li>Notes:
+  <ul>
+    <li>The heap sort pseudocode has been provided to you</li>
+    <li>Each cell in the arrays you will be sorting is one word in size, <b>not</b>
+      one byte</li>
+    <li>Keep track of comparisons and swaps with CompareCount and SwapCount,
+      respectively</li>
+    <li>When you call Heapify, remember to push the arguments
+      onto the stack in reverse order (right to left)</li>
+  </ul>
+<li>Points: 8</li>
+ </ul>
+
+<h3>void<b> Heapify(word *Array, word Current, word Length)</b> </h3>
+<ul>
+<li>Converts an array to a heap</li>
+<li>Inputs:
+  <ul>
+    <li>Array - Pointer to a heap (stored as an array) in memory</li>
+    <li>Current - Current index in the heap</li>
+    <li>Length - Length of the heap</li>
+  </ul>
+<li>Outputs:&nbsp; Array is correctly converted to a heap, CompareCount and 
+SwapCount updated appropriately</li>
+<li>Returns: None</li>
+<li>Calls: Heapify</li>
+<li>Notes:
+  <ul>
+    <li>The Heapify pseudocode has been provided to you</li>
+    <li>Each location in the array is one word in size, not
+      one byte</li>
+    <li>Keep track of comparisons and swaps with CompareCount and SwapCount,
+      respectively</li>
+    <li>When you call Heapify, remember to push the arguments
+      onto the stack in reverse order (right to left)</li>
+  </ul>
+<li>Points: 15</li>
+ </ul>
+
+<h3><b>void InsertionSort(word *Array, word Length)</b> </h3>
+<ul>
+<li>Sorts an array  with the insertion sort algorithm</li>
+<li>Inputs:&nbsp;&nbsp;
+  <ul>
+    <li>Array - Pointer to an array in memory</li>
+    <li>Length - Length of the array</li>
+  </ul>
+<li>Outputs:&nbsp; CompareCount, SwapCount</li>
+<li>Returns: None</li>
+<li>Calls: None</li>
+<li>Notes:
+  <ul>
+    <li>The insertion sort pseudocode has been provided to you</li>
+    <li>Keep track of comparisons and swaps with CompareCount and SwapCount,
+      respectively</li>
+    <li>Each location in the array is one word in size, not
+      one byte</li>
+  </ul>
+<li>Points: 10</li>
+ </ul>
+
+<h2>Debugging Exercises</h2>
+
+<p>
+Beginning with this MP, you will be completing debugging exercises which will improve your debugging skills.  For this MP,
+you will have to debug three subroutines that have been provided to you.  Your task is to modify each subroutine until it
+works correctly. Note that <strong>none</strong> of these subroutines are C-style like the other subroutines in the MP.
+</p>
+
+<h3><b>CToF</b> </h3>
+<ul>
+<li>
+Converts a temperature on the Celsius scale to the Fahrenheit scale using the formula F = (9/5)C + 32.
+</li>
+<li>Inputs:
+  <ul>
+    <li>AX - integer representing a temperature in Celsius</li>
+  </ul>
+<li>Outputs:
+   <ul>
+     <li>AX - integer representing a temperature in Fahrenheit</li>
+   </ul>
+</li>
+<li>Calls: None</li>
+<li>Notes:
+  <ul>
+    <li>You can ignore any remainder you get from the division</li>
+  </ul>
+<li>Points: 5</li>
+</ul>
+
+<h3><b>Factorial</b> </h3>
+<ul>
+<li>
+Calculates the Factorial of an integer.
+</li>
+<li>Inputs:
+  <ul>
+    <li>AX - input integer</li>
+  </ul>
+<li>Outputs:
+   <ul>
+     <li>AX - factorial of input integer</li>
+   </ul>
+</li>
+<li>Calls: None</li>
+<li>Notes:
+  <ul>
+    <li>You may assume that the inputs will be non-negative</li>
+    <li>Recall that 0! = 1</li>
+  </ul>
+<li>Points: 5</li>
+</ul>
+
+<h3><b>CalculateGrades</b> </h3>
+<ul>
+<li>
+Calculate the grades of the students in a class with a grading scale of: A >= 900, B >= 800, C >= 700, D >= 600, F < 600
+</li>
+<li>Inputs:
+  <ul>
+    <li>SI - pointer to beginning of 2D-array of bytes containing student grades. Each row has 11 elements:
+        The first 10 elements are the grades, and the last element is where the student's letter grade is stored.</li>
+    <li>CX - number of students in the class</li>
+  </ul>
+<li>Outputs:
+   <ul>
+     <li>Students' letter grades written to array</li>
+   </ul>
+</li>
+<li>Calls: None</li>
+<li>Points: 5</li>
+</ul>
+
+<h2>Procedure</h2>
+<ul>
+<li>You will begin this MP with the following files:
+    <ul>
+    <li><tt>MP2.ASM</tt>: Program Framework
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled
+        and linked.</li>
+    <li><tt>LIBMP2.LIB</tt>: Library functions for MP2</li>
+    <li><tt>LIB291.LIB</tt>: General-purpose library functions</li>
+    </ul>
+<li>You may copy these files from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s V:\ece291\mp2 W:\mp2</tt><br>
+    or download the files from this server as <a href="mp2.zip">mp2.zip</a> 
+</li>
+<li>Add your code to <tt>MP2.ASM</tt>.
+<li>Assemble and link your program by typing<tt> make.</tt>&nbsp; This command reads
+  the Makefile then invokes NASM and TLINK to build 
+    an executable program.  
+<li>Use TD debugger to find and correct program errors.
+</ul>
+
+<h2>Final Steps</h2>
+
+<ol>
+  <li>Demonstrate your MP2.EXE to a TA or to the instructor.&nbsp; The TA or
+    instructor will verify that your program produces the correct output. </li>
+  <li>Be prepared to answer questions about any aspect of the operation of
+   your program. The TAs will not accept an MP if you cannot fully explain
+   the operation of your code and details of your implementation. Delayed
+   MPs will be subject to late penalties as described in the course
+   syllabus (10pts/day).</li>
+  <li>The TA will handin your MP online.
+</ol>
+
+<hr>
+
+<h2>MP2.ASM (program framework)</h2>
+
+<font size=-1>
+<pre>
+; MP2 - Sorting Efficiency
+;  Your Name
+;  Today's Date
+;
+; Doug Jones, Fall 2003
+; Guest Author: Ryan Chmiel
+; University of Illinois, Urbana-Champaign
+; Dept. of Electrical and Computer Engineering
+;
+; Version 1.0
+
+	BITS	16
+
+;====== SECTION 1: Define constants =======================================
+
+; Define general constants
+        CR      	EQU     0Dh
+        LF      	EQU     0Ah
+	ESC		EQU	1Bh
+	SPACE		EQU	20h
+	BACKSPACE	EQU	08h
+	MAXLENGTH	EQU	75
+	MAXNUMBERS	EQU	20
+
+;====== SECTION 2: Declare external routines ==============================
+
+; Declare external library routines and variables
+EXTERN kbdin, kbdine, dspmsg, ascbin, binasc, dosxit, dspout
+EXTERN mp2xit, DisplayNumber, Test_CToF, Test_Factorial, Test_CalculateGrades, Grades
+EXTERN libGetInput, libParseInput, libPrintArray, libHeapSort, libHeapify, libInsertionSort
+
+GLOBAL CToF, Factorial, CalculateGrades, binascBuf, Heapify, CompareCount, SwapCount
+    
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        resb      64*8
+stacktop:
+        resb      0                     ; work around NASM bug
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+
+IntroString	db	CR,LF
+		db	0DAh
+		times 31 db 0C4h
+		db	0BFh,CR,LF
+		db	0B3h, '     ', 228, 'C', 228, ' 291 Fall 2003 MP2     ', 0B3h, CR, LF
+		db	0B3h, '           MAIN MENU           ', 0B3h, CR, LF
+		db	0B3h
+		times 31 db 0h
+		db	0B3h,CR,LF
+		db	0B3h, '   1. Run MP2                  ', 0B3h, CR, LF
+		db	0B3h, '   2. Test CToF()              ', 0B3h, CR, LF
+		db	0B3h, '   3. Test Factorial()         ', 0B3h, CR, LF
+		db	0B3h, '   4. Test CalculateGrades()   ', 0B3h, CR, LF
+		db	0C0h
+		times 31 db 0C4h
+		db	0D9h,CR,LF,CR,LF,'Please make your selection: $'
+
+SortString	db	CR,LF
+		db	0DAh
+		times 31 db 0C4h
+		db	0BFh,CR,LF
+		db	0B3h, '     ', 228, 'C', 228, ' 291 Fall 2003 MP2     ', 0B3h, CR, LF
+		db	0B3h, '      Sorting Efficiency       ', 0B3h, CR, LF
+		db	0B3h
+		times 31 db 0h
+		db	0B3h,CR,LF
+		db	0B3h, '       &lt;H&gt;eap Sort             ', 0B3h, CR, LF
+		db	0B3h, '       &lt;I&gt;nsertion Sort        ', 0B3h, CR, LF
+		db	0C0h
+		times 31 db 0C4h
+		db	0D9h,CR,LF,CR,LF,'$'
+	
+InputString	db	'Input format: &lt;sort letter&gt; &lt;string of numbers, each separated by a space&gt;',CR,LF,': $'
+ErrorString	db	'Invalid Input: please reenter your input.',CR,LF,'$'
+SortedString	db	CR,LF,'Sorted array:',CR,LF,'$'
+CompareString	db	'Number of comparisons: ','$'
+SwapString	db	'Number of swaps: ','$'
+EnterString	db	CR,LF,'$'
+
+NumberString	times MAXLENGTH+1 db 0
+HeapArray	dw	0
+NumberArray	times MAXNUMBERS  dw 0
+NumberArrayLen	dw	0
+
+CompareCount	dw	0
+SwapCount	dw	0
+
+FunctionTable	dw	MP2Main, Test_CToF, Test_Factorial, Test_CalculateGrades
+			       
+binascBuf	times 	7 db 0
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        mov     ax, cs                  ; Initialize Default Segment register
+        mov     ds, ax  
+        mov     ax, stkseg              ; Initialize Stack Segment register
+        mov     ss, ax
+        mov     sp, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+.SelectLoop
+	mov	dx, IntroString
+	call	dspmsg
+	xor	ax, ax
+	call	kbdin
+	cmp	al, ESC
+	je	.Done
+	mov	dl, al
+	call	dspout
+	mov	dx, EnterString
+	call	dspmsg
+	sub	al, 31h
+	cmp	al, 4
+	jae	.SelectLoop
+
+	mov	bx, ax
+	shl	bx, 1
+	call	[FunctionTable+bx]
+
+.Done
+	call	mp2xit
+
+;--------------------------------------------------------------
+;--                        MP2Main()                         --
+;--------------------------------------------------------------
+MP2Main	
+	mov	dx, SortString
+	call	dspmsg
+	mov	dx, InputString
+	call	dspmsg
+
+	push	word NumberString
+	call	GetInput
+	add	sp, 2
+	test	ax, ax
+	js	near .Done
+
+	push	word NumberArrayLen
+	push	word NumberArray
+	push	word NumberString
+	call	ParseInput
+	add	sp, 6
+
+	test	al, al
+	jns	.ChooseSort
+	mov	dx, ErrorString
+	call	dspmsg
+	jmp	MP2Main
+
+.ChooseSort
+	cmp	word [NumberArrayLen], 1
+	je	.Print
+	cmp	al, 'I'
+	je	.InsertionSort
+
+.HeapSort
+	push	word [NumberArrayLen]
+	push	word HeapArray
+	call	HeapSort
+	add	sp, 4
+	jmp	.Print
+	
+.InsertionSort
+	push	word [NumberArrayLen]
+	push	word NumberArray
+	call	InsertionSort
+	add	sp, 4
+
+.Print
+	mov	dx, SortedString
+	call	dspmsg
+	push	word [NumberArrayLen]
+	push	word NumberArray
+	call	PrintArray
+	add	sp, 4
+	mov	dx, EnterString
+	call	dspmsg
+	call	dspmsg
+	mov	dx, CompareString
+	call	dspmsg
+	mov	ax, [CompareCount]
+	mov 	bx, binascBuf
+	call	binasc
+	mov	dx, bx
+	call	dspmsg
+	mov	dx, EnterString
+	call	dspmsg
+	mov	dx, SwapString
+	call	dspmsg
+	mov	ax, [SwapCount]
+	mov 	bx, binascBuf
+	call	binasc
+	mov	dx, bx
+	call	dspmsg
+	mov	dx, EnterString
+	call	dspmsg
+	
+.Done
+	ret
+	
+;====== SECTION 8: Your subroutines =======================================
+
+;--------------------------------------------------------------
+;--          Replace library calls with your code!           --
+;--          [Save all reg values that you modify]           --
+;--          Do not forget to add function headers           --
+;--------------------------------------------------------------
+
+;--------------------------------------------------------------
+;--                        GetInput()                        --
+;--------------------------------------------------------------
+GetInput
+	push	bp
+	mov	bp, sp
+
+	push	word [bp+4]
+	call	libGetInput
+	add	sp, 2
+
+	pop	bp
+	ret
+
+;--------------------------------------------------------------
+;--                       ParseInput()                       --
+;--------------------------------------------------------------
+ParseInput
+	push	bp
+	mov	bp, sp
+
+	push	word [bp+8]
+	push	word [bp+6]
+	push	word [bp+4]
+	call	libParseInput
+	add	sp, 6
+
+	pop	bp
+	ret
+
+;--------------------------------------------------------------
+;--                       PrintArray()                       --
+;--------------------------------------------------------------
+PrintArray
+	push	bp
+	mov	bp, sp
+
+	push	word [bp+6]
+	push	word [bp+4]
+	call	libPrintArray
+	add	sp, 4
+	
+	pop	bp
+	ret
+
+;--------------------------------------------------------------
+;--                         HeapSort()                       --
+;--------------------------------------------------------------
+HeapSort
+	push	bp
+	mov	bp, sp
+
+	push	word [bp+6]
+	push	word [bp+4]
+	call	libHeapSort
+	add	sp, 4
+
+	pop	bp
+	ret
+
+;--------------------------------------------------------------
+;--                         Heapify()                        --
+;--------------------------------------------------------------
+Heapify
+	push	bp
+	mov	bp, sp
+
+	push	word [bp+8]
+	push	word [bp+6]
+	push	word [bp+4]
+	call	libHeapify
+	add	sp, 6
+
+	pop	bp
+	ret
+
+;--------------------------------------------------------------
+;--                      InsertionSort()                     --
+;--------------------------------------------------------------
+InsertionSort
+	push	bp
+	mov	bp, sp
+
+	push	word [bp+6]
+	push	word [bp+4]
+	call	libInsertionSort
+	add	sp, 4
+
+	pop	bp
+	ret
+
+;====== SECTION 9: MP2 Debugging Exercises ================================
+
+;--------------------------------------------------------------
+;--                          CToF()                          --
+;--------------------------------------------------------------
+CToF
+	push	bx
+	push	cx
+	push	dx
+
+	mov	bx, ax
+	mov	ax, 9
+	cwd
+	mov	cx, 5
+	div	cx
+	mul	bx
+	add	ax, 32
+
+	pop	dx
+	pop	cx
+	pop	bx
+	ret
+
+;--------------------------------------------------------------
+;--                       Factorial()                        --
+;--------------------------------------------------------------
+Factorial
+	pusha
+	mov     cx, ax
+	cmp	cx, 0
+	jmp	.FactorialDone
+	mov     ax, 0
+
+.FactorialLoop
+        mul     cx
+        loop    Factorial
+ 
+.FactorialDone
+        popa
+        ret
+
+;--------------------------------------------------------------
+;--                    CalculateGrades()                     --
+;--------------------------------------------------------------
+CalculateGrades
+	push	cx
+	push	si
+
+.StudentsLoop
+	xor	ax, ax
+	push	cx
+	mov	cx, 10			
+
+.AddGradesLoop				
+	mov	al, [si]
+	inc	si
+	loop	.AddGradesLoop
+	pop	cx
+
+	cmp	ax, 900			
+	jg	.A
+	cmp	ax, 800
+	jg	.B
+	cmp	ax, 700
+	jg	.C
+	cmp	ax, 600
+	jg	.D
+	jmp	.F
+
+.A
+	mov	al, 'A'
+	jmp	.StoreGrade
+
+.B
+	mov	al, 'B'
+	jmp	.StoreGrade
+
+.C
+	mov	al, 'C'
+	jmp	.StoreGrade
+
+.D
+	mov	al, 'D'
+	jmp	.StoreGrade
+
+.F
+	mov	al, 'F'
+
+.StoreGrade
+	mov	[si], al
+	inc	si
+	loop	.StudentsLoop
+
+	pop	si
+	pop	cx
+	ret
+</pre>
+</font>
+<!--#include file="foot.asp"-->

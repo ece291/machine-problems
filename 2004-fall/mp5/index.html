@@ -1,0 +1,527 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!-- saved from url=(0042)http://courses.engr.illinois.edu/ece390/mp/mp1/ -->
+<HTML xmlns="http://www.w3.org/1999/xhtml"><HEAD><TITLE>ECE 390 - MP5</TITLE>
+<META content="text/html; charset=windows-1252" http-equiv=Content-Type><LINK 
+href="/ece390/ece390.css" rel=stylesheet type=text/css>
+<META content="MSHTML 5.00.3909.6307" name=GENERATOR></HEAD>
+<BODY>
+<TABLE cellPadding=0 cellSpacing=0 class=header width="100%">
+  <TBODY>
+  <TR>
+    <TD align=left class=half vAlign=top>
+      <P><A href="http://courses.engr.illinois.edu/ece390"><IMG alt="" height=100 
+      src="/ece390/icon/ece390.jpg" width=310></A><BR><B>  Computer 
+      Engineering II</B><BR><B>  <SPAN class=red>Machine Problem 5</SPAN></B></P></TD>
+    <TD align=right class=half vAlign=center>
+      <TABLE border=0 cellPadding=0 cellSpacing=1 class=maxheight 
+        width="100%"><TBODY>
+        <TR>
+          <TD align=right class=dark><A 
+            href="http://courses.engr.illinois.edu/ece390/schedule.html">Schedule</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/labsched.html">Lab 
+            schedule</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/hw.asp">Homework</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/books/labmanual/">Lab 
+            Manual</A></TD></TR>
+        <TR>
+          <TD align=right class=dark><A 
+            href="http://courses.engr.illinois.edu/ece390/mp.asp">Machine 
+            Problems</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/resources">Resources</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/mp/mp1/fp">Final 
+            Project</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/photos">Photos</A></TD></TR>
+        <TR>
+          <TD align=right class=dark><A 
+            href="http://courses.engr.illinois.edu/ece390/grades">Gradebook</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/feedback.asp">Feedback</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/syllabus.html">Syllabus</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/archive">Archives</A></TD></TR>
+        <TR>
+          <TD align=right class=dark><A 
+            href="http://courses.engr.illinois.edu/ece390/lecture">Lectures</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/resources/turbo.zip">Download 
+            NASM</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390">Home</A>  </TD>
+          <TD>  <A 
+            href="https://courses.engr.illinois.edu/ece390/admin">Restricted 
+            access</A></TD></TR></TBODY></TABLE></TD></TR>
+  <TR>
+    <TD class=spacer colSpan=2><IMG alt="" height=8 src="" 
+  width=100></TD></TR></TBODY></TABLE>
+<TABLE border=0 cellPadding=7 cellSpacing=1 width="100%">
+  <TBODY>
+  <TR>
+    <TD vAlign=top>
+      <H1 align=center>Machine Problem 5: Battleship via Serial Port</H1>
+      <DIV align=center>
+      <CENTER>
+      <TABLE border=1 width=513>
+        <TBODY>
+        <TR>
+          <TD align=right width=64>Assigned</TD>
+          <TD width=433>Tuesday, 26 October 2004</TD></TR>
+        <TR>
+          <TD align=right width=64>Due Date</TD>
+          <TD width=433>Friday, 12 November 2004, 5:00 p.m.</TD></TR>
+        <TR>
+          <TD align=right width=64>Purpose</TD>
+          <TD width=433 Roman?>To understand graphics and asynchronous
+          serial communication. To work in teams.</TD></TR>
+        <TR>
+          <TD align=right width=64>Points</FONT></TD>
+          <TD width=433>60</TD></TR></TBODY></TABLE></CENTER></DIV>
+          
+<BLOCKQUOTE>
+Now all of the communications plugs the physical link, the
+RS232 connector, is the simplest. I think it was discovered in 
+the ruins at Pompeii -- the Romans probably used it to interface
+with their data runners. It specifies voltages (plus and minus)
+which are prehistoric. It even predates TTL. But it is all there
+is. When forced back to bare copper and elemental, ASCII 
+transmission, RS232 is always there, and we should be thankful,
+because in the intricacies of the higher layers of communications
+protocol lies a tower of Babel -- virtual plugs misted in 
+indescribable complexity. 
+-- Robert W. Lucky, <i>Lucky Strikes Again</i>, 1993.
+</BLOCKQUOTE>
+
+<P>Working in a team, you will write a single program MP5 that implements a 
+version of the classic game Battleship
+over the serial port. When MP5 is run on two computers whose serial ports
+are connected, each player can fire at the other's ships in turn, and
+each player can type messages to the other player.</p>
+
+<P>Files for MP5 are on the <tt>V:</tt> drive in the directory <tt>V:\ece291\mp5</tt>.
+In this directory are the program framework <tt>mp5.asm</tt> and a 
+running version of the program <tt>mp5lab.exe</tt>. Lab versions of subroutines
+are in <tt>libmp5.lib</tt>, which contains all subroutines of LIB291 plus 
+libInit, libReceiveSrv, libTransmitSrv, libTask1, libTask2, libTask3,
+libSetFleet, and libCircle. You will use mp5xit instead of dosxit.
+You should start by copying these files to your home directory with the following command: <BR>
+<TT>xcopy /s V:\ece291\mp5 W:\mp5</TT><BR>
+You may download the files from the server as 
+<A href="http://courses.engr.illinois.edu/ece390/mp/mp5/mp5.zip">mp5.zip</A>  </p>
+
+<p> Reading: Lab Notes, Chapter 12</p>
+
+<H2>Program Specification</H2>
+<p>Two copies of the program run on separate computers connected by a null modem cable.
+One player sits at each computer. When the program starts, it first asks whether the
+initial state is firing (1) or waiting (2). The player at one computer should enter 1, and 
+the player at the other computer should enter 2.
+</p>
+<p>The program then prompts the player for a radius, in pixels, for circles that will be displayed.
+</p>
+<p>Next, the program displays two square grids; each grid has 10 cells on each side.
+On the left is the fleet grid, and on the right is the target grid.
+The program interacts with the player to set the positions of five ships on
+the fleet grid. The ships are a carrier (5 cells), battleship (4 cells), 
+destroyer (3 cells), submarine (3 cells), and patrol boat (2 cells).
+For each ship, the program asks the player to click first on the top or
+leftmost cell of the ship, and then to click on the bottom or rightmost cell of the ship.
+The second cell must create a ship with the correct length.
+The program rejects mouse clicks outside the fleet grid and clicks on already occupied cells.
+</p>
+<p>After the ships are placed, players take turns firing shots.
+The first player clicks on a cell in the target grid.
+The shot is displayed on the corresponding cell of the second player's fleet grid.
+If the shot hits a ship, then it is displayed as a filled red circle.
+If the shot misses, then it is displayed as a filled white circle.
+A circle of the same color appears in the target grid cell that the first
+player had chosen.
+Then the second player may fire a shot by clicking on a cell in the target grid,
+with similar effects.
+The program rejects mouse clicks outside the target grid.
+</p>
+<p>
+At any time, a player may send a text message to the other player.
+The typed message appears one one line at the top of the display,
+and the player may use the backspace key to correct errors. 
+When the player presses the Enter key, the message is transmitted to the other player,
+and it appears at the bottom of the other player's display.
+</p>
+<p>
+When a player presses the ESC key, the program exits.
+</p> 
+
+<h2>Program Organization</h2>
+
+<P>In this machine problem, the main procedure is provided for you.
+You must write the code to replace the library subroutines 
+libInit, libReceiveSrv, libTransmitSrv, libTask1, libTask2, libTask3,
+libSetFleet, and libCircle.
+You will replace these subroutines from the libmp5 library by deleting the 
+statements that call the libmp5 subroutine and by adding your own code. 
+Each subroutine that you write should match the output of the library 
+subroutine exactly.</P>
+<p>
+You may use parts of your team members' subroutines for MP4, such as
+Enq and Deq.
+</p>
+<p>
+The program uses the following global variables:
+<pre>
+SavCOff RESW    1               ; Serial communication port vector
+SavCSeg RESW    1
+State   DB      1               ; 1 = firing, 2 = waiting for other side
+Radius  DW      3               ; Radius of circles, 2 to 6
+Fleet   RESB    100             ; 10x10 array of fleet locations
+ShotRow RESB    1               ; Grid row of last shot by user, 0 to 9
+ShotCol RESB    1               ; Grid column of last shot by user, 0 to 9
+</pre>
+There are also parameter lists for the 
+Transmit Queue (<tt>TQList</tt>) and the Receive Queue (<tt>RQList</tt>).
+</p>
+<img src="mp5queues.jpg">
+<p>
+The program operates in 320x200 graphics mode, with 200 pixel rows and 320 pixel columns.
+The fleet grid occupies pixels in rows 30 to 169 and columns 10 to 149.
+The target grid occupies pixels in rows 30 to 169 and columns 170 to 309.
+Each cell in each grid is a 13x13 square of green or blue color.
+In each grid, there is a single row of black pixels above and to the left of each cell.
+So in the fleet grid, the pixels in row 30 and in column 10 are black;
+the top left cell of this grid actually occupies pixels in rows 31 to 43 and columns 11 to 23.
+</p>
+<p>
+Each cell on the grid has a grid row numbered from 0 to 9 and a grid column
+from 0 to 9.  The top left cell of each grid is at grid row 0 and grid
+column 0.  The (r,c) entry of the <tt>Fleet</tt> array is 0 if the cell
+at grid row r and grid column c of the fleet grid is unoccupied, 
+or 1 if that cell has a segment of a ship.
+</p>
+<p>For text, the screen behaves as if there are 25 text rows and 40 text columns.
+To display text on the screen, use <tt>INT 10h</tt> to move the cursor to the appropriate column of
+row 0 (outgoing text) or row 23 (incoming text).
+Then call dspout or dspmsg to display a character or an entire message.</p>
+<p>
+The program uses <tt>INT 33h</tt> with <tt>AX</tt> = 3 to determine whether 
+the player has pressed a mouse button.
+The <tt>INT 33h</tt> instruction retrieves the position of the tip of the mouse cursor arrow.  
+The position is given in pixels for the row (in <tt>DX</tt>) and column (in <tt>CX</tt>).
+The row value is 0 to 199, but column value is in 0 to 639; divide the column value
+by 2 to get number of pixels in 320x200 mode.
+After the program determines that the player has pressed a mouse button,
+the program should wait for the mouse button to be released before
+proceeding.
+</p>
+<p>
+Packets are transmitted over the serial port between computers in three formats.
+In each format, the last character is <tt>EOT</tt>, which in this program is 0FFh.
+(Some standard packet formats use 04h, but we cannot do so here. Why not?)
+<ul>
+<li>Format 1: This format is used for shots. The first byte is 01h, the second byte 
+is the grid row of the shot (00h to 09h), the third byte is the grid column of the
+shot (00h to 09h), and the fourth byte is the <tt>EOT</tt> character.</li>
+<li>Format 2: This format is used to report whether the shot was a hit or a miss.
+The first byte is 02h, the second byte is 00h for a miss or 01h for a hit, and
+the third byte is the <tt>EOT</tt> character.</li>
+<li>Format 3: This format is used for text messages exchanged between players.
+The first byte is 03h, the subsequent bytes are ASCII characters (up to 40
+characters), and the last byte is the EOT character. </li>
+</ul>
+</p>
+<p>You may use without penalty the following subroutines, which are provided
+in the <tt>mp5.asm</tt> program framework.
+<ul>
+<li>EnableTI -- Enable ready-to-transmit interrupts from the 8250 ACE</li>
+<li>DisableTI -- Disable ready-to-transmit interrupts from the 8250 ACE</li>
+<li>SerialInit -- Initialize the 8250 ACE with the baud rate and frame format</li>
+<li>SerialReset -- Reset the 8250 ACE, disabling its interrupts</li>
+<li>ComInt -- Part of interrupt service routine for serial communication port</li>
+</ul>
+</p>
+<P>Your team will replace each of the subroutines listed below with your own code.
+Document each subroutine with a header.
+</P>
+      <TABLE border=1>
+        <TBODY>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Init</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Initializes interrupt vectors and the display screen
+              <LI>Inputs: None</LI>
+              <LI>Outputs: <tt>SavCOff, SavCSeg, Fleet</tt></LI>
+              <LI>Calls: SerialInit</li> 
+              <LI> 
+Init saves the old serial communication port interrupt vector and changes
+it to point to the interrupt service routine ComInt. Init uses
+<tt>INT 10h</tt> to select 320x200 graphics mode and draws the fleet grid
+and the target grid.
+Init uses <tt>INT 33h</tt> to initialize the mouse driver and to display
+the mouse cursor.
+Init initializes the <tt>Fleet</tt> array.
+              </LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>ReceiveSrv</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Receives one byte through serial port 
+              <LI>Inputs: None</LI>
+              <LI>Outputs: None </li>
+              <LI>Calls: Enq</li>
+              <LI>
+ComInt, the interrupt service routine for the serial communication port,
+calls ReceiveSrv, which receives one byte from the serial port and enqueues it 
+onto the Receive Queue.
+              </LI></UL></TD></tr>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>TransmitSrv</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Receives one byte through serial port 
+              <LI>Inputs: None</LI>
+              <LI>Outputs:  None </li>
+              <LI>Calls: Deq, DisableTI</li>
+              <LI>
+ComInt, the interrupt service routine for the serial communication port,
+calls TransmitSrv.
+If the Transmit Queue is not empty, then TransmitSrv dequeues
+dequeues a byte from this queue and uses the <tt>OUT</tt>
+instruction to send it to the <tt>THR</tt> register in the 8250 ACE.
+If the Transmit Queue is empty, then TransmitSrv calls DisableTI.
+(Why should TransmitSrv call DisableTI?)
+              </LI></UL></TD></tr>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Task1</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Processes keyboard character
+              <LI>Inputs: None</LI>
+              <LI>Outputs: <tt>TQ</tt> </li>
+              <LI>Calls: kbdin, dspout, Enq, EnableTI, SerialReset, mp5xit</li>
+              <LI>
+Task1 first uses <tt>INT 16h</tt> to determine whether the player has pressed a key.
+If so, then Task1 calls kbdin to obtain the ASCII code for the keyboard character.</li>
+<li>Unless the character is special,
+if the current unsent message is fewer than 40 characters long, then Task1 saves
+the new character and displays it on the screen.</li>
+<li>If the character is a backspace and there is a character to erase, then Task1 erases
+the last character of the current unsent message.</li>
+<li>If the character is a carriage return (from the Enter key), then Task1 sends a Format 3
+packet via TQ with the current message.
+Finally, Task1 calls EnableTI to enable serial port transmit interrupts.</li>
+<li>If the character is ESC (from the Esc key), then Task1 restores the serial port interrupt vector,
+calls SerialReset to reset the serial port, and calls mp5xit.</li>
+              </UL></TD></tr>           
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Task2</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Handles mouse inputs
+              <LI>Inputs: <tt>State</tt> </LI>
+              <LI>Outputs: <tt>ShotRow, ShotCol, TQ</tt> </li>
+              <LI>Calls:  Enq, EnableTI </LI>
+              <li> 
+Task2 exits if  <tt>State</tt> is 2 or if the mouse has not been clicked.
+If <tt>State</tt> is 1 and the player has clicked the mouse,
+then Task2 checks that the mouse cursor position is in the target grid.
+Task2 saves the grid row and grid column of the mouse cursor in memory
+variables <tt>ShotRow</tt> and <tt>ShotCol</tt> respectively.
+Task2 sends a Format 1 packet via <tt>TQ</tt> with the shot information
+and calls EnableTI to enable serial port transmit interrupts.
+Finally, Task2 sets <tt>State</tt> to 2.
+         </li></UL></TD></TR>
+         <TR vAlign=top>
+          <TD><B><FONT size=+1>Task3</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Handles received bytes from the serial port
+              <LI>Inputs: <tt>ShotRow, ShotCol, RQ</tt>
+                </LI>
+              </li>
+              <LI>Outputs: <tt>State, TQ</tt> </li>
+              <LI>Calls: dspmsg, Enq, Deq, EnableTI </LI>
+              <li> 
+Task3 checks the <tt>RQ</tt> to determine whether the program has received bytes from the serial port.
+Once an <tt>EOT</tt> has arrived, Task3 processes the entire packet.</li>
+<li>For a Format 1 packet, Task3 updates the display on the fleet grid and sends a Format 2 packet
+to the other player with information about a hit or a miss. 
+Task3 also sets <tt>State</tt> to 1.</li>
+<li>For a Format 2 packet, Task3 updates the display on the target grid.</li>
+<li>For a Format 3 packet, Task3 erases the previous message from the other player
+and displays the new message.</li>
+</UL></TD></tr>
+       <TR vAlign=top>
+          <TD><B><FONT size=+1>SetFleet</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Interacts with the player to set the positions of the ships
+              <LI>Inputs: None </li>
+              <LI>Output: <tt>Fleet</tt> </li>
+              <li> 
+SetFleet interacts with the player to set the position of each of five ships.
+For each ship, SetFleet prompts the player to choose the top or leftmost cell
+for the ship, and then the bottom or rightmost cell.
+After the player has selected the first cell, it is shown in one color,
+and after the player has selected the second cell of the ship, all segments
+of the ship are displayed in a different color.
+The lab version mp5lab.exe uses yellow for the first cell and gray for all
+segments of the ship.
+For each cell occupied by a ship segment, SetFleet sets the corresponding
+entry of the <tt>Fleet</tt> array to 1.
+ </LI></UL></TD></tr>
+       <TR vAlign=top>
+          <TD><B><FONT size=+1>Circle</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Draws a filled circle using Bresenham's algorithm
+              <LI>Inputs: 
+              <ul>
+                    <li><tt>SI</tt> -- column of center of circle</li>
+                   <li><tt>DI</tt> -- row of center of circle</li>
+                   <li><tt>Radius</tt> -- radius of circle</li>
+                   <li><tt>DL</tt> -- Color</li>
+                </ul>
+              </li>
+              <LI>Outputs: None</li>
+              <li> 
+Circle draws a circle of radius Radius centered at column SI,
+row DI, on the screen with the color specified by DL. The entire
+interior of the circle should be filled with this color.
+ </LI></UL></TD></tr>
+
+ </TBODY></TABLE>
+
+<h2>Optional Features</h2>
+<ul>
+<li>You may choose your own colors and shapes for the ship segments.</li>
+<li>You may keep and display a score.</li>
+<li>You may display an appropriate message when all of one player's ships
+have been sunk.</li>
+</ul>
+
+<h2>Working in Teams</h2>
+<ul>
+<li>Find an equitable division of subroutines among team members.
+For each subroutine, one student could be the primary developer and 
+another student could be the primary tester.
+All students should inspect code written by other team members</li>
+<li>For each team meeting, one student should serve as the manager, and 
+another as the recorder; these roles should rotate so that every student has a
+chance to fill each role. 
+<ul>
+<li>The manager is responsible for finding a time and place
+for the meeting. Substantial time will be allocated in during at least one lecture
+period each week for team meetings. Grainger Library has rooms specifically 
+designated for group meetings. 
+At the meeting, the manager should encourage everyone to 
+participate, ensure that all alternatives are adequately considered,
+and keep discussions on task and on time.</li>
+<li>The recorder is responsible for 
+taking notes, summarizing the decisions in an e-mail to all team members, and
+(for the Final Project) drafting the short document due that week.</li></ul>
+<li>Team members should strive to be professional and civil to each other.
+Disagreements should be based on facts and technical arguments, not on personal
+prejudices.</li>
+<li>At the first meeting, on October 28, all teams will formulate a team charter.
+Guidelines for the team charter will be distributed in class on October 28.
+</li>
+</ul>
+
+<H2>Friendly Advice</H2>
+<UL>
+<LI>The libmp5.lib file contains executable library subroutines for each of 
+the routines that you need to implement. The library subroutines allow
+you to run the program and understand how it works before you implement it. 
+You can test your program with any combinations of your own code and library 
+subroutines. You will receive credit only for the subroutines that 
+you implement yourselves. </li>
+<LI>You may define new memory variables as needed. Task1 can use an internal
+buffer for the unsent message, and Task3 can use an internal buffer for
+part of a packet.</li>
+<li>You may design and implement additional subroutines.  In particular,
+the SetFleet subroutine can be implemented with subroutines that perform
+smaller tasks.</li>
+<li>Each subroutine should save and restore any registers that it uses,
+except for registers that deliver subroutine outputs.  The caller 
+may use registers without outputs and expect them to remain unchanged. </li>
+<li>Each interrupt service routine must save and restore registers that it uses,
+possibly including <tt>DS</tt>.</li>
+<li>Think carefully about which parts of the program should be critical sections.</li>
+<li>When drawing a ship segment or a circle on the screen, first hide the mouse
+cursor, draw the shape, and then display the mouse cursor again. This maneuver
+will prevent the mouse cursor from blocking the display of the shape.</li>
+<li>To simulate the serial port on one computer, during development of MP5,
+you may write a subroutine Port
+that dequeues a byte from the Transmit Queue <tt>TQ</tt>(provided that this queue is nonempty)
+and enqueues this byte onto the Receive Queue <tt>RQ</tt>.
+</li>
+<li>After MP5 terminates, if the DOS window fills the whole screen, use Alt-Enter
+to return to a normal size window.
+</li>
+<LI>Monitor the Web Board for clarifications and help.</li>
+<LI>START EARLY!</LI>
+</UL>
+
+<h2>Demonstration, Documentation, and Grading</h2>
+<p>Demonstrate your program to an ECE 390 staff member, who may use mp5lab.exe
+on one of the two connected computers.</p>
+<p>Although each team will develop one program, each submission will be
+individual, as in previous MPs. You will also submit confidential peer evaluations.</p>
+<p>As before, keep an MP development log and write an individual cover memo,
+which you should submit with the program after the demonstration.
+The cover memo should address the following questions (not the same as for previous
+MPs):
+<UL>
+<LI>How much time did you spend on this MP, including team meetings, 
+planning and design, and debugging? </LI>
+<LI>What went well in your work on this MP?  What did not?</LI>
+<LI>What did you learn about working in teams?</LI>
+<li>How did you benefit from other team members?</li>
+<li>How did other team members benefit from you?</li>
+<li>What changes will your team make in its work practices for the Final Project?
+(Your team will be asked to consider whether its team charter should be
+revised.)</LI>
+</UL>
+<p>Your program will be graded according to the clarity of your design
+and the quality of your documentation.</p>
+
+<p>Gradesheet:<br>
+Functionality: 30 points <br>
+Style and documentation: 6 points<br>
+Cover memo: 4 points<br>
+Peer evaluations: 20 points<br>
+</p>
+Peer evaluations: 
+Each student will submit a confidential evaluation of each other
+member of the team. The evaluation will give 3, 2, 1, or 0 points
+for Excellent, Good, Fair, or Poor performance on each of the four
+primary criteria: quality, quantity, timeliness, and cooperation. 
+Although an evaluation has a total of 12 possible points, the maximum
+evaluation score will be 10; thus a student who is Excellent on two criteria 
+and Good on two criteria will receive a score of 10. In a team of four, for each
+student, the lowest peer evaluation score will be dropped, and the remaining
+two scores will be summed for a maximum of 20 possible points.
+In a team of three, for each student, the lower of the two peer
+scores will be dropped, and the remaining score will be
+added with 10, for a maximum of 20 possible points.
+<hr>
+
+      <H2>mp5.asm (program framework)</H2><FONT size=-1>
+      <PRE>
+
+
+</PRE></FONT></TD></TR></TBODY></TABLE>
+<TABLE cellPadding=0 cellSpacing=0 class=dark width="100%">
+  <TBODY>
+  <TR>
+    <TD><A href="http://courses.engr.illinois.edu/ece291/"><IMG alt="" height=17 
+      src="MP1_files/go-back.gif" width=16> Return to ECE291 Home Page</A></TD>
+    <TD align=right>Fall 2002</TD></TR></TBODY></TABLE></BODY></HTML>

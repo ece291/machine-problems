@@ -1,0 +1,561 @@
+<html>
+<!-- This is version 2.0  --!>
+<head>
+<title>ECE 291</title>
+</head>
+
+<body bgcolor="#FFFFFF">
+<div align="center"><center>
+
+<table border="0" width="100%" cellspacing="0" cellpadding="0">
+  <tr>
+    <td width="33%" align="left">ECE 291</td>
+    <td width="33%" align="center">Computer Engineering II</td>
+    <td width="33%" align="right">Moorman, Summer 1998</td>
+  </tr>
+</table>
+</center></div>
+
+<h1 align="center">Machine Problem 1</h1>
+<div align="center"><center>
+
+<table border=1 width=60%>
+  <tr>
+    <td align=right>Assigned</td>
+    <td>Thursday 6/18/98</td>
+  </tr>
+  <tr>
+    <td align="right">Due Date</td>
+    <td>Friday 6/26/98</td>
+  </tr>
+  <tr>
+    <td align="right">Purpose</td>
+    <td Roman">Learn to write assembler code. Use looping
+               and branching.  Perform basic string and
+               file manipulations.</td>
+  </tr>
+  <tr>
+    <td align="right">Points</font></td>
+    <td>50</td>
+  </tr>
+</table>
+</center></div>
+
+<h2>Introduction</h2>
+
+<p>The use of any text editor or word processor quickly reveals some
+basic operations common across platforms and programs.  In this machine
+problem you will develop some basic searching functions and simple
+variations.  Your program will take an input file, print the file, display
+statistics on the file, and match a string for counting, finding, or
+replacing parts of the file. </p>
+
+<h2>Problem Description</h2>
+
+<p>The file to be manipulated will be entered through an INCLUDE statement.
+Include files are read into the source at assemble time.
+The include file contains one variable: <tt>file</tt>.  This can be used as the
+offset for the beginning of the file data.  It can be assumed that all
+files end with and EOF marker.  You might also note that the file has
+been formatted for our use.  This is only to postpone having to use file
+operations until you are more familiar with assembly.  The conversion is
+fairly straightforward. </p>
+
+<p>The file can be thought of as a large array where characters are stored in
+contiguous bytes in memory.  You will be manipulating this file with a
+number of procedures depending on the command line arguments.  The command
+line arguments are stored in a section of memory called the PSP (Program
+Segment Prefix).  The main procedure takes care of pulling the necessary
+arguments from the PSP for our use.  This is similar to <i>argc</i> and
+<i>argv</i> in C.  The main procedure is provided for you, however, you
+must supply a routine that is used to copy the input strings from the PSP
+to the variables <tt>String1</tt> and <tt>String2</tt>.</p>
+
+<p>In this machine problem you will replace the procedures from the LIBMP1
+library by commenting out the <tt>extrn</tt> statements, uncommenting
+the routine definitions, and adding your code.  Each routine that you write
+should match the output of the library code exactly.  Each of the commands
+and their functionality is described below in the <b>Commands</b> section.
+The best way to get a feel for the program is to run it using various
+commands and options, to see how it is supposed to operate.</p>
+
+<p>Your program is required to:
+<ul>
+<li>Display the file, pausing every <tt>PauseLength</tt> lines, until the user
+        hits a key to continue.
+<li>Determine and display statistics for the given file.  These include
+        <ul>
+        <li>File length
+        <li>Number of Characters
+        <li>Number of Words
+        </ul>
+    Variables are defined for the above values to use as needed.
+<li>Count and display the number of matches for a given input string.
+<li>Find and display each occurrence of a given input string.  Pause on each
+        occurrence and wait for the user to proceed.
+<li>Find, replace, and display each occurrence of a given input string with
+        a second string.  This should also pause on each replaced string as
+        it displays.
+
+<h2>Commands</h2>
+<p>All commands for this program are entered on the command line.
+A summary of the command set is shown below:</p>
+                               
+<p>
+<center><table border="1" cellspacing="1">
+  <tr>
+    <td align="center"><strong>Command Line Options</strong></td>
+  </tr>
+  <tr>
+    <td><pre>Usage: MP1 [dscfr] [option]
+  d = display the file
+  s = print statistics
+  c [string] = count the number of times &lt string &gt appears in the file
+  f [string] = find each occurrence of &lt string &gt in the file
+  r [string1] [string2] = replace &lt string1 &gt in the file with &lt string2 &gt
+    </td>
+  </tr>
+</table>
+</center></p>
+
+
+<p>The file can be printed by using
+the 'd' command in the following manner:<br>
+<tt>W:/mp1>mp1 d</tt><br>
+This will call the DisplayFile routine to
+dump the contents of the file on to the screen.  Only the first command
+entered on the line will be used for input.  If the command requires a
+string then the string must be present or an error will be displayed.</p>
+<p>For instance in order to replace the string <i>Yes</i> with <i>No</i> you
+would use the 'r' command in the following manner:
+<tt>W:/mp1>mp1 r Yes No</tt><br>
+Other commands operate in a similar manner.
+
+<h2>Hints</h2>
+<ul>
+<li>The LIBMP1 file contains executable library functions for each of the
+routines that you need to implement.  
+This allows you to run the program and understand how it works before you 
+implement it.  You can test your program with any combination of your own
+code and library functions.  You will only receive credit, however, for
+the routines that you implement yourself. <p>
+
+<li>When debugging your code in Codeview, you will find it helpful to use
+the memory window to show you the memory location of the file and strings.
+You can also use the watch window to keep track of variables in your code.<p>
+
+<li>Do not assume that the file starts at memory location 0.<p>
+
+<li>You may define new variables as needed.<p>
+
+<li>You might find it very helpful to write your own helper function that
+finds the next occurrence of a &lt string &gt in the file starting at 
+any offset in the file.  This function could then be used in the procedures
+Count, Find, and Replace.<p>
+
+<li>Be very careful if you call another procedure not to destroy registers
+that the calling procedure uses.<p>
+
+<li>START EARLY!  This is the first MP that requires you to write your
+own program.  Composition is much more difficult than comprehension.<p>
+
+<li>Monitor the <a href="news:uiuc.class.ece291">newsgroup</a> for clarifications and help.</p>
+</ul>
+
+<h2>Subroutines</h2>
+
+<p>This assignment has six procedures. You will receive credit by replacing
+each of these six procedures listed below with your own code. 
+
+<table BORDER=1 >
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>StringCopy</font></b></td>
+
+<td><ul>
+<li>Copies a string of specified length from PSP to buffer.
+<li>Inputs:
+        <ul>
+        <li>CX    = length of string in bytes
+        <li>ES:SI = pointer to source PSP string
+        <li>DS:DI = pointer to destination string buffer
+        </ul>
+<li>Outputs: None
+<li>Note: String should terminate with '$'
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><B><font SIZE=+1>DisplayFile</font></b></td>
+
+<td><ul>
+<li>Displays a range of the file to the screen.
+<li>Inputs:
+        <ul>
+        <li>DS:SI = pointer to starting file offset
+        <li>DS:DI = pointer to ending file offset
+        </ul>
+<li>Outputs: To Screen (Pausing each <tt>PauseLength</tt> lines)
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>Statistics</font></b></td>
+
+<td><ul>
+<li>Determine and Display file length, number of characters, and number of
+        words.
+<li>Inputs: DS:SI = pointer to starting offset of file
+<li>Outputs: To Screen
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>Count</font></b></td>
+
+<td><ul>
+<li>Count the number of times &lt string &gt appears in the file.
+<li>Inputs:
+        <ul>
+        <li>DS:SI = pointer to &lt string &gt offset
+        <li>DS:BX = pointer to start of file
+        </ul>
+<li>Outputs: To Screen
+</ul></td>
+</tr>
+                   
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>Find</font></b></td>
+
+<td><ul>
+<li>Search the entire file for &lt string &gt.
+<li>Inputs: 
+        <ul>
+        <li>DS:SI = pointer to &lt string &gt offset
+        <li>DS:BX = pointer to start of file
+        </ul>
+<li>Outputs: To Screen (pausing on each match)
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>Replace</font></b></td>
+
+<td><ul>
+<li>Search the entire file for &lt string1 &gt and replace with &lt string2 &gt.
+<li>Inputs: 
+        <ul>
+        <li>DS:DI = pointer to &lt string1 &gt offset (search &lt string &gt)
+        <li>DS:SI = pointer to &lt string2 &gt offset (replace &lt string &gt)
+        <li>DS:BX = pointer to start of file
+        </ul>
+<li>Outputs: To Screen (pausing on each replacement)
+</ul></td>
+</tr>
+
+</table>
+
+<h2>Procedure</h2>
+<ul>
+<li>You will begin this MP with the following files:
+    <ul>
+    <li><tt>MP1.ASM</tt>: Program Framework
+    <li><tt>&lt FILE &gt.DAT</tt>: Files formatted for manipulation
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled
+        and linked.
+    <li><tt>LIBMP1.LIB</tt>: Library functions for MP1
+    <li><tt>LIB291.LIB</tt>: General-purpose library functions
+    </ul>
+<li>You may copy these files from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s V:\ece291\mp1 W:\mp1</tt><br>
+    or download the files from this server as <a href="mp1.zip">mp1.zip</a> 
+<li>Add your code to <tt>MP1.ASM</tt>.
+<li>Assemble and link your program by typing<br>
+      <tt>nmake</tt><Br>
+    This command reads <i>Makefile</i> then invokes MASM and LINK to build 
+    an executable program.  
+<li>Use CodeView (CV) to find and correct program errors. 
+<li>Verify your program operation by testing with
+    each command on various input files.
+</ul>
+
+<h2>Final Steps</h2>
+
+<ol>
+  <li>Print a copy of the MP1 grading report (<a href="mp1grade.html">MP1GR</a>).
+   Double-check that your program is ready for demonstration.  You need to
+   run through the test cases on the grading sheet, you WILL NOT be allowed
+   to hand-in unless you have done this step.
+  <li>Print MP1.ASM (Use GreenPrint32 to print at 4 pages/side.) 
+  <li>Demonstrate your MP1.EXE to a TA or to the instructor. You may
+   be asked to recompile and demonstrate MP1 with different input files.
+   Your program must work with all given
+   input. </li>
+  <li>Be prepared to answer questions about any aspect of the operation of
+   your program. The TAs will not accept an MP if you cannot fully explain
+   the operation of your code and details of your implementation. Delayed
+   MPs will be subject to late penalties as described in the course
+   syllabus (10pts/day).</li>
+  <li>The TA will copy your program to the demonstration disk.
+  <li>Take your printouts to the same TA which approved your demonstration.
+    Staple the grading sheet to the front of the MP1.ASM printout.  Be sure
+    that your name appears in your code and on the grading sheet.
+</ol>
+
+<hr>
+
+<h2>MP1.ASM (program framework)</h2>
+
+<font size=-1><pre>
+
+        TITLE FileParser - Your Name - Current Date
+
+COMMENT %
+        FileParser
+        --------------------
+        ECE291: MP1
+        Jay R. Moorman
+        Unversity of Illinois, Dept. of Electrical & Computer Engineering
+        Summer 1998
+        Revision 1.0
+        %
+
+;====== Constants =========================================================
+
+CR          EQU 13
+LF          EQU 10
+EOF         EQU 26
+PauseLength EQU 20
+
+;====== Externals =========================================================
+
+; -- LIB291 Routines (free) --
+
+  extrn binasc:near   ; From lib291.lib (You can use these functions freely)
+  extrn dspout:near   ; See your lab manual for a full description
+  extrn dspmsg:near   ; of each function
+  extrn kbdin:near    
+  extrn mp1xit:near   ; Terminates Program
+
+; -- LIBMP1 Routines (replace these with your own code) --
+
+
+  extrn StringCopy:near  ; Comment out each line as you
+  extrn DisplayFile:near ; write the routines      
+  extrn Statistics:near
+  extrn Count:near
+  extrn Find:near       
+  extrn Replace:near        
+
+;====== Stack Segment =====================================================
+stkseg  segment stack
+        db 64 dup ('STACK   ')
+stkseg  ends
+
+;====== Code/Data segment =================================================
+cseg    segment public 'CODE' 
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== Variables =========================================================
+
+; The INCLUDE directive inserts the contents of the file into your program.
+; In this file, one variable is defined: File.
+; Choose your test case by un-commenting one of the lines below:
+
+; Files
+INCLUDE frost.dat      ; These are the files that are parsed
+;INCLUDE seuss.dat      ;
+;INCLUDE lngfllw.dat    ;
+
+; Messages
+ErrorMessage    db      'Syntax Error',CR,LF
+                db      'Usage: MP1 [dscfr] [option]',CR,LF
+                db      '  d = display file',CR,LF
+                db      '  s = statistics',CR,LF
+                db      '  c [string] = count &lt string &gt',CR,LF
+                db      '  f [string] = find &lt string &gt',CR,LF
+                db      '  r [string1] [string2] = replace <string1>'
+                db      ' with <string2>',CR,LF,'$'
+
+crlf db CR,LF,'$'  ; Carriage Return / Line Feed String
+
+; Buffers
+PBuf    db 7  dup(?)
+String1 db 16 dup('$')
+String2 db 16 dup('$')
+
+; Variables
+CommandLinePos dw ?
+CommandLineLength dw ?
+
+FileLength  dw 0
+NumChars    dw 0
+NumWords    dw 0
+
+; ======== Your Code ======================================================
+
+; -- Write the code for your subroutines below --
+; To use your own code,
+; comment out the 'extrn' routine from above and
+; uncomment your procedure declaration
+
+;StringCopy Proc near        ; Copy a string in memory
+        ; Your code Goes here!
+        ret
+;StringCopy ENDP
+
+
+;DisplayFile Proc NEAR       ; Display the file to the screen
+        ; Your code Goes here!
+        ret
+;DisplayFile ENDP
+
+
+;Statistics Proc NEAR        ; Print Statistics on the file
+        ; Your code Goes here!
+        ret
+;Statistics ENDP
+
+
+;Count Proc NEAR             ; Count occurrences of &lt string &gt
+        ; Your code Goes here!
+        ret
+;Count ENDP
+
+
+;Find Proc NEAR              ; Find the occurrence of &lt string &gt in the file
+        ; Your code Goes here!
+        ret
+;Find ENDP
+
+;Replace Proc NEAR           ; Replace <string1> in file with <string2>
+        ; Your code Goes here!
+        ret
+;Replace ENDP
+
+
+;====== Main procedure ====================================================
+
+main    proc    far
+
+        ; The Main body of the program parses the command
+        ; line and invokes each subroutine.  You are given this code.
+        ; Note: es is pointing to the PSP when program starts
+        ;  (Brey p.380 and Figure Appendix-A5 has details) 
+
+        mov  ax, cseg
+        mov  ds, ax                         ; set DS=CS
+
+        mov  cx, 0                          ; Clear count
+        mov  cl, byte ptr es:[80h]          ; Read Command Line Length
+        mov  CommandLineLength, cx          ; Save Length
+        cmp  CommandLineLength, 1           ; Terminate if no commands
+        jbe  CommandLineError               ; Go to Output Display Message
+
+MainLoop:
+        mov  bx,1                           ; Skip first space
+        cmp  byte ptr es:[bx+81h], 'd'      ; Check for display
+        jne  NotDisplay
+        mov  si, offset File                ; Begin at start of file
+        mov  di,0FFFFh                      ; Display entire file
+        Call DisplayFile
+        jmp  Exit
+
+NotDisplay:                                 ; Check for statistics
+        cmp  byte ptr es:[bx+81h], 's'
+        jne  NotStats
+        mov  si, offset File                ; Setup offset for file
+        call Statistics
+        jmp  Exit
+
+NotStats:
+        cmp  byte ptr es:[bx+81h], 'c'      ; Check for &lt string &gt count
+        jne  NotCount
+        cmp  CommandLineLength, 3           ; See if enough input is given
+        jle  CommandLineError
+        inc  bx                             ; Move to &lt string &gt relative offset
+        mov  cx,-1                          ; Initialize count
+        mov  si,84h                         ; Get &lt string &gt absolute offset
+CountLoop:
+        inc  bx                             ; Go to next character
+        inc  cx                             ;    and increase count
+        cmp  bx, CommandLineLength          ; Check for end of string
+        jne  CountLoop
+        mov  di, offset String1             ; Put command line input into
+        call StringCopy                     ;    the string1 buffer
+        mov  si, offset String1             ; Setup offset for Count
+        mov  bx, offset File                ; Setup offset of File
+        call Count
+        jmp  Exit
+
+NotCount:
+        cmp  byte ptr es:[bx+81h], 'f'      ; Check for find
+        jne  NotFind
+        cmp  CommandLineLength, 3           ; See if enough input is given
+        jle  CommandLineError
+        inc  bx                             ; Move to &lt string &gt relative offset
+        mov  cx,-1                          ; Initialize count
+        mov  si,84h                         ; Get &lt string &gt absolute offset
+FindLoop:
+        inc  bx                             ; Go to next character
+        inc  cx                             ;    and increase count
+        cmp  bx, CommandLineLength          ; Check for end of string
+        jne  FindLoop
+        mov  di, offset String1             ; Put command line input into
+        call StringCopy                     ;    the string1 buffer
+        mov  si, offset String1             ; Setup offset for Find
+        mov  bx, offset File                ; Setup offset of File
+        call Find
+        jmp  Exit
+
+NotFind:
+        cmp  byte ptr es:[bx+81h], 'r'      ; Check for Replace
+        jne  CommandLineError
+        cmp  CommandLineLength, 3           ; See if enough input is given
+        jle  CommandLineError
+        inc  bx                             ; Move to <string1> relative offset
+        mov  cx,-1                          ; Initialize count
+        mov  si,84h                         ; Get <string1> absolute offset
+ReplaceLoop1:
+        inc  bx                             ; Go to next character
+        inc  cx                             ;    and increase count
+        cmp  bx, CommandLineLength          ; Check if already finished
+        jge  CommandLineError       
+        cmp  byte ptr es:[bx+81h], ' '      ; Check for end of string1
+        jne  ReplaceLoop1
+        mov  di, offset String1             ; Put the first command line input
+        call StringCopy                     ;    into string1 buffer
+        mov  cx,-1                          ; Clear cx for new count
+        mov  si,82h                         ; Source string offset
+        add  si,bx
+        inc  bx                             ; Here we must look ahead
+        cmp  bx, CommandLineLength          ;    to guarantee that
+        jge  CommandLineError               ;    the second argument
+        dec  bx                             ;    exists
+ReplaceLoop2:
+        inc  bx                             ; Go to next character
+        inc  cx                             ;    and increase this count
+        cmp  bx, CommandLineLength          ; Check for end of command line
+        jne  ReplaceLoop2
+        mov  di, offset String2             ; Put the second command line input
+        call StringCopy                     ;    into string2 buffer
+        mov  di, offset String1             ; Setup offset for Replace
+        mov  si, offset String2
+        mov  bx, offset File                ; Setup offset of File
+        call Replace
+        jmp  Exit
+
+CommandLineError:
+        mov   dx, offset ErrorMessage       ; Print Error message and quit
+        call  dspmsg                   
+Exit:
+        call  mp1xit                        ; Exit program
+
+main    endp
+
+cseg    ends
+        end     main
+
+</pre></font>
+</body>
+</html>

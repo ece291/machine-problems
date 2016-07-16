@@ -1,0 +1,653 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 5</title>
+</head>
+
+<body bgcolor=ffffff>
+
+<table width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Lockwood, Spring 1999</td></tr></table>
+<center><h1>Machine Problem 5: Network Tag</h1> 
+   <h2>Network and Game Play Algorithms</h2>
+</center>
+
+
+<p>
+<center><table border=1 width=60%>
+ <tr><td align=right><b>Assigned</b></td>
+    <td>Thursday, April 1, 1999 </td></tr>
+ <tr><td align=right><b>Due Date</b></td>
+    <td>Tuesday, April 13, 1999, 5pm</td></tr>
+   <tr><td align=right><b>Purpose: </b></td>
+    <td>Networking, concurrency, and game-play algorithms
+</td></tr>
+   <tr><td align=right><b>Points</b></td><td>50</td></tr>
+</table></center>
+
+<!-- Copyright 1996-1999, John W Lockwood, All rights reserved
+     For usage information: contact lockwood@ipoint.vlsi.uiuc.edu or visit
+     http://ipoint.vlsi.uiuc.edu/~lockwood/
+-->
+
+<h2>Introduction</h2>
+For MP5, we will complete the game of <i>Network Tag</i>
+by adding the code to process multicast datagrams, read the
+status of the mouse control, and implement the game control algorithms.
+Our program allows up to 63 players to simultaneously
+play a game of <i>Network Tag</i>.
+<p>
+A screen shot of an actual game is shown below:<br>
+<img src="mp5-sample-screen.gif" width="650" height="460">
+<p>
+We each represent ourself in the game with our unique bitmapped image. 
+When we enter the game, we transmit our 32x32, 16-color, BMP image
+to everyone else in the game within a HELLO message.  
+Upon receiving a HELLO message, other players
+store our image into a local variable on their machine
+called <i>ImageArray</i> and note that we
+are active by updating a flag in the <i>Player</i> variable.
+Once every two seconds, we retransmit our HELLO message to reach new players 
+that may have just entered the game.
+<p>
+The position of the mouse will be used to 
+determine the position of our image
+on the screen.  Over the network, we will transmit our
+position in an UPDATE message to
+the other players in the game.  
+<p>
+We learn of the positions
+of other players by listening to the network.  
+We store information from other players in our local <i>Player</i>
+variable.
+Positions are specified as an offset on a mode-13 VGA screen.  
+Our movements are limited to within
+the perimeter of the 320x200-pixel screen.  
+<p>
+<h2>Program Operation</h2>
+Before you begin playing <i>Network Tag</i>,
+Copy <i>MyImage.bmp</i> from your MP4 directory
+to your MP5 directory. 
+<p>
+When the game first begins, one player may become <i>it</i> by pressing the 
+left mouse button.  For the rest of the game, 
+<i>It</i>  is transferred by contact with another player.  
+when we become <i>it</i>, we cannot <i>tag back</i> 
+the player that just touched us (i.e., no tag-backs).  
+Pressing the right mouse
+is a cheat buttom that releases <i>it</i>.
+<p>
+We can leave the game at any time by pressing both the left and 
+right mouse buttons at the same time.
+Just before we exit, we send a GOODBYE message to the other players in
+the game to let them know we are no longer active in the game.
+<p>
+Run the program in the lab on one or more 
+machines until you understand how it works. 
+<p>
+If MP5 doesn't run on your home machine, 
+it is because NetBIOS is not properly installed on your machine.
+For this MP, it is suggested that you work in the lab.
+
+<h2>Network Protocol</h2>
+As described above, there are three
+types of messages are exhanged between players: HELLO, UPDATE, and GOODBYE.
+All messages begin with a byte that identifies the message type.
+The next byte of the message identifies the player that sent the message.
+The rest of the bytes contain the message data.
+The structure definitions for these messages are 
+given at the beginning MP5.ASM.  
+<p>
+Multicast Datagrams are used to transmit messages among players.
+All Messages are sent to a NetBIOS group called <i>ECE291MP5</i> are received
+by all players in the game.  When a player first joins they game, they
+are given the first available name between 
+<i>ECE291Player00</i> and <i>ECE291Player63</i>.  
+<p>
+To simplify the programming for NetBIOS, you have been given NETLIB.LIB --
+a library which provides function calls to send and receive datagrams.
+The NetLIB library calls are summarized below.
+Additional documentation about NetBIOS and Lockwood's NetLIB functions 
+can be found on our 
+<a href="http://www.ece.uiuc.edu/~ece291/class-resources/">ECE291 
+Class Resources</a> Web Page.
+<p>
+<blockquote><font size=-1><xmp>
+NetInit:    Initializes Network - Returns: Player num in AL
+SendPacket: Transmits data in TXBuffer - Inputs: AX = Length
+NetRelease: Release network resources 
+
+netpost : Procedure called when datagram arrives.
+          Called with AX = Length, BX = Pointer to RXBuffer
+          Must preserve all registers modified
+          Ends with RET (not IRET)
+
+TXBuffer: Transmit Buffer (1024 bytes) - Write your data here 
+RXBuffer: Receive Buffer  (1024 bytes) - Read from here !
+</xmp></font></blockquote>
+
+<h2>Important Variables</h2>
+
+To understand how network tag operates, consider 
+the information stored at each node.
+
+<ul>
+<li><b>Player:</b> 64-element array of PlayerType. <br>
+       Stores position and status of remote users.  <br>
+       Modified when packets arrive and used to redraw the screen.
+<li><b>ImageArray:</b> 64-element array of 1024-byte, uncompressed images.<br>
+       Holds local copy of remote user images.
+<li><b>MyNum</b>: My player number (as determined by NetINIT)
+<li><b>ItNum</b>: The number of the player that I think is it.
+<li><b>TagNum</b>: The number of the player that tagged me
+<li><b>MyPosition</b>: My location on the screen (an from the top-left offset)
+</ul>
+<h2>Problem Assignment </h2>
+To help you save time, I have given you the source code for the main 
+procedure.   This code controls the flow of the game and
+transmits packets to the other players in the game.  
+It is your job to first read and understand this code.
+You will then complete the program
+using your own routines from parts I and II of this MP.
+<p>
+You may cut & paste your graphic routines from MP4
+into MP5.ASM.  
+Edit MP5.ASM to add your new procedures for 
+mouse control, data reception, and updating the screen.
+
+
+
+
+<h2>Network, Mouse, and Screen Routines</h2>
+<ul>
+<li><i>All routines should preserve the values of
+       any registers modified</i>
+<li><i>Use proper segments where needed</i><p>
+
+<li><font size=+2><b>MouseMove</b></font>
+  <ul>
+  <li><b>Purpose:</b> Position self on the screen 
+      at the location of the mouse
+  <li><b>Variables Updated</b>
+    <ul>
+    <li>MyPosition: Sets <i>MyPosition</i> to correspond to mouse location<br>
+       <ul>
+       <li>Recall that <i>MyPosition</i> is specified to be the screen
+           offset for the top-left corner of <i>MyImage</i>.
+       <li>Limit the range of <i>MyPosition</i> to prevent drawing
+           <i>MyImage</i> to the extreme right or extreme bottom of the
+           the screen.
+       </ul>
+    <li>ItNum/TagNum: Set <i>ItNum=MyNum</i> and 
+          <i>TagNum=63</i> if left button pressed <br>
+        (allow me to become <i>it</i>)
+    <li>ItNum/TagNum: Set <i>ItNum=63</i> if right button pressed <br>
+        (force self to not be <i>it</i>)
+    <li>ExitFlag: Set <i>ExitFlag=1</i> if right mouse button pressed <Br>
+        (allow program to exit)
+    </ul>
+  <li><b>Hints</b>
+    <ul>
+    <li>MouseMove can poll the mouse position using an Int 33h routine.
+    <li>Recall that mouse positions range over X=(0..639) and Y=(0..199).
+    <li>Note that <i>MyPosition</i> is based on a screen resolution of 320x200.
+    </ul>
+  </ul><p>
+
+<li><font size=+2><b>ReDrawScreen</b></font>
+  <ul>
+  <li><b>Purpose:</b> Redraw the screen with up to 63 players
+  <li><b>Array Variable Used: </b> Player
+  <li><b>Output: </b> Writes directly to screen
+  <li><b>Calls Functions: </b> DrawBox, DrawEmptyBox, DrawBMP
+  <li><b>Description</b>: 
+    Redraw each ACTIVE player on the screen at their current position.<br>
+    Outline the player with an empty box when they are <i>it</i>. <br>
+    If a player is DEPARTING, remove their image and set their staus
+    to INACTIVE.
+
+   </ul><p>
+
+<li><font size=+2><b>NetPost</b></font>
+  <ul>
+  <li><b>Purpose:</b> Process Incoming Datagrams 
+  <li><b>Array Variables Modified: </b> Player
+  <li><b>Output registers: </b> None! (processed within an interrupt)
+  <li><b>Calls Functions: </b> StoreBMP 
+  <li><b>Description</b>: The NetPost function is called by 
+        NetLIB whenever a datagram
+        arrives.  The actions taken depend on the message type.
+        <ul>
+        <li>HELLO: Set the player status to active
+            and store their image to the array.
+        <li>UPDATE: 
+          <ul>
+          <li>Update the player's current position. <br>
+          <li>If some other player is <i>it</i> AND that player 
+              overlapping me AND that player wasn't tagged by me, 
+               then I should become <i>it</i>.
+               (ItNum=MyNum, TagNum=PlayerNum). <br>
+          <li>If some other player is <i>it</i> AND that player 
+              is NOT overlapping me
+               then let him/her become <i>it</i>
+                (ItNum=PlayerNum). <br>
+          <li>If some other player is <i>it</i> AND that player 
+               was tagged by me, let him/her continue to be <i>it</i> 
+               then let him/her become <i>it</i>
+                (ItNum=PlayerNum). <br>
+           </ul>
+        <li>GOODBYE: Set the player status to departing.
+              Let the ReDrawScreen take care of removing
+              the user from the screen.
+        </ul>
+
+  <li><b>Hints:</b>
+     <ul>
+     <li>You will receive messages from yourself!
+     </ul>
+
+    </ul>
+  </ul><p>
+
+<hr>
+<h2>Points</h2>
+You will earn the following points for replacing each of the subroutines
+with your own code.
+
+<ul>
+<li>MouseMove: 15 pts
+<li>ReDrawScreen: 15 pts
+<li>NetPost: 20 pts 
+</ul>
+
+
+<h2>Preliminary Procedure </h2> 
+<ol>
+<li>Obtain the MP5 files by downloading them from the web as 
+    <a href="mp5.zip">mp5.zip</a> or 
+    copying them from the netork drive with the following command:<br>
+      <tt>xcopy /s V:\ECE291\MP5\ W:\MP5</tt> <br>
+<li>Copy the 'myimage.bmp' you created for MP4 into your MP5 directory: <br>
+      <tt>copy W:MP4\MyImage.bmp W:\MP5</tt>
+<li>Run the code in the lab to understand how it works.  Experiment
+     with the operation of the left mouse button, the right mouse 
+     button, and pressing both the left and right mouse buttons 
+     together.
+<li>Read the existing code given in MP5.ASM.  Be sure that you understand
+     the program framework before you write the individual routines.
+</ol>
+
+<hr>
+<h2>MP5.ASM</h2>
+<font size=-1><xmp>
+        PAGE 75, 132
+        TITLE   MP5.ASM   your name
+
+Comment *
+        NETWORK TAG - Network Routines
+        ------------------------------
+        ECE291: Machine Problem 5
+        Prof. John W. Lockwood
+        University of Illinois, Dept. of Electrical & Computer Engineering
+        Spring 1999
+        Revision 2.1
+        *
+
+.MODEL LARGE    ; Allow Multiple Segments
+.486            ; Enable use of 32-bit registers
+
+OPTION NOOLDMACROS 
+
+; ===== Handy General-Purpose MACROS ======================================
+
+INCLUDE MACROS.INC
+
+;====== Bitmap structure definition =======================================
+
+BMPTYPE STRUC
+; --- BitMapFileHeader --- ; 14 bytes
+  BFType            DB 'BM' ; File Type
+  BFSize            DD   ?  ; File Size (in Bytes)
+  BFReserved1       DW   0  ; Reserved 
+  BFReserved2       DW   0  ;    "
+  BFOffBits         DD   ?  ; Offset to start of image data 
+; --- BitMapInfoHeader --- ; 40 bytes
+  BISize            DD   ?  ; Size of BitMapInfoHeader (28h = 40d)
+  BIWidth           DD   ?  ; # Pixel Rows 
+  BIHeight          DD   ?  ; # Pixel Columns
+  BIPlanes          DW   1  ;
+  BIBitCount        DW   ?  ; Log2(palette size) = 4 for 16-color image
+  BICompression     DD   0  ; RGB = 0 = Uncompressed 
+  BISizeImage       DD   ?  ; Size of Image (Bytes)
+  BIXPelsPerMeter   DD   ?  ;
+  BIYPelsPerMeter   DD   ?  ;
+  BIColorsUsed      DD   0  ; 0=All
+  BIColorsImportant DD   0  ;
+; --- Color Table --- ; 64 Bytes
+  RGBQuad           DB 16 dup ( 4 dup(?) ) ; Blue, Green, Red, Unused
+; --- Image Data Follows ; n Bytes
+  ImageData         DB 512 dup(0) ; Image data (bottom row first)
+BMPTYPE ENDS
+
+;====== Network Info =====================================================
+
+; ---- Network Player Information ---
+
+INACTIVE     EQU 0
+ACTIVE       EQU 1
+DEPARTING    EQU 2
+
+PlayerType STRUC
+  OldPosition  DW 320*100+160-16  ; Location specified as VGA MODE-13 Offset
+  CurPosition  DW 320*100+160-16  ;   (Start at center of the screen)
+  Status       DB INACTIVE        ; All Players Initially Inactive
+PlayerType ENDS
+
+; ---- Network Message Types & Formats ---
+
+HELLO   EQU 33
+UPDATE  EQU 21
+GOODBYE EQU 22
+
+GenericMsg STRUC          ; Generic Message Structure
+  MsgType   db ?          ; 1-byte packet type identifier (See types below)
+  PlayerNum db 63         ; Player that transmitted the message
+GenericMSG ENDS
+
+HelloMsg STRUC            ; Hello Message 
+  MsgType   db HELLO
+  PlayerNum db 63
+  Image     db 630 dup(?) ; 118+32*32/2 bytes
+HelloMsg ENDS
+
+UpdateMsg STRUC           ; Update Message
+  MsgType   db UPDATE
+  PlayerNum db 63
+  Position  dw ?          ; My Current Position
+  It_Flag   db 0          ; 1 if It, 0 otherwise
+  Tagged_by db ?          ; Player number that tagged me
+UpdateMsg ENDS
+
+GoodByeMsg STRUC          ; GoodBye Message
+  MsgType db GOODBYE
+  PlayerNum db 63
+GoodByeMsg ENDS
+
+;====== Stack Segment =====================================================
+
+stkseg  segment stack                   ; *** STACK SEGMENT ***
+        db      64 dup ('STACK   ')
+stkseg  ends
+
+;====== BMP Segment =======================================================
+
+bmpseg  segment public                  ; *** BMP Segment ***
+  bmp bmptype < >
+bmpseg ends
+
+PUBLIC bmp
+
+;====== Image Segment ====================================================
+
+imageseg segment public                 ; *** IMAGE Segment ***
+  ImageArray db 32 dup( 512 dup(4,15), 512 dup(2,15) )
+  ; 64 Images * 1024 bytes : red/white , greeen/white Stripe pattern
+imageseg ends
+
+PUBLIC imagearray
+
+;====== Define code segment ===============================================
+
+cseg    segment public 'CODE'           ; *** CODE SEGMENT ***
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== External procedures ===============================================
+
+; -- Lib291 (Free) --
+extrn   kbdin:near, binasc:near, dspmsg:near, dosxit:near
+
+; -- LibNet (Free) --
+extrn   NetInit:near, SendPacket:near, NetRelease:near, NetTest:Near
+extrn   TXBuffer:byte, RXBuffer:byte 
+
+; -- LibMP5gr --
+extrn LibLoadBMP      :near
+extrn LibStoreBMP     :near
+extrn LibDrawBMP      :near
+extrn LibDrawBox      :near
+extrn LibDrawEmptyBox :near
+
+; -- LibMP5nt --
+extrn LibReDrawScreen :near
+extrn LibMouseMove    :near
+extrn LibNetPost      :near
+
+extrn MP45Xit:near
+
+;====== Variables ========================================================
+
+MyNum  db 63  ; My Player Number
+PUBLIC MyNum
+
+ItNum  db 63  ; Who is it
+PUBLIC ItNum
+
+TagNum db 63  ; Who tagged me
+PUBLIC TagNum
+
+player PlayerType 64 dup(< >) ; Player Array
+PUBLIC player
+
+MyPosition dw 320*100+160-16  ; Start at middle of screen
+PUBLIC MyPosition
+
+ExitFLag db 0 ; 0=Play, 1=exit
+PUBLIC ExitFlag
+
+MyImage  db 'myimage.bmp',0  ; Null-terminated filename
+PUBLIC MyImage
+
+
+pbuf           db 7 dup(?)
+crlf           db CR,LF,'$'
+Num320         dw 320
+SizePlayerType db Sizeof Playertype
+
+grp_name db     'ECEMP5NetTag$$$$' ; Set this name for your own use
+                                   ;    (But keep sting length=16)
+
+my_name  db     'ECEMP5Player00$$' ; Set this name for your own use
+                                   ;    (But keep sting length=16,
+                                   ;     and location of 00 unchanged)
+
+PUBLIC grp_name, my_name
+
+; Debugging variables from netlib
+
+rxinvalid          dw 0 ; Number of Invalid packet types
+rxhello            dw 0
+rxupdate           dw 0
+rxgoodbye          dw 0
+rxbadlength        dw 0 ; Number of Wrong-length packets
+
+PUBLIC rxinvalid, rxhello, rxupdate, rxgoodbye, rxbadlength
+
+;======= Graphic Routines (Existing mp4 routines) ========================
+
+; Cut and paste your MP4 routines here
+
+LoadBMP  PROC NEAR
+         Call LibLoadBMP       ; Replace with your code!
+         RET
+LoadBMP  ENDP
+
+
+StoreBMP PROC NEAR
+         Call LibStoreBMP      ; Replace with your code!
+         RET
+StoreBMP ENDP
+
+
+DrawBMP  PROC NEAR
+         Call LibDrawBMP       ; Replace with your code!
+         RET
+DrawBMP  ENDP
+
+
+DrawBox  PROC NEAR
+         Call LibDrawBox       ; Replace with your code (MP4)!
+         RET                   
+DrawBox  ENDP
+
+
+DrawEmptyBox PROC NEAR
+         Call LibDrawEmptyBox  ; Replace with your code (MP4)!
+         RET
+DrawEmptyBox ENDP
+
+PUBLIC LoadBMP, StoreBMP, DrawBMP, DrawBox, DrawEmptyBOX
+
+;======= Network Routines (New MP5 Routines) ============================
+
+; Your new code goes Here !
+
+ReDrawScreen PROC NEAR
+  ; Redraws the screen for all active players
+  ; Indicates who is IT using EmptyBox
+  Call LibReDrawScreen         ; Replace with your code (MP5) !
+  RET
+ReDrawScreen ENDP
+
+
+MouseMove PROC NEAR
+  ; Updates MyPosition based on location of mouse
+  ; Sets ItNum=MyNum and TagNum=63 if left mouse button pressed
+  ; Sets ExitFlag=1 if right mouse button pressed
+  Call LibMouseMove            ; Replace with your code (MP5) !
+  RET
+MouseMove ENDP
+
+
+NetPost PROC NEAR
+  ; Callback function for incoming network messages
+  ; Handles HELLO and UPDATE messages
+  Call LibNetPost
+  RET                          ; Replace with your code (MP5)!
+NetPost ENDP
+
+public netpost
+
+PUBLIC ReDrawScreen, MouseMove, NetPost
+
+; ====== MAIN Routine ====================================================
+
+HelloTime      dw 0
+UpdateTime     dw 0
+
+main proc far
+        mov     ax, cseg      ; Initialize DS register
+        mov     ds, ax
+
+        mov ax,0  ; init mouse
+        int 33h  
+
+        mov ax,1  ; Show Mouse
+        int 33h
+
+
+        GetTime
+        SUB AX,18*2           ; Retransmit timers for HelloMsg and UpdateMsg
+        MOV HelloTime, AX
+        MOV UpdateTime,AX
+
+        Call NetINIT          ; Initialize Network
+        Mov MyNum , AL
+
+        Mov DX,offset MyImage ; Load MyImage into BMP
+        Call LoadBMP
+
+        GMODE ; Begin graphics mode
+
+MainLoop:
+
+        GetTime
+        SUB AX,cs:HelloTime   ; Send Hello Message once per 2 seconds
+        CMP AX,18*2
+        JB NoHelloMessage
+
+        MOV    (HelloMsg PTR TXBuffer).MsgType ,   HELLO
+        MOVMB  (HelloMsg PTR TXBuffer).PlayerNum , MyNum
+        STRCPY (HelloMsg PTR TXBuffer).Image , BMP , 630
+
+        MOV AX,SizeOf HelloMsg
+        Call SendPacket
+
+        GetTime
+        Mov HelloTime,AX
+
+NoHelloMessage:
+
+        GetTime
+        SUB AX,UpdateTime
+        CMP AX,2              ; Send Update Message 9 times per second
+        JB NoUpdateMessage
+
+        Call MouseMove        ; Update MyPosition, Exit status, and It
+
+        MOV    (UpdateMsg PTR TXBuffer).MsgType,  UPDATE
+        MOVMB  (UpdateMsg PTR TXBuffer).PlayerNum, MyNum
+        MOVMW  (UpdateMsg PTR TXBuffer).Position, MyPosition
+        MOV AL,ItNum
+
+        .if MyNum==AL
+          MOV    (UpdateMsg PTR TXBuffer).It_Flag,   1
+        .else
+          MOV    (UpdateMsg PTR TXBuffer).It_Flag,   0
+        .endif
+
+        MOVMB (UpdateMsg PTR TXBuffer).Tagged_By, TagNum
+
+        MOV AX,SizeOf UpdateMsg
+        Call SendPacket
+
+        GetTime
+        Mov UpdateTime,AX
+
+NoUpdateMessage:
+
+        Call ReDrawScreen     ; Redraw the screen
+
+        CMP ExitFlag,0
+        JE  MainLoop
+
+        TMODE ; Return to text mode
+
+        PRINTSTR 'My_Name: ' , My_Name
+        PRINTSTR 'Group  : ' , grp_Name
+
+        PRINTMSG 'Sending Goodbye Message '
+
+
+        MOV    (GoodbyeMsg PTR TXBuffer).MsgType,  GOODBYE
+        MOVMB  (GoodbyeMsg PTR TXBuffer).PlayerNum, MyNum
+
+        MOV AX,SizeOf GoodbyeMsg
+        Call SendPacket
+
+MainDoneNet:
+
+        Call NetRelease
+        call mp45xit
+
+main endp
+
+cseg    ends
+        end main     
+
+</xmp>
+</font>
+
+</body>
+
+

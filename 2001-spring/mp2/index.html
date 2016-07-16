@@ -1,0 +1,1012 @@
+<html>
+
+<head>
+<title>ECE 291</title>
+</head>
+
+<body bgcolor="#FFFFFF">
+<div align="center"><center>
+
+<table border="0" width="100%" cellspacing="0" cellpadding="0">
+  <tr>
+    <td width="33%" align="left">ECE 291</td>
+    <td width="33%" align="center">Computer Engineering II</td>
+    <td width="33%" align="right">Potts, Spring 2001</td>
+  </tr>
+</table>
+</center></div>
+
+<h1 align="center">Machine Problem 2: RSA Encryption</h1>
+<div align="center"><center>
+
+<table border=1 width=60%>
+  <tr>
+    <td align=right>Assigned</td>
+    <td>Thursday 2/8/01</td>
+  </tr>
+  <tr>
+    <td align="right">Due Date</td>
+    <td>Wednesday 2/14/01 : Checkpoint <br>
+    Monday 2/26/01 : Final</td>
+  </tr>
+  <tr>
+    <td align="right">Purpose</td>
+    <td Roman">To deal with subroutines, user I/O, and develop an 
+    understanding of encryption algorithms.</td>
+  </tr>
+  <tr>
+    <td align="right">Points</font></td>
+    <td>50</td>
+  </tr>
+</table>
+</center></div>
+
+<H2>
+Introduction</H2>
+Encryption provides a way to encode the content of
+a message in a way that is only useful for a specific recipient.&nbsp;
+In a public key cryptosystem, each person has their own set of keys: a
+public key and a secret, or private, key.&nbsp; The public key can be thought of as
+a lock, for which the secret key is the key.&nbsp; Each person will send
+out their public key, with which anyone can encrypt data.&nbsp; Once a message
+has been encrypted using the public key, it can only be decrypted using
+the secret key.&nbsp; If an eavesdropper gets the public key, it could
+not be used to decrypt messages sent to the holder of the secret key.
+<p>
+The two keys describe a function and it's inverse.&nbsp;
+That is for a public key, with a function P() and a secret key with a function
+S().&nbsp; So, for a message M, P(S(M)) = M, and S(P(M)) = M.&nbsp; This
+is in contrast to private key cryptosystems in which there is only one
+function which is it's own inverse.&nbsp; Under private key encryption,
+for a private key with a function P() and a message M, P(P(M)) = M.&nbsp;
+Since it is possible to decrypt and encrypt a message with the same key,
+under private key encryption, it is necessary to keep the encryption key
+private.
+<p>
+RSA encryption, which stands for 
+RSA stands for Ron Rivest, Adi Shamir
+and Leonard Adelman, is one of the most common methods of
+encrypting data today.&nbsp; Many algorithms use RSA as a basis for their
+encryption.&nbsp; PGP for example uses RSA to encrypt an IDEA key which
+is sent with the IDEA-encrypted message.&nbsp; Only with the correct RSA
+private key can you decrypt the IDEA key to decrypt the message.<P>
+In this MP, we will write an interactive assembly
+program that encodes and decodes text messages using RSA. Because this MP 
+is much larger and more complex than the first, we will be handling it in 
+two stages: a checkpoint, due on the 14th, where you will be required to 
+demonstrate 3 of the ten functions (Get Input, ParseInput, DisplayBuffer) and the final submission, where you 
+will be required to demonstrate all of the required functions.
+<H2>
+RSA Encryption</H2>
+The function RSA encryption is based on encrypts a
+block of text (T) into a block of cypher (C) as:
+<BR>&nbsp;
+<BR>&nbsp;&nbsp; C =&nbsp; T^e mod n
+
+<P>where (e, n) make up the public key. (e is the pubkey variable and n is 
+the mod variable.)&nbsp; Decryption is accomplished
+by the inverse operation:
+<BR>&nbsp;
+<BR>&nbsp;&nbsp;&nbsp; T = C^d mod n
+
+<P>where (d, n) make up the secret key. (d is the prikey variable and n is 
+the mod variable.)
+
+<P>
+It should be noted that for a modulus n, you can
+only encode a block of text (T) that is less than n, which will produce
+a block of encrypted text (C) which is also less than n.&nbsp;  For that 
+reason, in this MP, we will be encoding 7-bit clean ASCII using a modulus > 
+127. The 8 bit codes can then be decrypted back into 7-bit clean ASCII.
+
+
+<P>
+To determine an RSA key pair, the following steps
+need to be followed:
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1. Choose two prime numbers
+p and q.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2. Multiply p*q to obtain
+n. (p is prime1 and q is prime 2.)
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3. Choose an encryption
+key (e) which is less than {(p-1)(q-1)} and relatively prime* to {(p-1)(q-1)}.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4. Determine a decryption
+key (d) such that d*e % {(p-1)(q-1)} = 1.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<FONT SIZE=-1>* Two numbers are relatively prime if they share no common
+factors.  In other words, the greatest common factor of two relatively
+prime numbers is 1. </FONT>
+
+<P>
+The public key (e, n) can now be given out freely,
+because it can only be used to encrypt a message.&nbsp; Determining the
+secret key from the public key (or breaking the code) is only as difficult
+as factoring n into it's two prime factors. For our version of RSA encryption,
+we are imposing the limit that n must be 8 bits long.&nbsp; However, RSA
+encryption typically uses keys that are 512, 768 or 1024 bits long.&nbsp;
+<H2>
+Our Implementation</H2>
+Our implementation of RSA is greatly simplified.&nbsp;
+We will force n to be exactly 8 bits long.&nbsp; As noted earlier, to use RSA, 
+you can only encode values that are smaller than your modulus. This is sufficient to encode 7-bit clean ASCII. 
+
+<p>Rather than generating random prime numbers for the key, the program
+will generate p, q and e.&nbsp; Then n and d will be calculated by the computer.
+This implementation is limited to encoding and decoding
+a single 250 byte buffer.&nbsp; Each byte will be encrypted and decrypted
+individually. The user can either enter hex values or ASCII text into the
+buffer to be encrypted or decrypted.
+<p>
+Some algorithms are described below to help you program your mp.
+<H4>
+Exponentials in a modulus</H4>
+&nbsp; For very large values of e and d, it could be very difficult to
+exponential a large number.&nbsp; In RSA 200+ bit exponents are often used,
+with a 500+ bit modulus.&nbsp; To perform this exponential, a 100,000 bit
+number would be produced. Fortunately, there is a simple modular exponentiation
+algorithm below which computes <I>R=y<SUP>x</SUP></I> <TT>mod</TT> <I>n</I>,
+where <I>x</I> is <I>w</I> bits long:
+<PRE><TT>&nbsp;&nbsp;&nbsp; Let</TT> <I>s</I> = 1.
+<TT>&nbsp;&nbsp;&nbsp; For</TT> <I>k</I> = w-1 to 0:
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If</TT> (<TT>bit</TT> <I>k</I> <TT>of</TT> <I>x</I>) <TT>is</TT> 1 <TT>then
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Let</TT> <I>R</I> = (<I>s</I> · <I>y</I>) <TT>mod</TT> <I>n
+</I><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Else
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Let</TT> <I>R</I> = <I>s
+</I><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Let</TT> <I>s</I> = <I>R</I><SUP>2</SUP> <TT>mod</TT> <I>n
+</I><TT>&nbsp;&nbsp;&nbsp; Return</TT> (<I>R)</I></PRE>
+(From: <A HREF="http://www.cryptography.com/timingattack/">http://www.cryptography.com/timingattack/</A>
+)
+
+<P>Please note that this operation runs from the most significant bit of
+the exponent to the least significant bit of the exponent. This allows
+exponentiation to be done in a loop relative to the length of the exponent.&nbsp;
+So, for an 200 bit exponent, only 200 iterations need to be done, not 2^200.
+<H4>
+Calculating d*e mod n = 1</H4>
+&nbsp;&nbsp;&nbsp;
+Calculating d can be done recursively.&nbsp; In the
+general case, for calculating d where (d*a) <TT>mod </TT>b = c can be calculated
+using the following:
+
+<pre>
+     Let f(a, b, c) be a function such that
+        f(a, b, c)*a mod b = c. 
+     For simplicity, let f(a, b, c) = x0 where x0 is an integer 
+
+     Note that the definition of A mod B = C states that 
+          (x * B) + C = A 
+     where A, B, and C are constants and x is some integer.
+
+     The Original Equation. Note that c &lt; a 
+     (1)  (x0 * a) mod b = c
+
+     By the defintion of the modulus:
+     (2)  (x1 * b) + c = (x0 * a) , Where x1 is some integer.
+
+     Subtract c from both sides
+     (3)  (x1 * b)  = (x0 * a) + (-c)
+
+     Taking both sides of the equation mod a:
+     (4a) (x1 * b) mod a = ((x0 * a) + (-c)) mod a   
+           Since a is a factor of (x0 * a)
+     (4b) (x1 * b) mod a = (-c) mod a               
+           Note that this step is the inverse of how 
+           (2) was derived from (1).  
+
+     By the property (A*B) mod C = (A*(B mod C)) mod C
+     (5)  (x1 * (b mod a)) mod a = (-c) mod a
+
+     Note that (b mod a) and ((-c) mod a) are both constants defined 
+     in terms of the inputs to the function a, b, and c. So, let:
+        b mod a = e
+        (-c) mod a = f
+     Performing this substitution gives:
+     (6) (x1 * e) mod a = f
+
+     Noting that this is exactly in the form of (1), we can solve for x1:
+     (7a) x1 = f(e, a, f)
+      Performing the back substitutions 
+     (7b) x1 = f(b mod a, a, -c mod a)
+ 
+     Combining (7b) with (2):
+     (8a) (x0 * a) = f(b mod a, a, -c mod a) * b + c 
+        and using the definition x0 = f(a,b,c)
+     (8b) (f(a,b,c) * a) = f(b mod a, a, -c mod a) * b + c
+ 
+     Dividing through by a we get:
+     (9) f(a, b, c) = (b*f(b mod a, a, -c mod a) + c)/a
+
+      Note that (b mod a) &lt; a &lt; b, and c &lt; a.  
+      This suggests that the recursion will shrink down to 
+      some base case, or a set of base cases.   In this case, the base 
+      case for &quot;d*e mod n = 1&quot; is that when c=0, f(a,b,c)=0.
+      It is also possible that f(a, b, c) is undefined 
+      if a = 0 (division by 0).  To see what it means if f(a,b,c) 
+      is undefined, we will work the recursion backwards. 
+
+        After the nth iteration
+          a(n) = 0
+        Therefore
+          b(n-1) mod a(n-1) = 0
+ 
+        This implies that a(n-1) is a factor of b(n-1), however
+          b(n-1) = a(n-2)
+        So, a(n-1) is also a factor of a(n-2)
+
+        Also,
+          a(n-1) = b(n-2) mod a(n-2)
+
+        Now, taking both sides mod a(n-1)
+          a(n-1) mod a(n-1) = (b(n-2) mod a(n-2)) mod a(n-1)
+
+        Since A mod A = 0:
+          0 = (b(n-2) mod a(n-2)) mod a(n-1)
+
+        Using the definition of the modulus twice:
+          x1 * a(n-1) = b(n-2) mod a(n-2) ,      Where x1 is an integer
+          (x1 * a(n-1)) = b(n-2) - x2 * a(n-2) , Where x2 is an integer
+
+        But, since a(n-1) is a factor of a(n-2)
+          (x1 * a(n-1)) = b(n-2) - x2 * x3 * a(n-1) , Where x3 is an integer
+
+        Letting x2 absorb x3 since both are arbitrary integers:
+          (x1 * a(n-1) = b(n-2) - x2 * a(n-1)
+
+        Adding x2 * a(n-1) and distributing the a(n-1)
+          a(n-1)(x1 + x2) = b(n-2)
+
+        Letting x1 absorb x2 since both are arbitrary integers:
+          a(n-1)*x1 = b(n-2)
+
+       Therefore, a(n-1) is a factor of b(n-2).  It was already shown
+       that a(n-1) is a factor of a(n-2).   By induction, a(n-1) is a
+       factor of a(k) and b(k) where k &lt; n and a(n) = 0.  Actually, with a
+       slight modification to the proof, it could be shown that a(n-1) is the
+       greatest common factor of a(k) and b(k) for k &lt; n.
+
+</pre>
+
+<H4>
+Prime numbers</H4>
+&nbsp;&nbsp;&nbsp; Since the security of RSA depends on the size of n,
+finding large prime numbers is very important to the RSA algorithm. In
+general, one would choose a vary large random number and then determine
+if it is prime.&nbsp; For our implementation, the user will enter a number,
+and the computer will determine if it is prime.&nbsp; There are a number
+of complex algorithms for determining if large&nbsp; numbers are prime,
+but this operation is simple for small numbers.&nbsp; You will be responsible
+for your own algorithm.&nbsp; It should be able to calculate if any number
+between 1 and 127 is prime.
+
+<H2>
+User Interface</H2>
+
+<p align="center"><img border="0" src="mp2.jpg" width="652" height="451"></p>
+
+<p>The user interface for this program consists of 10 different commands, 
+which are described below. You are strongly encouraged to experiment with 
+the executable yourself to get a feel for what the program does.</p>
+
+<ul>
+<li><b>(T)ext message</b>: this command allows you to fill in the data buffer 
+by typing in regular text. The backspace key should work as normal.
+<li><b>En(c)rypted message</b>: this command allows you to fill in the data buffer 
+by typing in hexadecimal ASCII values. Backspace should work as normal, 
+and the function should only accept normal input (0-9, a-f, A-F). The 
+program should insert a space between every byte - ie, "123456" would show 
+up as  "12 34 56".
+<li><b>(A)SCII message</b>: this command prints out the contents of 
+the data buffer as if it contained regular ASCII values. Printing out an 
+encrypted buffer will result in a garbage string.
+<li><b>Encrypted (m)essage</b>: this command prints out the data buffer as 
+a string of hexadecimal ASCII numbers.
+<li><b>(K)ey pair</b>: this command displays the current working key/mod 
+pairs. If no keys have been generated, the pairs will be all zeros.
+<li><b>(E)ncrypt message</b>: this command asks the user for a key to 
+encrypt the data buffer.
+<li><b>(D)ecrypt message</b>: this command asks the user for a key to 
+decrypt the data buffer.
+<li><b>(G)enerate key pair</b>: this command creates a new pair of key/mod 
+numbers.
+<li><b>(S)how main menu</b>: this command displays the commands and their 
+associated letters.
+<li><b>(Q)uit</b>: quits the program.
+</ul>
+
+
+<h2>Hints</h2>
+<ul>
+<li>The LIBMP2 file contains executable library functions for each of the
+routines that you need to implement.  
+This allows you to run the program and understand how it works before you 
+implement it.  You can test your program by stepping through the game and 
+making sure the display and comparison functions work correctly.  You will only receive credit, however, for
+the routines that you implement yourself. <p>
+
+<li>When debugging your code in the debugger, you will find it helpful to use
+the memory window to show you the memory location of the file and strings.
+You can also use the watch window to keep track of variables in your 
+code, such as the shuffled deck and the dealt hands.<p>
+
+<li>If you change the seed, the library code may have a divide overflow due 
+to a difficult-to-trace bug in the code. So don't mess with it.<p>
+
+<li>Do not assume that the file starts at memory location 0.<p>
+
+<li>You may define new variables and function as needed.<p>
+
+<li>Try to develop a good understanding of <i>what</i> you're going to be 
+doing before you start coding, even if you don't completely understand why 
+you're doing it. Please ask a TA if you have any confusion about the 
+algorithm.<p>
+	
+<li>Be very careful if you call another procedure not to destroy registers
+that the calling procedure uses.<p>
+
+<li>Remember to include function headers for each of your functions!<p>
+
+<li>Input is NOT case sensitive.<p>
+
+<li>Using dspout to output a backspace (0x08h) will cause the input cursor to move left one space.<p>
+
+<li>START EARLY!<p>
+
+<li>Monitor the <a href="news:uiuc.class.ece291">newsgroup</a> for 
+clarifications and help.</p>
+
+</ul>
+
+<h2>Subroutines</h2>
+
+<p>This assignment has ten procedures. You will receive credit by 
+replacing
+each of these procedures listed below with your own code. Assume 
+these functions call library routines such as dspmsg as needed.</p>
+
+
+<table BORDER=1 >
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>GetInput</font></b></td>
+
+<td><ul>
+    
+<li> Takes user input. Handles ESC, RETURN by terminating string and exiting. 
+Handles BACKSPACE as normal in ASCII. Checks for (in)valid 
+input in hex input. Automatically adds and removes separating space for hex input. The input string has a max length of MAXLEN. Store the number of characters
+within inputbuf in inputbuflen, but do NOT include the terminating character.
+<li>Inputs: (from keyboard), AX = 1 for Hex input, AX = 0 for ASCII input
+<li>Outputs: [inputbuf], [inputbuflen], (to screen)
+<li>Calls: kbdin, dspout
+ </ul></td>
+</tr>
+
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>ParseInput</font></b></td>
+
+<td><ul>
+    
+<li>Copies inputbuf to cryptbuf, coverting from ASCII to hex if necessary
+<li>Inputs: AX = 1 for Hex input, AX = 0 for ASCII input, [inputbuf], [inputbuflen]
+<li>Outputs:[cryptbuf], [cryptbuflen]
+<li>Calls: none
+</ul></td>
+</tr>
+
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>DisplayBuffer</font></b></td>
+
+<td><ul>
+<li>Displays cryptbuf in either ASCII or hex
+<li>Inputs: AX = 1 for Hex input, AX = 0 for ASCII input, [cryptbuf], [cryptbuflen],
+[Output],[HexMsg],[AscMsg]
+<li>Outputs: (to screen)
+<li>Calls: dspmsg, dspout
+</ul></td>
+</tr>
+
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>Random</font></b></td>
+
+<td><ul>
+<li>Generates a random number between 0 and num-1
+<li>Inputs: CX = num, the upper bound, [seed]
+<li>Outputs: AX = rnd(0, num-1)
+<li>Calls: none
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>GetBits</font></b></td>
+
+<td><ul>
+<li>Figures out how many bits a number uses
+<li>Inputs: AX = number
+<li>Outputs: CX = number of bits
+<li>Calls: none
+</ul></td>
+</tr>
+
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>Solve</font></b></td>
+
+<td><ul>
+<li>Solves the equation, (d*a)%b=c, by using recursion and the formula <br>
+f(a,b,c) = (b * f(b%a, a, -c%a) + c) / a
+<li>Inputs: CX = a, SI = b, DI = c
+<li>Outputs: AX = d
+<li>Calls: none
+<li>NOTE: Function is recursive
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>PowMod</font></b></td>
+
+<td><ul>
+<li>Computes y^x mod n
+<li>Inputs: AX = x, BX = n, DI = y, [tempvar] (used in calculation)
+<li>Outputs: AX = result
+<li>Calls: GetBits
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>CheckPrime</font></b></td>
+
+<td><ul>
+<li>Checks if a given number is prime (1 is not prime)
+<li>Inputs: AX = number
+<li>Outputs: AX = itself if prime, AX = 0 if not prime
+<li>Calls: none
+<li>Notes: You only need to check for primes less than or equal to 127.
+Check out the resources page for a list of prime numbers.
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>GenerateKeyPair</font></b></td>
+
+<td><ul>
+<li>Generates a public and private key pair (prime 1 should be under 30)
+<li>Inputs: none
+<li>Outputs: [prime1], [prime2], [mod], [pubkey], [prikey]
+<li>Calls: Random, CheckPrime, Solve
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>Crypt</font></b></td>
+
+<td><ul>
+<li>Encrypts or decrypts cryptbuf by applying A=B^k mod n, where B is 
+the message, k is either the public (for encrypting) or private (for decrypting) 
+key, n is the modulus, and A is the output message.
+<li>Inputs: AX = k, key to use, BX = n, the modulus, [cryptbuf]  buffer to 
+encrypt/decrypt, [cryptbuflen] =length of buffer
+<li>Outputs: [cryptbuf] = decrypted/encrypted buffer
+<li>Calls: PowMod
+</ul></td>
+</tr>
+
+
+
+
+</table>
+
+<h2>Procedure</h2>
+<ul>
+<li>You will begin this MP with the following files:
+    <ul>
+    <li><tt>MP2.ASM</tt>: Program Framework
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled
+        and linked.
+    <li><tt>LIBMP2.LIB</tt>: Library functions for MP2
+    <li><tt>LIB291.LIB</tt>: General-purpose library functions
+    </ul>
+<li>You may copy these files from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s V:\ece291\mp2 W:\mp2</tt><br>
+    or download the files from this server as <a 
+href="mp2.zip">mp2.zip</a> 
+<li>Add your code to <tt>MP2.ASM</tt>.
+<li>Assemble and link your program by typing<br>
+      <tt>make</tt><Br>
+    This command reads <i>Makefile</i> then invokes NASM and LINK to build 
+    an executable program.  
+<li>Use Turbo Debugger (TB) to find and correct program errors. 
+<li>Verify your program operation by testing the
+    input test file.  You should alter the test file to check 
+    different scenarios with your code.
+</ul>
+
+<h2>Final Steps</h2>
+
+<p>1. Demonstrate your MP2.EXE to a TA. You may be asked to recompile and demo the program. Your program must work with all given input.</p>
+
+<p>2. Be prepared to answer questions about any aspect of the operation of your program. The TAs will not accept an MP if you cannot fully
+explain your code and your implementation. Delayed MPs will be subject to late penalties as described in the course syllabus (10/pts per day).</p>
+
+<p>3. The TA will complete the code submission procedure.</p>
+<hr>
+
+<h2>MP2.ASM (program framework)</h2>
+
+<font size=-1><pre>
+; MP2 - RSA Encryption
+;  Your Name
+;  Today's Date
+;
+; Josh Potts, Spring 2001
+; Authors: Justin Quek, Chris Jones
+; University of Illinois, Urbana-Champaign
+; Dept. of Electrical and Computer Engineering
+;
+; Version 1.0
+
+BITS	16
+
+;====== SECTION 1: Define constants =======================================
+BS      EQU     08h
+LF      EQU     0Ah
+CR      EQU     0Dh
+ESC     EQU     1Bh
+MAXLEN  EQU     250
+ASCII   EQU     0
+HEX     EQU     1
+
+;====== SECTION 2: Declare external procedures ============================
+; These functions are given to you -- you do NOT have to write them
+EXTERN  kbdin, dspout, dspmsg, ascbin, binasc, mp2xit
+
+; You will have to replace these library functions with your own code
+EXTERN libGetInput, libParseInput, libDisplayBuffer
+EXTERN libRandom
+EXTERN libGetBits, libSolve, libPowMod, libCheckPrime
+EXTERN libGenerateKeyPair, libCrypt
+
+; These are required for the library routines to work
+GLOBAL inputbuf, cryptbuf, inputbuflen, cryptbuflen
+GLOBAL prime1, prime2, mod, pubkey, prikey
+GLOBAL seed
+GLOBAL tempvar, binascbuf
+GLOBAL Menu, Command, Invalid, Input, Output, HexMsg, AscMsg
+GLOBAL Public, Private, Encrypt, Decrypt, Create, KeyMsg, ModMsg, Quit
+
+GLOBAL GetInput, ParseInput, DisplayBuffer, Random, GetBits
+GLOBAL Solve, PowMod, CheckPrime, GenerateKeyPair, Crypt
+
+;====== SECTION 3: Define stack segment ===================================
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        resb      64*8
+stacktop:
+        resb      0
+
+;====== SECTION 4: Define code segment ====================================
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+inputbuf        resb MAXLEN		; buffer for input
+                db '$'			;  in case =)
+cryptbuf        resb MAXLEN		; buffer for messages
+                db '$'			;  in case =)
+inputbuflen     db 0			; input buffer length
+cryptbuflen     db 0			; message buffer length
+
+prime1          db 0			; 1st prime number
+prime2          db 0			; 2nd prime number
+mod             db 0			; prime1*prime2
+pubkey          db 0			; public key (with modulus)
+prikey          db 0			; private key (with modulus)
+
+seed            dw 3			; seed for random number generator
+
+tempvar         dw 0			; temporary variable
+binascbuf       resb 7			; buffer for binasc
+		db '$'			;  so we can use dspmsg
+
+; Strings for User Interface
+Menu db '================== ECE291: RSA Encryption ==================',CR,LF
+     db '|                                                          |',CR,LF
+     db '| Input:                                                   |',CR,LF
+     db '|  (T)ext message      En(c)rypted message                 |',CR,LF
+     db '| Display:                                                 |',CR,LF
+     db '|  (A)SCII message     Encrypted (m)essage   (K)ey pair    |',CR,LF
+     db '|                                                          |',CR,LF
+     db '| Cryptography:                                            |',CR,LF
+     db '|  (E)ncrypt message   (D)ecrypt message                   |',CR,LF
+     db '| (G)enerate key pair                                      |',CR,LF
+     db '|                                                          |',CR,LF
+     db '| (S)how main menu                                         |',CR,LF
+     db '| (Q)uit                                                   |',CR,LF
+     db '|                                                          |',CR,LF
+     db '============================================================',CR,LF,'$'
+Command db CR,LF,'Command? ','$'
+Invalid db 'Invalid choice!',CR,LF,'$'
+Input   db 'Please enter your message in ','$'
+Output  db 'Here is the buffer in ','$'
+HexMsg  db 'HEX:',CR,LF,'$'
+AscMsg  db 'ASCII:',CR,LF,'$'
+Public  db 'The public key (key, mod) is:  (','$'
+Private db 'The private key (key, mod) is: (','$'
+Encrypt db 'Encrypting the buffer...',CR,LF,'$'
+Decrypt db 'Decrypting the buffer...',CR,LF,'$'
+Create  db 'Generating new keys (this may take a while)...',CR,LF,'$'
+KeyMsg  db 'Please enter the key to use (currently ','$'
+ModMsg  db 'Please enter the modulus (currently ','$'
+Quit    db 'Goodbye!',CR,LF,'$'
+
+;====== SECTION 6: Program initialization =================================
+..start:
+        mov     ax, cs                  ; Initialize Default Segment register
+        mov     ds, ax  
+        mov     ax, stkseg              ; Initialize Stack Segment register
+        mov     ss, ax
+        mov     sp, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+MAIN:
+
+; Print Main menu
+        mov     dx, Menu
+        call    dspmsg
+
+.MP2loop
+; Display prompt
+        mov     dx, Command
+        call    dspmsg
+
+; Get user choice
+        call    kbdin
+        and     al, 0dfh		; make input upper case
+
+; Newline
+        mov     dl, CR
+        call    dspout
+        mov     dl, LF
+        call    dspout
+
+; Call appropriate function
+        cmp     al, 'T'
+        jne     .notT
+        mov     dx, Input
+        call    dspmsg
+        mov     dx, AscMsg
+        call    dspmsg
+        xor     ax, ax
+        call    GetInput
+        call    ParseInput
+        jmp     .MP2loop
+
+.notT
+        cmp     al, 'C'
+        jne     .notC
+        mov     dx, Input
+        call    dspmsg
+        mov     dx, HexMsg
+        call    dspmsg
+        mov     ax, 1
+        call    GetInput
+        call    ParseInput
+        jmp     .MP2loop
+
+.notC
+        cmp     al, 'A'
+        jne     .notA
+        xor     ax, ax
+        call    DisplayBuffer
+        jmp     .MP2loop
+
+.notA
+        cmp     al, 'M'
+        jne     .notM
+        mov     ax, 1
+        call    DisplayBuffer
+        jmp     .MP2loop
+
+.notM
+        cmp     al, 'K'
+        jne     .notK
+.showkeys
+        mov     dx, Public
+        call    dspmsg
+        xor     ax, ax
+        mov     al, byte [pubkey]
+        call    ShowKey
+        mov     dx, Private
+        call    dspmsg
+        xor     ax, ax
+        mov     al, byte [prikey]
+        call    ShowKey
+        jmp     .MP2loop
+
+.notK
+        cmp     al, 'E'
+        jne     .notE
+        mov     dx, Encrypt
+        call    dspmsg
+        xor     ax, ax
+        mov     al, byte [pubkey]
+        jmp     .crypt
+
+.notE
+        cmp     al, 'D'
+        jne     .notD
+        mov     dx, Decrypt
+        call    dspmsg
+        xor     ax, ax
+        mov     al, byte [prikey]
+        jmp     .crypt
+
+.crypt
+; Get public key
+        mov     dx, KeyMsg
+        call    dspmsg
+        mov     bx, binascbuf
+        call    binasc
+        mov     dx, bx
+        call    dspmsg
+        mov     dx, binascbuf
+        mov     word [binascbuf+0], 3f29h	; ')','?'
+        mov     word [binascbuf+2], 2420h	; ' ','$'
+        call    dspmsg
+        xor     ax, ax
+        call    GetInput
+        mov     bx, inputbuf
+        call    ascbin
+        mov     si, ax
+
+; Get modulus
+        mov     dx, ModMsg
+        call    dspmsg
+        xor     ax, ax
+        mov     al, byte [mod]
+        mov     bx, binascbuf
+        call    binasc
+        mov     dx, bx
+        call    dspmsg
+        mov     dx, binascbuf
+        mov     word [binascbuf+0], 3f29h	; ')','?'
+        mov     word [binascbuf+2], 2420h	; ' ','$'
+        call    dspmsg
+        xor     ax, ax
+        call    GetInput
+        mov     bx, inputbuf
+        call    ascbin
+
+; encrypt/decrypt buffer
+        mov     bx, ax
+        mov     ax, si
+        call    Crypt
+
+        jmp     .MP2loop
+
+.notD
+        cmp     al, 'G'
+        jne     .notG
+        mov     dx, Create
+        call    dspmsg
+        call    GenerateKeyPair
+        jmp     .showkeys
+
+.notG
+        cmp     al, 'S'
+        jne     .notS
+        mov     dx, Menu
+        call    dspmsg
+        jmp     .MP2loop
+
+.invalid
+        mov     dx, Invalid
+        call    dspmsg
+        jmp     .MP2loop
+
+.notS
+        cmp     al, 'Q'
+        jne     .invalid
+
+        mov     dx, Quit
+        call    dspmsg
+
+        call    mp2xit                  ; Exit to DOS
+
+; MAIN()
+
+
+; ShowKey
+; Shows a key
+ShowKey:
+; Save registers to stack
+        push    ax
+        push    bx
+        push    cx
+        push    dx
+
+; Display key
+        call    binasc
+        mov     dx, bx
+        call    dspmsg
+
+; Punctuation
+        mov     dl, ','
+        call    dspout
+        mov     dl, ' '
+        call    dspout
+
+; Display mod
+        xor     ax, ax
+        mov     al, byte [mod]
+        mov     bx, binascbuf
+        call    binasc
+        mov     dx, bx
+        call    dspmsg
+
+; More punctuation
+        mov     dx, binascbuf
+        mov     word [binascbuf+0], 0d29h	; ')',CR
+        mov     word [binascbuf+2], 240ah	; LF,'$'
+        call    dspmsg
+
+; Restore registers from stack
+        pop     dx
+        pop     cx
+        pop     bx
+        pop     ax
+
+        ret
+
+; ShowKey()
+
+
+;====== SECTION 8: Your Subroutines =======================================
+;--------------------------------------------------------------
+;--     Instructions:                                        --
+;--             Replace Library Calls with your Code!        --
+;--             [Save all reg values that you modify]        --
+;--             Do not forget to add Function Headers        --
+;--------------------------------------------------------------
+
+
+;--------------------------------------------------------------
+;--                        GetInput()                        --
+;--------------------------------------------------------------
+GetInput:
+
+        call    libGetInput
+        ret
+
+; GetInput()
+
+
+;--------------------------------------------------------------
+;--                       ParseInput()                       --
+;--------------------------------------------------------------
+ParseInput:
+
+        call    libParseInput
+        ret
+
+; ParseInput()
+
+
+;--------------------------------------------------------------
+;--                      DisplayBuffer()                     --
+;--------------------------------------------------------------
+DisplayBuffer:
+
+        call    libDisplayBuffer
+        ret
+
+; DisplayBuffer()
+
+
+;--------------------------------------------------------------
+;--                         Random()                         --
+;--------------------------------------------------------------
+Random:
+
+        call    libRandom
+        ret
+
+; Random()
+
+
+;--------------------------------------------------------------
+;--                         GetBits()                        --
+;--------------------------------------------------------------
+GetBits:
+
+        call    libGetBits
+        ret
+
+; GetBits()
+
+
+;--------------------------------------------------------------
+;--                          Solve()                         --
+;--------------------------------------------------------------
+Solve:
+
+        call    libSolve
+        ret
+
+; Solve()
+
+
+;--------------------------------------------------------------
+;--                         PowMod()                         --
+;--------------------------------------------------------------
+PowMod:
+
+        call    libPowMod
+        ret
+
+; PowMod()
+
+
+;--------------------------------------------------------------
+;--                       CheckPrime()                       --
+;--------------------------------------------------------------
+CheckPrime:
+
+        call    libCheckPrime
+        ret
+
+; CheckPrime()
+
+
+;--------------------------------------------------------------
+;--                     GenerateKeyPair()                    --
+;--------------------------------------------------------------
+GenerateKeyPair:
+
+        call    libGenerateKeyPair
+        ret
+
+; GenerateKeyPair()
+
+
+;--------------------------------------------------------------
+;--                          Crypt()                         --
+;--------------------------------------------------------------
+Crypt:
+
+        call    libCrypt
+        ret
+
+; Crypt()
+</pre>
+
+
+</body>
+
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

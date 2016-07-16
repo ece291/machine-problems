@@ -1,0 +1,708 @@
+<html>
+
+<head>
+<title>ECE 291</title>
+</head>
+
+<body bgcolor="#FFFFFF">
+<div align="center"><center>
+
+<table border="0" width="100%" cellspacing="0" cellpadding="0">
+  <tr>
+    <td width="33%" align="left">ECE 291</td>
+    <td width="33%" align="center">Computer Engineering II</td>
+    <td width="33%" align="right">Kalbarczyk, Fall 1999</td>
+  </tr>
+</table>
+</center></div>
+
+<h1 align="center">Machine Problem 1: A Simple Database</h1>
+<div align="center"><center>
+
+<table border=1 width=60%>
+  <tr>
+    <td align=right>Assigned</td>
+    <td>Tuesday 9/7/99</td>
+  </tr>
+  <tr>
+    <td align="right">Due Date</td>
+    <td>Tuesday 9/21/99</td>
+  </tr>
+  <tr>
+    <td align="right">Purpose</td>
+    <td Roman">Learn to write assembler code. Use looping
+               and branching.  Perform basic string and
+               file manipulations.</td>
+  </tr>
+  <tr>
+    <td align="right">Points</font></td>
+    <td>50</td>
+  </tr>
+</table>
+</center></div>
+
+<h2>Introduction</h2>
+
+
+<p>Database systems play an integral part in the world of business.  As engineers, we play the part of designing and implementing the functionalities of a real world database system.  A simple example is the following.  Consider a workplace where the empl
+
+
+
+
+
+
+
+
+
+
+oyees are given ID cards to scan in  when they  arrive for work and when they leave for home.  The remote unit i.e. the card scanner and time clock unit would send the employee ID number and the time in and time out information to a server.  This server w
+
+
+
+
+
+
+
+
+
+
+ould then access its database and record the hours accordingly.  When payday comes, the system would just calculate the pay based on stored values for hourly pay and print out paychecks for the employees.  
+
+
+</p>
+
+<h2>Problem Description</h2>
+
+<p>In this machine problem, you will deal with a fictitious database which contains a set of data records.  Your program will calculate the overtime and total pay for the employees in this database.  You will then display the entire contents of the databa
+
+
+
+
+
+
+
+
+
+
+se along with the update values of overtime and total pay.  You will also implement functions capable of extracting specific information from the database. </p> 
+
+<p>This table depicts how the database records are stored in the data file.</p>
+
+<TABLE BORDER CELLSPACING=1 CELLPADDING=7 WIDTH=535>
+<TR><TD WIDTH="14%" VALIGN="TOP">
+<P>Field</TD>
+<TD WIDTH="14%" VALIGN="TOP">
+<P>ID</TD>
+<TD WIDTH="11%" VALIGN="TOP">
+<P>Wage</TD>
+<TD WIDTH="13%" VALIGN="TOP">
+<P>OT_rate</TD>
+<TD WIDTH="17%" VALIGN="TOP">
+<P>Days</TD>
+<TD WIDTH="14%" VALIGN="TOP">
+<P>OT_pay</TD>
+<TD WIDTH="17%" VALIGN="TOP">
+<P>Total_pay</TD>
+</TR>
+<TR><TD WIDTH="14%" VALIGN="TOP">
+<P>Data</TD>
+<TD WIDTH="14%" VALIGN="TOP">
+<P>AAAA$</TD>
+<TD WIDTH="11%" VALIGN="TOP">
+<P>B</TD>
+<TD WIDTH="13%" VALIGN="TOP">
+<P>B</TD>
+<TD WIDTH="17%" VALIGN="TOP">
+<P>BBBBBBB</TD>
+<TD WIDTH="14%" VALIGN="TOP">
+<P>W</TD>
+<TD WIDTH="17%" VALIGN="TOP">
+<P>W</TD>
+</TR>
+<TR><TD WIDTH="14%" VALIGN="TOP">
+<P>Offset</TD>
+<TD WIDTH="14%" VALIGN="TOP">
+<P>0</TD>
+<TD WIDTH="11%" VALIGN="TOP">
+<P>5</TD>
+<TD WIDTH="13%" VALIGN="TOP">
+<P>6</TD>
+<TD WIDTH="17%" VALIGN="TOP">
+<P>7-13</TD>
+<TD WIDTH="14%" VALIGN="TOP">
+<P>14-15</TD>
+<TD WIDTH="17%" VALIGN="TOP">
+<P>16-17</TD>
+</TR>
+</TABLE>
+
+<p> Where:</P>
+
+
+<ul>
+<li>ID AAAA$ -	represents an ID of an employee: 4 ASCII characters terminated by $ (5-bytes)<P>
+<li>Wage B -	represents the wage of an employee (1-byte)<P>
+<li>OT_rate	B -	represents overtime rate (1-byte) <P>
+<li>Days BBBBBBB -  represents the number of hours worked from Sunday through Saturday (7-bytes)<P>
+<li>OT Pay W -  represents the calculated value of the OT payment (2-bytes) <P>
+<li>Total_pay - represents the total pay that an employee earned (2-bytes) <P>
+
+<li>An example input from the time data base looks like:<P>
+<P>'GARP','$',24,2,4,8,8,8,8,8,4,0,0,0,0</P>
+</ul>
+<P>You compute the overtime pay (OT_Pay) and total pay (Total_Pay) based on these equations:</P>
+
+<OL>
+
+<LI>OT_Pay =  OT_rate * Wage * (Hours worked on Sat + Hours worked on Sun)</LI>
+<LI>Total_Pay = OT_pay + Wage * (Hours worked on Mon, Tue, Wed, Thu, and Fri)</LI></OL>
+
+
+
+<H2>Screen Dump</H2>
+<P>The following screen capture depicts the program as it is first executed.  It prints to the screen the database records with the correctly calculated values for OT and Total pay.  Then, it provides the user with options to choose from.  For this progra
+
+
+
+
+
+
+
+
+
+
+m, do not worry about the spacing as long as your output to screen is correct.</P>
+<IMG SRC="mp1.gif" WIDTH=100%>
+
+
+
+<H2>MP1 Program Assignment</H2>
+
+<p>The database file to be used in the calculations and printed out is read into memory for manipulation using the INCLUDE directive. This data will start at the location pointed to by the variable: <b><u>time</u></b>.  This can be used as the
+offset for the beginning of the database manipulation.  Each data record will be printed out and used to determine the values for OT pay and Total pay.</p>
+
+<p>The database can be thought of as a large array where characters and values
+are stored in continuous bytes in memory.  You will update the two word fields with your calculated values.  Since you will be using BINASC and DSPMSG functions from LIB291.LIB, do not worry about lining up the spacings of your output.
+What is important is that you demonstrate your knowledge of looping, branching, and simple math operations with respect to addressing in assembly.
+The procedures to print the header, print three spaces, print a carriage return and line feed, print a display menu and loop through printing the records are given to you.  They can be used freely without penalty.  These are
+very straightforward routines.  If you have questions, ask a TA.</p>
+
+<p>In this machine problem, the main procedure is provided for you; however,
+you must write the code to replace the library routines.
+You will replace these procedures from the LIBMP1
+library by commenting out the statements calling the Lib routine
+and adding your code.  Each routine that you write
+should match the output of the library code exactly.  Each of the function calls and their functionality is described below in the
+<b>Subroutines</b> section.
+The best way to get a feel for the program is to run it
+to see how it is supposed to operate.  You can also edit the test
+file to see how various changes will affect the program execution.</p>
+
+<p>Your program is required to:
+<ul>
+<li>Calculate the OT and Total pay for each employee. 
+<li>Display the entire contents of the database to the screen including your calculated results for OT and Total pay.
+<li>Handle the menu option for displaying the correct employee ID to the screen based on the user's choice.
+<li>Handle the menu option for displaying the proper employee ID, their OT and Total pay to the screen based on the user's choice.
+
+</ul>
+
+
+
+<p>The program can be run by typing <tt>mp1</tt> at the
+command prompt.  The data file to be used is named
+<tt>TIME.DTA</tt>.
+</p>
+
+<h2>Hints</h2>
+<ul>
+<li>The LIBMP1 file contains executable library functions for each of the
+routines that you need to implement.  
+This allows you to run the program and understand how it works before you 
+implment it.  You can test your program with any combinations of your own
+code and library functions.  You will only receive credit, however, for
+the routines that you implement yourself. <p>
+
+<li>When debugging your code in Codeview, you will find it helpful to use
+the memory window to show you the memory location of the file and strings.
+You can also use the watch window to keep track of variables in your code.<p>
+
+<li>Do not assume that the file starts at memory location 0.<p>
+
+<li>You may define new variables as needed.<p>
+
+<li>You might find it very helpful to write your own helper functions.
+For instance a routine to print the value of the current line to the
+screen might be helpful to use in a few routines.<p>
+
+<li>Be very careful if you call another procedure not to destroy registers
+that the calling procedure uses.<p>
+
+<li>START EARLY!  This is the first MP that requires you to write your
+own program.  Composition is much more difficult than comprehension.<p>
+
+<li>Monitor the <a href="news:uiuc.class.ece291">newsgroup</a> for clarifications and help.</p>
+</ul>
+
+<h2>Subroutines</h2>
+
+<p>This assignment has seven procedures. You will receive credit by replacing
+each of these seven procedures listed below with your own code. </p>
+
+
+<table BORDER=1 >
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>CalcOT</font></b></td>
+
+<td><ul>
+<li>Loops through each person in time array to calculate and update the OT_Pay field.
+<li>OT_Pay =  OT_rate * Wage * (Hours worked on Sat + Hours worked on Sun)
+<li>Inputs:
+        <ul>
+	<li>The Wage, OT_rate, and Sat and Sun fields in the
+time array.
+        </ul>
+<li>Outputs:
+        <ul><li>Calculated value goes in OT_pay field of the <b>time</b> array.</ul>
+<li>Calls: none
+<li>Note: You should save the registers you alter.&nbsp; To do this, push them
+  all onto the stack in the beginning of the subroutine, and pop them all off
+  the stack at the end.
+ </ul></td>
+</tr>
+
+
+<td><B><font SIZE=+1>CalcTP    </font></b></td>
+
+<td><ul>
+
+<li>Loops through each person in time array to calculate and update the
+  Total_Pay field.&nbsp;&nbsp;
+
+<li>Total_Pay = OT_pay + Wage * (Hours worked on Mon, Tue, Wed, Thu, and Fri)
+<li>Inputs:
+	<ul>
+	<li>The Wage, hours worked in the weekday, and OT_pay fields in
+time array.</ul>
+<li>Outputs:
+	<ul><li>Your calculated value goes into the Total_Pay field of the <b>time</b>
+        array.</ul>
+
+<li>Calls: none
+<li>Note: Always save your registers in every procedure from here on out.  (We're not going to tell you
+again!)
+</ul></td>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>PrintID</font></b></td>
+
+<td><ul>
+       <li>Print the employee ID.
+<li>Inputs:
+        <ul>
+<li>DI holds the number of the employee whose ID you want to print.&nbsp; (DI=0
+  for the 0th employee, DI=1 for the first employee, etc.)
+               </ul>
+<li>Outputs:
+        <ul><li>Prints the ID of employee to the screen. </ul>
+<li>Calls: dspmsg, PrintSpace
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>PrintD</font></b></td>
+
+<td><ul>
+<li>Prints all of the 1-byte data in the data file to the screen for the given
+person.
+<li>Inputs:
+        <ul>
+	<li>DI holds the number of the employee whose ID you want to print.&nbsp;
+      (DI=0 for the 0th employee, DI=1 for the first employee, etc.)
+        </ul>
+<li>Outputs:
+        <ul>
+        <li>Prints&nbsp; the Wage, OT_rate, and Hours worked from Sunday through Saturday
+          to the screen.&nbsp; Each of these should be separated by spaces
+          (which you can do by calling PrintSpace.)
+</ul>
+<li>Calls: binasc, dspmsg, PrintSpace
+</ul></td>
+</tr>
+                   
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>PrintT</font></b></td>
+
+<td><ul>
+<li>Prints the 2-byte (1-word) totals in the data file to the screen for
+the 
+given person.
+<li>Inputs:
+        <ul>
+	<li>DI holds the number of the employee whose ID you want to print.&nbsp;
+      (DI=0 for the 0th employee, DI=1 for the first employee, etc.) 
+        </ul>
+<li>Outputs:
+        <ul>
+        <li>Prints the overtime and total pay onto the screen.&nbsp; Again with
+          the spaces.
+        </ul>
+<li>Calls:PrintSpace, dspmsg, binasc
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>HandleA</font></b></td>
+
+<td><ul>
+<li>Outputs a menu for the user to choose a specific employee (0-9). Then, displays that employee's ID to the screen.
+<li>Inputs:<ul><li>None.</ul>
+<li>Outputs:
+        <ul>
+	<li>Prints to screen the specified employee.
+        </ul>
+<li>Calls:<ul><li>PrintID, kbdine, Ent, dspmsg</ul>
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>HandleB</font></b></td>
+
+<td><ul>
+<li>Outputs a menu for the user to choose a specific employee (0-9).  Then, displays that employee's ID, OT pay, and Total pay to the screen.
+<li>Inputs:
+	<ul><li>None.</ul>
+<li>Outputs:
+        <ul>
+        <li>Calls PrintID and PrintT to print the specified ID and OT_pay
+and Total pay.
+        </ul>
+<li>Calls: PrintID, PrintT, PrintSpace, PrintHdr2, kbdine, dspmsg, Ent  
+</ul></td>
+</tr>
+
+</table>
+
+<h2>Procedure</h2>
+<ul>
+<li>You will begin this MP with the following files:
+    <ul>
+    <li><tt>MP1.ASM</tt>: Program Framework
+    <li><tt>TIME.DTA</tt>: Database record file
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled
+        and linked.
+    <li><tt>LIBMP1.LIB</tt>: Library functions for MP1
+    <li><tt>LIB291.LIB</tt>: General-purpose library functions
+    </ul>
+<li>You may copy these files from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s V:\ece291\mp1 W:\mp1</tt><br>
+    or download the files from this server as <a href="mp1.zip">mp1.zip</a> 
+<li>Add your code to <tt>MP1.ASM</tt>.
+<li>Assemble and link your program by typing<br>
+      <tt>nmake</tt><Br>
+    This command reads <i>Makefile</i> then invokes MASM and LINK to build 
+    an executable program.  
+<li>Use CodeView (CV) to find and correct program errors. 
+<li>Verify your program operation by testing the
+    input test file.  You should alter the test file to check 
+    different scenarios with your code.
+</ul>
+
+<h2>Final Steps</h2>
+
+<ol>
+  <li>Print a copy of the MP1 grading report (<a href="mp1grade.html">MP1GR</a>).
+   Double-check that your program is ready for demonstration.  You need to
+   run through the test cases on the grading sheet, you WILL NOT be allowed
+   to hand-in unless you have done this step.
+  <li>Print MP1.ASM (Use GreenPrint32 to print at 4 pages/side.) 
+  <li>Demonstrate your MP1.EXE to a TA or to the instructor. You may
+   be asked to recompile and demonstrate MP1 with different input files.
+   Your program must work with all given input. </li>
+  <li>Be prepared to answer questions about any aspect of the operation of
+   your program. The TAs will not accept an MP if you cannot fully explain
+   the operation of your code and details of your implementation. Delayed
+   MPs will be subject to late penalties as described in the course
+   syllabus (10pts/day).</li>
+  <li>The TA will copy your program to the demonstration disk.
+  <li>Take your printouts to the same TA which approved your demonstration.
+    Staple the grading sheet to the front of the MP1.ASM printout.  Be sure
+    that your name appears in your code and on the grading sheet.
+</ol>
+
+<hr>
+
+<h2>MP1.ASM (program framework)</h2>
+
+<font size=-1><pre>
+
+
+
+PAGE    70, 140
+TITLE   MP1.ASM         Your Name       Today's Date
+
+COMMENT #
+        This program computes the weekly paychecks of employees at UIUC
+        based on their respective hourly wage, the number of hours that
+        they have logged, and overtime wage if it applies.
+        #
+
+;********** SECTION 1:  Define Constants ****************************
+
+        CR      EQU     0Dh
+        LF      EQU     0Ah
+        SPA     EQU     20h
+        RECLEN  EQU     18      ; Length of each record is constant
+                 
+
+;********** SECTION 2:  Declare External Procedures *****************
+
+;       Functions in LIB291.LIB
+;       These functions are free to be used by you.
+
+        extrn binasc:near, dspmsg:near, dosxit:near, dspout:near 
+        extrn kbdine:near
+
+        ;       Complete descriptions of the LIB291 functions can be
+        ;       found in your lab manuals.  Use these functions for
+        ;       displaying output on the screen.
+
+        extrn mp1xit:near            ; Terminates program
+
+;       Functions in LIBMP1.LIB
+;       You will need to write these functions for this program.
+        extrn  LIBCalcOT:near
+        extrn  LIBCalcTP:near
+        extrn  LIBPrintD:near
+        extrn  LIBPrintT:near
+        extrn  LIBPrintID:near
+        extrn  LIBHandleA:near
+        extrn  LIBHandleB:near
+                
+
+;********* SECTION 3:  Define Stack Segment **************************
+
+stkseg  segment stack           ; STACK SEGMENT
+        db      64 dup ('STACK  ')
+stkseg  ends
+
+;********* SECTION 4:  Define Code Segment **************************
+
+cseg segment public 'CODE'
+        assume cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;********* SECTION 5:  Declare Variables for Main Procedure **********
+;  The format for the time worksheet database:
+;  Each record is 18 bytes long.
+;       Emp_ID:         4 ASCII letters or numbers + '$'        = 5 bytes
+;         Wage:         1-byte unsigned integer                 = 1 byte
+;          OTr:         1-byte unsigned integer                 = 1 byte
+;    Sun...Sat:         1-byte unsigned integers (7 elements)   = 7 bytes
+;          OTp:         2-byte unsigned integer                 = 2 bytes
+;         Totp:         2-byte unsigned integer                 = 2 bytes
+;
+;       ID,'$',Wage,OT_rate,Sun,Mon,Tue,Wed,Thu,Fri,Sat,OT_pay,Total_pay
+   
+INCLUDE time.dta
+
+;  INCLUDE places contents of file time.dta here.
+;  This file has two variables defined:  time and numrec.
+;
+;  time is an array of 18-byte records.
+;  numrec is defined as a 16-bit integer that stores the number of records.
+
+;  head is the HEADER that needs to be the first line printed out.
+head db '-ID-- '
+     db ' Wage OTr Sun Mon Tue Wed Thu Fri Sat   OTp      Totp',CR,LF,'$'
+
+Hdr2 db 'Emp_ID    OT_Pay   Total_Pay',CR,LF,'$'
+
+enter db CR,LF,'$'              ;   Mimics hitting the enter key
+space db SPA,SPA,SPA,'$'        ;   Types 3 Spaces
+
+Menu  db CR,LF,'What info do you want?',CR,LF
+      db '(a) Employee ID.',CR,LF
+      db '(b) How much OT pay and Total Pay for Employee(0-9).',CR,LF
+      db '(c) Display database.',CR,LF
+      db '    Press ESC key to return to the DOS prompt.',CR,LF,'$'
+
+EmpMsg db 'Enter the number (0-9) of the employee that you want.',CR,LF,'$'
+InvalidMesg db 'Invalid Input.  Choose Again.',CR,LF,'$'
+
+buff  db 7 dup(?)               ;   Temporary buffer used by BINASC lib291 call
+
+;********** SECTION 6:  Main Procedure ****************************
+
+main    proc    far
+        mov     ax,cseg                 
+        mov     ds,ax                   ; Initialize ds = cs
+
+        call    CalcOT    
+
+        call    CalcTP     
+
+Refresh:
+        call    PrintHdr
+
+        call    PrintRec 
+
+        call    Ent             ;  Prints CR and LF to screen
+
+Display:
+        call    DisplayMenu;
+
+        call    kbdine
+        call    Ent
+
+        cmp     al,1Bh          ; Was Escape key pressed?
+        je      Exit
+
+        cmp     al,'a'
+        jne     NOTa
+        call    HandleA      
+        jmp    Display
+NOTa:   cmp     al,'b'
+        jne     NOTab
+        call    HandleB
+        jmp     Display
+NOTab:   
+        cmp     al,'c'
+        jne     InvalidIO
+        jmp     Refresh
+InvalidIO:
+        call    InvalidInput
+        call    Ent
+        jmp     Display        
+
+Exit:   call mp1xit
+main    endp
+
+;  Procedure to print three spaces based on definition of space
+PrintSpace PROC NEAR
+        mov     dx, OFFSET space
+        call    dspmsg
+        ret
+PrintSpace ENDP
+
+;  Procedure to print CR,LF
+Ent PROC NEAR
+        mov     dx, OFFSET enter
+        call    dspmsg
+        ret
+Ent ENDP
+
+;  Procedure to print Hdr2 for HandleB function
+PrintHdr2       PROC    NEAR
+        call    Ent
+        mov     dx, OFFSET Hdr2
+        call    dspmsg
+        ret
+PrintHdr2       ENDP
+
+;  Procedure to display Menu message
+DisplayMenu     PROC    NEAR
+          mov     dx, OFFSET Menu
+          call    dspmsg
+          call    Ent
+          ret
+DisplayMenu     ENDP
+
+InvalidInput PROC NEAR
+        call    Ent
+        mov     dx, OFFSET InvalidMesg
+        call    dspmsg
+        ret
+InvalidInput    ENDP
+
+PrintHdr PROC   NEAR
+        mov     dx, cs:OFFSET head
+        call    dspmsg
+        call    Ent
+        ret
+PrintHdr        ENDP
+
+;  PLEASE NOTE: You may choose to use this skeleton code for PrintRec to print
+;               your database records; but you are forewarned that bp and di
+;               are changed in the loop.  So you can either incorporate
+;               them into your procedures or simply replace PrintRec
+;               with your own code to print out the database records.
+;               Just comment out the code in PrintRec and replace with your own.
+;               Also, do not worry to much about the spacing as long
+;               as your output correctly reflects the database records.
+PrintRec  PROC  NEAR
+        mov     di,0
+PrintL:
+        call    PrintID
+        call    PrintD
+        call    PrintT
+        call    Ent
+    
+        inc     di
+        cmp     di, numrec
+        jnz     PrintL       
+        ret
+PrintRec        ENDP        
+
+;******************************************************************
+;***************  You need to code these functions ****************
+;******************************************************************
+CalcOT  PROC    NEAR
+        call    LIBCalcOT  ;  Comment this function out; Insert your code here.
+        ret
+CalcOT          ENDP
+
+CalcTP  PROC    NEAR
+        call    LIBCalcTP  ;  Comment this function out; Insert your code here.
+        ret
+CalcTP          ENDP
+
+
+HandleA PROC    NEAR
+        call    LIBHandleA     ;   Comment this out.  Insert your function here.
+        ret
+HandleA         ENDP
+
+HandleB PROC    NEAR
+        call    LIBHandleB     ;   Comment this out.  Insert your function here.
+        ret
+HandleB         ENDP
+
+PrintID PROC    NEAR
+        call    LIBPrintID     ;   Comment this out.  Insert your function here.
+        ret
+PrintID         ENDP
+
+PrintD  PROC    NEAR
+        call    LIBPrintD      ;   Comment this out.  Insert your function here.
+        ret
+PrintD          ENDP
+
+PrintT  PROC    NEAR
+        call    LIBPrintT      ;   Comment this out.  Insert your function here.
+        ret
+PrintT          ENDP
+
+cseg    ends
+        end     main
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

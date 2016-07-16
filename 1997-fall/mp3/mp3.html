@@ -1,0 +1,845 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <TITLE>Machine Problem 3: Visual Sorting</TITLE>
+</HEAD>
+<BODY bgcolor=ffffff>
+&nbsp;
+<TABLE COLS=3 WIDTH="100%" >
+<TR>
+<TD width=33%>ECE 291</TD>
+<TD width=34%><CENTER>Computer Engineering II</CENTER> </TD>
+<TD width=33%><DIV ALIGN=right>Lockwood, Fall 1997</DIV></TD>
+</TR>
+</TABLE>
+
+<CENTER>
+<H1>
+&nbsp;Machine Problem 3: Visual Sorting</H1></CENTER>
+
+<CENTER>&nbsp;</CENTER>
+
+<CENTER><TABLE BORDER WIDTH="60%" >
+<TR>
+<TD> <DIV ALIGN=right><B>Assigned:</B></DIV> </TD>
+<TD>October 7, 1997</TD> </TR>
+
+<TR>
+<TD> <DIV ALIGN=right><B>Due Date:</B></DIV> </TD>
+<TD>October 24, 1997</TD> 
+</TR>
+
+<TR>
+<TD> <DIV ALIGN=right><B>Purpose:</B></DIV> </TD>
+<TD>Text-mode video, Mouse control, Recursive algorithms.</TD>
+</TR>
+
+<TR>
+<TD> <DIV ALIGN=right><B>Points:</B></DIV> </TD>
+<TD>50</TD>
+</TR>
+</TABLE></CENTER>
+
+<CENTER>&nbsp;</CENTER>
+
+<H2>Introduction</H2>
+In this MP we will investigate two sorting algorithms: The bubble
+sort and the recursive quick sort.  We will then visualize the operation of 
+these sorting algorithms by creating a graphical display which 
+animates the sort as it progresses.  Finally, a mouse-driven interface
+will be provided a friendly interface to a human user.
+
+<p>
+Imagine looking up a telephone number in an unsorted telephone book.
+Without having the data sorted, it would be necessary to scan though 
+all of the names in the book just to find an individual listing.  
+Searches and queries for data can be 
+performed far more quickly when the data set we are searching 
+through is in a known order.
+<p>
+Now imaging having the task of sorting all the names in the telephone book.
+Each step of the process involves comparing a pair of names and
+determining which name should be listed before the other.
+In algorithms like the bubble sort, the running time of the sort increases 
+with the square of the number of items being sorted.  In algorithms
+like the quicksort, the time is proportional to n * log(n).
+<P>
+<H2>
+Sorting Algorithms: Bubble Sort</H2>
+Possibly <I>the </I>simplest sorting algorithm is the Bubble Sort.&nbsp;
+Bubble sort works by iterating through the array of numbers (n-1) times.&nbsp;
+Each iteration results in the largest element being placed in its correct
+location in the array.&nbsp; Every pass through the array, a comparison
+is made between every element and the element next to it.&nbsp; If the
+first element is larger than the second element, their positions are swapped.&nbsp;
+The algorithm then moves on to the next pair of elements.&nbsp; Below is
+the pseudo code for the Bubble Sort algorithm.
+
+<P>Pseudo Code: given an array from 0 to (n-1) elements.
+
+<P><TT>&nbsp;&nbsp;&nbsp; for i = (n-1) to 0{</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; for j =&nbsp; to i{</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+if (Values[j] &lt; Values[j+1])</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+swap Values[j], Values[j+1]</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</TT>
+<BR><TT>&nbsp;&nbsp;&nbsp; }</TT>
+
+<P>A sample run through an array of integers:
+<UL>&nbsp;
+<TABLE BORDER >
+<TR>
+<TD>
+<CENTER>After Iteration:</CENTER>
+</TD>
+
+<TD>
+<CENTER>Array</CENTER>
+</TD>
+</TR>
+
+<TR>
+<TD>
+<DIV ALIGN=right>original array:</DIV>
+</TD>
+
+<TD><TT>&nbsp;2&nbsp; 6&nbsp; 4&nbsp; 8&nbsp; 10&nbsp; 12&nbsp; 89&nbsp;
+68&nbsp; 45&nbsp; 37&nbsp;</TT></TD>
+</TR>
+
+<TR>
+<TD>
+<DIV ALIGN=right>1</DIV>
+</TD>
+
+<TD><TT>&nbsp;2&nbsp; 4&nbsp; 6&nbsp; 8&nbsp; 10&nbsp; 12&nbsp; 68&nbsp;
+45&nbsp; 37&nbsp; 89</TT></TD>
+</TR>
+
+<TR>
+<TD>
+<DIV ALIGN=right>2</DIV>
+</TD>
+
+<TD><TT>&nbsp;2&nbsp; 4&nbsp; 6&nbsp; 8&nbsp; 10&nbsp; 12&nbsp; 45&nbsp;
+37&nbsp; 68&nbsp; 89</TT></TD>
+</TR>
+
+<TR>
+<TD>
+<DIV ALIGN=right>3</DIV>
+</TD>
+
+<TD><TT>&nbsp;2&nbsp; 4&nbsp; 6&nbsp; 8&nbsp; 10&nbsp; 12&nbsp; 37&nbsp;
+45&nbsp; 68&nbsp; 89</TT></TD>
+</TR>
+</TABLE>
+&nbsp;</UL>
+In this example the sort is complete after only 3 iterations, however the
+Bubble sort continues to iterate through the array (n-1) times.&nbsp; A
+more efficient sort could detect if the data is already in sorted order,
+and terminate the outer loop of the algorithm if that is the case. (You
+are not required to enhance the basic algorithm for this MP)
+
+<P>Because of the nested loops in the algorithm above, Bubble sort has
+O(n^2) running time. For small data sets (n &lt;
+10) this is not a problem.&nbsp; However, the problem of sorting large
+arrays of integers quickly becomes intractable when using Bubble sort.&nbsp;
+A more efficient sorting algorithm is needed.
+<H2>
+Sorting Algorithms: Quick Sort</H2>
+We know look at a recursive sorting technique called Quick Sort.&nbsp;
+The basic algorithm for an array of integers is as follows:
+<OL>
+<LI>
+<I>Partitioning Step:</I>&nbsp; Take the first element of the unsorted
+array of values and determine its final location in the sorted array.&nbsp;
+This occurs when all values to the left of the element in the array are
+less than the element, and all values to the right of the element in the
+array are greater than the element.&nbsp; We now have one element in its
+proper location and two unsorted sub arrays.</LI>
+
+<LI>
+<I>Recursive Step:</I> Perform step 1 on each unsorted array.</LI>
+</OL>
+Each time step 1 is performed on a sub array, another element is placed
+in its final location of the sorted array, and two unsorted sub arrays
+are created.&nbsp; When a sub array consists of one element, it must be
+sorted, therefore that element is in its final location.
+
+<P>The basic algorithm seems simple enough, but how do we determine the
+final position the first element of each sub array?&nbsp; As an example,
+consider the following set of values (the element in bold is the partitioning
+element or <I>pivot</I> element — it will be placed in its final position
+in the sorted array):
+<UL>&nbsp;
+<TABLE BORDER >
+<TR>
+<TD><TT>&nbsp; <B>37</B>&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp; 6&nbsp;&nbsp;&nbsp;
+4&nbsp;&nbsp; 89&nbsp;&nbsp;&nbsp; 8&nbsp;&nbsp; 10&nbsp;&nbsp; 12&nbsp;&nbsp;
+68&nbsp;&nbsp; 45&nbsp;</TT></TD>
+</TR>
+</TABLE>
+Starting from the rightmost element of the array, compare each element
+to <B>37</B> until an element less than <B>37</B> is found, the swap <B>37</B>
+and that element.&nbsp; The first element less then <B>37</B> is 12, so
+<B>37</B> and 12 are swapped.&nbsp; The new array is:
+<BR>&nbsp;
+<TABLE BORDER >
+<TR>
+<TD><TT>&nbsp; <I>12</I>&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp; 6&nbsp;&nbsp;&nbsp;
+4&nbsp;&nbsp; 89&nbsp;&nbsp;&nbsp; 8&nbsp;&nbsp; 10&nbsp;&nbsp; <B>37</B>&nbsp;&nbsp;
+68&nbsp;&nbsp; 45&nbsp;</TT></TD>
+</TR>
+</TABLE>
+Element 12 is in italics to indicate that it was just swapped with <B>37</B>.
+
+<P>Starting from the left of the array, but beginning with the element
+after 12, compare each element to <B>37</B> until an element greater than
+<B>37</B> is found, then swap <B>37</B> and that element.&nbsp; The first
+element greater than <B>37</B> is 89, so <B>37</B> and 89 are swapped.&nbsp;
+The new array is:
+<BR>&nbsp;
+<TABLE BORDER >
+<TR>
+<TD><TT>&nbsp; 12&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp; 6&nbsp;&nbsp;&nbsp;
+4&nbsp;&nbsp; <B>37</B>&nbsp;&nbsp;&nbsp; 8&nbsp;&nbsp; 10&nbsp;&nbsp;
+<I>89</I>&nbsp;&nbsp; 68&nbsp;&nbsp; 45&nbsp;</TT></TD>
+</TR>
+</TABLE>
+Starting from the right, but beginning with the element before 89, compare
+each element to <B>37</B> until an element less than <B>37</B> is found,
+then swap <B>37</B> and that element. The first element less than <B>37</B>
+is 10, so <B>37</B> and 10 are swapped.&nbsp; Then new array is:
+<BR>&nbsp;
+<TABLE BORDER >
+<TR>
+<TD><TT>&nbsp; 12&nbsp;&nbsp;&nbsp; 2&nbsp;&nbsp;&nbsp; 6&nbsp;&nbsp;&nbsp;
+4&nbsp;&nbsp; <I>10</I>&nbsp;&nbsp;&nbsp; 8&nbsp;&nbsp; <B>37</B>&nbsp;&nbsp;
+89&nbsp;&nbsp; 68&nbsp;&nbsp; 45&nbsp;</TT></TD>
+</TR>
+</TABLE>
+Starting from the left, but beginning with the element after 10, compare
+each element to <B>37</B> until an element greater than <B>37</B> is found,
+then swap <B>37</B> and that element.&nbsp; There are no more elements
+greater than <B>37</B>, so when we compare <B>37</B> to itself we know
+that <B>37</B> has been placed in its final location of the sorted array.</UL>
+Once this partitioning method has been applied on the above array, there
+are two unsorted sub arrays.&nbsp; The sub array with values less than
+37 contains 12, 2, 6, 4, 10, and 8.&nbsp; The sub array with values greater
+than 37 contains 89, 68, and 45.&nbsp; The sort continues with both sub
+arrays being partitioned in the same manner as the original array.&nbsp;
+To sort the sub arrays, we simply make a recursive call to QuickSort, sorting
+the sub arrays.
+
+<P>Without going into too much detail, Quick Sort represents a sort with
+a best case running time of O(n lg(n)).&nbsp; Using even a small dataset,
+such as this MP uses, this represents a large savings over Bubble Sort.&nbsp;
+Try running MP3 and see for yourself.&nbsp; The worst case running time
+of Quick Sort is still O(n^2) however.&nbsp; Can you determine the conditions
+under which this exponential running time will result?
+
+<p>
+
+<H1>Problem Description</H1>
+
+<CENTER><IMG SRC="mp3screen.gif" HEIGHT=452 WIDTH=401></CENTER>
+
+<CENTER>A Screen Shot of mp3</CENTER>
+In this machine problem we will be using text-mode video graphics to illustrate
+these sorting algorithms.&nbsp; The data we will be using will consist
+of an array of bytes representing integers between 1 and n.&nbsp; Since
+the text screen is only 80 columns wide, and since we want to leave room
+for a control panel, we will make our integers range in length from between
+1 and 46 or so.&nbsp; The actual value will depend on how you decide to
+implement your user interface.&nbsp; The values we will be sorting will
+be stored in the byte array <B>Values</B>. The maximum length of the bars
+you will sort will be specified by <B>Barwidth </B>and the number of bars
+you will sort will be specified by <B>Numvals</B>.&nbsp; Numvals can range
+from 1 to 46. These are all byte-quantities.&nbsp; You will populate the
+array with a random-number generator. As the sorting routines progress,
+they will keep the running total number of comparisons in the variable
+<B>Compares</B>. The variable <B>Stepping</B><I> </I>will determine whether
+or not the program steps interactively through a sort, or just runs straight
+through.&nbsp; The delay during the sorting animation is determined by
+<B>Sortdelay</B>.
+
+<P>You are encouraged to exercise artistic freedom when implementing the
+user interface, keeping in mind that your interface must have all the necessary
+elements: A display of up to 46 bars going down the side of the screen,
+a counter for the number of comparisons, 5 buttons to perform the various
+actions of the MP, and a speed control.&nbsp; You should display a scale
+along the left hand side of the screen (as shown in the sample) and you
+should leave enough room to display "pointers" which indicate what two
+elements are currently being compared.&nbsp; In short, the best way to
+discover the requirements of your MP is to play with the sample executable.&nbsp;
+Keep in mind that regardless of where you decide to draw your buttons and
+screen elements, the library routines will always draw the elements in
+the same place (e.g., the bars will always start drawing in row 3, column
+4 of the screen) so problems may arise if you combine your code with the
+library routines.
+<BR>&nbsp;
+<H2>
+80x50 Text Mode Programming</H2>
+Programming in 80x50 text mode is a direct extension of the programming
+for 80x25 text mode that you learned in class.&nbsp; You simply have 50
+rows instead of only 25.&nbsp; The Video memory still starts at offset
+B800.&nbsp; You do not need to do any page flipping; simply write to memory
+as if you were using 80x25 text mode with 25 more available rows.
+Getting the video card into 80x50 text mode requires a slight
+trick with the video hardware.  This code is given to you in the MP3.ASM 
+program framework.
+
+<p>
+
+<H2>The Procedures</H2>
+You will implement the following procedures:
+<H3>
+DrawTextScreen</H3>
+
+<UL><B>Inputs</B>: none
+<BR><B>Outputs</B>: static elements are drawn to the screen
+<BR><B>Purpose:</B>
+<BR>This subroutine will draw out all the static, unchanging elements of
+the graphical display.&nbsp; You are required to draw the scale running
+down the left hand side of the screen running from 0 to 45.&nbsp; The control
+panel will have six buttons: "Quick sort: Run," "Quick Sort: Step," "Bubble
+Sort: Run," "Bubble Sort: Step," "Distribute Bars" and "Quit Program."&nbsp;
+You will also require an up/down type speed control to adjust how fast
+the sorting algorithm runs.&nbsp; You need to provide a counter which will
+display the number of comparisons.&nbsp; You will fill in the actual number
+of comparisons&nbsp; in <B><I>Comparison</I></B>.&nbsp; In short, anything
+that does not get animated is drawn out with this subroutine. <B>DrawScreen</B>
+is called only once at the beginning of the program.</UL>
+
+<H3>
+DrawAllBars</H3>
+
+<UL><B>Inputs:</B> VALUES, Numvals
+<BR><B>Outputs:</B> draws the entire array of bars
+<BR><B>Purpose:</B>
+<BR>This is the routine which will initially draw all of the bars to the
+screen using <B>DrawBar</B>.&nbsp; When you swap elements in the array,
+you will only redraw the two bars you are swapping, so initially some routine
+needs to draw out all of the bars at once.&nbsp; This routine is called
+at the beginning of the program and whenever you re-distribute the values
+in the array.</UL>
+
+<H3>
+DrawBar</H3>
+
+<UL><B>Inputs:&nbsp;&nbsp;&nbsp; </B>AX - the length of the bar to be drawn
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+DI - the index of the bar to be drawn
+<BR><B>Outputs: </B>draws a bar to the screen at array position DI, AX
+characters in length.
+<BR><B>Purpose:</B>
+<BR>This routine uses DI to determine which position to draw the bar in.&nbsp;
+DI does not contain the actual offset into video memory of the beginning
+of the bar; you will need to calculate that yourself.&nbsp; DI only contains
+the number between 0 and 45 indicating the position where the bar is to
+be drawn.&nbsp; Draw a bar AX characters in length.&nbsp; The determination
+of the <I>color</I> of the bar is also important.&nbsp; <I>It is essential
+that all bars of length n be drawn in the same color.</I>&nbsp; Without
+this feature, the animation of the sorting algorithms is somewhat ineffective
+at conveying what is going on.&nbsp; You must implement some way of making
+sure that every bar of a particular length is always drawn the same color.&nbsp;
+Do not draw invisible bars (e.g., black bars on a black background)</UL>
+
+<H3>
+Comparison</H3>
+
+<UL><B>Inputs:&nbsp;&nbsp;&nbsp; </B>SI, DI - the indices of the two elements
+being compared.
+<BR><B>Outputs:</B> Some indication of which two bars are being compared.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Comparisons - incremented by 1 and output to the screen.
+<BR><B>Purpose:</B>
+<BR>When watching the algorithms run, it is essential to be able to see
+which two bars are being compared.&nbsp; You will call this routine <I>every
+time you make a comparison between two array elements.&nbsp; </I>This routine
+will draw two pointers of some kind to indicate which two bars are currently
+being compared.&nbsp; This routine will also update the Comparisons memory
+variable to indicate the number of comparisons taking place, using binasc
+to output that variable to the screen.</UL>
+
+<H3>
+Delay</H3>
+
+<UL><B>Inputs:&nbsp;&nbsp;&nbsp; </B>Sortdelay - memory variable indicating
+the length of the delay
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Stepping - memory variable indicating whether or not we are stepping through
+the sort.
+<BR><B>Outputs:&nbsp; </B>Burned CPU cycles.
+<BR><B>Purpose:</B>
+<BR>This routine will simply burn Sortdelay x 0xFFFFh clock cycles to give
+the program its "animated" quality.&nbsp; You will call this routine from
+your sorts <I>every time you make a comparison between two array elements</I>.&nbsp;
+If the Stepping memory variable is nonzero, this routine will wait for
+a key to be pressed before allowing the sort to continue.&nbsp; If the
+key hit is ESC, this routine will set Stepping to zero so the sort continues
+on without any further keypresses.</UL>
+
+<H3>
+Random</H3>
+
+<UL><B>Inputs:</B> Randval memory variable
+<BR><B>Outputs:</B> AX - Random number between 0 .. 2^16-1
+<BR><B>Purpose:</B>
+<BR>This routine generates and returns a pseudo-random number by multiplication
+and addition of large prime constants to a random number.&nbsp; This function
+is defined below.
+
+<P>&nbsp;&nbsp;&nbsp; R(1) = Randval
+<BR>&nbsp;&nbsp;&nbsp; R(i+1) = Randval = (K1 *R(i) + K2) % MaxValue
+
+<P>Where
+<UL>
+<LI>
+<I>R(i)</I> is the random value generated in the i-th call to the subroutine.</LI>
+
+<LI>
+<I>Randval</I> is a variable that holds the initial random value and is
+updated with the result after each call to Random.</LI>
+
+<LI>
+<I>K1</I> and <I>K2</I> are two large, prime-valued constants, defined
+as 2054 and 13849 respectively.</LI>
+
+<LI>
+<I>MaxValue</I> = 2^16-1 (0FFFFh)</LI>
+</UL>
+Hints &amp; Observations
+<UL>
+<LI>
+The first call to Random returns the original random number seed</LI>
+
+<LI>
+Perform multiplication and division using the 16-bit unsigned operations.</LI>
+</UL>
+&nbsp;</UL>
+
+<H3>
+<B>Quicksort</B></H3>
+
+<UL><B>Inputs:&nbsp;&nbsp;&nbsp; </B>Values - Memory array of bytes
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+SI - Index of the first element in the array to be sorted
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+DI - Index of the last element in the array to be sorted
+<BR><B>Outputs:</B> Values - Memory array of bytes in sorted order.&nbsp;
+Animation drawn to screen.
+<BR><B>Purpose:</B>
+<BR>Perform an animated Quick Sort on the array of bytes, Values.&nbsp;
+It is here where you will make your calls to the other routines to do the
+animation.&nbsp; <I>Every</I> time you compare two elements in the array,
+you should call <I>Delay</I> and <I>Comparison </I>to generate the on-screen
+animation.&nbsp; Only call these routines when you do a comparison between
+two array elements.&nbsp; Do not, for example, call them when you compare
+CX to zero for a looping condition.&nbsp; The quick sort algorithm is given
+at the beginning of this document.&nbsp; Your sort should work correctly
+for array sizes of 1 and larger..
+
+<P>Hints &amp; Observations
+<UL>
+<LI>
+Treat the bytes in the array as unsigned numbers</LI>
+</UL>
+&nbsp;</UL>
+
+<H3>
+<B>BubbleSort</B></H3>
+
+<UL><B>Inputs:&nbsp;&nbsp;&nbsp; </B>Values - Memory array of bytes.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+SI - Index of the first element in the array to be sorted.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+DI - Index of the last element in the array to be sorted.
+<BR><B>Outputs:</B> Values - Memory array of bytes in sorted order.
+<BR><B>Purpose:</B>
+<BR>Perform an animated Bubble Sort on the array of bytes, Values.&nbsp;
+The Bubble sort algorithm is given at the beginning of this document.&nbsp;
+Everything stated for Quick Sort applies to this routine.</UL>
+
+<H3>
+<B>DistributeValues</B></H3>
+
+<UL><B>Inputs:</B>&nbsp;&nbsp;&nbsp;&nbsp; Values - Memory array of bytes
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Numvals
+<BR><B>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</B>Barwidth
+<BR><B>Outputs:</B> Values is filled with random numbers
+<BR><B>Purpose:</B>
+<BR>This is the routine you will use to populate the array with random
+numbers between 1 and Barwidth.&nbsp; You should use Random to generate
+the random numbers.&nbsp; Do not generate any zero-length bars.
+<BR>&nbsp;</UL>
+
+<H3>
+<B>MouseControl</B></H3>
+
+<UL><B>Inputs:</B>
+<BR><B>Outputs:</B> AX - Number of the button the user clicked.
+<BR><B>Purpose:</B>
+<BR>The mouse allows the user to press buttons on the screen. For this
+MP, the "buttons" are the buttons which were drawn out during DrawTextScreen,
+on the right hand side of the screen. When the user clicks the left mouse
+atop or near a button, this routine returns a number in AX. The buttons
+are numbered from top to bottom with the values 0 to 7 as follows:
+
+<P><B>Button Assignments</B>
+<BR>&nbsp;
+<TABLE BORDER WIDTH="50%" >
+<TR>
+<TD>
+<CENTER>Value Returned in AX</CENTER>
+</TD>
+
+<TD>
+<CENTER>Button Clicked</CENTER>
+</TD>
+</TR>
+
+<TR>
+<TD>
+<CENTER>0</CENTER>
+</TD>
+
+<TD>Bubble Sort: Run</TD>
+</TR>
+
+<TR>
+<TD>
+<CENTER>1</CENTER>
+</TD>
+
+<TD>Bubble Sort: Step</TD>
+</TR>
+
+<TR>
+<TD>
+<CENTER>2</CENTER>
+</TD>
+
+<TD>Quick Sort: Run</TD>
+</TR>
+
+<TR>
+<TD>
+<CENTER>3</CENTER>
+</TD>
+
+<TD>Quick Sort: Step</TD>
+</TR>
+
+<TR>
+<TD>
+<CENTER>4</CENTER>
+</TD>
+
+<TD>Distribute Values</TD>
+</TR>
+
+<TR>
+<TD>
+<CENTER>5</CENTER>
+</TD>
+
+<TD>Increase Delay</TD>
+</TR>
+
+<TR>
+<TD>
+<CENTER>6</CENTER>
+</TD>
+
+<TD>Decrease Delay</TD>
+</TR>
+
+<TR>
+<TD>
+<CENTER>7</CENTER>
+</TD>
+
+<TD>Exit the program</TD>
+</TR>
+</TABLE>
+Hints &amp; Obsertvations
+<UL>
+<LI>
+The program spends most of the time in the MouseCtrl routine. The program
+loops in this routine until the user has clicked on a button.</LI>
+
+<LI>
+The mouse status is read via software interrupts. By loading the appropriate
+values into registers and executing INT 33h, the location of the mouse
+and the status of the buttons can be determined.The mouse interrupt functions
+are documented in Sections 10.2 of the lab manual.</LI>
+
+<LI>
+Notice that the mouse is initialized and made visible in main. You need
+not repeat this code.</LI>
+
+<LI>
+You may need to run the program in full-screen mode (hit [ALT-ENTER] in
+win95).</LI>
+</UL>
+&nbsp;</UL>
+
+<H3>
+<B>Main</B></H3>
+
+<UL><B>Purpose:</B>
+<BR>Your MAIN routine should implement the following Psuedo-code:
+<BR>&nbsp;
+<TABLE BORDER >
+<TR>
+<TD><TT>Main()</TT>&nbsp;
+
+<P><TT>&nbsp;&nbsp;&nbsp; Put display into 80x50 text mode (this code is
+given)</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; Initialize mouse driver and make mouse pointer
+visible (this code is given)&nbsp;</TT>&nbsp;
+
+<P><TT>&nbsp;&nbsp;&nbsp; CALL DrawScreen</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; CALL DistributeValues</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; CALL DrawAllBars</TT>&nbsp;
+
+<P><TT>&nbsp;&nbsp;&nbsp; MainLoop:&nbsp;&nbsp;&nbsp;&nbsp;</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CALL MouseControl</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IF (AX == one of the
+sort buttons)</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Draw "Sorting" message at bottom of screen</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Reset Comparisons variable to 0</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Set Stepping variable appropriately</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Set SI and DI appropriately</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Call the appropriate sort routine</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Draw "Soring Complete" message at the bottom of screen</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IF (AX = DistributeValues)</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Call DistributeValues</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Redraw the bars on the screen</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IF (AX = Increase Delay
+or Decrease Delay)</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Increase or decrease Sortdelay</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Print out the value of Sortdelay to the screen</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IF (AX = Quit Program)</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Quit the program</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; GOTO MainLoop</TT></TD>
+</TR>
+</TABLE>
+&nbsp;</UL>
+
+
+
+
+<p>
+
+
+<H2>Scoring</H2>
+
+
+
+<UL>Points will be awarded for completion of each of these subroutines.&nbsp;
+Your subroutines must perform all the functions of the library routines,
+and must be interchangeable with them in order to recieve full credit.&nbsp;
+The point values for each subroutine are listed below:
+
+<P><B>DrawTextScreen:</B> 3 pts
+<BR><B>DrawAllBars:</B> 2 pts
+<BR><B>DrawBar: </B>2 pts
+<BR><B>Comparison</B>: 2 pts
+<BR><B>Delay:</B> 3 pts
+<BR><B>Random: </B>2 pts
+<BR><B>QuickSort: </B>12 pts
+<BR><B>BubbleSort:</B> 8 pts
+<BR><B>DistributeValues: </B>3 pts
+<BR><B>MouseControl: </B>10 pts
+<BR><B>Main:</B> 3 pts</UL>
+
+<H2>Preliminary Procedure</H2>
+
+<UL>
+<LI>
+Copy the empty MP3 program (MP3.ASM), libraries (libmp3.lib, lib291.lib),
+and Makefile from the network drive to your home directory with the following
+command:</LI>
+
+<BR><TT>xcopy /s I:\ece291\mp3 F:\mp3</TT><br>
+or download the same files from the web as <a href="mp3.zip">mp3.zip</a>.
+<LI>
+As with the other MP's, run NMake to build an executable program using
+the given MP3 library functions.</LI>
+
+<LI>
+To receive full credit for the assignment, you need to implement each of
+the subroutines described above with your own code.&nbsp; As given, the
+MP3.ASM file will run the library versions of those subroutines</LI>
+
+<LI>
+As with the other MP's, use CodeView to debug your program</LI>
+</UL>
+
+<H2>Errors and Eratica</H2>
+<ul>
+<li>Libmp3 version 1.1: Allows stepping when delay=0
+<li>Libmp3 version 1.2: Bubblesort uses correct number of comparisons
+<li>MP3.ASM version 1.2: Add <tt>EXTRN random</tt> and 
+      <tt>EXTRN DistributeValues</tt> to MP2.ASM header; Remove 
+      <tt>EXTRN EXTRN SwapBars</tt> from MP2.ASM header.
+<li>libmp3 version 1.3: Fixed MouseControl Bug - it returned the incorrect values for faster and slower buttons.
+</ul>
+
+<H2>
+Final Steps</H2>
+
+<OL>
+<LI>
+Demonstrate MP3.EXE to a TA or to the instructor.&nbsp; You will then be
+asked to recompile and demonstrate MP3 with different values for Numvals
+and Barwidth.&nbsp; Your program must work for different values of these
+variables.&nbsp; Once approved, you are ready to turn in your program</LI>
+
+<LI>
+Be prepared to answer questions about any aspect of the operation of your
+program.&nbsp; The TA's will not accept an MP if you cannot fully explain
+the operation of your code.</LI>
+
+<LI>
+Copy you programs to the handin floppy: <TT>A:\HANDIN <I>YourWindowsLogin</I></TT></LI>
+
+<LI> Print MP3.ASM.  Use small fonts to save paper.</LI>
+</OL>
+
+<HR WIDTH="100%">
+<H2>MP3.ASM (Program framework)</H2>
+<font size=-1><pre>
+        PAGE 75, 132
+        TITLE   ECE291:MP3:MultiSORT:Fall97    Your Name    Hand-in Date
+
+COMMENT * Sorting Algorithms
+          ECE291: Machine Problem 3
+          Fall 1997 / Lockwood
+          Guest MP Author: Daniel Restelli
+          University of Illinois,
+          Dept. of Electrical & Computer Engineering
+          Ver 1.0  *
+
+; =================== External Library Procedures =======================
+        ; LIB291 Routines
+        EXTRN  BINASC:near
+        EXTRN  RSAVE:near
+        EXTRN  RREST:near
+        EXTRN  KBDIN:near
+
+        ; LIBMP3 routines -- Comment out and replace with your own code!
+        EXTRN  Delay:near
+        EXTRN  DrawTextScreen:near
+        EXTRN  DrawAllBars:near
+        EXTRN  DrawBar:near
+        EXTRN  QuickSort:near
+        EXTRN  BubbleSort:near
+        EXTRN  SwapBars:near
+        EXTRN  Comparison:near
+        EXTRN  MainRun:near
+        EXTRN  MouseControl:near
+
+        EXTRN  MP3Xit:near
+
+;============================== Constants ===============================
+TextVidSeg     EQU  0b800h
+BubbleRun      EQU  0
+BubbleStep     EQU  1
+QuickRun       EQU  2
+QuickStep      EQU  3
+Distribute     EQU  4
+Slower         EQU  5
+Faster         EQU  6
+QuitProg       EQU  7
+ESCKEY         EQU  27
+
+; ============================ Stack Segment ============================
+stkseg    segment stack
+          db   64 dup ('STACK   ')
+stkseg    ends
+
+; ============================ Program Data =============================
+CSEG      segment public 'CODE'
+          assume  cs:CSEG, ds:CSEG, ss:stkseg, es:nothing
+
+; ============================= Variables ===============================
+NumVals        db  46
+BarWidth       db  42
+RandVal        dw   3
+Pbuff          db   7 dup (5)
+Values         db   46 dup (6)
+Stepping       db   0
+Compares       dw   0
+sortdelay      db   2
+
+PUBLIC    NumVals, Barwidth, Randval, Pbuff
+PUBLIC    Values, Stepping, Compares, Sortdelay
+
+; ============================= Procedures ==============================
+
+; Your Subroutines (defined in handout)
+
+; ---- Main Procedure ----
+
+MAIN Proc FAR
+
+; Initialise DS register
+          MOV  AX, CSEG
+          MOV  DS, AX
+
+; Put display into 80x50 text mode
+          MOV  AX, 1202h                ; Sets to 400 line scan mode
+          MOV  BL, 30h
+          int  10h
+          MOV  AX, 3                    ; Sets to 8x8 font
+          INT  10h
+          MOV  AX, 1112h                ; Enter text mode
+          MOV  BL, 0
+          INT  10h
+
+; Initialize the mouse hardware, Function 0000h
+          MOV  AX, 0000h
+          INT  33h
+; Display the mouse cursor, Function 0001h
+          MOV  AX, 0001h
+          INT  33h
+
+          ; ===== Comment out and put your main code here =====
+          CALL MainRun
+
+; Put display into 80x50 text mode (to reset the screen)
+EndIt:    MOV  AX, 1202h
+          MOV  BL, 30h
+          int  10h
+          MOV  AX, 3
+          INT  10h
+          MOV  AX, 1112h
+          MOV  BL, 0
+          INT  10h
+
+          CALL MP3Xit
+MAIN ENDP
+
+; ===================== End of Proceures & Data ==========================
+
+CSEG    ends
+        end    main </pre></font> </BODY>
+</HTML>

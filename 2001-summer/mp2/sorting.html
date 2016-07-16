@@ -1,0 +1,756 @@
+
+<h1>Sorting Techniques</h1>
+<p>In this MP, you will be implementing the QuickSort and BubbleSort
+algorithms.&nbsp; In addition, you will be analyzing their performance on the
+same input array.</p>
+<h2>QuickSort</h2>
+<p>QuickSort is one of the fastest sorting methods around, hence the name.&nbsp;
+It is a recursive function that works using a &quot;divide and conquer&quot;
+method. It chooses one element, called the pivot element, then shifts the
+elements of the array so that everything less than the pivot element comes
+before it in the array, and everything greater than the pivot element comes
+after it.&nbsp; This step is called the partitioning step.&nbsp; The pivot element is then at its permanent place in the array, and
+QuickSort calls itself twice: once to sort the subarray to the left of the
+pivot, and once to sort the subarray to the right.</p>
+<p>Our QuickSort function will take three parameters.&nbsp; The first is a
+pointer to the beginning of an array in memory.&nbsp; The second is the number
+of the first element of the (sub)array that you want to sort, which we'll call <b>First</b>.<b>&nbsp;
+</b>The third parameter is the number of the last element of the (sub)array that
+you want to sort, which we'll call <b>Last</b>.</p>
+<p>Here's the pseudocode for QuickSort:</p>
+<pre>QuickSort(Array,First,Last)
+begin
+ if ( First &lt; Last ) then
+  PivotIndex = Partition(Array,First,Last);
+  QuickSort(Array,First,PivotIndex-1);
+  QuickSort(Array,PivotIndex+1,Last);
+ end if
+end</pre>
+<p>The one if-statement above handles both of QuickSort's base cases: </p>
+<ul>
+  <li>First = Last : This corresponds to a subarray of size one, which is by
+    definition sorted</li>
+  <li>First &gt; Last : This corresponds to a subarray of size zero, which is
+    also by definition sorted</li>
+</ul>
+<p>Assume that we had an array called <i>MyArray</i> which had the following
+values:</p>
+<table border="1" width="423">
+  <tr>
+    <td width="11%" align="center">44</td>
+    <td width="11%" align="center">75</td>
+    <td width="11%" align="center">23</td>
+    <td width="11%" align="center">43</td>
+    <td width="11%" align="center">55</td>
+    <td width="11%" align="center">12</td>
+    <td width="11%" align="center">64</td>
+    <td width="11%" align="center">77</td>
+    <td width="12%" align="center">33</td>
+  </tr>
+</table>
+<p>To sort this array with QuickSort, the initial function call would read
+QuickSort(<i>MyArray</i>,0,8).</p>
+<p> The heart of the algorithm is the Partition function - it does all the dirty work.&nbsp; Let's describe how the partitioning
+works by first giving its pseudocode, followed by an example: </p>
+<pre>Partition(Array,First,Last)
+begin
+ <b>Pivot</b> = Array[First]
+ Let <b>Front</b> be a pointer to Array[First]
+ Let <b>Back</b> be a pointer to Array[Last]
+ 
+ do
+  Increment <b>Front</b> pointer until it points to the first element greater than <b>Pivot</b>
+  Decrement <b>Back</b> pointer until it points to the first element less than or equal to than <b>Pivot</b>
+  if <b>Front</b> &lt; <b>Back</b> then
+   Swap values pointed to by <b>Front</b> and <b>Back</b>
+ while <b>Front</b> &lt; <b>Back</b>
+ 
+ Swap <b>Pivot</b> with value pointed to by <b>Back</b>
+ <b>PivotIndex</b> = Index number in the array pointed to by <b>Back</b>
+ 
+ return <b>PivotIndex</b>
+end</pre>
+
+<p>Let's partition the <i>MyArray</i> array above.&nbsp; First,
+initialize the variables.</p>
+<p>The first element is the pivot element, so <b>Pivot = 44</b>.&nbsp;
+Initialize <b>Front</b> and <b>Back</b> as follows:</p>
+<table border="1">
+  <tr>
+    <td width="11%" align="center">44</td>
+    <td width="11%" align="center">75</td>
+    <td width="11%" align="center">23</td>
+    <td width="11%" align="center">43</td>
+    <td width="11%" align="center">55</td>
+    <td width="11%" align="center">12</td>
+    <td width="11%" align="center">64</td>
+    <td width="11%" align="center">77</td>
+    <td width="12%" align="center">33</td>
+  </tr>
+  <tr>
+    <td width="11%" align="center">^</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="12%" align="center">^</td>
+  </tr>
+  <tr>
+    <td width="11%">&nbsp;Front </td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="12%">&nbsp;Back</td>
+  </tr>
+</table>
+<p>Now, begin the partition loop: </p>
+<p>Move <b>Front</b> to first number greater than the <b>Pivot</b>:</p>
+<table border="1">
+  <tr>
+    <td width="11%" align="center">44</td>
+    <td width="11%" align="center">75</td>
+    <td width="11%" align="center">23</td>
+    <td width="11%" align="center">43</td>
+    <td width="11%" align="center">55</td>
+    <td width="11%" align="center">12</td>
+    <td width="11%" align="center">64</td>
+    <td width="11%" align="center">77</td>
+    <td width="12%" align="center">33</td>
+  </tr>
+  <tr>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">^</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="12%" align="center">^</td>
+  </tr>
+  <tr>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;Front </td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="12%">&nbsp;Back</td>
+  </tr>
+</table>
+<p>Move <b>Back</b> to first number less than or equal to the <b>Pivot</b>:</p>
+<table border="1">
+  <tr>
+    <td width="11%" align="center">44</td>
+    <td width="11%" align="center">75</td>
+    <td width="11%" align="center">23</td>
+    <td width="11%" align="center">43</td>
+    <td width="11%" align="center">55</td>
+    <td width="11%" align="center">12</td>
+    <td width="11%" align="center">64</td>
+    <td width="11%" align="center">77</td>
+    <td width="12%" align="center">33</td>
+  </tr>
+  <tr>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">^</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="12%" align="center">^</td>
+  </tr>
+  <tr>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;Front </td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="12%">&nbsp;Back</td>
+  </tr>
+</table>
+<p><b>Front</b>  &lt; <b>Back</b>, so swap the values:</p>
+<table border="1">
+  <tr>
+    <td width="11%" align="center">44</td>
+    <td width="11%" align="center">33</td>
+    <td width="11%" align="center">23</td>
+    <td width="11%" align="center">43</td>
+    <td width="11%" align="center">55</td>
+    <td width="11%" align="center">12</td>
+    <td width="11%" align="center">64</td>
+    <td width="11%" align="center">77</td>
+    <td width="12%" align="center">75</td>
+  </tr>
+  <tr>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">^</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="12%" align="center">^</td>
+  </tr>
+  <tr>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;Front </td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="12%">&nbsp;Back</td>
+  </tr>
+</table>
+<p>Move <b>Front</b> to first number greater than the <b>Pivot</b>:</p>
+<table border="1">
+  <tr>
+    <td width="11%" align="center">44</td>
+    <td width="11%" align="center">33</td>
+    <td width="11%" align="center">23</td>
+    <td width="11%" align="center">43</td>
+    <td width="11%" align="center">55</td>
+    <td width="11%" align="center">12</td>
+    <td width="11%" align="center">64</td>
+    <td width="11%" align="center">77</td>
+    <td width="12%" align="center">75</td>
+  </tr>
+  <tr>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">^</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="12%" align="center">^</td>
+  </tr>
+  <tr>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;Front </td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="11%">&nbsp;</td>
+    <td width="12%">&nbsp;Back</td>
+  </tr>
+</table>
+<p>Move <b>Back</b> to first number less than or equal to the <b>Pivot</b>:</p>
+<table border="1">
+  <tr>
+    <td width="11%" align="center">44</td>
+    <td width="11%" align="center">33</td>
+    <td width="11%" align="center">23</td>
+    <td width="11%" align="center">43</td>
+    <td width="11%" align="center">55</td>
+    <td width="11%" align="center">12</td>
+    <td width="11%" align="center">64</td>
+    <td width="11%" align="center">77</td>
+    <td width="12%" align="center">75</td>
+  </tr>
+  <tr>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">^</td>
+    <td width="11%" align="center">&nbsp;^</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="12%" align="center">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;Front </td>
+    <td width="11%" align="center">&nbsp;Back</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="12%" align="center">&nbsp;</td>
+  </tr>
+</table>
+<p>Again, <b>Front</b>  &lt; <b>Back</b>, so swap the values:</p>
+<table border="1">
+  <tr>
+    <td width="11%" align="center">44</td>
+    <td width="11%" align="center">33</td>
+    <td width="11%" align="center">23</td>
+    <td width="11%" align="center">43</td>
+    <td width="11%" align="center">12</td>
+    <td width="11%" align="center">55</td>
+    <td width="11%" align="center">64</td>
+    <td width="11%" align="center">77</td>
+    <td width="12%" align="center">75</td>
+  </tr>
+  <tr>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">^</td>
+    <td width="11%" align="center">&nbsp;^</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="12%" align="center">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;Front </td>
+    <td width="11%" align="center">&nbsp;Back</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="11%" align="center">&nbsp;</td>
+    <td width="12%" align="center">&nbsp;</td>
+  </tr>
+</table>
+<p>Move <b>Front</b> to first number greater than the <b>Pivot</b>:</p>
+<table border="1" width="456">
+  <tr>
+    <td width="62" align="center">44</td>
+    <td width="66" align="center">33</td>
+    <td width="68" align="center">23</td>
+    <td width="72" align="center">43</td>
+    <td width="69" align="center">12</td>
+    <td width="156" align="center">55</td>
+    <td width="73" align="center">64</td>
+    <td width="78" align="center">77</td>
+    <td width="61" align="center">75</td>
+  </tr>
+  <tr>
+    <td width="62" align="center">&nbsp;</td>
+    <td width="66" align="center">&nbsp;</td>
+    <td width="68" align="center">&nbsp;</td>
+    <td width="72" align="center">&nbsp;</td>
+    <td width="69" align="center">&nbsp;</td>
+    <td width="156" align="center">&nbsp;&nbsp;&nbsp;&nbsp; ^&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      ^&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+    <td width="73" align="center">&nbsp;</td>
+    <td width="78" align="center">&nbsp;</td>
+    <td width="61" align="center">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="62" align="center">&nbsp;</td>
+    <td width="66" align="center">&nbsp;</td>
+    <td width="68" align="center">&nbsp;</td>
+    <td width="72" align="center">&nbsp;</td>
+    <td width="69" align="center">&nbsp; </td>
+    <td width="156" align="center">Front&nbsp;&nbsp; Back</td>
+    <td width="73" align="center">&nbsp;</td>
+    <td width="78" align="center">&nbsp;</td>
+    <td width="61" align="center">&nbsp;</td>
+  </tr>
+</table>
+<p>Move <b>Back</b> to first number less than or equal to the <b>Pivot</b>:</p>
+<table border="1" width="390">
+  <tr>
+    <td width="40" align="center">44</td>
+    <td width="34" align="center">33</td>
+    <td width="34" align="center">23</td>
+    <td width="44" align="center">43</td>
+    <td width="38" align="center">12</td>
+    <td width="37" align="center">55</td>
+    <td width="39" align="center">64</td>
+    <td width="39" align="center">77</td>
+    <td width="38" align="center">75</td>
+  </tr>
+  <tr>
+    <td width="40" align="center">&nbsp;</td>
+    <td width="34" align="center">&nbsp;</td>
+    <td width="34" align="center">&nbsp;</td>
+    <td width="44" align="center">&nbsp;</td>
+    <td width="38" align="center">^</td>
+    <td width="41" align="center">^</td>
+    <td width="39" align="center">&nbsp;</td>
+    <td width="39" align="center">&nbsp;</td>
+    <td width="38" align="center">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="40">&nbsp;</td>
+    <td width="34">&nbsp;</td>
+    <td width="34">&nbsp;</td>
+    <td width="44">&nbsp;</td>
+    <td width="38">&nbsp;Back</td>
+    <td width="41">&nbsp;Front </td>
+    <td width="39">&nbsp;</td>
+    <td width="39">&nbsp;</td>
+    <td width="38">&nbsp;</td>
+  </tr>
+</table>
+<p><b>Front</b> &gt;= <b>Back</b>, do not swap values, terminate loop</p>
+<p>Swap <b>Pivot </b>(first element) and value pointed to by <b>Back:</b></p>
+<table border="1" width="390">
+  <tr>
+    <td width="35" align="center">12</td>
+    <td width="37" align="center">33</td>
+    <td width="35" align="center">23</td>
+    <td width="36" align="center">43</td>
+    <td width="43" align="center">44</td>
+    <td width="42" align="center">55</td>
+    <td width="37" align="center">64</td>
+    <td width="40" align="center">77</td>
+    <td width="34" align="center">75</td>
+  </tr>
+  <tr>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="37" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="36" align="center">&nbsp;</td>
+    <td width="43" align="center">^</td>
+    <td width="46" align="center">^</td>
+    <td width="37" align="center">&nbsp;</td>
+    <td width="40" align="center">&nbsp;</td>
+    <td width="34" align="center">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="35">&nbsp;</td>
+    <td width="37">&nbsp;</td>
+    <td width="35">&nbsp;</td>
+    <td width="36">&nbsp;</td>
+    <td width="43">&nbsp;Back</td>
+    <td width="46">&nbsp;Front </td>
+    <td width="37">&nbsp;</td>
+    <td width="40">&nbsp;</td>
+    <td width="34">&nbsp;</td>
+  </tr>
+</table>
+<p>Then, set <b>PivotIndex</b> equal to 4, since <b>Back</b> points to array
+index 4.&nbsp;&nbsp;</p>
+<p>Finally, return <b>PivotIndex</b> to the calling function.</p>
+<p>Notice that all the values to the left of 44 are less than or equal to 44, and all
+values to the right are greater than 44.&nbsp; This is the outcome we wanted as
+described above.&nbsp; Now that we've partitioned the entire array, we recursively call QuickSort on
+the two subarrays.&nbsp; Since the <b>PivotIndex</b> is 4, the two function
+calls would be QuickSort(<i>MyArray</i>,0,3) and QuickSort(<i>MyArray</i>,5,8).&nbsp;
+When these function calls are made, each subarray will be partitioned, and then
+each of those subarrays will be recursively sorted.&nbsp; The process will
+continue until the entire array is
+sorted.</p>
+<h2>BubbleSort</h2>
+<p>BubbleSort is as famous for being bad as QuickSort is for being
+good.&nbsp; The good thing, though, which I'm sure you'll appreciate, is that
+it's easy to code.&nbsp; It passes through the data comparing
+adjacent elements, and if the elements are out of order, then they are swapped. If
+you were to watch a graphical representation of the sorting occurring, you would
+see that the largest element gets &quot;bubbled&quot; up to the top, then the
+next largest, and so on.</p>
+<p>Our BubbleSort function will take two parameters.&nbsp; The first is a
+pointer to the beginning of an array in memory.&nbsp; The second is the length
+of the array, which we'll call <b>Length</b>.</p>
+<p>Here's the pseudocode for BubbleSort:</p>
+<pre>BubbleSort(Array,Length)
+begin
+ for (i = 0; i &lt; Length; i++)
+  for (j = 0; j &lt; Length-1; j++)
+   if ( Array[j] &gt; Array[j+1] ) then
+    Swap values Array[j] and Array[j+1]
+   end if
+  end for
+ end for
+end</pre>
+<p>Let's show how BubbleSort works by showing its first pass through the <i>MyArray</i>
+array.&nbsp; Recall that the <i>MyArray</i> array is defined as:</p>
+<table border="1" width="423">
+  <tr>
+    <td width="11%" align="center">44</td>
+    <td width="11%" align="center">75</td>
+    <td width="11%" align="center">23</td>
+    <td width="11%" align="center">43</td>
+    <td width="11%" align="center">55</td>
+    <td width="11%" align="center">12</td>
+    <td width="11%" align="center">64</td>
+    <td width="11%" align="center">77</td>
+    <td width="12%" align="center">33</td>
+  </tr>
+</table>
+<p>The algorithm starts at the beginning of the array.</p>
+<table border="1" width="423">
+  <tr>
+    <td width="11%" align="center">44</td>
+    <td width="11%" align="center">75</td>
+    <td width="11%" align="center">23</td>
+    <td width="11%" align="center">43</td>
+    <td width="11%" align="center">55</td>
+    <td width="11%" align="center">12</td>
+    <td width="11%" align="center">64</td>
+    <td width="11%" align="center">77</td>
+    <td width="12%" align="center">33</td>
+  </tr>
+  <tr>
+    <td width="35" align="center">&nbsp;j</td>
+    <td width="37" align="center">j+1</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="36" align="center">&nbsp;</td>
+    <td width="43" align="center"></td>
+    <td width="46" align="center">&nbsp;</td>
+    <td width="37" align="center">&nbsp;</td>
+    <td width="40" align="center">&nbsp;</td>
+    <td width="34" align="center">&nbsp;</td>
+  </tr>
+</table>
+<p>44 &lt; 75, do not swap:</p>
+<table border="1" width="423">
+  <tr>
+    <td width="11%" align="center">44</td>
+    <td width="11%" align="center">75</td>
+    <td width="11%" align="center">23</td>
+    <td width="11%" align="center">43</td>
+    <td width="11%" align="center">55</td>
+    <td width="11%" align="center">12</td>
+    <td width="11%" align="center">64</td>
+    <td width="11%" align="center">77</td>
+    <td width="12%" align="center">33</td>
+  </tr>
+  <tr>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;j</td>
+    <td width="37" align="center">j+1</td>
+    <td width="36" align="center">&nbsp;</td>
+    <td width="43" align="center"></td>
+    <td width="46" align="center">&nbsp;</td>
+    <td width="37" align="center">&nbsp;</td>
+    <td width="40" align="center">&nbsp;</td>
+    <td width="34" align="center">&nbsp;</td>
+  </tr>
+</table>
+<p>75 &gt; 23, swap:</p>
+<table border="1" width="423">
+  <tr>
+    <td width="11%" align="center">44</td>
+    <td width="11%" align="center">23</td>
+    <td width="11%" align="center">75</td>
+    <td width="11%" align="center">43</td>
+    <td width="11%" align="center">55</td>
+    <td width="11%" align="center">12</td>
+    <td width="11%" align="center">64</td>
+    <td width="11%" align="center">77</td>
+    <td width="12%" align="center">33</td>
+  </tr>
+  <tr>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;j</td>
+    <td width="37" align="center">j+1</td>
+    <td width="43" align="center"></td>
+    <td width="46" align="center">&nbsp;</td>
+    <td width="37" align="center">&nbsp;</td>
+    <td width="40" align="center">&nbsp;</td>
+    <td width="34" align="center">&nbsp;</td>
+  </tr>
+</table>
+<p>75 &gt; 43, swap:</p>
+<table border="1" width="423">
+  <tr>
+    <td width="11%" align="center">44</td>
+    <td width="11%" align="center">23</td>
+    <td width="11%" align="center">43</td>
+    <td width="11%" align="center">75</td>
+    <td width="11%" align="center">55</td>
+    <td width="11%" align="center">12</td>
+    <td width="11%" align="center">64</td>
+    <td width="11%" align="center">77</td>
+    <td width="12%" align="center">33</td>
+  </tr>
+  <tr>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;j</td>
+    <td width="37" align="center">j+1</td>
+    <td width="46" align="center">&nbsp;</td>
+    <td width="37" align="center">&nbsp;</td>
+    <td width="40" align="center">&nbsp;</td>
+    <td width="34" align="center">&nbsp;</td>
+  </tr>
+</table>
+<p>75 &gt; 55, swap:</p>
+<table border="1" width="423">
+  <tr>
+    <td width="11%" align="center">44</td>
+    <td width="11%" align="center">23</td>
+    <td width="11%" align="center">43</td>
+    <td width="11%" align="center">55</td>
+    <td width="11%" align="center">75</td>
+    <td width="11%" align="center">12</td>
+    <td width="11%" align="center">64</td>
+    <td width="11%" align="center">77</td>
+    <td width="12%" align="center">33</td>
+  </tr>
+  <tr>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;j</td>
+    <td width="37" align="center">j+1</td>
+    <td width="37" align="center">&nbsp;</td>
+    <td width="40" align="center">&nbsp;</td>
+    <td width="34" align="center">&nbsp;</td>
+  </tr>
+</table>
+<p>75 &gt; 12, swap:</p>
+<table border="1" width="423">
+  <tr>
+    <td width="11%" align="center">44</td>
+    <td width="11%" align="center">23</td>
+    <td width="11%" align="center">43</td>
+    <td width="11%" align="center">55</td>
+    <td width="11%" align="center">12</td>
+    <td width="11%" align="center">75</td>
+    <td width="11%" align="center">64</td>
+    <td width="11%" align="center">77</td>
+    <td width="12%" align="center">33</td>
+  </tr>
+  <tr>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;j</td>
+    <td width="37" align="center">j+1</td>
+    <td width="40" align="center">&nbsp;</td>
+    <td width="34" align="center">&nbsp;</td>
+  </tr>
+</table>
+<p>75 &gt; 64, swap:</p>
+<table border="1" width="423">
+  <tr>
+    <td width="11%" align="center">44</td>
+    <td width="11%" align="center">23</td>
+    <td width="11%" align="center">43</td>
+    <td width="11%" align="center">55</td>
+    <td width="11%" align="center">12</td>
+    <td width="11%" align="center">64</td>
+    <td width="11%" align="center">75</td>
+    <td width="11%" align="center">77</td>
+    <td width="12%" align="center">33</td>
+  </tr>
+  <tr>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;j</td>
+    <td width="37" align="center">j+1</td>
+    <td width="34" align="center">&nbsp;</td>
+  </tr>
+</table>
+<p>75 &lt; 77, do not swap:</p>
+<table border="1" width="423">
+  <tr>
+    <td width="11%" align="center">44</td>
+    <td width="11%" align="center">23</td>
+    <td width="11%" align="center">43</td>
+    <td width="11%" align="center">55</td>
+    <td width="11%" align="center">12</td>
+    <td width="11%" align="center">64</td>
+    <td width="11%" align="center">75</td>
+    <td width="11%" align="center">77</td>
+    <td width="12%" align="center">33</td>
+  </tr>
+  <tr>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;j</td>
+    <td width="37" align="center">j+1</td>
+  </tr>
+</table>
+<p>77 &gt; 33, swap:</p>
+<table border="1" width="423">
+  <tr>
+    <td width="11%" align="center">44</td>
+    <td width="11%" align="center">23</td>
+    <td width="11%" align="center">43</td>
+    <td width="11%" align="center">55</td>
+    <td width="11%" align="center">12</td>
+    <td width="11%" align="center">64</td>
+    <td width="11%" align="center">75</td>
+    <td width="11%" align="center">33</td>
+    <td width="12%" align="center">77</td>
+  </tr>
+  <tr>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;</td>
+    <td width="35" align="center">&nbsp;j</td>
+    <td width="37" align="center">j+1</td>
+  </tr>
+</table>
+<p>So, after the first pass of the sort, 77 (the maximum value of the array) was
+moved to the end of the array.&nbsp; After the next pass, the second largest
+value, 75, would be moved to the second from last position in the array.&nbsp;
+In the end, the smallest value will be in the first position, and the array will
+be sorted.</p>
+<h2>Analyzing QuickSort and BubbleSort</h2>
+<p>Just how much worse than QuickSort is BubbleSort?&nbsp; You'll be able to
+find out in this MP by keeping track of the number
+of comparisons and swaps that each makes.&nbsp; So, when you're writing your
+code, you'll have to increment the CompareCount and SwapCount variables each
+time you perform a compare or swap, respectively.&nbsp; When counting the number
+of compares, only consider the compares that deal with array elements.&nbsp; Let me demonstrate with code:</p>
+<pre>
+.MyLoop
+	cmp	cx, ArrayLength     ; Do not count this compare
+	je	.LoopDone	    ; it is only used in constructing a loop
+	
+	... Loop Code ...
+	
+	mov	ax, [MyArray+si]    ; Count this compare
+	cmp	ax, [MyArray+di]    ; it deals with array elements
+	jle	.NoSwap
+	
+	... Swap Code ...	    ; Count all swaps
+	
+.NoSwap
+	... Loop Code ...
+	jmp	.MyLoop
+</pre>
+
+<p>So in the Partition function, only count the comparisons where you are moving
+<b>Front</b> and <b>Back</b> around the array.&nbsp; Do not count the
+comparisons that check to see if <b>Front</b> &lt; <b>Back</b>.&nbsp; Similarly,
+in the BubbleSort function, only count the comparisons that are performed on adjacent array
+elements.&nbsp; Do not count comparisons used as parts of loops, etc.&nbsp; If
+you've done things correctly, you'll notice that BubbleSort is performing a lot
+more comparisons and swaps than QuickSort.&nbsp; If your BubbleSort is doing
+better than your QuickSort, something is definitely wrong!
+</p>
+
+<p>&nbsp;
+</p>
+

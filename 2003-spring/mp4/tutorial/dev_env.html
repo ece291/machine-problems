@@ -1,0 +1,182 @@
+<html>
+
+<head>
+<title>Development Environment</title>
+</head>
+
+<body>
+
+<h1 align="center"><FONT size=+2><b><i>Development Environment</i></b></FONT></h1>
+<p>The development environment used for this tutorial and for the protected mode 
+MPs in ECE 291 is different from the one used for all of the other MPs. For this 
+tutorial (and in the protected mode MPs and probably your final project), you 
+will be using the DJGPP compiler system. The entire environment is installed 
+under <tt class="FILENAME">V:\ece291\djgpp\</tt>. It's also available for 
+download at
+<a href="http://courses.engr.illinois.edu/ece291/resources/djgpp.zip" target="_top">
+http://courses.engr.illinois.edu/ece291/resources/djgpp.zip</a> for those that want 
+to install it at home.</p>
+<div class="SECT1">
+  <p class="SECT1"><font size="+2"><a name="Task 2: Beating the Simplest Program to Death">
+  About DJGPP</a></font></p>
+  <p><a href="http://www.delorie.com/djgpp/" target="_top">DJGPP</a> is a 
+  complete 32-bit C/C++ development system for Intel 80386 (and higher) PCs 
+  running DOS (or any version of Windows). It includes many of the standard GNU 
+  development utilities (gcc, g++, gdb, etc) that are the de facto standard 
+  tools available on most UNIXes, including Linux. The development tools require 
+  a 80386 or newer computer to run, as do the programs they produce. In almost 
+  all cases, the programs it produces can be sold commercially without license 
+  or royalties.</div>
+<div class="SECT1">
+  <p class="SECT1"><font size="+2"><a name="Task 2: Beating the Simplest Program to Death">
+  About DPMI</a></font></p>
+  <p><b><i class="FIRSTTERM">DPMI</i></b> is the DOS Protected Mode Interface. 
+  The programs produced by DJGPP run in 32-bit protected mode. The transition 
+  from real-mode to protected-mode is provided by the DJGPP real-mode stub, 
+  which calls DPMI. DPMI is also used by DJGPP programs to allocate memory, set 
+  interrupt vectors, and perform protected-mode to real-mode (and vice-versa) 
+  interrupt call translations.</p>
+  <p>Why is DPMI necessary? Multitasking operating systems such as Windows 2000 
+  run DOS programs within a <span class="QUOTE">&quot;virtual 8086&quot;</span> 
+  environment, provided by 80386 and higher processors, that isolates the 
+  operating system from program errors. However, this processor mode also 
+  restricts access to certain features of the processor, such as the ability to 
+  switch between real and protected mode. DPMI is a standardized interface that 
+  provides interrupt-level functions for things such as switching between real 
+  and protected mode, allocating memory, and setting interrupt vectors.</p>
+  <p>If we were writing programs under a non-multitasking operating system such 
+  as DOS, our programs would have complete control of the machine, as we 
+  wouldn't be limited by the virtual 8086 mode. However, DPMI isn't available; 
+  we'd have to implement all of its functionality by manipulating control 
+  registers on the processor and building various data structures by hand. While 
+  this would be an interesting (yet difficult) exercise, fortunately Charles 
+  Sandmann has already done it for us by writing the CWSDPMI utility, a full 
+  DPMI provider that runs on DOS.</p>
+  <p>As we'll assume DPMI is the lowest level protected mode interface available 
+  for our programs' use, we will learn about protected mode by first using these 
+  functions directly. Later, we'll combine these low-level functions into 
+  higher-level, easier-to-use library functions.</div>
+<div class="SECT1">
+  <p class="SECT1"><font size="+2"><a name="Task 2: Beating the Simplest Program to Death">
+  Setting Up DJGPP</a></font></p>
+  <p>Normally setting up DJGPP requires the downloading of numerous (20+) ZIP 
+  files and some minor configuration. However, a fully installed and configured 
+  version of DJGPP is available on the lab machines. It should already be set up 
+  and ready to use for this tutorial.</p>
+  <p>If you want to develop at home, everything you need is in
+  <a href="http://courses.engr.illinois.edu/ece291/resources/djgpp.zip" target="_top">
+  http://courses.engr.illinois.edu/ece291/resources/djgpp.zip</a>. There are some 
+  environment variables that need to be set properly in order for the tools to 
+  work correctly:</p>
+  <pre class="SCREEN">    SET PATH=C:\djgpp\bin;%PATH
+    SET TMP=C:\temp
+    SET TEMP=C:\temp
+    SET DJGPP=C:\djgpp\djgpp.env
+</pre>
+  <p>A batch file, <tt class="COMMAND">djgpp.bat</tt>, is included in
+  <tt class="FILENAME">djgpp.zip</tt> that sets these environment variables. It 
+  is necessary to edit this file (to change the directory locations if 
+  necessary) and run it in every DOS box you intend to use the DJGPP tools in. 
+  If this gets tiring, you might try setting these variables in the Environment 
+  Settings dialog box, accessed from the System Control Panel, Advanced tab (in 
+  Windows 2000).</div>
+
+<p><font size="+2"><a name="Task 2: Beating the Simplest Program to Death">Task 2: Beating the Simplest Program to Death</a></font></p>
+<div class="SECT1">
+  <ol type="1">
+    <li>Make an empty <tt class="FILENAME">tutorial</tt> folder. Make an
+    <tt class="FILENAME">basic.asm</tt> file. Type this code into the
+    <tt class="FILENAME">basic.asm</tt> file:<table border="1">
+  <tr>
+    <td width="100%" height="94"><pre><font color="#FF0000">BITS</font> 32          <font color="#808080">; Tell NASM we're using 32-bit protected mode.</font>
+
+<font color="#FF0000">GLOBAL</font> _main     <font color="#808080">; Tells the linker about the label called _main</font>
+
+<font color="#FF0000">SECTION</font> .text    <font color="#808080">; Says that this is the start of the code section.</font>
+     
+_main:           <font color="#808080">; Code execution will start at the label called _main</font>
+   mov eax, 42   <font color="#808080">; The simplest program you'll write in this class.</font>
+   ret           <font color="#808080">; Return to DJGPP's crt0 library startup code</font></pre></td>
+  </tr>
+</table>
+
+    </li>
+    <li>Go into the directory and type <tt class="COMMAND">nasm -f coff 
+    basic.asm -l basic.lst</tt>. A quick run of <tt class="COMMAND">nasm -hf</tt> 
+    shows that this assembles the <tt class="FILENAME">basic.asm</tt> file and 
+    creates <tt class="FILENAME">basic.o</tt> in the form of a COFF object file. 
+    (This is the format that the DJGPP linker can read). The object file 
+    contains the assembled code and data and information about the variable and 
+    label names so that the linker can link the object file with other object 
+    files and the system libraries. NASM also creates a list file called
+    <tt class="FILENAME">basic.lst</tt> which contains the compiled code with 
+    line numbers, addresses, and data tacked on to it. Look at this file. <a href="questions.html#Question2">Question
+2:</a>&nbsp; What is the opcode for ret?&nbsp; How many bytes were the two 
+    opcodes in the _main function? Note how large the constant
+    <span class="QUOTE">&quot;42&quot;</span> is.</li>
+    <li>Type <tt class="COMMAND">objdump --disassemble-all basic.o</tt> to 
+    disassemble the object file that NASM created and print its contents to the 
+    screen. (This step doesn't actually do anything, it's just to see how NASM 
+    works.) Look at the <tt class="COMMAND">objdump</tt> output. This is the 
+    information that's in an object file. <a href="questions.html#Question3">Question 3:</a>&nbsp; 
+    How much of the mov opcode was actually opcode and how much data? Hint: find 
+    the hex value of your data in the opcode.</li>
+    <li>Type <tt class="COMMAND">gcc -o basic basic.o</tt> which runs gcc, which 
+    runs the linker to take the <tt class="FILENAME">basic.o</tt> file and link 
+    it with the DJGPP startup code to make it an executable.<p>A <b>
+    <i class="FIRSTTERM">linker</i></b> takes a bunch of assembled object files 
+    and sticks them all into one big object (probably executable) file. Object 
+    files can call routines or access variables in other object files as long as 
+    they are declared <tt class="LITERAL">GLOBAL</tt> in one object file and
+    <tt class="LITERAL">EXTERN</tt> in the others. When something is declared as
+    <tt class="LITERAL">GLOBAL</tt>, NASM will put its name and address into the 
+    object file it creates. Other object files, with <tt class="LITERAL">EXTERN</tt> 
+    references to a routine or variable, will be assembled into object files 
+    with unresolved links. The linker takes these object files, matches up the 
+    names, and puts the the address of the <tt class="LITERAL">GLOBAL</tt> 
+    routine or variable into the code instead of just an unresolved name. This 
+    is how the LIB291 library code has been matched up with the MP code since 
+    the beginning of the class.</li>
+    <li>Type &quot;objdump --disassemble-all basic &gt; out.txt&quot; and look at out.txt 
+    (which is now huge) to see the dump of the object file it created with all 
+    the libraries. Find <tt class="LITERAL">&lt;_qsort&gt;</tt>. Find
+    <tt class="LITERAL">&lt;start&gt;</tt> and <tt class="LITERAL">&lt;exit&gt;</tt>.
+    <tt class="LITERAL">&lt;start&gt;</tt> is where protected mode execution actually 
+    starts. It eventually calls your <tt class="LITERAL">&lt;_main&gt;</tt>. When
+    <tt class="LITERAL">&lt;_main&gt;</tt> returns, execution passes into the
+    <tt class="LITERAL">&lt;exit&gt;</tt> code which calls the <tt class="LITERAL">
+    &lt;_exit&gt;</tt> code which calls the <tt class="LITERAL">&lt;__exit&gt;</tt> code, 
+    which finally leaves protected mode. This is how C works. Be afraid. Be very 
+    afraid.</li>
+    <li>Type <tt class="COMMAND">basic</tt> to run the example program. Nothing 
+    happened? Good. Awe at the fact that there's only one line of assembly, yet 
+    twenty million things had to go on to get into and out of protected mode, to 
+    load the code, to interact with the operating system, to toggle the bits in 
+    the microprocessor, to manipulate the quantum state of billions and billions 
+    of electrons, etc, etc...<p>If it seems like an excessive amount of work for 
+    one line of code, it is. It's possible to do the exact same thing this
+    <span class="QUOTE">&quot;basic&quot;</span> program did in real mode. Keep in mind 
+    that this is only the beginning, and it's good to start simple.</li>
+    <li>Type <tt class="COMMAND">cv32 basic</tt> to actually see what's going 
+    on. This is the best protected mode debugger available in ECE 291 at the 
+    moment. Hit <b class="KEYCAP">F8</b> a few times to step through. (Go slow, 
+    or it's easy to miss the one line of code!) <b class="KEYCAP">Alt</b>-<b class="KEYCAP">H</b> 
+    brings up a help screen. <b class="KEYCAP">Alt</b>-<b class="KEYCAP">X</b> 
+    exits. CV32 will become more useful as the programs get more complex.</li>
+  </ol>
+</div>
+
+<P><FONT size=+2><a name="What Actually Happened When You Ran Your Program">What Actually Happened When You Ran Your Program</a></FONT></P>
+<P>The startup of a DJGPP protected-mode program is far more complex than a real-mode 
+program.  First, DOS reads in the real-mode stub and executes it.  This real-mode stub checks to
+see if DPMI is available, and then uses it to switch to
+protected mode.  After switching to protected mode, it then asks the operating
+system to allocate memory for the program's
+code and data segments, loads the protected mode image from disk, and then directs processor
+execution into the DJGPP library startup code. This startup code does some dirty work such as reading
+the command line and initializing the standard library, and then runs your <b><samp>_main</samp></b>.
+</P>
+
+</body>
+
+</html>

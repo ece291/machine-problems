@@ -1,0 +1,1084 @@
+<HTML>
+<HEAD>
+   <TITLE>Machine Problem 3</TITLE>
+</HEAD>
+<BODY bgcolor=ffffff>
+
+<CENTER><TABLE BORDER=0 COLS=3 WIDTH="100%" >
+<TR>
+<TD width=33%>ECE 291</TD>
+<TD width=34%><center>Computer Engineering II</CENTER></TD>
+<TD width=33%><DIV ALIGN=right>Lockwood, Spring 1998</DIV> </TD>
+</TR>
+</TABLE></CENTER>
+
+<CENTER>&nbsp;</CENTER>
+
+<CENTER>
+<H1>
+Machine Problem 3: The "15-Puzzle"</H1></CENTER>
+
+<CENTER>&nbsp;</CENTER>
+
+<CENTER><TABLE BORDER WIDTH="60%" >
+<TR>
+<TD>
+<DIV ALIGN=right><B>Assigned:</B></DIV>
+</TD>
+
+<TD>Tuesday, February 24, 1998</TD>
+</TR>
+
+<TR>
+<TD>
+<DIV ALIGN=right><B>Due Date:</B></DIV>
+</TD>
+
+<TD>Tuesday, March 10, 1998</TD>
+</TR>
+
+<TR>
+<TD>
+<DIV ALIGN=right><B>Purpose:</B></DIV>
+</TD>
+
+<TD>Text-mode video, Mouse control, Stack usage, GUI programming</TD>
+</TR>
+
+<TR>
+<TD>
+<DIV ALIGN=right><B>Points:</B></DIV>
+</TD>
+
+<TD>50</TD>
+</TR>
+</TABLE></CENTER>
+
+<CENTER>&nbsp;</CENTER>
+
+<CENTER><IMG SRC="puzzle.gif" HEIGHT=451 WIDTH=401></CENTER>
+
+<CENTER>Figure 1. The ECE 291 15-Puzzle</CENTER>
+
+<CENTER>&nbsp;</CENTER>
+
+<H2>
+About this Machine Problem</H2>
+In the 1870's a man by the name of Samuel Lloyd shocked and amazed a simple-minded
+world with an equally simple-minded puzzle.&nbsp; His puzzle consisted
+of a wooden box in which there were 15 numbered blocks.&nbsp; The blocks
+were placed at random into the box, and the goal was to shift the blocks
+around until the blocks lined up sequentially with the '1' block in the
+upper left hand corner of the board.&nbsp; This puzzle has become what
+is known as the "15-Puzzle."&nbsp; After taking the world by storm a mere
+century ago, the classic 15-Puzzle now lives out its mundane life as a
+cheap corporate giveaway at the Engineering EXPO.&nbsp; In this machine
+problem, we will attempt to restore the 15-Puzzle to its former glory.
+<H2>
+How the Puzzle Works</H2>
+The operation of the puzzel is best explained using the concepts
+your learned in ECE340 (yes, really, the semiconductor class).
+Fundamentally, Our 15-puzzle works not by moving numbered tiles
+around, but by moving the <I>hole</I> around.&nbsp; When the user clicks
+on the 15 tile (Figure 2), the tile slides to the right to fill in the
+gap, right?&nbsp; Wrong.&nbsp; Think of this as the hole sliding over to
+the left to fill in the space previously occupied by the 15 tile.&nbsp;<BR>
+<BR>
+<CENTER><IMG SRC="figure2.gif" HEIGHT=103 WIDTH=391></CENTER>
+
+<CENTER>Figure 2.</CENTER>
+&nbsp;
+<BR>By thinking of the problem as "moving the hole around" instead of "moving
+the tiles around," we simplify the coding experience.&nbsp; The core of
+this functionality is the <B>MoveHole</B> subroutine.&nbsp; This routine
+accepts a direction as input, and attempts to move the hole in the specified
+direction.&nbsp; If the direction is invalid, <B>MoveHole</B> returns an
+error code.&nbsp; An example of an invalid move would be attempting to
+move the hole down on the puzzle in figure 2.
+<p>
+
+Although <I>we </I>know
+that it is the <I>hole</I> that is moving, the user sees the <I>tile</I>
+sliding into the place previously occupied by the hole.&nbsp; <B>MoveHole</B>
+accomplishes this by repeated calls to the <B>DrawTile</B> subroutine.&nbsp;
+<B>DrawTile</B> simply draws the specified tile at the specified location.&nbsp;
+The "animated" effect is achieved by repeatedly drawing the tile, each
+time moving it over by one character until it reaches its destination.
+Calling the <B>Delay</B> subroutine each time the tile is drawn slows the
+animation down.&nbsp; <B>Delay</B> simply burns clock cycles so that the
+animation appears at human-detectable speed.&nbsp; Without some sort of
+delay, the animation would be instantaneous to the human eye.
+<p> 
+
+The state of the game board is stored in the <B>Board</B> variable.&nbsp; This
+is simply an array of bytes indicating which tiles are in each of the 16
+possible positions (numbered 0...15).&nbsp; The hole is represented as
+tile 0.&nbsp; The variable <B>HolePtr</B> always contains the position
+of the hole.&nbsp; In addition, the <B>Moves</B> variable always contains
+the number of moves the user has made.&nbsp; 
+<p>
+
+The mouse control is implemented
+in the <B>MouseControl</B> subroutine.&nbsp; Using the mouse as an input
+device is straightforward, and the details are contained in the lab manual.&nbsp;
+<B>MouseControl</B> returns a value indicating which tile or button was
+clicked.&nbsp; The Main routine (given) takes this value and decides what
+action to take.&nbsp; If a tile is clicked, Main calls the <B>CheckMove</B>
+routine, which checks if the click was valid, and if so, calls <B>MoveHole</B>
+to effect the desired move.&nbsp; Note that the user should be able to
+click on any tile in line with the hole.&nbsp; In figure 2 (farthest to
+right), clicking on the 3 tile should cause the 11, 7, and 3 tiles to move
+downward.&nbsp; The full details of these subroutines are given below.
+<H2>
+The Autosolve "Algorithm"</H2>
+When complete, your machine problem will amaze your non-engineering
+friends with its ability to automagically solve itself.
+Of course, we engineers know that
+there is no magic involved.&nbsp; Rather, this puzzle will use the stack
+to perform the amazing autosolve feat. Whenever a move is made, 
+the <I>opposite</I> move is pushed onto the stack.&nbsp; 
+The number of moves currently residing
+on the stack is kept track of using the <B>MovesPushed</B> variable.
+<p>
+
+To solve the puzzle, the <B>AutoSolve</B> subroutine simply pops the moves
+off of the stack and calls <B>MoveHole</B>. The <B>Shuffle</B> routine
+resets the puzzle and then moves the hole in random directions.&nbsp; The
+number of times the hole is moved is specified by <B>ShuffAmount</B>.&nbsp;
+Your <B>Shuffle</B> routine should take care not to move the hole in one
+direction and then follow that by moving the hole right back to where it
+started again.&nbsp; That sort of behavior is not very impressive and it
+is annoying to watch.&nbsp; 
+<p>
+
+The randomness is achieved by generating random
+numbers with the <B>Random</B> routine.&nbsp; 
+The method for generating random numbers is outlined below.&nbsp; 
+
+Each time <B>Shuffle</B> moves
+the hole, the <I>opposite</I> move is pushed onto the stack for later retrieval
+by the <B>AutoSolve</B> routine.&nbsp; In this manner, the puzzle can solve
+itself after being shuffled and then played with.&nbsp; Be careful when
+using the stack to store moves.&nbsp; You will be using the same stack
+that the CPU uses to store return addresses for subroutine calls.&nbsp;
+Review your lecture notes on stack usage.
+<H2>
+A Few Other Things</H2>
+<ul>
+<li>The <B>Reset</B> routine will restore the board to its original, in-order
+configuration.&nbsp; <B>Reset</B> will also pop all existing moves off
+of the stack.&nbsp; 
+<li><B>DrawBoard</B> is the routine that will draw all
+of the static elements of the Graphical User Interface.&nbsp; Buttons,
+title bars, borders, and backgrounds are all "static" elements of 
+the display.&nbsp; These do not change and generally only need to be drawn once.
+<B>DrawBoard</B>
+also draws the current arrangement of tiles, specified in the <B>Board</B>
+array.&nbsp; Your puzzle game will display the current number of moves
+the user has made.&nbsp; It will also display the current setting of the
+<B>DelayC</B> constant.&nbsp; 
+<li><B>UpdateScreen</B> is the routine which
+draws these displays into place.&nbsp; <B>UpdateScreen</B> is called any
+time the <B>Moves</B> variable or the <B>DelayC</B> variable changes.
+</ul>
+
+<H2>
+Play With It</H2>
+The best way to get the feel for how the game should operate is to play
+with the library version of the game.&nbsp; Your version must implement
+all the features of the library version.&nbsp; If you have a question as
+to how your program should behave, look at the library code and have your
+version do what it does.&nbsp; You may use some degree of artistic license
+in your version, but be aware that if you change the locations of buttons
+or tiles, your code will not interoperate properly with the library code.&nbsp;
+The best strategy is to place all of your screen elements in the same places
+as the library code.
+<H2>
+Efficiency</H2>
+Many of the operations of this Machine Problem can be implemented most
+efficiently with loops, lookup tables, and bit-tricks.&nbsp; In this case,
+efficient = simple. Many of those same operations can be very tedious and
+time-consuming to program if you do not choose efficient ways to implement
+them.&nbsp; We will not explicitly test the speed of your code for this
+MP, but the benefit derived from efficient coding is that you will have
+many more free-time hours to pursue leisure activities such as playing
+with the 15-puzzle that some company gave out free at the last EXPO.
+<H2>
+80x50 Text Mode Video</H2>
+You will be using text-mode video graphics to display the game on the screen.&nbsp;
+You will be using direct video memory writes as described in the lecture
+notes.&nbsp; Using 80x50 text mode is a simple extension of what you know
+about 80x25 text mode.&nbsp; You simply double the size of the memory page
+to which you will write data.
+<H2>
+Data Structures</H2>
+
+<UL>
+<LI>
+A few variable have been defined in the program framework.&nbsp; Use them.</LI>
+
+<UL>
+<LI>
+<B>Moves</B>: keeps track of the number of moves the used has made.&nbsp;
+This must be updated every time MoveHole returns successful.</LI>
+
+<LI>
+<B>MovesPushed</B>: tracks the number of moves that have been pushed to
+the stack.&nbsp; This is not necessarily equal to the Moves variable.</LI>
+
+<LI>
+<B>HolePtr</B>: always contains the current position of the hole.&nbsp;
+A position is a number 0...15 representing the offset into the Board array
+where the hole is stored.</LI>
+
+<LI>
+<B>Board</B>: is an array of bytes representing the state of the board.&nbsp;
+Each byte position contains a number 0...15 representing which tile is
+in that position.&nbsp; For example, if the 6 tile is located in the lower
+left hand corner of the board, then Board[12]=6.&nbsp; The hole is represented
+as tile number 0.</LI>
+
+<LI>
+<B>RandVal</B>: contains the seed used by the random number generator.</LI>
+
+<LI>
+<B>DelayC</B>: contains the delay constant.&nbsp; This delay constant is
+a number 1...20.</LI>
+</UL>
+
+<LI>
+A few constants have also been defined.&nbsp; Please see the given code
+(MP3.ASM) for documentation on these constants.&nbsp; Use them.</LI>
+</UL>
+
+<H2>
+Procedures</H2>
+
+<UL>
+<LI>
+This assignment has eleven procedures.&nbsp; You will receive credit by
+replacing each of the eleven procedures listed below with your own code.</LI>
+
+<LI>
+Experiment with the given library code to gain a full understanding of
+how the program works.</LI>
+
+<LI>
+You program should exactly match the functionality of the library subroutines.&nbsp;
+Do not violate the I/O specs given.</LI>
+
+<LI>
+All subroutines must preserve the value of any registers that they modify,
+not including registers used for function output.</LI>
+
+<LI>
+<I>Library routines only call other Library Routines.</I>&nbsp; Keep this
+in mind when testing your code with the given library code.</LI>
+
+<H3>
+<B><FONT SIZE=+1>MouseControl</FONT></B></H3>
+
+<UL>
+<LI>
+<B>Purpose:</B> To get user input via the mouse.</LI>
+
+<LI>
+<B>Inputs:</B> none</LI>
+
+<LI>
+<B>Outputs:</B> DX - returns values according to the following table:</LI>
+
+<UL>&nbsp;
+<TABLE BORDER >
+<TR>
+<TD>
+<CENTER><B>Value</B></CENTER>
+</TD>
+
+<TD>
+<CENTER><B>Description</B></CENTER>
+</TD>
+</TR>
+
+<TR>
+<TD>TileClicked</TD>
+
+<TD>returned if a tile on the board was clicked</TD>
+</TR>
+
+<TR>
+<TD>ShuffleClk</TD>
+
+<TD>returned if the Shuffle button was clicked</TD>
+</TR>
+
+<TR>
+<TD>SolveClk</TD>
+
+<TD>returned if the Solve button was clicked</TD>
+</TR>
+
+<TR>
+<TD>SolveOnceClk</TD>
+
+<TD>returned if the Solve Once button was clicked</TD>
+</TR>
+
+<TR>
+<TD>DelayUpClk</TD>
+
+<TD>returned if the Increase Delay button was clicked</TD>
+</TR>
+
+<TR>
+<TD>DelayDownClk</TD>
+
+<TD>returned if the Decrease Delay button was clicked</TD>
+</TR>
+
+<TR>
+<TD>QuitClk</TD>
+
+<TD>returned if the Quit button was clicked</TD>
+</TR>
+
+<TR>
+<TD>ResetClk</TD>
+
+<TD>returned it the Reset button was clicked</TD>
+</TR>
+</TABLE>
+&nbsp;</UL>
+
+<UL>
+<LI>
+AX: returns the position of the tile that was clicked, if a tile was clicked.</LI>
+</UL>
+
+<LI>
+<B>Notes:</B></LI>
+
+<UL>
+<LI>
+The program will spend most of its time looping through this subroutine.&nbsp;
+The subroutine does not return until a valid place on the screen has been
+clicked.</LI>
+
+<LI>
+Many comparisons will need to be made in this subroutine.&nbsp; Use the
+provided constants to refer to return values or screen element locations.&nbsp;
+See the given code for details.</LI>
+
+<LI>
+See the lab manual for details on how to use the mouse hardware.</LI>
+</UL>
+
+<LI>
+<B>Calls:</B> None</LI>
+</UL>
+&nbsp;
+<H3>
+<B><FONT SIZE=+1>ResetBoard</FONT></B></H3>
+
+<UL>
+<LI>
+<B>Purpose:</B> to reset the board to its ordered configuration.&nbsp;
+This routine will reset the Board array to the ordered configuration.&nbsp;
+HolePtr will be reset.&nbsp; This routine will also remove all moves currently
+residing on the stack.&nbsp; This routine resets the Moves variable.&nbsp;
+When ResetBoard is done, the user sees a reset screen.</LI>
+
+<LI>
+<B>Inputs:</B> the stack, Board, HolePtr, MovesPushed, Moves</LI>
+
+<LI>
+<B>Outputs: </B>the stack, Board, HolePtr, MovesPushed, Moves</LI>
+
+<LI>
+<B>Calls:</B> DrawBoard, UpdateScreen</LI>
+</UL>
+
+<H3>
+Shuffle</H3>
+
+<UL>
+<LI>
+<B>Purpose:</B> to shuffle the board.&nbsp; This routine moves the hole
+in random directions the number of times specified by the ShuffAmount constant.&nbsp;
+The hole should never be moved in one direction and then moved right back
+again.&nbsp; Your code must prevent this from happening.&nbsp; Each time
+shuffle makes a valid move, the <I>opposite</I> move is pushed to the stack
+and MovesPushed is incremented.</LI>
+
+<LI>
+<B>Inputs:</B> the stack, MovesPushed, ShuffAmount</LI>
+
+<LI>
+<B>Outputs:</B> the stack, MovesPushed</LI>
+
+<LI>
+<B>Calls:</B> Random, MoveHole</LI>
+</UL>
+
+<H3>
+MoveHole</H3>
+
+<UL>
+<LI>
+<B>Purpose:</B> to move the hole.&nbsp; A hole is moved by sliding the
+corresponding tile in the proper direction.&nbsp; The motion should be
+animated.&nbsp; MoveHole checks to see if the move requested is valid,
+and returns an error code if an invalid move was attempted.  This routine is responsible for correctly updating the Board and HolePtr variables.  Board should be updated to reflect the actual arrangement of tiles, and HolePtr should be updated to point to the new Hole locations</LI>
+
+<LI>
+<B>Inputs</B>: HolePtr, Board</LI>
+
+<UL>
+<LI>
+SI = the direction the hole should be moved in</LI>
+
+<TABLE BORDER WIDTH="50%" >
+<TR>
+<TD>
+<CENTER><B>Value in SI</B></CENTER>
+</TD>
+
+<TD>
+<CENTER><B>Direction of Hole Motion</B></CENTER>
+</TD>
+</TR>
+
+<TR>
+<TD>
+<CENTER>0</CENTER>
+</TD>
+
+<TD>
+<CENTER>Up</CENTER>
+</TD>
+</TR>
+
+<TR>
+<TD>
+<CENTER>1</CENTER>
+</TD>
+
+<TD>
+<CENTER>Right</CENTER>
+</TD>
+</TR>
+
+<TR>
+<TD>
+<CENTER>2</CENTER>
+</TD>
+
+<TD>
+<CENTER>Down</CENTER>
+</TD>
+</TR>
+
+<TR>
+<TD>
+<CENTER>3</CENTER>
+</TD>
+
+<TD>
+<CENTER>Left</CENTER>
+</TD>
+</TR>
+</TABLE>
+&nbsp;</UL>
+
+<LI>
+<B>Outputs</B>:  Board, HolePtr</LI>
+
+<UL>
+<LI>
+DX = 0 if success, 1 if failure</LI>
+</UL>
+
+<LI>
+<B>Notes:</B></LI>
+
+<UL>
+<LI>
+Can you use lookup tables to make this simple?</LI>
+
+<LI>
+This routine does not push moves to the stack.</LI>
+</UL>
+
+<LI>
+<B>Calls:</B> DrawTile</LI>
+</UL>
+
+<H3>
+DrawBoard</H3>
+
+<UL>
+<LI>
+<B>Purpose:</B> Draw out all of the static elements of the display, as
+well as draw out all of the tiles.&nbsp; This routine is called to redraw
+the entire screen, including the background, the buttons, the labels, and
+anything else you include in the user interface.</LI>
+
+<LI>
+<B>Inputs:</B> none</LI>
+
+<LI>
+<B>Outputs:</B> to screen</LI>
+
+<LI>
+<B>Uses:</B> none</LI>
+</UL>
+
+<H3>
+UpdateScreen</H3>
+
+<UL>
+<LI>
+<B>Purpose:</B> Update the "Number of Moves" and the "Delay" displays on
+the screen.&nbsp; This routine is called whenever Moves or Delayc is changed.&nbsp;
+It draws the proper characters to the screen so the user can see the value
+of these variable.</LI>
+
+<LI>
+<B>Inputs:</B> Moves, DelayC</LI>
+
+<LI>
+<B>Outputs:</B> to screen</LI>
+
+<LI>
+<B>Uses:</B> none</LI>
+</UL>
+
+<H3>
+Delay</H3>
+
+<UL>
+<LI>
+<B>Purpose: </B>Burns CPU cycles.&nbsp; This routine loops through a meaningless
+loop DelayC*0AFFFh times.&nbsp; Just sit there and loop.&nbsp; That's all
+it needs to do.&nbsp; Delay is called to give the program its animated
+quality.</LI>
+
+<LI>
+<B>Inputs:</B> DelayC</LI>
+
+<LI>
+<B>Outputs:</B> time</LI>
+
+<LI>
+<B>Uses:</B> none</LI>
+</UL>
+
+<H3>
+<B>Random</B></H3>
+
+<UL>
+<LI>
+<B>Purpose:</B> This routine generates and returns a pseudo-random number
+by multiplication and addition of large prime constants to a random number.</LI>
+
+<LI>
+<B>Inputs:</B> Randval memory variable</LI>
+
+<LI>
+<B>Outputs:</B> AX - Random number between 0 .. 2^16-1</LI>
+
+<LI>
+<B>Notes:</B> The random function is defined below<BR>
+R(1) = Randval<BR>
+R(i+1) = Randval = (K1 *R(i) + K2) % MaxValue&nbsp;<BR>
+Where</LI>
+</UL>
+
+<UL>
+<UL>
+<LI>
+<I>R(i)</I> is the random value generated in the i-th call to the subroutine.</LI>
+
+<LI>
+<I>Randval</I> is a variable that holds the initial random value and is
+updated with the result after each call to Random.</LI>
+
+<LI>
+<I>K1</I> and <I>K2</I> are two large, prime-valued constants.</LI>
+
+<LI>
+<I>MaxValue</I> = 2^16-1 (0FFFFh)</LI>
+</UL>
+Hints &amp; Observations
+<UL>
+<LI>
+The first call to Random returns the original random number seed</LI>
+
+<LI>
+Perform multiplication and division using the 16-bit unsigned operations.</LI>
+</UL>
+
+<LI>
+<B>Uses:</B> None</LI>
+</UL>
+
+<H3>
+AutoSolve</H3>
+
+<UL>
+<LI>
+<B>Purpose:</B> To solve the puzzle.&nbsp; Autosolve solves the puzzle
+by popping a move from the stack and executing that move using MoveTile.&nbsp;
+Moves is incremented for each pop.  In addition, AutoSolve should only pop and execute one move off the stack if AX=0.  If AX=1, Autosolve should pop and execute all moves off the stack.</LI>
+
+<LI>
+<B>Inputs:</B> stack, MovesPushed, Moves
+<UL>
+<LI>AX = 0 - Autosolve only pops one move off the stack, 1 - Autosolve pops all moves off the stack and executes them.
+</LI>
+</UL>
+</LI>
+
+<LI>
+<B>Outputs:</B> a solved puzzle, Moves, MovesPushed, stack </LI>
+
+<LI>
+<B>Uses:</B> UpdateScreen, MoveHole</LI>
+</UL>
+
+<H3>
+DrawTile</H3>
+
+<UL>
+<LI>
+<B>Purpose:</B> to draw a tile.&nbsp; Draw tile will draw a tile at the
+specified location, with the specified number inside.&nbsp; Tiles should
+be drawn with differing colors for visual appeal.</LI>
+
+<LI>
+<B>Inputs:</B></LI>
+
+<UL>
+<LI>
+AL = # of tile being drawn (1...15)</LI>
+
+<LI>
+BX = Offset into text mode video memory of the upper left hand corner of
+the tile.</LI>
+</UL>
+
+<LI>
+<B>Outputs:</B> A tile is drawn to the screen</LI>
+
+<LI>
+<B>Uses:</B> None</LI>
+</UL>
+
+<H3>
+CheckMove</H3>
+
+<UL>
+<LI>
+<B>Purpose:</B> to execute a user's move.&nbsp; This routine takes as input
+the position of the board which the user clicked on.&nbsp; It determines
+if a valid move is available, and executed that move using MoveHole.&nbsp;
+When the hole is moved, this routine pushes the <I>opposite</I> move to
+the stack and updates Moves.</LI>
+
+<LI>
+<B>Inputs:</B> stack, HolePtr, Moves, MovesPushed.</LI>
+
+<UL>
+<LI>
+AX = the position of the board that was clicked.</LI>
+</UL>
+
+<LI>
+<B>Outputs:</B> stack, Moves, MovesPushed</LI>
+
+<LI>
+<B>Uses: </B>MoveHole, UpdateScreen</LI>
+</UL>
+&nbsp;</UL>
+
+<H2>
+Scoring</H2>
+Points are earned by replacing the library code with your own code. The
+point values for each of the subroutines is listed below:
+<BR>&nbsp;
+<UL><B>MouseControl:</B> 8 pts.
+<BR><B>ResetBoard: </B>3 pts.
+<BR><B>Shuffle:</B> 5 pts.
+<BR><B>MoveHole:</B> 8 pts.
+<BR><B>DrawBoard:</B> 4 pts.
+<BR><B>UpdateScreen: </B>4 pts.
+<BR><B>Delay:</B> 1pt.
+<BR><B>Random: </B>3 pts.
+<BR><B>AutoSolve:</B> 3 pts.
+<BR><B>DrawTile:</B> 3 pts.
+<BR><B>CheckMove: </B>8 pts.</UL>
+
+<H2>
+&nbsp;Preliminary Procedure</H2>
+
+<UL>
+<LI>
+Copy the empty MP3 program (<TT>MP3.ASM</TT>), libraries (<TT>libmp3.lib</TT>,
+<TT>lib291.lib</TT>), and <TT>Makefile</TT> from the network drive to your
+home directory with the following command:</LI>
+
+<BR><TT>xcopy /s I:\ece291\mp3 F:\mp3</TT>
+<BR>Alternatively, from home, you can download the same files as <A HREF="mp3.zip">mp3.zip</A>.
+<LI>
+As with previous MPs, run <TT>NMake</TT> to build an executable program
+using the given ECE291 library functions.</LI>
+
+<LI>
+As with previous MPs, use a text editor to modify the program. As given,
+the program uses LIBMP3 routines to implement all functionality. To receive
+full credit for the assignment, you will need to implement each of the
+subroutines described above with your own code.</LI>
+
+<LI>
+As with previous MPs, use CodeView (<TT>CV</TT>) to debug and test your
+program. Because you only receive credit for procedures that function completely
+as specified, it is best to debug each routine individually.</LI>
+
+<LI>
+By modifying a few comments, you can mix and match usage of your own code
+and Library routines. You may notice that the LIBMP3 routines contain extraneous
+and difficult-to-read code. They are not meant to be unassembled!</LI>
+</UL>
+
+<H2>
+Final Steps</H2>
+
+<OL>
+<LI>
+Print a copy of the <A HREF="mp3grade.html">MP3 grading sheet</A>.</LI>
+
+<LI>
+Demonstrate MP3.EXE to a TA or to the instructor.</LI>
+
+<UL>
+<LI>
+Be prepared to answer questions about any aspect of the operation of your
+program. The TAs will not accept an MP if you cannot fully explain all
+operations of your code.</LI>
+</UL>
+
+<LI>
+Handin in your program by running:</LI>
+
+<BR><TT>A:\Handin </TT><I>YourWindowsLogin</I>
+<LI>
+Print <FONT COLOR="#FF0000">MP3.ASM</FONT></LI>
+
+<BR>Staple the MP3 grading sheet to the front of your MP3.ASM file and
+give both to the same TA that approved your demonstration.</OL>
+
+<HR WIDTH="100%">
+<H2>
+MP3.ASM (program framework)</H2>
+Study the given program framework carefully.&nbsp; There are many hints
+in the given source code.
+
+<P><FONT SIZE=-1><xmp>
+        PAGE 75, 132
+        TITLE   MP3:15-Puzzle   Your_Name_Here          Date
+
+COMMENT *
+        The 15-Puzzle
+
+        ECE291: Machine Problem 3
+        Spring 1998 / Lockwood
+        Guest MP Author: Daniel Restelli
+        University of Illinois,
+        Dept. of Electrical & Computer Engineering
+
+        Ver 1.0
+        *
+
+; =================== External Library Procedures =======================
+
+        ; LIB291 Routines -- Use these for free
+          EXTRN DOSXIT:NEAR
+          EXTRN RSAVE:NEAR
+          EXTRN RREST:NEAR
+          EXTRN KBDIN:NEAR
+          EXTRN BINASC:NEAR
+
+          EXTRN MP3XIT:NEAR
+
+        ; LIBMP3 routines -- Comment out and replace with your own code!
+          EXTRN MouseControl:NEAR
+          EXTRN ResetBoard:NEAR
+          EXTRN Shuffle:NEAR
+          EXTRN MoveHole:NEAR
+          EXTRN DrawBoard:NEAR
+          EXTRN UpdateScreen:NEAR
+          EXTRN Delay:NEAR
+          EXTRN Random:NEAR
+          EXTRN AutoSolve:NEAR
+          EXTRN DrawTile:NEAR
+          EXTRN CheckMove:NEAR
+
+
+; ============================ Stack Segment ============================
+
+stkseg    segment stack
+          db   128 dup ('STACK   ')
+stkseg    ends
+
+; ============================ Program Data =============================
+
+CSEG      segment public 'CODE'
+          assume  cs:CSEG, ds:CSEG, ss:stkseg, es:nothing
+
+; ============================= Variables ===============================
+
+TEXTVIDSEG EQU  0b800h
+
+
+; == Use these constants in your code, if you change them,
+; == your code will not work properly with the library code
+
+BOARDSTART     EQU 980        ; Starting offset of the playing board
+TILEWIDTH      EQU 10         ; Width of tiles
+TILEHEIGHT     EQU 9          ; Height of tiles
+BOARDDIM       EQU 4          ; Dimension of board (4x4)
+
+SHUFFAMOUNT    EQU 200        ; When shuffling board, how many moves to make
+
+ButtonWidth    EQU 16         ; The width of the control panel buttons
+
+MAXDELAY       EQU 20
+MINDELAY       EQU 1
+
+; == These are the values corresponding to the different buttons
+TileClicked    EQU 0          ; A tile was clicked
+ShuffleClk     EQU 1          ; The Shuffle button was clicked
+SolveClk       EQU 2          ; The Solve button was clicked
+SolveOnceClk   EQU 3          ; The Solve Once button was clicked
+DelayUpClk     EQU 4          ; The > Delay button was clicked
+DelayDownClk   EQU 5          ; The < Delay button was clicked
+QuitClk        EQU 6          ; The Quit button was clicked
+ResetClk       EQU 7          ; The Reset button was clicked
+
+; == These are the starting offsets of the different buttons
+ShuffleLoc     EQU 2034
+SolveLoc       EQU 2514
+SolveOnceLoc   EQU 2994
+DelayUpLoc     EQU 3480
+DelayDownLoc   EQU 3474
+QuitLoc        EQU 4274
+ResetLoc       EQU 1554
+
+PUBLIC Board, HolePtr, randval, delayc, Moves, MovesPushed
+
+Board     db   01,02,03,04    ; This simple array keeps track of the state
+          db   05,06,07,08    ; of the board
+          db   09,10,11,12
+          db   13,14,15,00
+HolePtr   dw   15             ; The location of the hole
+
+
+; == This is a lookup table of the starting offsets of each tile
+; == location in the board.  
+
+BoardLoc  dw   BOARDSTART+0*160*TILEHEIGHT+0*2*TILEWIDTH
+          dw   BOARDSTART+0*160*TILEHEIGHT+1*2*TILEWIDTH
+          dw   BOARDSTART+0*160*TILEHEIGHT+2*2*TILEWIDTH
+          dw   BOARDSTART+0*160*TILEHEIGHT+3*2*TILEWIDTH
+          dw   BOARDSTART+1*160*TILEHEIGHT+0*2*TILEWIDTH
+          dw   BOARDSTART+1*160*TILEHEIGHT+1*2*TILEWIDTH
+          dw   BOARDSTART+1*160*TILEHEIGHT+2*2*TILEWIDTH
+          dw   BOARDSTART+1*160*TILEHEIGHT+3*2*TILEWIDTH
+          dw   BOARDSTART+2*160*TILEHEIGHT+0*2*TILEWIDTH
+          dw   BOARDSTART+2*160*TILEHEIGHT+1*2*TILEWIDTH
+          dw   BOARDSTART+2*160*TILEHEIGHT+2*2*TILEWIDTH
+          dw   BOARDSTART+2*160*TILEHEIGHT+3*2*TILEWIDTH
+          dw   BOARDSTART+3*160*TILEHEIGHT+0*2*TILEWIDTH
+          dw   BOARDSTART+3*160*TILEHEIGHT+1*2*TILEWIDTH
+          dw   BOARDSTART+3*160*TILEHEIGHT+2*2*TILEWIDTH
+          dw   BOARDSTART+3*160*TILEHEIGHT+3*2*TILEWIDTH
+
+; == How might you use these tables to simplify your code?
+SlideDir  dw   -160, 2, 160, -2
+SlideLen  dw   TILEHEIGHT, TILEWIDTH, TILEHEIGHT, TILEWIDTH
+PointDir  dw   -4, 1, 4, -1
+
+
+randval        dw   3         ; random # generator seed
+delayc         db   3         ; delay constant
+Moves          dw   0         ; # of moves made
+MovesPushed    dw   0         ; # of moves currently on the stack
+                              
+
+; ========================== Your Subroutines ==========================
+
+; Uncomment and add your own code here
+
+
+;MouseControl PROC NEAR
+;
+;               RET
+;MouseControl ENDP
+
+
+;ResetBoard PROC NEAR
+;
+;               RET
+;ResetBoard ENDP
+
+
+;Shuffle PROC NEAR
+;
+;               RET
+;Shuffle ENDP
+
+
+;MoveHole PROC NEAR
+;
+;               RET
+;MoveHole ENDP
+
+
+;DrawBoard PROC NEAR
+;
+;               RET
+;DrawBoard ENDP
+
+
+;UpdateScreen PROC NEAR
+;
+;               RET
+;UpdateScreen ENDP
+
+
+;Delay PROC NEAR
+;
+;               RET
+;Delay ENDP
+
+
+;Random PROC NEAR
+;
+;               RET
+;random  endp
+
+
+;AutoSolve PROC NEAR
+;
+;               RET
+;AutoSolve ENDP
+
+
+;DrawTile Proc NEAR
+;
+;               RET
+;DrawTile ENDP
+
+
+;CheckMove PROC NEAR
+;
+;               RET
+;CheckMove ENDP
+
+
+
+
+
+; == Main ================================================================
+
+MAIN Proc FAR
+
+; Initialize DS register
+          MOV  AX, CSEG
+          MOV  DS, AX
+
+; Put display into 80x50 text mode
+          MOV  AX, 1202h                ; Sets to 400 line scan mode
+          MOV  BL, 30h
+          int  10h
+          MOV  AX, 3                    ; Sets to 8x8 font
+          INT  10h
+          MOV  AX, 1112h                ; Enter text mode
+          MOV  BL, 0
+          INT  10h
+
+; Initialize the mouse hardware, Function 0000h
+          MOV  AX, 0000h
+          INT  33h
+; Display the mouse cursor, Function 0001h
+          MOV  AX, 0001h
+          INT  33h
+
+; The Main Program Code
+          CALL DrawBoard
+          CALL UpdateScreen
+
+MainLoop:
+          CALL MouseControl
+
+
+          CMP  DX, TileClicked
+          JNE  @F
+               CALL CheckMove
+               JMP  MainLoop
+@@:       CMP  DX, ResetClk
+          JNE  @F
+               CALL ResetBoard
+               JMP  MainLoop
+@@:       CMP  DX, ShuffleClk
+          JNE  @F
+               CALL ResetBoard
+               CALL Shuffle
+               JMP  MainLoop
+@@:       CMP  DX, SolveClk
+          JNE  @F
+               MOV  AX, 0
+               CALL Autosolve
+               JMP  MainLoop
+@@:       CMP  DX,  SolveOnceClk
+          JNE  @F
+               MOV  AX, 1
+               CALL AutoSolve
+               JMP  MainLoop
+@@:       CMP  DX,  DelayUpClk
+          JNE @F
+               CMP  DelayC, MAXDELAY
+               JNL  MainLoop
+               INC  DelayC
+               CALL UpdateScreen
+               JMP  MainLoop
+@@:       CMP  DX, DelayDownClk
+          JNE  @F
+               CMP  DelayC, MINDELAY
+               JNG  MainLoop
+               DEC  DelayC
+               CALL UpdateScreen
+               JMP  MainLoop
+@@:       CMP  DX, QuitClk
+          JNE  MainLoop
+
+
+; Put display into 80x50 text mode (to reset the screen)
+EndIt:    MOV  AX, 1202h
+          MOV  BL, 30h
+          int  10h
+          MOV  AX, 3
+          INT  10h
+          MOV  AX, 1112h
+          MOV  BL, 0
+          INT  10h
+
+          CALL MP3Xit
+MAIN ENDP
+
+; ===================== End of Proceures & Data ==========================
+
+CSEG    ends
+        end    main </FONT></xmp>
+</BODY>
+</HTML>

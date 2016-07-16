@@ -1,0 +1,98 @@
+
+------------- MP2 Menu -------------
+  Enter:  Operand(1)    Operand(2)
+          (S)how Operands
+
+  Logical Operations:
+          (>) Greater Than
+          (=) Is Equal
+
+  Mathematical Operations:
+          (+) Addition
+          (-) Subtraction
+
+  Redisplay (M)enu
+
+------ [ESC] or (Q)uit = exit ------
+
+>S
+Operand 1:  0
+Operand 2:  0
+>=
+The operands are equal 
+>>
+Operand1 is not greater than Operand2 
+>-
+Subtraction Result:  0
+>1
+Operand: -543
+>+
+Addition Result: -543
+>>
+Operand1 is not greater than Operand2 
+>2
+Operand: -543
+>=
+The operands are equal 
+>+
+Addition Result: -1086
+>1
+Operand: 799
+>2
+Operand: 946
+>+
+Addition Result:  1745
+>-
+Subtraction Result: -147
+>1
+Operand: 955
+>+
+Addition Result:  1901
+>-
+Subtraction Result:  9
+>>
+Operand1 is greater than Operand2 
+>1
+Operand: -2
+>2
+Operand: -9
+>+
+Addition Result: -11
+>-
+Subtraction Result:  7
+>1
+Operand: 872346887213879983487334387878899834378
+>2
+Operand: 893423487787324429898984598435788734877
+>s
+Operand 1:  872346887213879983487334387878899834378
+Operand 2:  893423487787324429898984598435788734877
+>+
+Addition Result:  1765770375001204413386318986314688569255
+>-
+Subtraction Result: -21076600573444446411650210556888900499
+>>
+Operand1 is not greater than Operand2 
+>1
+Operand: 97102
+>2
+Operand: 8248
+>S
+Operand 1:  97102
+Operand 2:  8248
+>+
+Addition Result:  105350
+>-
+Subtraction Result:  88854
+>=
+The operands are not equal 
+>Q
+LIBMP2 * ver 1.0 * Calls:
+-LibGetOperand
+-LibShowString
+-LibShowOperands
+-LibCompare
+-LibLogicOperations
+-LibAddCore
+-LibAddOperation
+-LibSubtractOperation

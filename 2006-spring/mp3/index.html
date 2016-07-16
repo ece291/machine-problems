@@ -1,0 +1,687 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>ECE 390 Machine Problem 3</title>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252"><link href="index_files/ece390.css" type="text/css" rel="stylesheet"></head>
+
+<!--#include file="headvb.asp" -->
+
+  <tr>
+    <td valign="top">
+      <h1 align="center">Machine Problem 3: Forest Racer</h1>
+      <div align="center">
+      <center>
+      <table border="1" width="513">
+        <tbody>
+        <tr>
+          <td align="right" width="64">Assigned</td>
+          <td width="433">Monday, February 28, 2006</td></tr>
+        <tr>
+          <td align="right" width="64">Due Date</td>
+          <td width="433">Wednesday, March 15, 2006</td></tr>
+        <tr>
+          	<td align="right" width="64">Purpose</td>
+  			<td roman="" width="433">To understand interrupt-driven I/O, control of the video display, arrays, and queues.</td>
+		</tr>
+        <tr>
+          <td align="right" width="64">Points</td>
+          <td width="433">70</td>
+		 </tr>
+		 </tbody>
+	  </table>
+	  </center>
+	  </div>
+			<p>In this MP, you will write a program that implements a vertically scrolling driving game where the object
+			is to navigate your car along the various pathways towards the finish line.</p>
+			
+            <p>Reading: Lab Notes -- Libraries (Chapter 9), Arrays (Section 7.1),Queues (Section 7.2), Keyboard (Section 10.1), Graphics (Chapter 11).</p>
+            <br>
+            <font color="#FF0000">(03/06/2006)</font> The ScrollMap subroutine mistakenly listed <tt>Status</tt> as an output. This has been corrected.<br>
+            <font color="#FF0000"><b>(03/06/2006)</b></font> <b>Important</b>: It has been brought to our attention that occasionally mp3 will give an error before starting and fail to load. This occurs fairly infrequently, however before trying to figure out what it wrong with your MP if this happens, do a <tt>make clean</tt> and re-make your MP. This seems to solve the problem 99% of the time. Clearing the screen (<tt>cls</tt> in the command window) before running the MP (after re-making) also seems to help.<br>
+            <font color="#FF0000">(03/06/2006)</font> A new version of the library is available which slows the game down a little. Use this if you want the map and car to move slower. <a href="libmp3-slower.zip">libmp3-slower.zip</a> (Note: We will use this to test your program)<br>
+            <br>
+            *<font color="#FF0000">(03/01/2006)</font> New Map Added! <a href="channels.txt">channels.txt</a>. Excel Sheet: <a href="channels.xls">channels.xls</a> (Right click and select save as)<br>          
+            *<font color="#FF0000">(03/06/2006)</font> New Map Added! <a href="short.txt">short.txt</a>. Excel Sheet: <a href="short.xls">short.xls</a> (Right click and select save as). Use this one for debugging to avoid the "cannot load into memory" error in TD.<br>          
+			<h2>Screen Dump</h2>
+			<p>Below is a screenshot of an example run of the program.  You can see 
+			the number of lives left in the upper right corner, represented by red hearts, as well as the car and various types
+			of terrain. 
+			</p>
+			<center>
+				<img src="mp3screen.png" width="652" height="331">
+				<br><br>
+				<img src="mp3screen2.png" width="652" height="331">			
+			</center>
+      <h2>Program Specification</h2>
+			<p>The car drives along the map following the path represented by green squares. If the car crashes into a tree or water a life is lost and the game is paused until
+			the player respawns. At this point, the car is placed back on the correct path towards the goal.  The game responds to the following key presses:<br>
+			<ul>
+				<li><b>Left Arrow</b>: Move the car left by one square</li>
+				<li><b>Right Arrow</b>: Move the car right by one square</li>
+				<li><b>P</b>: Pause the game</li>
+				<li><b>Spacebar</b>: Respawn the car on the correct path</li>
+				<li><b>Escape</b>: Exit the game</li>
+			</ul>
+			When an arrow key is release, the car should stop moving until another arrow key is pressed. The car may only respawn if the player has crashed into an obstacle,
+			and if the player has more than 0 lives left.
+			<br><br>
+	  <h2>The Game Map</h2>
+	  		<p>The entire map for the game is contained in an array called <i>GameMap</i> whose size can be up to a 255x80 (It will always have 80 columns). The number
+			of rows in the array is specified by the <i>MapLength</i> variable. Each row in <i>GameMap</i> represents one row on the display. Each value in <i>GameMap</i> 
+			is one word in length, and contains the color and character specification (see Section 11.1.2 of the lab manual) for a given pixel on the screen. There are four defined values:<br>
+			<br>
+		  	<table>
+				<tbody>
+					<tr>
+						<td><b>SPAWNBLOCK</b></td>
+						<td>6ADBh</td>
+						<td>This block marks the respawn position for the row. There will be exactly one SPAWNBLOCK per row in <i>GameMap</i></td>
+					</tr>
+					<tr>
+						<td><b>WATER</b></td>
+						<td>69B0h</td>
+						<td>Block represents a water square</td>
+					</tr>
+					<tr>
+						<td><b>TREE</b></td>
+						<td>6A05H</td>
+						<td>Block represents a tree</td>
+					</tr>
+					<tr>
+						<td><b>GROUND</b></td>
+						<td>6AB0h</td>
+						<td>Block represents a driveable part of the map</td>
+					</tr>
+					<tr>
+						<td><b>FINISH</b></td>
+						<td>6ADFh</td>
+						<td>Block represents the finish line</td>
+					</tr>
+				</tbody>
+			</table>
+			
+			</p>
+			<p>The five constants in bold are defined by EQU's at the top of <i>mp3asm</i>
+			so you can and should use these mnemonics rather than the hex values. </p>
+
+			<h2>Program Organization</h2>
+			<p>The program uses 80x25 text mode for the display.</p>
+			<p>The map is drawn on rows 1-23 (zero-indexed) and the 0th and 24th rows should be black lines.</p>
+			
+			<p>The program has the following global variables: </p>
+			<pre>
+SavKOff     RESW    1                       ; Keyboard interrupt vector
+SavKSeg     RESW    1
+SavTOff     RESW    1                       ; Timer interrupt vector
+SavTSeg     RESW    1
+
+CarState    DB      0                       ; Current state of the car-- 1 = Move Left, -1 = Move Right,
+                                            ;  0 = Stopped, -2 = Dead
+CarCol      DB      40                      ; Which column your car is in
+
+CarTicks    DB      0                       ; Used to determine frequency of car movement
+Scroll      DB      0                       ; Used to determine frequency of scrolling
+CurrentRow  DB      24                      ; Current row in GameMap
+Status      DB      1                       ; Current game status--0 = Paused, 1 = Playing
+                                            ; 2 = Won, -1 = Lost
+Lives       DB      3                       ; # of lives left
+
+WinString   DB      'You Win!!!','$'        ;If you win
+LoseString  DB      'You Lose :(','$'       ;If you lose
+			</pre>
+			<ul>
+				<li><i>SavKOff</i> and <i>SavKSeg</i> are the offset and segment words in the original keyboard interrupt vector (type 9). Similarly <i>SavTOff</i> and <i>SavTSeg</i> are the offset 
+				and segment words in the original user timer interrupt vector (type 1Ch).</li>
+				<li><i>CarState</i> specifies the current status of your car, and can be one of the following four values: 1 = Move Left, +1 = Move Right, 0 = Stopped (not moving left or right), -2 = Dead.</li>
+				<li><i>Status</i> specifies the current game status and can be one of the following 4 values: 0 = Paused, 1 = Playing, 2 = Won (reached the finish line), -1 = Lost (all 3 lives gone)</li>
+				<li><i>CarTicks</i> counts the number of ticks since the car last moved. When enough ticks have elapsed, the car is moved in the direction specified by <i>CarState</i>. Similarly, <i>Scroll</i> 
+				counts the number of ticks since the map last scrolled down. When enough ticks have elapsed, the map is scrolled down by one row.</li>
+				<li><i>CarCol</i> keeps track of which column in the display the car is on. The car is always on the bottom (23rd) row.</li>
+				<li><i>CurrentRow</i> keeps track of which row in the <i>GameMap</i> array is going to be at the top (row 1) of the screen when ScrollMap is called. When the game starts this is set to 24, 
+				meaning the next row to draw when the map scrolls down is row 24 from <i>GameMap</i></li>
+				<li><i>Lives</i> indicates how many lives the player has left. A life is lost when the car hits a tree or water.</li>
+			</ul>
+			<br>
+			The program uses a circular queues to store keyboard scan codes.<br>
+			<pre>
+QBeg        EQU     0                       ; Beginning offset of queue area
+QCap        EQU     2                       ; Capacity of of queue
+QFront      EQU     4                       ; Index of front item
+QRear       EQU     6                       ; Index of next place to put rear item
+QData       EQU     8                       ; BYTE to input or output
+
+KQList      RESB    0                       ; Parameter list for Keyboard Queue
+KQBeg       DW      KQArea                  ; Offset of Keyboard Queue area
+KQCap       DW      10
+KQFront     DW      0
+KQRear      DW      0
+KQData      RESB    1
+KQArea      RESB    10
+			</pre>
+			<p>The queue is specified by a parameter list. The first word of the list specifies the offset of the first byte of the queue area, where data are stored. 
+			The second word is the capacity of the queue c. The third word of the parameter list is the index of the byte at the front of the queue, 
+			and the fourth word is the index of the byte that will be new rear of the queue. These indices run from 0 to the c-1. The byte at the front of the queue 
+			is the next to be dequeued. If the front and rear indices are equal, then the queue is empty. If the the rear index is either one less than the front index, 
+			or one less than the front index plus c, then the queue is full. (So the maximum number of bytes that can be stored in the queue is actually c-1.) Enq 
+			uses the Data byte on the parameter list for the item to be enqueued, and Deq delivers the dequeued item into this byte.</p>
+			
+			<p>Below is a detailed description of all the functions you are responsible for 
+			writing. Document each subroutine with a header. In the Lab Notes, standards 
+			for headers appear on page 4, and examples of subroutines on pages 28-33 and 
+			84-88.</p>
+			<p><b>You may use libDrawGameEnd WITHOUT PENALTY</b></p>
+			<table border="1">
+				<tbody>
+					<tr valign="top">
+						<td><b><font size="+1">Init</font></b></td>
+						<td>
+							<ul>
+								<li>Initializes interrupt vectors and the video display. Draws the starting portion of the map.</li>
+								<li>Inputs: None</li>
+								<li>Outputs: 
+									<ul>
+										<li><tt>SavTOff, SavTSeg, SavKOff, SavKSeg</tt></li>
+									</ul>
+								</li>
+								<li>Calls: DrawStatus</li>
+								<li>Init saves the old user timer and Keyboard interrupt vectors and changes them to point to the interrupt service routines 
+                                TimerInt and KbdInt (TimerInt is provided, you will need to write KbdInt). Init uses <tt>INT 10h</tt> to select 80x25 text video mode and to clear the display area (with black at every location). 
+								Init draws the first 23 rows of <tt>GameMap</tt> to the screen. Init draws the number of lives in the upper right corner of the 
+								screen (right aligned), and hides the cursor. Init sets <tt>Scroll</tt> and <tt>CarTicks</tt> to 0. </li>
+							</ul>
+						</td>
+					</tr>
+					<tr valign="top">
+						<td><b><font size="+1">KbdInt</font></b></td>
+						<td>
+							<ul>
+								<li>Interrupt service routine for keyboard</li>
+								<li>Inputs: None</li>
+								<li>Outputs: None</li>
+								<li>Calls: Enq</li>
+								<li>KbdInt enqueues the scan code from the keyboard onto the Keyboard Queue with a call to <tt>Enq</tt>. Most of this routine 
+								is specified on page 93 of the ECE 390 Lab Notes.</li>
+							</ul>
+						</td>
+					</tr>
+					<tr valign="top">
+						<td><b><font size="+1">ReadKeyboard</font></b></td>
+						<td>
+							<ul>
+								<li>Processes one scan code byte</li>
+								<li>Inputs: None</li>
+								<li>Outputs: 
+									<ul>
+										<li><tt>CarState, Status</tt> </li>
+									</ul>
+								</li>
+								<li>Calls: FindRespawn, Deq, mp3xit</li>
+								<li>ReadKeyboard first checks that the Keyboard Queue is nonempty. If so, then ReadKeyboard dequeues the byte at the front of the Keyboard Queue.</li>
+								<li>If the byte is the scan code for Spacebar, <tt>CarState</tt> = DEAD, and <tt>Lives</tt> > 0, ReadKeyboard finds the respawn point for the row
+								the car died on and updates <tt>CarCol</tt>, <tt>CarState</tt>, and <tt>Status</tt>.</li>								
+								<li>If the byte is the scan code for the ESC key, then ReadKeyboard restores the old interrupt vectors and exits to DOS.</li>
+								<li>If the byte is the scan code for the Left or Right Arrow key or a release of the arrow keys, then ReadKeyboard sets <tt>CarState</tt> accordingly.</li>
+								<li>If the byte is the scan code for the P key, then ReadKeyboard toggles the pause state of the game (in <tt>Status</tt>).</li>
+							</ul>
+						</td>
+					</tr>
+					<tr valign="top">
+						<td><b><font size="+1">UpdateMoves</font></b></td>
+						<td>
+							<ul>
+								<li>Updates the movement of your car on the screen</li>
+								<li>Inputs: 
+									<ul>
+										<li><tt>Status, CarState, CarTicks, CarCol, CurrentRow</tt></li>
+									</ul>
+								</li>
+								<li>Outputs: 
+									<ul>
+										<li><tt>CarCol, Status</tt> </li>
+									</ul>
+								</li>
+								<li>Calls: DrawGameEnd</li>
+								<li>UpdateMoves exits if either the game is currently paused or <tt>CarTicks</tt> indicates that fewer than 2 (the constant <tt>CARSPEED</tt>) ticks have elapsed.
+								Otherwise, UpdateMoves sets <tt>CarTicks</tt> = 0, then determines the new column for the car (<tt>CarCol</tt>).</li>
+								<li>After determining the new value of <tt>CarCol</tt>, UpdateMoves should draw the car in its new column and replace the old square with its value from <tt>GameMap</tt>.</li>
+								<li>If the square the car has just moved to is the finish line (the constant <tt>FINISH</tt>), UpdateMoves should change <tt>Status</tt> and call DrawGameEnd appropriately.</li>
+							</ul>
+						</td>
+					</tr>
+					<tr valign="top">
+						<td><b><font size="+1">ScrollMap</font></b></td>
+						<td>
+							<ul>
+								<li>Scrolls the map vertically down one line</li>
+								<li>Inputs: 
+									<ul>
+										<li><tt>Status, Scroll, CarCol, CurrentRow</tt></li>
+									</ul>
+								</li>
+								<li>Outputs: 
+									<ul>
+										<li><tt>Scroll, CurrentRow</tt> </li>
+									</ul>
+								</li>
+								<li>Calls: None</li>
+								<li>ScrollMap exits if either the game is currently paused or <tt>Scroll</tt> indicates that fewer than 10 (the constant <tt>GAMESPEED</tt>) ticks have elapsed.
+								Otherwise, ScrollMap sets <tt>Scroll</tt> = 0, and scrolls the map vertically down by 1 row.</li>
+								<li>When the value of a block is found to be 6ADBh (constant <tt>SPAWNBLOCK</tt>) it should be drawn as 6AB0h (constant <tt>GROUND</tt>). The value 6ADBh is a special
+								value used in the FindRespawn function but it should never be drawn to the screen.</li>
+								<li>Note: "Scrolling the map vertically down by 1 row" means that if the screen previously displayed rows 10-33 of <tt>GameMap</tt>, after this function returns the
+								screen should display rows 11-34 of <tt>GameMap</tt>.</li>
+							</ul>
+						</td>
+					</tr>
+					<tr valign="top">
+						<td><b><font size="+1">CollisionDetect</font></b></td>
+						<td>
+							<ul>
+								<li>Determine if the car has collided with an object, and if so perform the appropriate actions.</li>
+								<li>Inputs: 
+									<ul>
+										<li><tt>Status, CarCol, CurrentRow</tt></li>
+									</ul>
+								</li>
+								<li>Outputs: 
+									<ul>
+										<li><tt>Status, Lives, CarState</tt> </li>
+									</ul>
+								</li>
+								<li>Calls: DrawStatus, DrawGameEnd</li>
+								<li>CollisionDetect exits if the game is currently paused. Otherwise, CollisionDetect checks to see if the current square occupied by the car contains an obstacle 
+								(<tt>TREE</tt> or <tt>WATER</tt> constants).</li>
+								<li>If a collision occurred, <tt>Lives</tt> should be decremented and <tt>Status</tt> and <tt>CarState</tt> should be modified appropriately.</li>
+								<li>CollisionDetect should CALL DrawStatus to update the top status bar (displaying lives) if a collision was detected.</li>
+								<li>If a collision is detected and <tt>Lives</tt> becomes 0, <tt>Status</tt> should be updated appropriately and DrawGameEnd should be CALLed to inform the player
+								that the game has ended.</li>
+							</ul>
+						</td>
+					</tr>
+					<tr valign="top">
+						<td><b><font size="+1">DrawStatus</font></b></td>
+						<td>
+							<ul>
+								<li>Draw the game status bar to the top row of the display</li>
+								<li>Inputs: 
+									<ul>
+										<li><tt>Lives</tt></li>
+									</ul>
+								</li>
+								<li>Outputs: None</li>
+								<li>Calls: None</li>
+								<li>DrawStatus draws red hearts (constants <tt>HEART</tt> and <tt>RED</tt>) equal to the number of <tt>Lives</tt> to the upper right corner of the screen, right justified.</li>
+                                <li>Hint: Erase the last <tt>MAXLIVES</tt> columns from the top row with black boxes (constants <tt>BLOCK</tt> and <tt>BLACK</tt>) before drawing the correct number of hearts. Why? Because if you don't do this, when you lose a life it will still show up on the screen unless you erase it.</li>
+							</ul>
+						</td>
+					</tr>
+					<tr valign="top">
+						<td><b><font size="+1">FindRespawn</font></b></td>
+						<td>
+							<ul>
+								<li>Scans a row in <tt>GameMap</tt> to find the respawn column</li>
+								<li>Inputs: 
+									<ul>
+										<li><tt>GameMap, CurrentRow</tt></li>
+									</ul>
+								</li>
+								<li>Outputs:
+									<ul>
+										<li><tt>(DL)</tt> - The column containing the respawn block</li>
+									</ul>
+								</li>
+								<li>Calls: NONE</li>
+								<li>FindRespawn scans the row in <tt>GameMap</tt> which your car crashed on for the block whose value is 6ADBh (constant <tt>SPAWNBLOCK</tt>). It then returns 
+								this column number in <tt>DL</tt>.</li>
+								<li>It is guaranteed that there will be <i>exactly</i> one <tt>SPAWNBLOCK</tt> per row.</li>
+							</ul>
+						</td>
+					</tr>
+					<tr valign="top">
+						<td><b><font size="+1">Enq</font></b></td>
+						<td>
+							<ul>
+								<li>Enqueues a byte on a circular queue</li>
+								<li>Inputs: 
+									<ul>
+										<li><tt>(BX)</tt>: offset of queue list structure</li>
+										<li><tt>[BX+QData]</tt>: byte to enqueue</li>
+									</ul>
+								</li>
+								<li>Outputs: None</li>
+								<li>Calls: None</li>
+								<li>If the queue is not full, then Enq enqueues the byte at <tt>[BX+QData]</tt> onto the rear of the circular queue. Then Enq updates <tt>[BX+QRear]</tt>.</li>
+							</ul>
+						</td>
+					</tr>
+					<tr valign="top">
+						<td><b><font size="+1">Deq</font></b></td>
+						<td>
+							<ul>
+								<li>Dequeues a byte on a circular queue</li>
+								<li>Inputs: 
+									<ul>
+										<li><tt>(BX)</tt>: offset of queue list structure</li>
+									</ul>
+								</li>
+								<li>Outputs: 
+									<ul>
+										<li><tt>[BX+QData]</tt>: byte dequeued</li>
+									</ul>
+								</li>
+								<li>Calls: None</li>
+								<li>If the queue is not empty, then Deq dequeues the byte from the front of the queue, places the byte in <tt>[BX+QData]</tt>, and updates <tt>[BX+QFront]</tt>.</li>
+							</ul>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+
+	<h2>Friendly Advice</h2>
+	<ul>
+        <li>The <tt>libmp3.lib</tt> file contains executable library subroutines for each of the routines that you need to implement. The library 
+		subroutines enable you to run the program and understand how it works before you implement it. You can test your program with any combination of 
+        your own code and library subroutines. You will receive credit only for the subroutines that you implement yourself.</li>
+		<li>You may define new memory variables as needed. Variables associated with a subroutine may be declared between the header and the first 
+        instruction of the subroutine. </li>
+		<li>Each subroutine should save and restore any registers that it uses, except for registers that deliver subroutine outputs. The caller may use 
+        registers without outputs and expect them to remain unchanged. </li>
+		<li>Be careful when transmitting subroutine outputs via registers. For example, if you use POPA at the end of a subroutine, avoid overwriting a
+		register that delivers an output.</li>
+	    <li>You may design and implement additional subroutines. For example, you could write a subroutine that places a character on the screen by writing 
+		to the video memory directly (see page 110 in the Lab Notes). You could write a subroutine that reads from the video memory. Be sure to modify the 
+		Calls lines in the headers of the subroutines that call these additional subroutines.</li>
+		<li>Remember that the QData is shared among several subroutines including an interrupt. What does this mean?</li>
+		<li>Monitor the course WebBoard for clarifications and help.</li>
+		<li>START EARLY!</li>
+	</ul>
+
+	<p>Files for MP3 are on the <tt>V:</tt> drive in the directory <tt>V:\ece390\mp3</tt>. In this directory are the program framework <tt>mp2.asm</tt> 
+	and a running version of the program <tt>mp2lab.exe</tt>. Lab versions of subroutines are in <tt>libmp3.lib</tt>, which contains all subroutines of 
+	LIB291 plus versions of the MP3 subroutines (libMain for Main, etc). You will use mp3xit instead of dosxit. You should start by copying these files 
+	to your home directory with the following command: <br><tt>xcopy /s V:\ece390\mp3 W:\mp3</tt><br>You may download the files from the server as 
+	<a href="mp3.zip">mp3.zip</a> </p>
+      
+				
+	<h2>Demonstration, Documentation, and Grading</h2>
+	<p>Demonstrate your program to an ECE 390 staff member.</p>
+	<p>As in MP2, keep an MP development log and write a cover memo, which 
+	should address the following questions: </p>
+	<ul>
+		<li>How much time did you spend on each subroutine, from planning and 
+		design through final debugging? </li>
+		<li>What kinds of defects (bugs) did you find during the development of the program? When did you discover these defects (during code review 
+		or during testing)? How did you find them? </li>
+		<li>What did you learn about design, coding, testing, and debugging in this MP?</li>
+		<li>What went well in your work on this MP? What did not? </li>
+		<li>What you would do differently for the next MP? </li>
+	</ul>
+	<p>After the demonstration, submit your program and cover memo. Your 
+	program will be graded according to the clarity of your design and the 
+	quality of your documentation.</p>
+	<p>Gradesheet:</p>
+	<table border="1" cellspacing="0" cellpadding="0">
+		<tbody>
+			<tr valign="top">
+				<td align="center" bgcolor="#000000"><font color="#FFFFFF">Function</font></td>
+				<td align="center" bgcolor="#000000"><font color="#FFFFFF">Points</font></td>
+			</tr>
+			<tr valign="top">
+				<td>Init&nbsp;</td>
+				<td align="center">11</td>
+			</tr>
+			<tr valign="top">
+				<td>KbdInt&nbsp;</td>
+				<td align="center">2</td>
+			</tr>
+			<tr valign="top">
+				<td>ReadKeyboard&nbsp;</td>
+				<td align="center">9</td>
+			</tr>
+			<tr valign="top">
+				<td>UpdateMoves&nbsp;</td>
+				<td align="center">10</td>
+			</tr>
+			<tr valign="top">
+				<td>ScrollMap&nbsp;</td>
+				<td align="center">10</td>
+			</tr>
+			<tr valign="top">
+				<td>CollisionDetect&nbsp;</td>
+				<td align="center">8</td>
+			</tr>
+			<tr valign="top">
+				<td>DrawStatus&nbsp;</td>
+				<td align="center">4</td>
+			</tr>
+			<tr valign="top">
+				<td>FindRespawn&nbsp;</td>
+				<td align="center">3</td>
+			</tr>
+			<tr valign="top">
+				<td>Enq&nbsp;</td>
+				<td align="center">3</td>
+			</tr>
+			<tr valign="top">
+				<td>Deq&nbsp;</td>
+				<td align="center">3</td>
+			</tr>
+			<tr valign="top">
+				<td>Documentation&nbsp;</td>
+				<td align="center">3</td>
+			</tr>
+			<tr valign="top">
+				<td>Cover Memo&nbsp;</td>
+				<td align="center">4</td>
+			</tr>
+		</tbody>
+	</table>
+      
+	<hr>
+	
+	<h2>mp3.asm (program framework)</h2>
+<pre>
+<font color="#804040">  1</font>  <font color="#ff0000">; MP3 - Forest Racer</font>
+<font color="#804040">  2</font>  <font color="#ff0000">; This program implements a vertically scrolling driving game</font>
+<font color="#804040">  3</font>  <font color="#ff0000">;</font>
+<font color="#804040">  4</font>  <font color="#ff0000">; Your name</font>
+<font color="#804040">  5</font>  <font color="#ff0000">; Date</font>
+<font color="#804040">  6</font>
+<font color="#804040">  7</font>         <font color="#804040">BITS</font>    <font color="#ff00ff">16</font>
+<font color="#804040">  8</font>
+<font color="#804040">  9</font>  <font color="#ff0000">;====== SECTION 1: Define constants =======================================</font>
+<font color="#804040"> 10</font>
+<font color="#804040"> 11</font>         <font color="#0000ff">KVEC</font>        <font color="#804040">EQU</font>     <font color="#ff00ff">0024h</font>           <font color="#ff0000">; Location of Keyboard Vector</font>
+<font color="#804040"> 12</font>         <font color="#0000ff">TVEC</font>        <font color="#804040">EQU</font>     <font color="#ff00ff">0070h</font>           <font color="#ff0000">; Location of User Timer Vector</font>
+<font color="#804040"> 13</font>         <font color="#0000ff">ESCSCAN</font>     <font color="#804040">EQU</font>     <font color="#ff00ff">1</font>               <font color="#ff0000">; Scan code for ESC key</font>
+<font color="#804040"> 14</font>         <font color="#0000ff">SPSCAN</font>      <font color="#804040">EQU</font>     <font color="#ff00ff">57</font>              <font color="#ff0000">; Scan code for spacebar</font>
+<font color="#804040"> 15</font>         <font color="#0000ff">LEFT</font>        <font color="#804040">EQU</font>     <font color="#ff00ff">75</font>              <font color="#ff0000">; Scan code for left arrow</font>
+<font color="#804040"> 16</font>         <font color="#0000ff">LEFT_UP</font>     <font color="#804040">EQU</font>     <font color="#ff00ff">0CBh</font>            <font color="#ff0000">; Scan code for left arrow release</font>
+<font color="#804040"> 17</font>         <font color="#0000ff">RIGHT</font>       <font color="#804040">EQU</font>     <font color="#ff00ff">77</font>              <font color="#ff0000">; Scan code for right arrow</font>
+<font color="#804040"> 18</font>         <font color="#0000ff">RIGHT_UP</font>    <font color="#804040">EQU</font>     <font color="#ff00ff">0CDh</font>            <font color="#ff0000">; Scan code for right arrow up</font>
+<font color="#804040"> 19</font>
+<font color="#804040"> 20</font>         <font color="#0000ff">CHAR_P</font>      <font color="#804040">EQU</font>     <font color="#ff00ff">25</font>              <font color="#ff0000">; Scan code for 'P'</font>
+<font color="#804040"> 21</font>         <font color="#0000ff">ROWS</font>        <font color="#804040">EQU</font>     <font color="#ff00ff">25</font>              <font color="#ff0000">; Number of rows in entire display</font>
+<font color="#804040"> 22</font>         <font color="#0000ff">COLS</font>        <font color="#804040">EQU</font>     <font color="#ff00ff">80</font>              <font color="#ff0000">; Number of columns in entire display</font>
+<font color="#804040"> 23</font>
+<font color="#804040"> 24</font>         <font color="#0000ff">MAXLIVES</font>    <font color="#804040">EQU</font>     <font color="#ff00ff">3</font>
+<font color="#804040"> 25</font>         <font color="#0000ff">GAMESPEED</font>   <font color="#804040">EQU</font>     <font color="#ff00ff">02</font>              <font color="#ff0000">; Number of ticks between scrolling</font>
+<font color="#804040"> 26</font>         <font color="#0000ff">CARSPEED</font>    <font color="#804040">EQU</font>     <font color="#ff00ff">1</font>               <font color="#ff0000">; Speed of the car</font>
+<font color="#804040"> 27</font>         <font color="#0000ff">WON</font>         <font color="#804040">EQU</font>     <font color="#ff00ff">2</font>               <font color="#ff0000">; The game has been won</font>
+<font color="#804040"> 28</font>         <font color="#0000ff">LOST</font>        <font color="#804040">EQU</font>     -<font color="#ff00ff">1</font>              <font color="#ff0000">; The game has been lost</font>
+<font color="#804040"> 29</font>         <font color="#0000ff">PLAYING</font>     <font color="#804040">EQU</font>     <font color="#ff00ff">1</font>               <font color="#ff0000">; The game is still being played</font>
+<font color="#804040"> 30</font>         <font color="#0000ff">PAUSED</font>      <font color="#804040">EQU</font>     <font color="#ff00ff">0</font>               <font color="#ff0000">; The game is paused</font>
+<font color="#804040"> 31</font>         <font color="#0000ff">DEAD</font>        <font color="#804040">EQU</font>     -<font color="#ff00ff">2</font>              <font color="#ff0000">; The car hit something</font>
+<font color="#804040"> 32</font>
+<font color="#804040"> 33</font>         <font color="#0000ff">NULL</font>        <font color="#804040">EQU</font>     <font color="#ff00ff">0</font>
+<font color="#804040"> 34</font>         <font color="#0000ff">SPAWNBLOCK</font>  <font color="#804040">EQU</font>     <font color="#ff00ff">6ADBh</font>           <font color="#ff0000">; The spawn block</font>
+<font color="#804040"> 35</font>         <font color="#0000ff">FINISH</font>      <font color="#804040">EQU</font>     <font color="#ff00ff">0DFh</font>            <font color="#ff0000">; The finish Line</font>
+<font color="#804040"> 36</font>         <font color="#0000ff">WATER</font>       <font color="#804040">EQU</font>     <font color="#ff00ff">69B0h</font>           <font color="#ff0000">; Water</font>
+<font color="#804040"> 37</font>         <font color="#0000ff">TREE</font>        <font color="#804040">EQU</font>     <font color="#ff00ff">6A05h</font>           <font color="#ff0000">; A tree</font>
+<font color="#804040"> 38</font>         <font color="#0000ff">GROUND</font>      <font color="#804040">EQU</font>     <font color="#ff00ff">6AB0h</font>          <font color="#ff0000">; The light block shape extended ASCII</font>
+<font color="#804040"> 39</font>         <font color="#0000ff">BLOCK</font>       <font color="#804040">EQU</font>     <font color="#ff00ff">0DBh</font>            <font color="#ff0000">; The block shape extended ASCII</font>
+<font color="#804040"> 40</font>         <font color="#0000ff">HEART</font>       <font color="#804040">EQU</font>     <font color="#ff00ff">03h</font>             <font color="#ff0000">; The heart shape</font>
+<font color="#804040"> 41</font>         <font color="#0000ff">CAR</font>         <font color="#804040">EQU</font>     <font color="#ff00ff">06h</font>             <font color="#ff0000">; Your Car (Spade)</font>
+<font color="#804040"> 42</font>         <font color="#0000ff">BROWN</font>       <font color="#804040">EQU</font>     <font color="#ff00ff">06h</font>             <font color="#ff0000">; Color attribute for brown</font>
+<font color="#804040"> 43</font>         <font color="#0000ff">WHITE</font>       <font color="#804040">EQU</font>     <font color="#ff00ff">0Fh</font>             <font color="#ff0000">; Color attribute for white</font>
+<font color="#804040"> 44</font>         <font color="#0000ff">BLACK</font>       <font color="#804040">EQU</font>     <font color="#ff00ff">00h</font>             <font color="#ff0000">; Color attribute for black</font>
+<font color="#804040"> 45</font>         <font color="#0000ff">RED</font>         <font color="#804040">EQU</font>     <font color="#ff00ff">0Ch</font>             <font color="#ff0000">; Color attribute for red</font>
+<font color="#804040"> 46</font>
+<font color="#804040"> 47</font>  <font color="#ff0000">;====== SECTION 2: Declare external procedures ============================</font>
+<font color="#804040"> 48</font>
+<font color="#804040"> 49</font>  <font color="#0000ff">EXTERN</font>  <font color="#0000ff">ascbin</font>, <font color="#0000ff">binasc</font>, <font color="#0000ff">kbdin</font>, <font color="#0000ff">dspout</font>, <font color="#0000ff">dspmsg</font>, <font color="#0000ff">dosxit</font>
+<font color="#804040"> 50</font>
+<font color="#804040"> 51</font>  <font color="#0000ff">GLOBAL</font> <font color="#0000ff">SavKOff</font>, <font color="#0000ff">SavKSeg</font>, <font color="#0000ff">SavTOff</font>, <font color="#0000ff">SavTSeg</font>
+<font color="#804040"> 52</font>  <font color="#0000ff">GLOBAL</font> <font color="#0000ff">KQList</font>, <font color="#0000ff">KQBeg</font>, <font color="#0000ff">KQCap</font>, <font color="#0000ff">KQFront</font>, <font color="#0000ff">KQRear</font>, <font color="#0000ff">KQData</font>, <font color="#0000ff">KQArea</font>
+<font color="#804040"> 53</font>  <font color="#0000ff">GLOBAL</font> <font color="#0000ff">CarState</font>, <font color="#0000ff">CarCol</font>, <font color="#0000ff">CarTicks</font>, <font color="#0000ff">Scroll</font>, <font color="#0000ff">CurrentRow</font>, <font color="#0000ff">Status</font>, <font color="#0000ff">Lives</font>
+<font color="#804040"> 54</font>  <font color="#0000ff">GLOBAL</font> <font color="#0000ff">WinString</font>, <font color="#0000ff">LoseString</font>, <font color="#0000ff">MapLength</font>, <font color="#0000ff">GameMap</font>
+<font color="#804040"> 55</font>  <font color="#0000ff">GLOBAL</font> <font color="#0000ff">Init</font>, <font color="#0000ff">KbdInt</font>, <font color="#0000ff">ReadKeyboard</font>, <font color="#0000ff">UpdateMoves</font>
+<font color="#804040"> 56</font>  <font color="#0000ff">GLOBAL</font> <font color="#0000ff">ScrollMap</font>, <font color="#0000ff">CollisionDetect</font>, <font color="#0000ff">DrawStatus</font>, <font color="#0000ff">DrawGameEnd</font>
+<font color="#804040"> 57</font>  <font color="#0000ff">GLOBAL</font> <font color="#0000ff">FindRespawn</font>, <font color="#0000ff">Enq</font>, <font color="#0000ff">Deq</font>
+<font color="#804040"> 58</font>
+<font color="#804040"> 59</font>
+<font color="#804040"> 60</font>  <font color="#0000ff">EXTERN</font> <font color="#0000ff">libInit</font>, <font color="#0000ff">libKbdInt</font>, <font color="#0000ff">libReadKeyboard</font>, <font color="#0000ff">libUpdateMoves</font>
+<font color="#804040"> 61</font>  <font color="#0000ff">EXTERN</font> <font color="#0000ff">libScrollMap</font>, <font color="#0000ff">libCollisionDetect</font>, <font color="#0000ff">libDrawStatus</font>, <font color="#0000ff">libDrawGameEnd</font>
+<font color="#804040"> 62</font>  <font color="#0000ff">EXTERN</font> <font color="#0000ff">libFindRespawn</font>, <font color="#0000ff">libEnq</font>, <font color="#0000ff">libDeq</font>
+<font color="#804040"> 63</font>  <font color="#0000ff">EXTERN</font> <font color="#0000ff">TimerInt</font>, <font color="#0000ff">mp3xit</font>
+<font color="#804040"> 64</font>
+<font color="#804040"> 65</font>  <font color="#ff0000">;====== SECTION 4: Define stack segment ===================================</font>
+<font color="#804040"> 66</font>
+<font color="#804040"> 67</font>  <font color="#804040">SEGMENT</font> <font color="#0000ff">stkseg</font> <font color="#0000ff">STACK</font>                    <font color="#ff0000">; *** STACK SEGMENT ***</font>
+<font color="#804040"> 68</font>         <font color="#0000ff">RESB</font>    <font color="#ff00ff">64</font>*<font color="#ff00ff">8</font>
+<font color="#804040"> 69</font>  <font color="#0000ff">stacktop</font>:
+<font color="#804040"> 70</font>         <font color="#0000ff">RESB</font>    <font color="#ff00ff">0</font>                       <font color="#ff0000">; NASM bug workaround</font>
+<font color="#804040"> 71</font>
+<font color="#804040"> 72</font>  <font color="#ff0000">;====== SECTION 5: Define code segment ====================================</font>
+<font color="#804040"> 73</font>
+<font color="#804040"> 74</font>  <font color="#804040">SEGMENT</font> <font color="#0000ff">code</font>                            <font color="#ff0000">; *** CODE SEGMENT ***</font>
+<font color="#804040"> 75</font>
+<font color="#804040"> 76</font>  <font color="#ff0000">;====== SECTION 6: Declare variables for main procedure ===================</font>
+<font color="#804040"> 77</font>  <font color="#0000ff">SavKOff</font>     <font color="#0000ff">RESW</font>    <font color="#ff00ff">1</font>                       <font color="#ff0000">; Keyboard interrupt vector</font>
+<font color="#804040"> 78</font>  <font color="#0000ff">SavKSeg</font>     <font color="#0000ff">RESW</font>    <font color="#ff00ff">1</font>
+<font color="#804040"> 79</font>  <font color="#0000ff">SavTOff</font>     <font color="#0000ff">RESW</font>    <font color="#ff00ff">1</font>                       <font color="#ff0000">; Timer interrupt vector</font>
+<font color="#804040"> 80</font>  <font color="#0000ff">SavTSeg</font>     <font color="#0000ff">RESW</font>    <font color="#ff00ff">1</font>
+<font color="#804040"> 81</font>
+<font color="#804040"> 82</font>  <font color="#0000ff">QBeg</font>        <font color="#804040">EQU</font>     <font color="#ff00ff">0</font>                       <font color="#ff0000">; Beginning offset of queue area</font>
+<font color="#804040"> 83</font>  <font color="#0000ff">QCap</font>        <font color="#804040">EQU</font>     <font color="#ff00ff">2</font>                       <font color="#ff0000">; Capacity of of queue</font>
+<font color="#804040"> 84</font>  <font color="#0000ff">QFront</font>      <font color="#804040">EQU</font>     <font color="#ff00ff">4</font>                       <font color="#ff0000">; Index of front item</font>
+<font color="#804040"> 85</font>  <font color="#0000ff">QRear</font>       <font color="#804040">EQU</font>     <font color="#ff00ff">6</font>                       <font color="#ff0000">; Index of next place to put rear item</font>
+<font color="#804040"> 86</font>  <font color="#0000ff">QData</font>       <font color="#804040">EQU</font>     <font color="#ff00ff">8</font>                       <font color="#ff0000">; BYTE to input or output</font>
+<font color="#804040"> 87</font>
+<font color="#804040"> 88</font>  <font color="#0000ff">KQList</font>      <font color="#0000ff">RESB</font>    <font color="#ff00ff">0</font>                       <font color="#ff0000">; Parameter list for Keyboard Queue</font>
+<font color="#804040"> 89</font>  <font color="#0000ff">KQBeg</font>       <font color="#0000ff">DW</font>      <font color="#0000ff">KQArea</font>                  <font color="#ff0000">; Offset of Keyboard Queue area</font>
+<font color="#804040"> 90</font>  <font color="#0000ff">KQCap</font>       <font color="#0000ff">DW</font>      <font color="#ff00ff">10</font>
+<font color="#804040"> 91</font>  <font color="#0000ff">KQFront</font>     <font color="#0000ff">DW</font>      <font color="#ff00ff">0</font>
+<font color="#804040"> 92</font>  <font color="#0000ff">KQRear</font>      <font color="#0000ff">DW</font>      <font color="#ff00ff">0</font>
+<font color="#804040"> 93</font>  <font color="#0000ff">KQData</font>      <font color="#0000ff">RESB</font>    <font color="#ff00ff">1</font>
+<font color="#804040"> 94</font>  <font color="#0000ff">KQArea</font>      <font color="#0000ff">RESB</font>    <font color="#ff00ff">10</font>
+<font color="#804040"> 95</font>
+<font color="#804040"> 96</font>  <font color="#0000ff">CarState</font>    <font color="#0000ff">DB</font>      <font color="#ff00ff">0</font>                       <font color="#ff0000">; Current state of the car-- 1 = Move Left, -1 = Move Right,</font>
+<font color="#804040"> 97</font>                                              <font color="#ff0000">;  0 = Stopped, -2 = Dead</font>
+<font color="#804040"> 98</font>  <font color="#0000ff">CarCol</font>      <font color="#0000ff">DB</font>      <font color="#ff00ff">40</font>                      <font color="#ff0000">; Which column your car is in</font>
+<font color="#804040"> 99</font>
+<font color="#804040">100</font>  <font color="#0000ff">CarTicks</font>    <font color="#0000ff">DB</font>      <font color="#ff00ff">0</font>                       <font color="#ff0000">; Used to determine frequency of car movement</font>
+<font color="#804040">101</font>  <font color="#0000ff">Scroll</font>      <font color="#0000ff">DB</font>      <font color="#ff00ff">0</font>                       <font color="#ff0000">; Used to determine frequency of scrolling</font>
+<font color="#804040">102</font>  <font color="#0000ff">CurrentRow</font>  <font color="#0000ff">DB</font>      <font color="#ff00ff">24</font>                      <font color="#ff0000">; Current row in GameMap</font>
+<font color="#804040">103</font>  <font color="#0000ff">Status</font>      <font color="#0000ff">DB</font>      <font color="#ff00ff">1</font>                       <font color="#ff0000">; Current game status--0 = Paused, 1 = Playing</font>
+<font color="#804040">104</font>                                              <font color="#ff0000">; 2 = Won, -1 = Lost</font>
+<font color="#804040">105</font>  <font color="#0000ff">Lives</font>       <font color="#0000ff">DB</font>      <font color="#ff00ff">3</font>                       <font color="#ff0000">; # of lives left</font>
+<font color="#804040">106</font>
+<font color="#804040">107</font>  <font color="#0000ff">WinString</font>   <font color="#0000ff">DB</font>      <font color="#ff00ff">'You Win!!!'</font>,<font color="#ff00ff">'$'</font>        <font color="#ff0000">;If you win</font>
+<font color="#804040">108</font>  <font color="#0000ff">LoseString</font>  <font color="#0000ff">DB</font>      <font color="#ff00ff">'You Lose :('</font>,<font color="#ff00ff">'$'</font>       <font color="#ff0000">;If you lose</font>
+<font color="#804040">109</font>
+<font color="#804040">110</font>  <font color="#ff0000">;The game map. An XXx80 array of words, each specifying a specific part</font>
+<font color="#804040">111</font>  <font color="#ff0000">;of the map. First byte is the attributes, 2nd is the character.</font>
+<font color="#804040">112</font>  <font color="#a020f0">%include</font> <font color="#ff00ff">&quot;gamemap.txt&quot;</font>
+<font color="#804040">113</font>
+<font color="#804040">114</font>
+<font color="#804040">115</font>  <font color="#ff0000">; You may declare additional variables here</font>
+<font color="#804040">116</font>
+<font color="#804040">117</font>  <font color="#ff0000">;====== SECTION 7: Program initialization =================================</font>
+<font color="#804040">118</font>
+<font color="#804040">119</font>  <font color="#804040">..start</font>:
+<font color="#804040">120</font>         <font color="#804040">MOV</font>     AX, CS                  <font color="#ff0000">; Initialize Data Segment register</font>
+<font color="#804040">121</font>         <font color="#804040">MOV</font>     DS, AX
+<font color="#804040">122</font>         <font color="#804040">MOV</font>     AX, <font color="#0000ff">stkseg</font>              <font color="#ff0000">; Initialize Stack Segment register</font>
+<font color="#804040">123</font>         <font color="#804040">MOV</font>     SS, AX
+<font color="#804040">124</font>         <font color="#804040">MOV</font>     SP, <font color="#0000ff">stacktop</font>            <font color="#ff0000">; Initialize Stack Pointer register</font>
+<font color="#804040">125</font>
+<font color="#804040">126</font>  <font color="#ff0000">;====== SECTION 8: Main procedure =========================================</font>
+<font color="#804040">127</font>
+<font color="#804040">128</font>  <font color="#0000ff">main</font>:
+<font color="#804040">129</font>         <font color="#804040">MOV</font>      AH, <font color="#ff00ff">2Ch</font>                 <font color="#ff0000">; Get current time of day</font>
+<font color="#804040">130</font>         <font color="#804040">INT</font>      <font color="#ff00ff">21h</font>                     <font color="#ff0000">;   (DH) = secs, (DL) = hundredths of secs</font>
+<font color="#804040">131</font>         <font color="#804040">CALL</font>     <font color="#0000ff">Init</font>                    <font color="#ff0000">; Initialization</font>
+<font color="#804040">132</font>  <font color="#0000ff">.mainLoop</font>:
+<font color="#804040">133</font>         <font color="#804040">CALL</font>     <font color="#0000ff">ReadKeyboard</font>
+<font color="#804040">134</font>         <font color="#804040">CALL</font>     <font color="#0000ff">UpdateMoves</font>
+<font color="#804040">135</font>         <font color="#804040">CALL</font>     <font color="#0000ff">ScrollMap</font>
+<font color="#804040">136</font>         <font color="#804040">CALL</font>     <font color="#0000ff">CollisionDetect</font>
+<font color="#804040">137</font>         <font color="#804040">JMP</font>      <font color="#0000ff">.mainLoop</font>
+<font color="#804040">138</font>
+<font color="#804040">139</font>
+<font color="#804040">140</font>  <font color="#ff0000">;=============== Your Subroutines =========================================</font>
+<font color="#804040">141</font>
+<font color="#804040">142</font>  <font color="#0000ff">KbdInt</font>:
+<font color="#804040">143</font>         <font color="#804040">JMP</font>     <font color="#0000ff">libKbdInt</font>
+<font color="#804040">144</font>         <font color="#804040">IRET</font>
+<font color="#804040">145</font>
+<font color="#804040">146</font>  <font color="#0000ff">Init</font>:
+<font color="#804040">147</font>         <font color="#804040">CALL</font>     <font color="#0000ff">libInit</font>
+<font color="#804040">148</font>         <font color="#804040">RET</font>
+<font color="#804040">149</font>
+<font color="#804040">150</font>  <font color="#0000ff">ReadKeyboard</font>:
+<font color="#804040">151</font>         <font color="#804040">CALL</font>     <font color="#0000ff">libReadKeyboard</font>
+<font color="#804040">152</font>         <font color="#804040">RET</font>
+<font color="#804040">153</font>
+<font color="#804040">154</font>  <font color="#0000ff">UpdateMoves</font>:
+<font color="#804040">155</font>         <font color="#804040">CALL</font>     <font color="#0000ff">libUpdateMoves</font>
+<font color="#804040">156</font>         <font color="#804040">RET</font>
+<font color="#804040">157</font>
+<font color="#804040">158</font>  <font color="#0000ff">ScrollMap</font>:
+<font color="#804040">159</font>         <font color="#804040">CALL</font>     <font color="#0000ff">libScrollMap</font>
+<font color="#804040">160</font>         <font color="#804040">RET</font>
+<font color="#804040">161</font>
+<font color="#804040">162</font>  <font color="#0000ff">CollisionDetect</font>:
+<font color="#804040">163</font>          <font color="#804040">CALL</font>    <font color="#0000ff">libCollisionDetect</font>
+<font color="#804040">164</font>          <font color="#804040">RET</font>
+<font color="#804040">165</font>
+<font color="#804040">166</font>  <font color="#0000ff">DrawStatus</font>:
+<font color="#804040">167</font>         <font color="#804040">CALL</font>     <font color="#0000ff">libDrawStatus</font>
+<font color="#804040">168</font>         <font color="#804040">RET</font>
+<font color="#804040">169</font>
+<font color="#804040">170</font>  <font color="#0000ff">DrawGameEnd</font>:
+<font color="#804040">171</font>          <font color="#804040">CALL</font>    <font color="#0000ff">libDrawGameEnd</font>
+<font color="#804040">172</font>          <font color="#804040">RET</font>
+<font color="#804040">173</font>
+<font color="#804040">174</font>  <font color="#0000ff">FindRespawn</font>:
+<font color="#804040">175</font>          <font color="#804040">CALL</font>    <font color="#0000ff">libFindRespawn</font>
+<font color="#804040">176</font>          <font color="#804040">RET</font>
+<font color="#804040">177</font>
+<font color="#804040">178</font>  <font color="#0000ff">Enq</font>:
+<font color="#804040">179</font>         <font color="#804040">CALL</font>     <font color="#0000ff">libEnq</font>
+<font color="#804040">180</font>         <font color="#804040">RET</font>
+<font color="#804040">181</font>
+<font color="#804040">182</font>  <font color="#0000ff">Deq</font>:
+<font color="#804040">183</font>         <font color="#804040">CALL</font>     <font color="#0000ff">libDeq</font>
+<font color="#804040">184</font>         <font color="#804040">RET</font>
+</pre>
+    <HR>
+      <H2>Makefile</H2>
+<pre>
+<font color="#804040"> 1</font>  <font color="#0000ff">MPNAME</font>=mp3
+<font color="#804040"> 2</font>
+<font color="#804040"> 3</font>  <font color="#0000ff">all:</font> <font color="#0000ff">$(MPNAME)</font>.exe
+<font color="#804040"> 4</font>
+<font color="#804040"> 5</font>  <font color="#0000ff">clean: </font>
+<font color="#804040"> 6</font>  <font color="#ff00ff">    rm -f </font><font color="#0000ff">$(MPNAME)</font><font color="#ff00ff">.exe </font><font color="#0000ff">$(MPNAME)</font><font color="#ff00ff">.obj </font><font color="#0000ff">$(MPNAME)</font><font color="#ff00ff">.lst </font><font color="#0000ff">$(MPNAME)</font><font color="#ff00ff">.map</font>
+<font color="#804040"> 7</font>
+<font color="#804040"> 8</font>  <font color="#0000ff">%.exe:</font> <font color="#0000ff">%</font>.obj
+<font color="#804040"> 9</font>  <font color="#ff00ff">    tlink /c /v </font><font color="#0000ff">$&lt;</font><font color="#ff00ff">, </font><font color="#0000ff">$*</font><font color="#ff00ff">.exe, </font><font color="#0000ff">$*</font><font color="#ff00ff">.map, lib291.lib libmp3.lib</font>
+<font color="#804040">10</font>
+<font color="#804040">11</font>  <font color="#0000ff">%.obj:</font> <font color="#0000ff">%</font>.asm
+<font color="#804040">12</font>  <font color="#ff00ff">    nasm -g -f obj -o </font><font color="#0000ff">$*</font><font color="#ff00ff">.obj </font><font color="#0000ff">$&lt;</font><font color="#ff00ff"> -l </font><font color="#0000ff">$*</font><font color="#ff00ff">.lst</font>
+<font color="#804040">13</font>
+</pre>
+    </td>
+  </tr>
+
+<!--#include file="foot.asp" -->

@@ -1,0 +1,467 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!-- saved from url=(0041)https://netfiles.uiuc.edu/loui/MP2F04.htm -->
+<HTML xmlns="http://www.w3.org/1999/xhtml"><HEAD><TITLE>ECE 390 Machine Problem 2</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=windows-1252"><LINK 
+href="MP2_files/ece291.css" type=text/css rel=stylesheet>
+<META content="MSHTML 6.00.2900.2180" name=GENERATOR></HEAD>
+<BODY>
+<TABLE class=header cellSpacing=0 cellPadding=0 width="100%">
+  <TBODY>
+  <TR>
+    <TD class=half vAlign=top align=left>
+      <P><A href="http://courses.engr.illinois.edu/ece390"><IMG height=100 alt="" 
+      src="http://courses.engr.illinois.edu/ece390/ece390.jpg" width=310></A><BR><B>&nbsp;&nbsp;Computer 
+      Engineering II</B><BR><B>&nbsp;&nbsp;<SPAN class=red>Machine Problem 
+      2</SPAN></B></P></TD>
+    <TD class=half vAlign=center align=right>
+      <TABLE class=maxheight cellSpacing=1 cellPadding=0 width="100%" 
+        border=0><TBODY>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/schedule.html">Schedule</A>&nbsp;&nbsp;</TD>
+          <TD class=dark>&nbsp;&nbsp;<A 
+            href="http://courses.engr.illinois.edu/ece390/labsched.html">Lab 
+            schedule</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/hw.asp">Homework</A>&nbsp;&nbsp;</TD>
+          <TD>&nbsp;&nbsp;<A 
+            href="http://courses.engr.illinois.edu/ece390/books/labmanual/">Lab 
+            Manual</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/mp.asp">Machine 
+            Problems</A>&nbsp;&nbsp;</TD>
+          <TD class=dark>&nbsp;&nbsp;<A 
+            href="http://courses.engr.illinois.edu/ece390/resources">Resources</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/mp/mp0/fp">Final 
+            Project</A>&nbsp;&nbsp;</TD>
+          <TD>&nbsp;&nbsp;<A 
+            href="http://courses.engr.illinois.edu/ece390/user/photos">Photos</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/grades">Gradebook</A>&nbsp;&nbsp;</TD>
+          <TD class=dark>&nbsp;&nbsp;<A 
+            href="http://courses.engr.illinois.edu/ece390/feedback.asp">Feedback</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/syllabus.html">Syllabus</A>&nbsp;&nbsp;</TD>
+          <TD>&nbsp;&nbsp;<A 
+            href="http://courses.engr.illinois.edu/ece390/archive">Archives</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/lecture">Lectures</A>&nbsp;&nbsp;</TD>
+          <TD class=dark>&nbsp;&nbsp;<A 
+            href="http://courses.engr.illinois.edu/ece390/resources/turbo.zip">Download 
+            NASM</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390">Home</A>&nbsp;&nbsp;</TD>
+          <TD>&nbsp;&nbsp;<A 
+            href="https://courses.engr.illinois.edu/ece390/admin">Restricted 
+            access</A></TD></TR></TBODY></TABLE></TD></TR>
+  <TR>
+    <TD class=spacer colSpan=2><IMG height=8 alt="" 
+      src="MP2BF04_files/loui.htm" width=100></TD></TR></TBODY></TABLE>
+<TABLE cellSpacing=1 cellPadding=7 width="100%" border=0>
+  <TBODY></TBODY></TABLE>
+<TABLE cellSpacing=1 cellPadding=7 width="100%" border=0>
+  <TBODY>
+  <TR>
+    <TD vAlign=top>
+      <H1 align=center>Machine Problem 2: Encryption and Decryption</H1>
+      <DIV align=center>
+      <CENTER>
+      <TABLE width=513 border=1>
+        <TBODY>
+        <TR>
+          <TD align=right width=64>Assigned</TD>
+          <TD width=433>Tuesday, 14 September 2004</TD></TR>
+        <TR>
+          <TD align=right width=64>Due Date</TD>
+          <TD width=433>Wednesday, 29 September 2004</TD></TR>
+        <TR>
+          <TD align=right width=64>Purpose</TD>
+          <TD width=433 Roman?>To design and implement subroutines, passing 
+            arguments in registers and in memory. To use arithmetic instructions 
+            in numeric computations.</TD></TR>
+        <TR>
+          <TD align=right width=64>Points</FONT></TD>
+          <TD width=433>60</TD></TR></TBODY></TABLE></CENTER></DIV>
+      <BLOCKQUOTE>The subroutine is the greatest invention since sliced bread. 
+        <I>-- M. C. Loui</I><BR>I often quote myself. It adds spice to my 
+        conversations. <I>-- G. B. Shaw</I><BR></BLOCKQUOTE>
+      <P>You will write a program MP2 that reads in a string of characters from 
+      the keyboard and types out an encrypted form of the string on the display 
+      screen. The program also decrypts strings of characters and changes the 
+      two encryption/decryption keys. The encryption/decryption algorithm is a 
+variant of the famous RSA public-key cryptosystem, which is used by PGP.</P>
+      <P>Files for MP2 are on the <TT>V:</TT> drive in the directory 
+      <TT>V:\ece390\mp2</TT>. In this directory are the program framework 
+      <TT>mp2.asm</TT> and a running version of the program <TT>mp2lab.exe</TT>. 
+      Lab versions of subroutines are in <TT>libmp2.lib</TT>, which contains all 
+      subroutines of LIB291 plus libGetStr, libKeys, libMultInv, and libEncDec. 
+      You will use mp2xit instead of dosxit. You should start by copying these files to your home 
+      directory with the following command: <BR><TT>xcopy /s V:\ece390\mp2 
+      W:\mp2</TT><BR>You may download the files from the server as <A 
+      href="http://courses.engr.illinois.edu/ece390/mp/mp2/mp2.zip">mp2.zip</A> </P>
+      <P>Reading: Lab Notes -- Libraries (Chapter 9), The Case of the Speckled 
+      Bug (Section 6.2), Modular Programming (Section 4.3), Programming Style 
+      (Section 4.4)</P>
+      <H2>Program Specification</H2>
+      <P>The program accepts four commands: K, E, D, and Q.</P>
+      <TABLE>
+        <TBODY>
+        <TR>
+          <TD>Kst </TD>
+          <TD><B>Change keys</B> to s and t, which are upper-case letters or spaces</TD></TR>
+        <TR>
+          <TD>E <I>string</I></TD>
+          <TD><B>Encryption</B>: using the current keys, type out the 
+            encrypted form of the string</TD></TR>
+        <TR>
+          <TD>D <I>string</I></TD>
+          <TD><B>Decryption</B>: using the current keys, type out the 
+            decrypted form of the string</TD></TR>
+        <TR>
+          <TD>Q </TD>
+          <TD><B>Quit</B> and return to DOS</TD></TR></TBODY></TABLE>
+      <P>The strings produced by the E and D commands are preceded by two spaces 
+      to align them with the input. The user may press the Backspace and Esc 
+      keys to correct errors. Sample dialogue:</P>
+<PRE>
+?KXY                                ("?" is the prompt character)
+                                    (make the keys X and Y)
+?E DO YOU LIKE PIZZA WITH ANCHOVIES
+   LW NWT OVUE AVGGY HVBD YQFDWMVEC (encrypted form)
+
+?D LW NWT OVUE AVGGY HVBD YQFDWMVEC
+   DO YOU LIKE PIZZA WITH ANCHOVIES (it works!)
+</PRE>
+      
+      <H2>Program Organization</H2>
+      <P>In this machine problem, the main procedure is provided for you; 
+      however, you must write the code to replace the library subroutines 
+      libGetStr, libKeys, libEncDec, libMultInv. You will replace these 
+      subroutines from the <TT>libmp2</TT> library by deleting the statements 
+      that call the <TT>libmp2</TT> subroutine and by adding your own code. Each 
+      subroutine that you write should match the output of the library 
+      subroutine exactly.</P>
+      <P>Document each subroutine with a header. In the Lab Notes, standards for 
+      headers appear on page 4, and examples of subroutines on pages 28-33 and 
+      84-88. </P>
+      <P>The program has the following global variables: <PRE>
+nkey    DW      29      ; Key <i>n</i>
+ekey    DW      1       ; Key <i>e</i>
+dkey    DW      1       ; Multiplicative inverse of <i>e</i> modulo <i>n</i>-1
+</PRE>
+The definition of <i>multiplicative inverse</i> is on HW2.
+To use the library versions of subroutines, declare these variables 
+      with a <TT>GLOBAL</TT> statement.</P>
+      <P>The program encrypts and decrypts only upper-case letters 
+      (<TT>A-Z</TT>). For convenience, define functions <i>f</i> and <i>g</i>
+      as follows.  If <i>c</i> is the ASCII code for an upper-case letter
+      or a space, then define <i>f</i>(<i>c</i>) to be 
+<ul>
+<li><i>c</i> - 3Fh if 41h <u>&lt;</u> <i>c</i> <u>&lt;</u> 5Ah (ASCII for <tt>A,...,Z</tt>)</li>
+<li>1 if <i>c</i> = 20h (ASCII for space)</li>
+</ul>
+Observe that <i>f</i> assigns 2 to the letter <tt>A</tt>, 3 to <tt>B</tt>, .., 
+27 to <tt>Z</tt>.
+Define <i>g</i> to be the inverse of <i>f</i>: for all <i>c</i>,
+<i>g</i>(<i>f</i>(<i>c</i>)) = <i>c</i>.  If 1 <u>&lt;</u> <i>z</i> <u>&lt;</u> 27, then 
+<i>g</i>(<i>z</i>) is the ASCII code for a space or an upper-case letter. </P>
+      <TABLE border=1>
+        <TBODY>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>GetStr</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Accepts an input string of at most 59 characters from the 
+              keyboard 
+              <LI>Input: 
+              <UL>
+                <LI><TT>BX</TT> = offset of first location in memory to store 
+                the string </LI></UL>
+              <LI>Outputs: 
+              <UL>
+                <LI>None</LI></UL>
+              <LI>Calls: kbdin, dspout, dspmsg 
+              <LI>GetStr displays the prompt character '<TT>?</TT>' on the 
+              screen and reads in a character string from the keyboard with 
+              kbdin. GetStr echoes each character as it is typed in by calling 
+              dspout.  GetStr accepts only spaces and upper-case letters <tt>A-Z</tt>. 
+              <LI>When the user presses the Enter (carriage return) key, 
+              GetStr appends a '<tt>$</tt>' to mark the end of the string, 
+              echoes a carriage return and line feed on the screen, and returns 
+              via a <TT>RET</TT> instruction.</li>
+              <li>When the user presses the Backspace key, GetStr echoes the 
+              backspace to move the cursor back one position. Then GetStr sends 
+              a single space ' ' to the screen to erase the last character, and 
+              GetStr sends the backspace character to the screen again to move 
+              the cursor back to the intended position. GetStr prevents the user 
+              from backspacing past the prompt character.</li> 
+              <li>When the user presses the Esc key, GetStr starts over from the beginning,
+              displaying the prompt on the screen.</li>
+              <li>The character string is stored in 60 consecutive bytes in 
+              memory, including one byte for '<tt>$</tt>'. GetStr prevents the 
+              user from typing more than 59 characters. 
+              </li></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Keys</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Determines whether the new keys proposed by the user are 
+              legitimate.  If so, then Keys updates the values of <tt>nkey, ekey</tt>, and <tt>dkey</tt>.
+              <LI>Inputs: 
+              <UL>
+                <LI><TT>DL</TT> = ASCII code <i>s</i> of first letter </LI>
+                <li><tt>DH</tt> = ASCII code <i>t</i> of second letter </UL>
+              <LI>Outputs: 
+              <UL>
+                <LI><TT>nkey</TT> = key <i>n</i>
+                <LI><TT>ekey</TT> = key <i>e</i>
+                <LI><TT>dkey</TT> = multiplicative inverse of <i>e</i> modulo 
+                <i>n</i>-1 </LI></UL>
+              <LI>Calls: MultInv, dspmsg 
+              <LI>Keys computes the numerical forms of keys.  The inputs to Keys
+are the ASCII codes <i>s,t</i> of two upper-case letters or spaces.  Keys sets
+the values of <tt>nkey, ekey, dkey</tt> as follows:
+<ul>
+<li> <tt>nkey</tt> = <i>n</i> = integer at offset 2<i>f</i>(<i>s</i>)-2 from the beginning of <tt>primes</tt> </li>
+<li> <tt>ekey</tt> = <i>e</i> = integer at offset 2<i>f</i>(<i>t</i>)-2 from the beginning of <tt>primes</tt> </li>
+<li> <tt>dkey</tt> = multiplicative inverse of <i>e</i> modulo <i>n</i>-1 </li>
+</ul>
+</LI>
+<li>To compute <i>d</i>, Keys calls MultInv. If <i>e</i>
+does not have a multiplicative inverse modulo <i>n</i>-1, then Keys types out '<tt>Invalid keys</tt>' and
+does NOT change the current values of <tt>nkey, ekey, dkey</tt>. 
+</li>
+</UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>MultInv</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Calculates a multiplicative inverse. The definition of <i>multiplicative inverse</i> is on HW2.
+              <LI>Inputs: 
+              <UL>
+                <LI><TT>AX</TT> = unsigned integer <i>x</i></li>
+                <li><tt>DX</tt> = unsigned integer <i>m</i></li>
+              </UL>
+              <LI>Output:
+              <ul>
+                <li><tt>CX</tt> = multiplicative inverse of <i>x</i> modulo <i>m</i>, or 0 if <i>x</i>
+                                does not have a multiplicative inverse modulo <i>m</i>
+              </ul> 
+              
+        <li> MultInv tries every value for the multiplicative inverse among 1, 2, ..., <i>m</i>-1. 
+              </LI></UL>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>EncDec</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Performs encryption and decryption. 
+              <LI>Inputs: 
+              <UL>
+                <LI><TT>BX</TT> = offset of string to be encrypted or decrypted, 
+                ends with '$' </li>
+                <li><tt>DX</tt> = power <i>p</i> to use (<tt>ekey</tt> to encrypt, <tt>dkey</tt> to decrypt</li>
+                <LI><TT>nkey</TT> = key <i>n</i></LI></UL>
+              <LI>Outputs: 
+              <UL>
+                <LI>Displays the encrypted or decrypted string on the screen</LI></UL>
+              <LI>Calls: dspout 
+              <LI>First, EncDec outputs two spaces. Then EncDec inspects each 
+              character in the input string and
+              performs the following calculation on the ASCII code <i>c</i> of the character: <BR>
+<PRE>
+z := f(c)
+REPEAT  y := z 
+        z := 1
+        FOR i = 1 TO p DO
+                z := (y * z) mod n
+% Replace z by the remainder when y*z is divided by n
+        END FOR
+UNTIL z <u>&lt;</u> 27 
+c' := g(z)
+</PRE>
+EncDec outputs the character whose ASCII code is <i>c'</i>. </li>
+<li>Notice that when <i>c</i> is the ASCII code of the space ' ', the result <i>c'</i> 
+is again the ASCII code of the space character. (Why?)
+</LI></UL></TD></TR></TBODY></TABLE>
+      <H2>Friendly Advice</H2>
+      <UL>
+        <LI>The <TT>libmp2.lib</TT> file contains executable library subroutines 
+        for each of the routines that you need to implement. The library 
+        subroutines enable you to run the program and understand how it works before 
+        you implement it. You can test your program with any combinations of 
+        your own code and library subroutines. You will receive credit only for 
+        the subroutines that you implement yourself. 
+        <LI>You may define new memory variables as needed. Variables associated 
+        with a subroutine may be declared between the header and the first 
+        instruction of the subroutine. 
+        <LI>Each subroutine should save and restore any registers that it uses, 
+        except for registers that deliver subroutine outputs. The caller may use 
+        registers without outputs and expect them to remain unchanged. 
+        <li>Be careful when transmitting subroutine inputs and outputs via registers.
+        For example, if you use POPA at the end of a subroutine, avoid overwriting a
+        register that delivers an output.
+        <LI>You may write subroutines that compute the functions <i>f</i> and 
+        <i>g</i>. Remember to state all subroutines called by your versions of 
+        Keys and EncDec. 
+        <LI>Be careful with operand sizes: byte, word, double word. You may need 
+        to convert between sizes. 
+        <li>When the user types <tt>KMC</tt> the response should be '<tt>Invalid keys</tt>'.
+        (Why?)
+        <LI>Monitor the course WebBoard for clarifications and help. 
+        <LI>START EARLY! </LI></UL>
+      <H2>Demonstration, Documentation, and Grading</H2>
+      <P>Demonstrate your program to an ECE 390 staff member. You will be asked 
+      to use Turbo Debugger and MultInv to compute the multiplicative inverse of a 
+      number.</P>
+      <P>As in MP1, keep an MP development log and write a cover memo, which 
+      should address the following questions: 
+      <UL>
+        <LI>How much time did you spend on each subroutine, from planning and 
+        design through final debugging? 
+        <LI>What kinds of defects (bugs) did you find during the development of 
+        the program? When did you discover these defects (during code review or 
+        during testing)? How did you find them? 
+        <LI>What did you learn about design, coding, testing, and debugging in 
+        this MP? 
+        <LI>What went well in your work on this MP? What did not? 
+        <LI>What you would do differently for the next MP? </LI></UL>
+      <P>After the demonstration, submit your program and cover memo. Your 
+      program will be graded according to the clarity of your design and the 
+      quality of your documentation.</P>
+      <P>Gradesheet:<BR>GetStr 15 points, Keys 10 points, MultInv 10 points, 
+      EncDec 15 points <BR>Style and documentation 6 points, Cover memo 4 
+      points</P>
+      <HR>
+
+      <H2>mp2.asm (program framework)</H2><FONT size=-1><PRE>
+
+; MP2 - Encryption and Decryption
+;
+; Your name
+; Date
+;
+; This program encrypts and decrypts a message string, using
+; modular arithmetic
+
+        BITS    16
+
+;====== SECTION 1: Define constants =======================================
+
+        CR      EQU     0Dh
+        LF      EQU     0Ah
+        BS      EQU     08h
+        ESC     EQU     1Bh             ; ESC key
+        SPACE   EQU     20h
+        MaxLen  EQU     60              ; Maximum length of input string
+
+; You may define additional constants here
+
+;====== SECTION 2: Declare external procedures ============================
+
+EXTERN  kbdin, dspout, dspmsg, dosxit, ascbin
+EXTERN  libGetStr, libKeys, libMultInv, libEncDec
+
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        RESB      64*8
+stacktop:
+        RESB    0                       ; NASM bug workaround
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+
+prompt  DB      CR,LF,LF,'?','$'
+invmsg  DB      CR,LF,'Invalid command','$'
+primes  DW      29,31,37,41,43,47,53,59,61,67,71,73,79,83,89,97,101
+        DW      103,107,109,113,127,131,137,139,149,151,157,163,167
+inpstr  RESB    MaxLen                  ; Input string
+nkey    DW      29                      ; Key n
+ekey    DW      1                       ; Key e
+dkey    DW      1                       ; Multiplicative inverse of e mod n-1
+
+;You may declare additional variables here
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        MOV     AX, CS                  ; Initialize Default Segment register
+        MOV     DS, AX
+        MOV     AX, stkseg              ; Initialize Stack Segment register
+        MOV     SS, AX
+        MOV     SP, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+main:
+
+.mainloop:
+        MOV     BX, inpstr
+        CALL    GetStr
+        CMP     BYTE [inpstr], 'K'      ; K for Keys command
+        JE      .doKeys
+        CMP     BYTE [inpstr], 'E'      ; E for Encode command
+        JE      .doEncode
+        CMP     BYTE [inpstr], 'D'      ; D for Decode command
+        JE      .doDecode
+        CMP     BYTE [inpstr], 'Q'      ; Q for Quit command
+        JE      .done
+        MOV     dx, invmsg              ; Otherwise invalid command
+        CALL    dspmsg
+        JMP     .mainloop
+        
+.doKeys:
+        MOV     DL, BYTE [inpstr+1]     ; First character after 'K'
+        MOV     DH, BYTE [inpstr+2]     ; Second character after 'K'
+        CALL    Keys
+        JMP     .mainloop
+
+.doEncode:
+        MOV     BX, inpstr+1            ; Go past command character 
+        MOV     DX, WORD [ekey]
+        CALL    EncDec
+        JMP     .mainloop
+
+.doDecode:
+        MOV     BX, inpstr+1            ; Go past command character 
+        MOV     DX, WORD [dkey]
+        CALL    EncDec
+        JMP     .mainloop
+        
+.done:
+        CALL    mp2xit
+        
+GetStr:
+        CALL    libGetStr
+        RET
+        
+Keys:
+        CALL    libKeys
+        RET
+
+MultInv:
+        CALL    libMultInv
+        RET
+
+EncDec:
+        CALL    libEncDec
+        RET
+
+      </PRE></FONT></TD></TR></TBODY></TABLE>
+<TABLE class=dark cellSpacing=0 cellPadding=0 width="100%">
+  <TBODY>
+  <TR>
+    <TD><A href="http://courses.engr.illinois.edu/ece390/"><IMG height=17 alt="" 
+      src="" width=16> Return to ECE390 Home Page</A></TD>
+    <TD align=right>Fall 2004</TD></TR></TBODY></TABLE></BODY></HTML>

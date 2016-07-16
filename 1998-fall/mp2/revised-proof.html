@@ -1,0 +1,98 @@
+<html>
+<pre>
+     Let f(a, b, c) be a function such that
+        f(a, b, c)*a mod b = c. 
+     For simplicity, let f(a, b, c) = x0 where x0 is an integer 
+
+     Note that the definition of A mod B = C states that 
+          (x * B) + C = A 
+     where A, B, and C are constants and x is some integer.
+
+     The Original Equation. Note that c < a 
+     (1)  (x0 * a) mod b = c
+
+     By the defintion of the modulus:
+     (2)  (x1 * b) + c = (x0 * a) , Where x1 is some integer.
+
+     Subtract c from both sides
+     (3)  (x1 * b)  = (x0 * a) + (-c)
+
+     Taking both sides of the equation mod a:
+     (4a) (x1 * b) mod a = ((x0 * a) + (-c)) mod a   
+           Since a is a factor of (x0 * a)
+     (4b) (x1 * b) mod a = (-c) mod a               
+           Note that this step is the inverse of how 
+           (2) was derived from (1).  
+
+     By the property (A*B) mod C = (A*(B mod C)) mod C
+     (5)  (x1 * (b mod a)) mod a = (-c) mod a
+
+     Note that (b mod a) and ((-c) mod a) are both constantsdefined 
+     in terms of the inputs to the function a, b, and c. So, let:
+        b mod a = e
+        (-c) mod a = f
+     Performing this substitution gives:
+     (6) (x1 * e) mod a = f
+
+     Noting that this is exactly in the form of (1), we can solve for x1:
+     (7a) x1 = f(e, a, f)
+      Performing the back substitutions 
+     (7b) x1 = f(b mod a, a, -c mod a)
+ 
+     Combining (7b) with (2):
+     (8a) (x0 * a) = f(b mod a, a, -c mod a) * b + c 
+        and using the definition x0 = f(a,b,c)
+     (8b) (f(a,b,c) * a) = f(b mod a, a, -c mod a) * b + c
+ 
+     Dividing through by a we get:
+     (9) f(a, b, c) = (b*f(b mod a, a, -c mod a) + c)/a
+
+      Note that (b mod a) < a < b, and c < a.  
+      This suggests that the recursion will shrink down to 
+      some base case, or a set of base cases.  
+      It is also possible that f(a, b, c) is undefined 
+      if a = 0 (division by 0).  To see what it means if f(a,b,c) 
+      is undefined, we will work the recursion backwards. 
+
+        After the nth iteration
+          a(n) = 0
+        Therefore
+          b(n-1) mod a(n-1) = 0
+ 
+        This implies that a(n-1) is a factor of b(n-1), however
+          b(n-1) = a(n-2)
+        So, a(n-1) is also a factor of a(n-2)
+
+        Also,
+          a(n-1) = b(n-2) mod a(n-2)
+
+        Now, taking both sides mod a(n-1)
+          a(n-1) mod a(n-1) = (b(n-2) mod a(n-2)) mod a(n-1)
+
+        Since A mod A = 0:
+          0 = (b(n-2) mod a(n-2)) mod a(n-1)
+
+        Using the definition of the modulus twice:
+          x1 * a(n-1) = b(n-2) mod a(n-2) ,      Where x1 is an integer
+          (x1 * a(n-1)) = b(n-2) - x2 * a(n-2) , Where x2 is an integer
+
+        But, since a(n-1) is a factor of a(n-2)
+          (x1 * a(n-1)) = b(n-2) - x2 * x3 * a(n-1) , Where x3 is an integer
+
+        Letting x2 absorb x3 since both are arbitrary integers:
+          (x1 * a(n-1) = b(n-2) - x2 * a(n-1)
+
+        Adding x2 * a(n-1) and distributing the a(n-1)
+          a(n-1)(x1 + x2) = b(n-2)
+
+        Letting x1 absorb x2 since both are arbitrary integers:
+          a(n-1)*x1 = b(n-2)
+
+        Therefore, a(n-1) is a factor of b(n-2).  It was already shown
+that a(n-1) is a factor of a(n-2).   By induction, a(n-1) is a
+factor of a(k) and b(k) where k < n and a(n) = 0.  Actually, with a
+slight modification to the proof, it could be shown that a(n-1) is the
+greatest common factor of a(k) and b(k) for k < n.
+
+</pre>
+

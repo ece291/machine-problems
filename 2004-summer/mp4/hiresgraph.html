@@ -1,0 +1,204 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>High Resolution Graphics Library</title>
+</head>
+
+<body>
+
+<h1>High Resolution Graphics Library</h1>
+<p>You've tackled text mode video, and now it's time to move on to bigger and
+better things.&nbsp; Enter high resolution graphics.</p>
+<h2>How to Interface</h2>
+<p>The interface to the High Resolution Graphics Library is fairly simple:</p>
+<ul>
+  <li>invoke _InitGraphics, dword _kbINT, dword _kbIRQ, dword _kbPort
+  <li>invoke _FindGraphicsMode, word x-res, word y-res, word bits-per-pixel,
+    dword allow-emulated
+  <li>mov [mode], ax
+  <li>invoke _SetGraphicsMode, word [mode]
+  <li>Allocate image buffer with same bits-per-pixel as selected mode
+  <li>Write to image buffer
+  <li>invoke _CopyToScreen to copy the image buffer or portion thereof to the
+    screen
+  <li>call UnsetGraphicsMode
+  <li>call ExitGraphics
+  <li>exit</li>
+</ul>
+<p>Here's a few notes about the library:</p>
+<ol>
+  <li>Each pixel in a 32-bit mode is RGBA from low byte to high byte, and takes
+    4 bytes to describe (in a 24-bit mode it's RGB and takes 3 bytes)
+  <li>If you allocate a 32-bit image buffer the size of the screen, it will
+    be xres*yres*4 bytes long. Remember the *4 on the end. Remember it when you
+    go to the next row, and remember it when you advance a pixel.  It's
+    important.
+  <li>Unlike the Text Video Mode, this is double buffered, and you cannot write
+    directly to the screen. Call _CopyToScreen if you want to see any results.
+    Feel free to put in more calls to this when debugging, but remember to
+    remove it (for speed, etc.) once you're done.
+</ol>
+The one non-graphics thing you have to be aware of is that we've moved the
+keyboard.  It's dynamically assigned, with the proper settings returned by
+InitGraphics into the parameters passed it (in the above example, after the
+InitGraphics call, _kbINT (a byte-sized variable) will hold the interrupt
+number, _kbIRQ (a byte) will hold the IRQ, and _kbPort (a word) will hold the
+port.  You don't have to ACK the keyboard (like you may have done in MP3), but
+you do have to ack with the PIC with <tt>mov al, 20h </tt>and<tt> out 20h,
+al</tt>.  In addition, if the IRQ is above 7, it's necessary to ack the slave
+PIC with <tt>mov al, 20h </tt>and<tt> out 0A0h, al</tt>.  The moveable keyboard
+lets us use the debugger, and solves some other problems, so it's worth the
+irregularity.
+<h2>How to make use of it</h2>
+<p>This library is rather complicated in function to give you an interface as
+similar as possible to what assembly has always used. Due to the way it
+functions, however, you do get some perks.&nbsp; What you have to do to use it is the following:</p>
+<p>In any DOS window you wish to run your assembly graphics program, run ex291.
+ex291 reads the environment variable EX291 to determine the keyboard and mouse
+settings, as well as determine whether the program will be run in full-screen
+mode or windowed mode.  Full-screen mode is what we will require for handins.
+Windowed mode allows you to debug - you'll get both the graphics window and the
+debug window.</p>
+<p>If you want to switch from one mode to another, or for any reason wish to
+remove the driver, simply run it again, and it will uninstall. It will tell you
+if it successfully installed or uninstalled, so you will know its status.</p>
+<p>If something goes horribly wrong, press CTRL-ALT-DEL and choose the task
+manager. Tell the ECE 291 Display Driver to exit (forcibly if necessary). You
+will need to restart the graphics driver (not the machine) if this happens.</p>
+<h3>The EX291 Environment Variable</h3>
+<p>The EX291 environment variable, like the BLASTER environment variable used by
+old SoundBlasters, contains several different options that can be used to set
+what resources EX291 uses and on what ports.  Seperate multiple options with
+spaces.  The environment variable must be set _before_ running ex291.com!</p>
+<p><ul>
+  <li>w|S<p>w=windowed/S=fullscreen.  Selects whether EX291 will fullscreen the
+    application window when switching into graphics mode.  Fullscreen is
+    faster, windowed allows for debugging in the Command Prompt window.</p>
+  </li>
+  <li>Kx,yyy
+    <p>x=IRQ virtual keyboard uses, yyy=I/O port virtual keyboard uses (in hex).
+      The virtual keyboard is used when a key is pressed when the graphics
+      window has focus (or when EX291 is running fullscreen).  It acts
+      identically to the normal keyboard, only it uses a different IRQ and I/O
+      port to allow for debugging.</p>
+  </li>
+  <li>Mz
+    <p>z=IRQ virtual mouse uses.  In graphics mode, EX291 overrides the normal
+      mouse driver with its own internal functions.  To do this, it needs an
+      IRQ to use internally.</p>
+  </li>
+</ul>
+<p>Select IRQs and I/O ports for these options which the application doesn't
+need for other purposes and the hardware hasn't already taken (eg, don't try
+to put the virtual keyboard on IRQ1: it will conflict with the hardware IRQ
+port and cause unpredictable behavior).</p>
+<p>Examples:<br>
+  <tt>EX291=w K7,300 M12</tt> - windowed, keyboard on IRQ7, port 300h, mouse on
+    IRQ12<br>
+  <tt>EX291=S K10,301 M5</tt> - full screen, keyboard on IRQ10 (high IRQ!),
+    port 301h, mouse on IRQ5</p>
+<h2>Known Problems</h2>
+<p>Unfortunately, as is often the case with the first round of any software,
+there are some problems with the library. So here are some of the things that
+we'ver heard cause problems, so you can <em>avoid</em> them. Or at least, you
+can know that we know it may crash when you do them. Or something.
+<ol>
+  <li>When debugging in windowed mode, only switch between the debug window and the Graphics window. Switching to any other window will sometimes
+    completely freeze your program.</li>
+</ol>
+<h1>Drawing in High Resolution Graphics</h1>
+<p>Now that you know how the library works, it's time to start using it.</p>
+<h2>Image Buffers</h2>
+<p>There are a few image buffers that you will be working with in this MP:</p>
+<ul>
+  <li>Screen buffer - contains the contents of the entire screen</li>
+  <li>Canvas buffer - contains the contents of the drawing canvas</li>
+  <li>Overlay buffer - this is the buffer to which you draw</li>
+</ul>
+<p>First, you draw to the overlay buffer.&nbsp; This buffer is then <a href="graphics.html">alpha
+composed</a> onto the canvas buffer, and the result it is written back to the
+canvas buffer.&nbsp; Finally, the canvas buffer is copied onto the screen buffer
+so you can see what you are drawing.&nbsp; In the function descriptions, the
+DestOff parameter is a pointer to the beginning of one of these three
+buffers.  &nbsp; Remember that the beginning of the buffer is point (0,0) in the buffer.
+&nbsp; Here is an example of drawing a green circle with half opacity to
+a red circle with full opacity:</p>
+<p>&nbsp;</p>
+<div align="center">
+  <center>
+  <table border="1" width="805" height="29">
+    <tr>
+      <td width="153" height="29" valign="middle">Step 1:<br>
+        Circle is drawn to overlay buffer (outlined - everything other than circle is transparent)</td>
+      <td valign="middle" align="left" width="638"><img border="0" src="circle.gif" align="absmiddle" width="200" height="200"></td>
+    </tr>
+    <tr>
+      <td width="153" height="29" valign="middle">Step 2:<br>
+        Overlay buffer is alpha composed onto canvas buffer<br>
+      </td>
+      <td valign="middle" align="left" width="638"><img border="0" src="circle.gif" align="absmiddle" width="200" height="200">
+        + <img border="0" src="oldcanvas.gif" align="absmiddle" width="200" height="200">
+        = <img border="0" src="newcanvas.gif" align="absmiddle" width="200" height="200"></td>
+    </tr>
+    <tr>
+      <td width="153" height="29" valign="middle">Step 3:<br>
+        Canvas buffer is copied to screen buffer<br>
+      </td>
+      <td valign="middle" align="left" width="638">&nbsp; <img border="0" src="newcanvas.gif" align="absmiddle" width="200" height="200">
+        ==&gt; <img border="0" src="screen.gif" align="absmiddle" width="323" height="252"></td>
+    </tr>
+    <tr>
+      <td width="153" height="29" valign="middle"></td>
+      <td valign="middle" align="left" width="638"></td>
+    </tr>
+  </table>
+  </center>
+</div>
+<p>&nbsp;</p>
+<h2>Blitting</h2>
+<p>Blitting is conceptually easy. You make a copy of an image (or part of an
+image) in another place. You do it really fast. This is what allows you to draw
+a mouse cursor, or characters of a font, or just about anything you see in a
+graphical user environment.</p>
+<p>There's a caveat to a general blitting function: the widths of the source and
+destination images aren't usually the same.&nbsp; In this MP, this situation
+includes (but is not limited to) drawing the 480x400 canvas to the 640x480
+screen.&nbsp; In this case, the source width corresponds to the width you want
+to draw.&nbsp; The picture below shows the canvas being drawn on the screen.</p>
+<p align="center"><img border="0" src="screen.gif" width="200" height="160"></p>
+<p>Once we find the address corresponding to the upper-left pixel of the canvas
+in memory and the address for the upper-left pixel of the destination of the
+canvas on the screen, we're almost good to go.</p>
+<p>For this example, let's say that the offset of the upper-left pixel of the
+destination of the
+canvas is 1000.&nbsp; What about the offset of the pixel to the right of the
+upper-left pixel?&nbsp; If you said 1004, you're right.&nbsp; You're moving over
+one pixel, and since each pixel is 4 bytes, you need to move over 4 bytes in
+memory.</p>
+<p>What about the offset of the pixel below the upper-left destination pixel?&nbsp; You need
+to know the width of the font image in order to answer this question.&nbsp; We
+know that the width of the screen is 640 pixels.&nbsp; Then, adding the width of
+the <b>screen</b> (in<b> bytes)</b> to the current offset will give you the offset of the
+pixel directly below where you're at now.&nbsp; So, the offset of the pixel
+below the upper-left destination pixel in this case would be 1000 + 640 pixels *
+4 bytes / pixel = 3560 bytes.</p>
+<p>Now all you need to know is how many rows and columns to copy, and this will
+vary with each image.&nbsp; For each of the <i>NumRows</i> rows, you'll copy <i>NumColumns</i>
+pixels out of the source image and place them in the destination image, moving
+right after each one.&nbsp; When you hit the end of the row in the source image,
+you'll have to move down to the next row in both the source and destination
+images, keeping in mind that in the destination image you'll also have to return
+to the column in which the initial, upper-left pixel resided.</p>
+<p>Unlike in MP3, where you were writing directly to video memory, you will now
+be using double buffering.&nbsp; In double buffering, you create a buffer the
+size of the screen, do all of your drawing on that buffer, and then write the
+entire buffer to memory at once.&nbsp; This reduces flicker and provides smooth
+animation of the objects on the screen.&nbsp; If you've ever played an
+old-school Nintendo game you should know what flickering is.&nbsp;</p>
+
+</body>
+
+</html>

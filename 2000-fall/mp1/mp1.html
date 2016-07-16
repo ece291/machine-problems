@@ -1,0 +1,519 @@
+<html>
+
+<head>
+<title>ECE 291</title>
+</head>
+
+<body bgcolor="#FFFFFF">
+<div align="center"><center>
+
+<table border="0" width="100%" cellspacing="0" cellpadding="0">
+  <tr>
+    <td width="33%" align="left">ECE 291</td>
+    <td width="33%" align="center">Computer Engineering II</td>
+    <td width="33%" align="right">Kalbarczyk, Fall 2000</td>
+  </tr>
+</table>
+</center></div>
+
+<h1 align="center">Machine Problem 1: Card Game (WAR)</h1>
+<div align="center"><center>
+
+<table border=1 width=60%>
+  <tr>
+    <td align=right>Assigned</td>
+    <td>Thursday 9/7/00</td>
+  </tr>
+  <tr>
+    <td align="right">Due Date</td>
+    <td>Thursday 9/21/00</td>
+  </tr>
+  <tr>
+    <td align="right">Purpose</td>
+    <td Roman">Learn to write assembler code. Use looping
+               and branching.  Perform basic string manipulations. Use 
+               subroutines.</td>
+  </tr>
+  <tr>
+    <td align="right">Points</font></td>
+    <td>50</td>
+  </tr>
+</table>
+</center></div>
+
+<h2>Introduction</h2>
+
+
+<p>The card game War may be familiar to many students. In it, a deck is 
+randomly 
+divided in two, and two players repeatedly place their cards on the table 
+at the same time, one card at a time. Whoever has the highest card takes 
+both cards, and the game continues until one player has won all cards. In 
+this assignment, we will be programming a somewhat simpler version of this 
+game, wherein we run through the deck once, and the player with the most 
+cards at the end wins.
+</p>
+
+<CENTER><IMG SRC=mp1.gif ALIGN=CENTER width="652" height="451"></CENTER>
+
+
+<h2>Problem Description</h2>
+
+
+<p>In this machine problem, you will write four basic functions which will 
+serve to simulate the game. As was previously stated, this game is 
+somewhat different in that the game will only play through the deck 
+once. </p>
+
+<p>Rather than sorting the fifty two card array into two ordered 
+subarrays,  we will simply generate a random number between 1 and 52 (via a pre-programmed 
+library routine) and use that number to select a card from the deck. We 
+will do this one more time, marking the cards we've already drawn. If the random 
+number happens to fall on a card we have already drawn, then we will 
+simply keep generating random numbers until we hit a card we have not yet 
+drawn. All this occurs in the <b>DealCards</b> routine.</p>
+
+<p>We actually play the game by comparing the two cards returned by 
+<b>DealCards</b>. If Player 1's card is ranked higher (only face value 
+counts) then the user wins and his/her card count is incremented by two. If 
+Player 2's card is ranked higher than the computer wins and its card count 
+is incremented by two.  In a real game of War, a tie condition results in a complex recursive 
+routine, but in our game, nothing will happen - the card counts will 
+remain unchanged. All this occurs in the <b>PlayOneRound</b> function.</p>
+
+<p>Of course, we should communicate to the user what is happening as the 
+game is played - specifically, we should tell him/her what cards are being 
+delt and who wins each round. The messages stating who is winning can be 
+found in pre-programmed library routines, but we need to program a 
+function to display cards: the <b>DisplayCard</b> function. Here we will 
+simply output the face value of the card (2-10, J, Q, K, A) followed by 
+the ASCII symbol for the card's suit.</p>
+
+<p>Last, but ironically first in the main routine, we have the 
+<b>Initialize</b> function. This function should intialize all counts to 
+zero and initialize the array describing the cards to a full deck. </p>
+
+
+
+<H2>MP1 Program Assignment</H2>
+
+<p>In this machine problem, the main procedure is provided for you; 
+however,
+you must write the code to replace the library routines.
+You will replace these procedures from the LIBMP1
+library by commenting out the statements calling the Lib routine
+and adding your code.  Each routine that you write
+should match the output of the library code exactly.  Each of the function 
+calls and their functionality is described below in the
+<b>Subroutines</b> section.
+The best way to get a feel for the program is to run it
+to see how it is supposed to operate.</p>
+
+
+<p>The program can be run by typing <tt>mp1</tt> at the
+command prompt.
+</p>
+
+<h2>Hints</h2>
+<ul>
+<li>The LIBMP1 file contains executable library functions for each of the
+routines that you need to implement.  
+This allows you to run the program and understand how it works before you 
+implment it.  You can test your program by stepping through the game and 
+making sure the display and comparison functions work correctly.  You will only receive credit, however, for
+the routines that you implement yourself. <p>
+
+<li>When debugging your code in Codeview, you will find it helpful to use
+the memory window to show you the memory location of the file and strings.
+You can also use the watch window to keep track of variables in your 
+code.<p>
+
+<li>Do not assume that the file starts at memory location 0.<p>
+
+<li>You may define new variables as needed.<p>
+
+<li>You may find it helpful to learn the <i>loop</i> command.<p>
+
+<li>The card array is stored thusly (in the deck variable):<p>
+<ul>
+	<li>(0 - 12) : Hearts (0-8 = numbers 2 to 10, 9 = Jack, 10 = Queen, 11 = King, 12 = Ace)
+	<li>(13 - 25) : Diamonds (13 - 21 = numbers 2 to 10, 22 = Jack, 23 = Queen, 24 = King, 25 = Ace)
+	<li>(26 - 38) : Clubs (26 - 34 = numbers 2 to 10, 35 = Jack, 36 = Queen, 37 = King, 38 = Ace)
+	<li>(39 - 51) : Spades (39 - 47 = numbers 2 to 10, 48 = Jack, 49 = Queen, 50 = King, 51 = Ace)
+	<li>A previously drawn card will have a value of 1, whereas an undrawn card 
+	will have a value of 0.<p>
+</ul>
+	
+<li>Be very careful if you call another procedure not to destroy registers
+that the calling procedure uses.<p>
+
+<li>For some more information on how the cards are stored in memory (and
+some hints on how to determine the card/suit), reference Spring 2000's
+<a href="http://www.ece.uiuc.edu/ece291/archive/archive-s2000/mp/mp3/mp3.html">MP3</a>,
+which discuses it in more detail. (This MP was loosely based on that one.)<p>
+
+<li>Remember to include function headers for each of your functions!<p>
+
+<li>Remember to include comments within the functions you write!<p>
+
+<li>START EARLY!  This is the first MP that requires you to write your
+own program.  Composition is much more difficult than comprehension.<p>
+
+<li>Monitor the <a href="news:uiuc.class.ece291">newsgroup</a> for 
+clarifications and help.</p>
+</ul>
+
+<h2>Subroutines</h2>
+
+<p>This assignment has four procedures. You will receive credit by 
+replacing
+each of these four procedures listed below with your own code. </p>
+
+
+<table BORDER=1 >
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>Initialize</font></b></td>
+
+<td><ul>
+    
+<li>Initializes all counters and arrays properly.
+<li>Inputs: deck[52], CurrentCard[2], TotalCards[2]
+<li>Outputs: deck[52], CurrentCard[2], TotalCards[2]
+<li>Calls: none
+<li>Note: You should save the registers you alter.&nbsp; One way to do this,
+is to push them
+  all onto the stack (via rsave) in the beginning of the subroutine, and pop them all 
+off
+  the stack at the end (via rrest).
+ </ul></td>
+</tr>
+
+
+<td><B><font SIZE=+1>DealCards</font></b></td>
+
+<td><ul>
+
+<li>Deals two random cards from the ones currently available
+
+<li>Inputs: deck[52]
+<li>Outputs: CurrentCard[2]
+<li>Calls: libRandom
+<li>Note: Always save your registers in every procedure from here on out.  
+(We're not going to tell you
+again!)
+</ul></td>
+
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>DisplayCard</font></b></td>
+
+<td><ul>
+<li>Display the given card, both face value and suit
+<li>Inputs: AX = card to be displayed, DX = offset of either playerMsg or opponentMsg
+<li>Outputs: none
+<li>Calls: dspmsg
+</ul></td>
+</tr>
+
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>PlayOneRound</font></b></td>
+
+<td><ul>
+       <li>Compare two input cards, display cards and display winner.
+<li>Inputs: CurrentCard[2]
+<li>Outputs: TotalCards[2]
+<li>Calls: dspmsg, DealCards, DisplayCards
+</ul></td>
+</tr>
+
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>libRandom</font></b></td>
+
+<td><ul>
+       <li>Generates a random number between 0 and N-1, where N is an input 
+       paramter.
+<li>Inputs: CX = N
+<li>Outputs: AX = random number
+<li>Calls: none
+<li>NOTE: This routine is provided in the library, you do not have to 
+write it.
+</ul></td>
+</tr>
+
+                  
+</table>
+
+<h2>Procedure</h2>
+<ul>
+<li>You will begin this MP with the following files:
+    <ul>
+    <li><tt>MP1.ASM</tt>: Program Framework
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled
+        and linked.
+    <li><tt>LIBMP1.LIB</tt>: Library functions for MP1
+    <li><tt>LIB291.LIB</tt>: General-purpose library functions
+    </ul>
+<li>You may copy these files from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s V:\ece291\mp1 W:\mp1</tt><br>
+    or download the files from this server as <a 
+href="mp1.zip">mp1.zip</a> 
+<li>Add your code to <tt>MP1.ASM</tt>.
+<li>Assemble and link your program by typing<br>
+      <tt>nmake</tt><Br>
+    This command reads <i>Makefile</i> then invokes MASM and LINK to build 
+    an executable program.  
+<li>Use CodeView (CV) to find and correct program errors. 
+<li>Verify your program operation by testing the
+    input test file.  You should alter the test file to check 
+    different scenarios with your code.
+</ul>
+
+<h2>Final Steps</h2>
+
+<ol>
+  <li>Print a copy of the MP1 grading report (<a 
+href="mp1grade.html">MP1GR</a>).
+   Double-check that your program is ready for demonstration.  You need to
+   run through the test cases on the grading sheet, you WILL NOT be allowed
+   to hand-in unless you have done this step.
+  <li>Print MP1.ASM (Use GreenPrint32 to print at 4 pages/side.) 
+  <li>Demonstrate your MP1.EXE to a TA or to the instructor.</li>
+  <li>Be prepared to answer questions about any aspect of the operation of
+   your program. The TAs will not accept an MP if you cannot fully explain
+   the operation of your code and details of your implementation. Delayed
+   MPs will be subject to late penalties as described in the course
+   syllabus (10pts/day).</li>
+  <li>The TA will copy your program to the demonstration disk.
+  <li>Take your printouts to the same TA which approved your demonstration.
+    Staple the grading sheet to the front of the MP1.ASM printout.  Be sure
+    that your name appears in your code and on the grading sheet.
+</ol>
+
+<hr>
+
+<h2>MP1.ASM (program framework)</h2>
+
+<font size=-1><pre>
+
+
+
+TITLE     ECE291        Your Name       Today's Date
+
+COMMENT % War!
+          ECE291 - Machine Problem 1
+          Prof. Kalbarczyk
+          Author: Justin Quek, Chris Jones
+          University of Illinois at Urbana Champaign
+          Dept. of Electrical & Computer Engineering
+          Fall 2000
+
+          Ver. 1.0
+        %
+
+;--------------------------------------------------------------
+;--                   Defining  Constants                    --
+;--------------------------------------------------------------
+
+        ESCKEY  EQU     1Bh
+        LF      EQU     0Ah
+        CR      EQU     0Dh
+
+        public ESCKEY, LF, CR
+
+;--------------------------------------------------------------
+;--               Declaring External Procedures              --
+;--------------------------------------------------------------
+
+;       Functions in LIB291.LIB These functions are free to 
+;       be used by you. Complete descriptions of the LIB291
+;       functions can be found in your lab manuals. Use these
+;       functions for displaying output on the screen.
+
+        extrn rsave:near, rrest:near
+        extrn dspout:near, dspmsg:near, kbdin:near
+
+;       Functions in LIBMP1.LIB
+;       You will need to write these functions for this program.
+
+        extrn libInitialize:near, libDealCards:near, libDisplayCard:near
+        extrn libPlayOneRound:near
+
+;       You will NOT need to write these functions.
+
+        extrn libGreeting:near, libRandom:near
+
+;       This function terminates the program.
+        extrn mp1xit:near
+
+;--------------------------------------------------------------
+;--                Defining the Stack Segment                --
+;--------------------------------------------------------------
+
+stkseg SEGMENT stack
+        db  64 dup ('STACK  ')
+stkseg ENDS
+
+;--------------------------------------------------------------
+;--                 Defining the Code Segment                --
+;--------------------------------------------------------------
+
+cseg SEGMENT PUBLIC 'CODE'
+        assume cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;--------------------------------------------------------------
+;--           Declaring variables for Lib Procedures         --
+;--------------------------------------------------------------
+
+deck            db      52 dup(0)       ; Deck of cards (1=chosen, 0=not)
+currentCard     db      2 dup(0)        ; Players' cards (0-51)
+totalCards      db      2 dup(0)        ; Number of cards each player has
+cardsLeft       db      52              ; Number of cards left in the deck
+
+playerMsg       db      '  Player', 60h, 's Card: ','$'
+opponentMsg     db      'Opponent', 60h, 's Card: ','$'
+
+newline         db      CR, LF, '$'
+message         db      'Press ESC to quit, any other key to continue...', CR, LF, '$'
+gameWinMsg      db      'Congratulations, you won!', CR, LF, '$'
+gameLoseMsg     db      'Too bad, you lost!', CR, LF, '$'
+gameTieMsg      db      'Darn, a tie game...', CR, LF, '$'
+
+winMsg          db      'You WIN! You receive the two cards.', CR, LF, '$'
+loseMsg         db      'You LOSE! Your opponent receives the two cards.', CR, LF, '$'
+tieMsg          db      'A TIE! Nobody receives the two cards.', CR, LF, '$'
+
+public deck, currentCard, totalCards, cardsLeft
+public playerMsg, opponentMsg
+public newline, message, gameWinMsg, gameLoseMsg, gameTieMsg
+public winMsg, loseMsg, tieMsg
+
+public Initialize, DealCards, DisplayCard, PlayOneRound
+
+;--------------------------------------------------------------
+;--                       Main Procedure                     --
+;--------------------------------------------------------------
+
+MAIN PROC FAR
+
+        mov     ax, cseg	; Use common code and data segment
+        mov     ds, ax
+        
+        call    libGreeting	; spit out some greeting messages
+
+        call    Initialize
+        mov     cx, 26
+
+GameLoop:
+        call    PlayOneRound
+
+        mov     dx, offset message
+        call    dspmsg
+
+        call    kbdin
+        cmp     al, ESCKEY	; check for exit status
+        je      GameOver
+
+        loop    GameLoop	; loop until either player quits, or deck used up
+
+GameOver:
+        mov     ax, word ptr [totalCards]
+        cmp     al, ah
+        je      tieGame
+        jg      winGame
+
+loseGame:			; Oh no, you lost!
+        mov     dx, offset gameLoseMsg
+        call    dspmsg
+        jmp     MP1Exit
+
+winGame:			; Hooray, you won!
+        mov     dx, offset gameWinMsg
+        call    dspmsg
+        jmp     MP1Exit
+
+tieGame:			; Darn, a tie...
+        mov     dx, offset gameTieMsg
+        call    dspmsg
+
+MP1Exit:
+        call    mp1xit
+
+MAIN ENDP
+
+;--------------------------------------------------------------
+;--             Replace Library Calls with your Code!        --
+;--             [Save all reg values that you modify]        -- 
+;--             Do not forget to add Function Headers        --
+;--------------------------------------------------------------
+
+;--------------------------------------------------------------
+;--                       Initialize()                       --
+;--------------------------------------------------------------
+Initialize PROC NEAR
+
+        call    libInitialize
+        ret
+        
+Initialize ENDP
+
+
+;--------------------------------------------------------------
+;--                        DealCards()                       --
+;--------------------------------------------------------------
+DealCards PROC NEAR
+
+        call    libDealCards
+        ret
+
+DealCards ENDP
+
+
+;--------------------------------------------------------------
+;--                       DisplayCard()                      --
+;--------------------------------------------------------------
+DisplayCard PROC NEAR
+
+        call    libDisplayCard
+        ret
+
+DisplayCard ENDP
+
+
+;--------------------------------------------------------------
+;--                       PlayOneRound()                     --
+;--------------------------------------------------------------
+PlayOneRound PROC NEAR
+
+        call    libPlayOneRound
+        ret
+        
+PlayOneRound ENDP
+
+
+CSEG ENDS
+        END MAIN
+
+</pre></font>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,581 @@
+<% title = "ECE291 Machine Problem 1"
+subtitle = "Machine Problem 1"
+
+ %>
+<!--#include file="headvb.asp"--><HTML><HEAD>
+<META http-equiv=Content-Type content="text/html; charset=windows-1252">
+<META content="Microsoft FrontPage 5.0" name=GENERATOR></HEAD>
+<BODY>
+<H1 align=center>Machine Problem 1: ECE291 Hangman</H1>
+<DIV align=center>
+<CENTER>
+<TABLE cellSpacing=2 cellPadding=2 width="60%" border=0>
+  <TBODY>
+  <TR>
+    <TD align=right bgColor=#efefef><B>Assigned</B></TD>
+    <TD bgColor=#efefef>Thursday, 30 January 2003</TD></TR>
+  <TR>
+    <TD align=right bgColor=#efefef><B>Due Date</B></TD>
+    <TD bgColor=#efefef>Wednesday, 12 February 2003, 5:00 p.m.</TD></TR>
+  <TR>
+    <TD align=right bgColor=#efefef><B>Purpose</B> </TD>
+    <TD bgColor=#efefef>Learn to write assembly code. Use loops and branching. 
+      Perform basic string operations.</TD></TR>
+  <TR>
+    <TD align=right bgColor=#efefef><B>Points</B> </TD>
+    <TD bgColor=#efefef>40</TD></TR></TBODY></TABLE></CENTER></DIV>
+<H2>Introduction</H2>Hangman is a simple word-guessing game. 
+Implementing a basic hangman game in assembly will introduce you to the basics 
+of writing assembly code, as well as preparing you to write more complicated 
+programs in later MPs. 
+<H2>Problem Description</H2>
+<P>In Hangman, the user is presented with an unknown word, consisting of all 
+underscore ('_') characters. The object of the game is to guess every letter in 
+the word. However, each time the user guesses a letter that is not in the word, 
+part of the hangman is drawn to the gallows. If the entire hangman is drawn to 
+the gallows (head, left arm, right arm, left leg, and right leg), the user loses 
+and the hangman is hung. If the user can guess all of the letters in the word 
+while making fewer than 5 wrong guesses, the user wins. </P>
+<P>In our implementation of Hangman, there are a few key issues and variables: 
+<UL>
+  <LI><B>Strings</B><BR>In assembly, strings are just a series of bytes of ASCII 
+  characters. The lib291 string-display function, <tt><b>dspmsg</b></tt>, uses a '$' character to mark 
+  the end of a string. For example, the string 'ECE291$' would be a seven-byte 
+  string - one byte each for 'E', 'C', 'E', '2', '9', '1', and the end-of-string 
+  character '$'. 
+  <P></P>
+  <LI><B>The <TT>WordSpace</TT> and <TT>TheWord</TT> 
+  variables</B><BR><TT>TheWord</TT> is a string variable storing the word that 
+  the user is trying to guess. For simplicity, it is a static variable - the 
+  word will not change each time you run the program. If you want to use a 
+  different word than the default, you may change the word in your source .asm 
+  file, but make sure to keep it under 20 characters. <TT>WordSpace</TT> is a 
+  20-byte string for you to store your 'word-in-progress'. In the Init function, 
+  you should set up <TT>WordSpace</TT> to have as many underscore characters as 
+  <TT>TheWord</TT> has letters. As the user correctly guesses letters, these 
+  letters will replace the underscores in <TT>WordSpace</TT>. 
+  <P></P>
+  <LI><B>The <TT>UsedLetters</TT> array</B><BR>To keep track of which letters 
+  have already been guessed, we will use a 26-byte array called 
+  <TT>UsedLetters</TT>. Each byte-sized element of this array corresponds to a 
+  letter in the alphabet - element 0 corresponds to 'a', 1 corresponds to 'b', 
+  and so on. Each byte acts as a flag: if the byte corresponding to a letter is 
+  a 0, that letter has not been guessed. If the byte is a 1, that letter has 
+  been used. </LI></UL>
+<H2><A name=screenshot>Screenshot</A></H2>
+<P>The following screen capture depicts ECE291 Hangman during gameplay: </P>
+<CENTER><IMG height=425 src="mp1.gif" width=652 border=0></CENTER>
+<H2>MP1 Program Assignment</H2>
+<P>In this machine problem, the main procedure and the procedure to draw the 
+hangman (<tt><b>DisplayGallows</b></tt>) are provided for you; however, you must write the 
+code to replace the other library routines. You will replace these procedures 
+from the LIBMP1 library by commenting out the statements calling the Lib routine 
+and adding your code. Each routine that you write should match the output of the 
+library code exactly. Each of the function calls and their functionality is 
+described below in the <b>Subroutines</b> section. The best way to get a feel 
+for the program is to run it to see how it is supposed to operate.</P>
+<P>Your program is required to: 
+<OL type=I>
+  <LI>Process each character that the user guesses appropriately 
+  <LI>Display the word-in-progress and list of already-guessed letters correctly 
+
+  <LI>Determine whether the user has won or lost 
+  <LI>Run efficiently. Points will be deducted for inefficient algorithms and/or 
+  excessive coding. </LI></OL>
+<P>The program can be run by typing <TT>mp1</TT> at the command prompt. </P>
+<H2>Brief Intro to PUSH and POP</H2>
+<UL>
+  <LI>Pushing and poping are stack operations and will be covered later in 
+  lecture. 
+  <P></P>
+  <LI>PUSHA will record onto the stack a copy of the data in all of the CPU's 
+  registers. POPA removes the data from the stack and copies it back to the 
+  registers. 
+  <P></P>
+  <LI>Pushing and popping is, among other things,&nbsp;used to ensure that a 
+  called function doesn't scramble registers that&nbsp;the calling function 
+  uses. 
+  <P></P>
+  <LI>You can push and pop individual registers with instructions like <TT>push 
+  ax</TT> and <TT>pop cx</TT>. PUSHA and POPA save <I>all</I> of the registers 
+  to the stack.  Pushing and popping individual registers is the 
+  preferred method of saving/restoring register data when calling a function. 
+  PUSHA and POPA are used here for simplicity. 
+  <P></P>
+  <LI>Precocious students will examine <A 
+  href="http://courses.engr.illinois.edu/ece291/lecture/potts/lecture6.htm">Lecture 
+  6</A> or <A 
+  href="http://courses.engr.illinois.edu/ece291/lecture/lockwood/l7.html">Lockwood's 
+  Lecture</A>. </LI></UL>
+<H2>Hints</H2>
+<UL>
+  <LI>The LIBMP1 file contains executable library functions for each of the 
+  routines that you need to implement. This allows you to run the program and 
+  understand how it works before you implement it. You can test your program 
+  with any combinations of your own code and library functions. You will only 
+  receive credit, however, for the routines that you implement yourself.
+  <P></P>
+  <li>The <tt><B>DisplayGallows</B></tt> function has been written for you.  You
+  can use it as a model to see how to write and comment your own assembly functions.
+  <p></p>
+  <li>Check out
+  <a href="http://courses.engr.illinois.edu/ece291/books/labmanual/libraries.html">Chapter 9</a>
+  in your lab manual for descriptions and documentation for the lib291 functions
+  <tt><b>dspout</b></tt> and <tt><b>dspmsg</b></tt>.  These functions are used for displaying a character
+  and a string to the screen, respectively.
+  <p></p>
+  <LI>You may define new variables as needed.
+  <P></P>
+  <LI>START EARLY! This is the first MP that requires you to write your own 
+  program. Composition is much more difficult than comprehension.
+  <P></P>
+  <P></P>
+  <LI>Monitor the <A href="news:uiuc.class.ece291">newsgroup</A> for 
+  clarifications and help.
+  <P></P></LI></UL>
+<H2>Subroutines</H2>
+<P>This assignment has five procedures. You will receive credit by replacing each 
+of these five procedures listed below with your own code. </P>
+<P>Document your functions with descriptive function headers.&nbsp; Look in your 
+lab book for examples or ask a TA.&nbsp; YOU WILL LOSE POINTS IF YOU DON'T WRITE 
+CLEAR, CONCISE FUNCTION HEADERS!!!!</P>
+<TABLE border=1>
+  <TBODY>
+  <TR vAlign=top>
+    <TD><B><FONT size=+1>Init</FONT></B></TD>
+    <TD>
+      <UL>
+        <LI>Sets up the <TT>WordSpace</TT> variable to have as many underscores 
+        as <TT>TheWord</TT> has letters. 
+        <LI>Inputs: 
+        <UL>
+          <LI>The <TT>WordSpace</TT> and <TT>TheWord</TT> variables </LI></UL>
+        <LI>Outputs: 
+        <UL>
+          <LI><TT>WordSpace</TT> is set up properly</LI></UL>
+        <LI>Calls: None 
+        <LI>Note: Remember that all strings should end with the '$' character. 
+        </LI></UL></TD></TR>
+  <TR vAlign=top>
+    <TD><B><FONT size=+1>ProcessChar</FONT></B></TD>
+    <TD>
+      <UL>
+        <LI>Checks the character that the user has guessed to see if it matches 
+        any letters in <TT>TheWord</TT>, and takes the appropriate action. 
+        <LI>Inputs: 
+        <UL>
+          <LI>AL = Character that the user has just guessed 
+          <LI>The <TT>WordSpace</TT> and <TT>TheWord</TT> variables 
+          <LI>The <TT>UsedLetters</TT> array 
+          <LI>The <TT>NumIncorrect</TT> variable </LI></UL>
+        <LI>Outputs: 
+        <UL>
+          <LI>The correct element in <TT>UsedLetters</TT> is marked as 'used' 
+          <LI><TT>WordSpace</TT> is updated if the character matches 
+          <LI><TT>NumIncorrect</TT> is updated appropriately if the character 
+          doesn't match. </LI></UL>
+        <LI>Calls: DSPMSG, DSPOUT 
+        <LI>Notes: ProcessChar should first check to see if the character in 
+        <TT>AL</TT> is in the range 'a' through 'z'. If it is not, output an 
+        error message and return. If it is within that range, check to see if 
+        that letter has already been guessed by checking the appropriate entry 
+        in <TT>UsedLetters</TT>. If it has been used, output an error message 
+        and return. If the letter hasn't been used, scan through each character 
+        in <TT>TheWord</TT> and check for matching characters. If any characters 
+        match, copy them to the corresponding place in <TT>WordSpace</TT>.  If no 
+        characters match, update <TT>NumIncorrect</TT> appropriately. 
+        <LI>Hint: Either the "register relative" or "base plus index" addressing 
+        modes are useful in this function. Review your lecture notes or look at 
+        the <A 
+        href="http://courses.engr.illinois.edu/ece291/lecture/potts/index.html">online 
+        lecture notes</A> for more information on memory addressing. </LI></UL></TD>
+  <TR vAlign=top>
+    <TD><B><FONT size=+1>DisplayWord</FONT></B></TD>
+    <TD>
+      <UL>
+        <LI>Displays the word-in-progress 
+        <LI>Inputs: 
+        <UL>
+          <LI>The <TT>WordSpace</TT> variable </LI></UL>
+        <LI>Outputs: 
+        <UL>
+          <LI>The word-in-progress is displayed to the screen with a space 
+          between each character 
+          <LI>Calls: DSPOUT, DSPMSG</LI></UL>
+        <LI>Note: If you're unclear on what to display, run the program or take 
+        a look at the <A 
+        href="#screenshot">screenshot</A> 
+        to see exactly how to display the word.</LI></UL>
+      <UL></UL></TD></TR>
+  <TR vAlign=top>
+    <TD><B><FONT size=+1>DisplayUsed</FONT></B></TD>
+    <TD>
+      <UL>
+        <LI>Displays a list of already-guessed letters 
+        <LI>Inputs: 
+        <UL>
+          <LI>The <TT>UsedLetters</TT> array </LI></UL>
+        <LI>Outputs: 
+        <UL>
+          <LI>Displays used letters </LI></UL>
+        <LI>Calls: DSPOUT, DSPMSG 
+        <LI>Notes: Loop through the <TT>UsedLetters</TT> array looking for 1's. 
+        If/when you find a 1, display the corresponding character. </LI></UL>
+      <UL></UL></TD></TR>
+  <TR vAlign=top>
+    <TD><B><FONT size=+1>CheckWinner</FONT></B></TD>
+    <TD>
+      <UL>
+        <LI>Determines if the user has won or lost. 
+        <LI>Inputs: 
+        <UL>
+          <LI>The <TT>NumIncorrect</TT> variable 
+          <LI>The <TT>WordSpace</TT> variable </LI></UL>
+        <LI>Outputs: 
+        <UL>
+          <LI>Sets the <TT>Status</TT> variable to 1 if the user has won, -1 if 
+          the user has lost, or 0 if the user hasn't won or lost (i.e. the user 
+          should keep playing). </LI></UL>
+        <LI>Calls: None 
+        <LI>Notes: First, check <TT>NumIncorrect</TT>. Then, scan 
+        <TT>WordSpace</TT> looking for underscore characters. </LI></UL>
+      <UL></UL></TD></TR></TBODY></TABLE>
+<H2>Procedure</H2>
+<UL>
+  <LI>You will begin this MP with the following files: 
+  <UL>
+    <LI><TT>MP1.ASM</TT>: Program Framework 
+    <LI><TT>Makefile</TT>: Specifies how and when programs are assembled and 
+    linked. 
+    <LI><TT>LIBMP1.LIB</TT>: Library functions for MP1 
+    <LI><TT>LIB291.LIB</TT>: General-purpose library functions </LI></UL>
+  <LI>You may copy these files from the network drive to your home directory 
+  with the following command: <BR><TT>xcopy /s V:\ece291\mp1 W:\mp1</TT><BR>or 
+  download the files from this server as <A 
+  href="mp1.zip">mp1.zip</A> 
+
+  <LI>Add your code to <TT>MP1.ASM</TT>. 
+  <LI>Assemble and link your program by typing<BR><TT>make</TT><BR>This command 
+  reads <I>Makefile</I> then invokes NASM and TLINK to build an executable 
+  program. 
+  <LI>Use Turbo Debugger (TD) to find and correct program errors. 
+  <LI>Verify your program operation by playing the game and checking all cases. 
+  </LI></UL>
+
+<H2>Development Log and Cover Memo</H2>
+
+<P>As you work on each machine problem, you will keep a simple MP 
+development log. The log will document your design decisions, development plan,
+and debugging experiences, including the time you spent on different parts
+of the machine problem. The log may be kept in any form. In general, whenever
+you work on a machine problem, briefly record the starting time, 
+significant design decisions, progress in coding and
+testing, bugs you discovered, and the ending time. Do <I>not</I> record
+simple syntax errors detected by NASM at assembly time; these 
+are not considered to be bugs.</P>
+
+<P>For each machine problem, beginning with MP1, you will submit a cover memo of
+200 to 400 words (up to one page, single spaced). The cover memo
+should answer the following questions, based on the information that you
+record in your MP development log. 
+<UL>
+<LI>How much time did you spend on the design, coding, and testing of each part 
+or subroutine?</LI>
+<LI>What kinds of defects (bugs) did you find during the development 
+of the program? When did you discover these defects (during
+code review or during testing)? How did you find them?</LI>
+<LI>What you would do differently for the next MP?</LI>
+</UL>
+<p>Type your cover memo into a plain text file in your W:\mp1 directory </p>
+<H2>Final Steps</H2>
+<OL>
+  <LI>Demonstrate your MP1.EXE to a TA or to the instructor.&nbsp; The TA or 
+  instructor will verify that your program works as intended. 
+  <LI>Be prepared to answer questions about any aspect of the operation of your 
+  program. The TAs will not accept an MP if you cannot fully explain the 
+  operation of your code and details of your implementation. Delayed MPs will be 
+  subject to late penalties as described in the course syllabus (10%/day). 
+  <LI>The TA will handin your MP online. </LI></OL>
+<HR>
+
+<H2>MP1.ASM (program framework)</H2><FONT size=-1><XMP>; MP1 - ECE291 Hangman
+
+; MP1 - ECE291 Hangman
+; Your Name
+; Date
+;
+; Zbigniew Kalbarczyk, Spring 2003
+; Author: John King
+; University of Illinois, Urbana-Champaign
+; Dept. of Electrical and Computer Engineering
+;
+; Version 1.0
+
+        BITS	16
+
+;====== SECTION 1: Define constants =======================================
+
+        CR		EQU     0Dh
+        LF		EQU     0Ah
+        ESC             EQU     01Bh
+        SPACE           EQU     020h
+        HEAD            EQU     04Fh
+        LEFTLIMB        EQU     02Fh
+        RIGHTLIMB       EQU     05Ch
+
+;====== SECTION 2: Declare external routines ==============================
+
+; Declare external library routines
+EXTERN kbdine, dspout, dspmsg, mp1xit 
+EXTERN libInit, libProcessChar, libDisplayWord, libDisplayUsed
+EXTERN libDisplayGallows, libCheckWinner
+
+; Declare local routines
+GLOBAL Init, ProcessChar, DisplayWord, DisplayUsed
+GLOBAL DisplayGallows, CheckWinner
+
+; Make program variables global
+GLOBAL CRLFString, WelcomeString, PromptString, NotValidString, UsedString
+GLOBAL WinString, LoseString, AlreadyUsed, AlreadyUsedEnd
+GLOBAL NumIncorrect, TheWord, UsedLetters, WordSpace, FoundFlag, Status
+
+
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        resb      64*8
+stacktop:
+        resb      0                     ; work around NASM bug
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+; Some useful strings
+CRLFString      db   CR,LF,'$'
+WelcomeString   db   CR,LF,'Welcome to ECE291 Hangman!',CR,LF,'$'
+PromptString    db   CR,LF,'Enter a letter: ','$'
+NotValidString  db   CR,LF,'That is not a valid letter.',CR,LF,'$'
+UsedString      db   CR,LF,'Used letters: ','$'
+WinString       db   CR,LF,'You Win!!!',CR,LF,'$'
+LoseString      db   CR,LF,'You Lose :(',CR,LF,'$'
+AlreadyUsed     db   CR,LF,'You have already used the letter ',027H,'$'
+AlreadyUsedEnd  db   027h,'.',CR,LF,'$'
+
+; Strings to draw the hangman
+GallowsTop      db   '------',CR,LF
+                db   '|    |',CR,LF,'$'
+GallowsSide     db   '|   ','$'
+GallowsBottom   db   '|',CR,LF
+                db   '-',CR,LF,'$'
+
+; NumIncorrect keeps track of how many incorrect guesses the user has made
+NumIncorrect    db   0
+
+; TheWord is the word the user is trying to guess
+TheWord         db   'frequency','$'
+
+UsedLetters     times 26 db 0
+WordSpace       times 20 db '$'
+
+Status          db   0
+FoundFlag       db   0
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        mov     ax, cs                  ; Initialize Default Segment register
+        mov     ds, ax  
+        mov     ax, stkseg              ; Initialize Stack Segment register
+        mov     ss, ax
+        mov     sp, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+MAIN:
+        mov     dx, WelcomeString       ; Display welcome message
+        call    dspmsg
+
+        call    Init                    ; Set up the WordSpace variable
+
+.InputLoop:
+        call    DisplayGallows          ; Draw the hangman
+        
+        call    DisplayUsed             ; Display used letters
+        call    DisplayWord             ; Display the word in progress
+        
+        mov     dx, PromptString
+        call    dspmsg
+        call 	kbdine                  ; Input a character from the keyboard
+                                        ; into al
+        
+        mov     dx,CRLFString
+        call    dspmsg
+
+        cmp     al,ESC                  ; If it's an ESC character,
+        je      .End                    ; exit immediately
+        
+        call    ProcessChar
+        
+        call    CheckWinner
+
+        cmp     byte[Status],0
+        js      .Lose                   ; js = jump sign.  If Status is signed,
+                                        ; e.g. a negative number, the user has lost
+        je      .InputLoop              ; If Status is equal to zero, keep playing
+
+.Win                                    ; If Status is neither -1 nor 0,
+        call    DisplayGallows          ; we assume it must be 1, so the user has won
+        call    DisplayUsed
+        call    DisplayWord
+
+        mov     dx,WinString
+        call    dspmsg
+        jmp     .End
+
+.Lose             
+        call    DisplayGallows    
+        call    DisplayUsed
+        call    DisplayWord
+
+        mov     dx,LoseString
+        call    dspmsg
+.End
+        call    mp1xit
+
+;====== SECTION 8: Your subroutines =======================================
+
+;;; Init
+;;;
+Init:
+        pusha				; Save all register values to the stack
+        call    libInit
+        popa                            ; Restore registers
+        ret
+
+;;; ProcessChar
+;;;
+ProcessChar:
+        pusha
+        call    libProcessChar
+        popa
+        ret
+
+;;; DisplayWord
+;;;
+DisplayWord:
+        pusha
+        call    libDisplayWord
+        popa
+        ret
+        
+;;; DisplayUsed
+;;;
+DisplayUsed:
+        pusha
+        call    libDisplayUsed
+        popa
+        ret
+
+;;; CheckWinner
+;;;
+CheckWinner:
+        pusha
+        call    libCheckWinner
+        popa
+        ret
+
+;;; DisplayGallows
+;;; PURPOSE: Draws the hangman to the screen
+;;; INPUTS:  The NumIncorrect variable
+;;; OUTPUTS: The hangman is drawn correctly, according to how many wrong
+;;;          guesses the user has made
+;;;
+DisplayGallows:
+        pusha					; Save all register values to the stack, since
+        					; we change some of their values in this function
+
+        mov     dx,GallowsTop        		; Display the top of the gallows
+        call    dspmsg        			; dspmsg takes the address of a string in dx
+        mov     dx,GallowsSide
+        call    dspmsg
+        
+        cmp     byte[NumIncorrect],1        	; If there are one or more incorrect
+        jb      .NoHead        			; guesses, we draw the head
+        					; jb = jump below
+        mov     dl,SPACE
+        call    dspout        			; dspout takes the ASCII character to output in dl
+        mov     dl,HEAD
+        call    dspout
+.NoHead
+        mov     dx,CRLFString        		; CRLFString puts us at the beginning
+        call    dspmsg        			; of a new line
+
+        mov     dx,GallowsSide
+        call    dspmsg
+        
+        cmp     byte[NumIncorrect],2        	; If there are two or more incorrect
+        jb      .NoLeftArm        		; guesses, we draw the left arm
+        mov     dl,LEFTLIMB
+        call    dspout
+        mov     dl,SPACE
+        call    dspout
+        
+.NoLeftArm
+        cmp     byte[NumIncorrect],3        	; Three or more incorrect guesses,
+        jb      .NoRightArm        		; draw the right arm
+        mov     dl,RIGHTLIMB
+        call    dspout
+
+.NoRightArm
+        mov     dx,CRLFString        		; New line
+        call    dspmsg
+        mov     dx,GallowsSide
+        call    dspmsg
+        
+        cmp     byte[NumIncorrect],4        	; Four or more, draw the left leg
+        jb      .NoLeftLeg
+        mov     dl,LEFTLIMB
+        call    dspout
+        mov     dl,SPACE
+        call    dspout
+
+.NoLeftLeg
+        cmp     byte[NumIncorrect],5        	; Five or more, draw the right leg
+        jb      .Done
+        mov     dl,RIGHTLIMB
+        call    dspout
+
+.Done
+        mov     dx,CRLFString        		; Draw the bottom of the gallows
+        call    dspmsg
+        mov     dx,GallowsBottom
+        call    dspmsg
+
+        popa					; Restore register values from the stack
+        ret
+
+
+</XMP></FONT>
+<HR>
+
+<H2>Makefile</H2><FONT size=-1><XMP>MPNAME=mp1
+
+
+all: $(MPNAME).exe
+
+
+clean: 
+	rm -f $(MPNAME).exe $(MPNAME).obj $(MPNAME).lst $(MPNAME).map
+
+
+%.exe: %.obj
+	tlink /c /v $<, $*.exe, $*.map, libmp1.lib lib291.lib
+
+
+%.obj: %.asm
+	nasm -g -f obj -o $*.obj $< -l $*.lst
+
+
+</XMP></FONT><!--#include file="foot.asp"--></BODY></HTML>

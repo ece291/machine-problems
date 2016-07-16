@@ -1,0 +1,131 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!-- saved from url=(0074)http://courses.engr.illinois.edu/ece291/archive/archive-f2000/mp/mp4/ablit.html -->
+<HTML><HEAD><TITLE>Drawing Anti-Aliased Text</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=windows-1252">
+
+<META content="Microsoft FrontPage 4.0" name=GENERATOR></HEAD>
+<BODY>
+<h1>Drawing Anti-aliased Text in High Resolution Graphics</h1>
+<p>Now that you know how the library works, it's time to start using it.</p>
+<h2>Blitting</h2>
+<p>Blitting is conceptually easy. You make a copy of an image (or part of an
+image) in another place. You do it really fast. This is what allows you to draw
+a mouse cursor, or characters of a font, or just about anything you see in a
+graphical user environment.&nbsp; There's a caveat to a general blitting
+function: the widths of the source and destination images aren't usually the
+same.&nbsp;&nbsp;Let's see an example with drawing a letter on the screen, as
+this is what you'll be doing in this MP.&nbsp; Here's the image of a section of
+the font file, with the 'A' being the character we will draw to the screen.&nbsp;
+The entire font file has 128 characters, and each character is 16 pixels wide
+and 16 pixels high.&nbsp;&nbsp;</p>
+<p align="center"><img border="0" src="font-a.png" width="185" height="50"></p>
+<p>Once we find the offset corresponding to the upper-left pixel of the source
+character and the offset for the upper-left pixel of the destination, we'll be
+good to go.&nbsp; A character's initial offset in the font image is dependent on
+its ASCII value, the size of the character, and the number of bytes needed for
+each pixel.&nbsp; Take the letter 'A' in this example. Its offset in the font
+image is 4160 decimal, and here's how to get that number:</p>
+<ul>
+  <li>The ASCII value of 'A' is 65 decimal</li>
+  <li>Each letter in the font image is 16 pixels wide</li>
+  <li>Each pixel takes up 4 bytes in memory</li>
+</ul>
+<p>Thus, 65 * 16 pixels * 4 bytes / pixel = 4160 bytes.&nbsp; You'll also need
+to calculate the initial offset of the destination (x,y) pixel.&nbsp; For that
+you'll need the width of the destination, the (x,y) values, and the number of
+bytes per pixel.&nbsp; It's up to you to come up with the formula on this one.</p>
+<p>Now all you need to know is how many rows and columns to copy, and this will
+vary with each image (in our example they're both 16).&nbsp; For each of the <i>NumRows</i>
+rows, you'll copy <i>NumColumns</i> pixels out of the source image and place
+them in the destination image, moving right after each one.&nbsp; When you draw <i>NumColumns</i>
+pixels in the current row of the source image, you'll have to move down to the
+next row in both the source and destination images, keeping in mind that you'll
+also have to return to the original columns in both images.&nbsp; Again, you'll
+need the widths (in <b>bytes</b> - remember 4 bytes per pixel!) of the source
+and destination images to move down to the next row properly.&nbsp; Do this for
+each character in your string, and voilà, you have a string of text on the
+screen.</p>
+<h2>Anti-aliasing Through Alpha Blending</h2>
+<p>There are two parts to the idea of alpha blending - the alpha part and the
+blending part (ingenious I know).&nbsp; First we'll cover alpha opacity, then
+we'll learn how to use this to combine images on the screen.</p>
+<h3>Alpha Opacity</h3>
+<p>A lot of people think of transparency when they hear the word
+&quot;alpha&quot; in the context of graphics. They're right, sort of. Al<img alt="Figure A: Outlined Coverage of a Triangle on a pixel grid" src="triangle.png" align="right" width="360" height="270">pha
+really refers to the opacity of a pixel, which is derived generally from the
+coverage of a pixel.</p>
+<p align="left">What is meant by the coverage of a pixel? Let's say you're
+drawing a triangle. The bottom and the left of the triangle are horizontal and
+vertical, respectively. The remaining side is at 45°. Now fill this triangle
+with a blue color. Now draw it to the screen. The outline, zoomed in, is shown
+in Figure A.</p>
+<p align="left">Where are the 45° pixels? For that matter, if all these lines
+go through the centers of pixels, chances are the left and bottom and
+upper-right include a lot of half-covered pixels; the lower-left corner has a
+one-quarter covered pixel and the two remaining corners have about a one-eighth
+covered pixel, as visualized in Figure A.<br>
+</p>
+<h3 align="left"><b>The Over Operation</b></h3>
+<p>So how do you turn this into actual pixels? The simplest way, and the way
+we're using, is called the over operation. To draw color A with coverage &#945;
+over color B, the resulting color C is calculated as follows:</p>
+<p>C<sub>r</sub> = (&#945;<sub>r</sub> * A<sub>r</sub>) + ((1-&#945;<sub>r</sub>)
+* B<sub>r</sub>)<br>
+C<sub>g</sub> = (&#945;<sub>g</sub> * A<sub>g</sub>) + ((1-&#945;<sub>g</sub>) *
+B<sub>g</sub>)<br>
+C<sub>b</sub> = (&#945;<sub>b</sub> * A<sub>b</sub>) + ((1-&#945;<sub>b</sub>) *
+B<sub>b</sub>)</p>
+<p>Or more succinctly, as we only have one &#945;, apply this to each channel
+independently:<img alt="Figure B: Triangle Drawn with Over Compositions, alpha by coverage" src="triangle-over.png" align="right" width="360" height="270">
+<p align="left">C = (&#945; * A) + ((1-&#945;) * B)<br>
+C = (&#945; * A) + B - &#945; * B</p>
+<p>When we apply this to the case as listed above, with coverage values one,
+one-half, one-quarter, and one-eighth, we get something that looks like Figure
+B, only not quite so zoomed in, and no grid.<br>
+<br>
+Things like this are where alpha opacity values originally come from. Don't
+worry about how to calculate the alpha value, as the font image comes with an
+alpha value for you. Concentrate on how to apply it using the over operator.</p>
+<p>Here's how the value for the lower-left corner pixel was calculated, assuming
+a white background (B) upon which you draw a pure blue pixel with 25% coverage:</p>
+<div class="eqn">
+  C = (&#945; * A) + ((1-&#945;) * B)<br>
+  C = (0.25 * {0.0, 0.0, 1.0}) + (0.75 * {1.0, 1.0, 1.0})<br>
+  C = {0.0, 0.0, 0.25} + {0.75, 0.75, 0.75}<br>
+  C = {0.75, 0.75, 1.0}
+</div>
+<p>Notice that the pixels in the font file are all black, with some of them
+being darker than others.&nbsp; The lighter pixels have alpha values closer to
+zero that distinguish them as such (<tt>0h</tt> is no coverage, while <tt>FFh</tt>
+is total coverage).&nbsp;&nbsp;</p>
+<p>Wait... all the pixels are black?&nbsp; How will we be able to see the
+characters on a black background? Can we get text of different color? Yes you
+can.&nbsp; To do this, the easiest way is to set them manually by OR'ing the
+pixel's RGB portion with a hex color value, making sure not to change the alpha
+portion.&nbsp; So if you OR'ed a pixel with <tt>007F7F7Fh</tt>, you'd set its
+color to gray.</p>
+<p>In this MP, we will make an assumption that will simplify things for
+us.&nbsp; This assumption will be that we will always be drawing on a black
+background.&nbsp; Notice what this does to the equation for the over operation:</p>
+<p>C = (&#945; * A) + ((1-&#945;) * B)<br>
+C = (&#945; * A) + ((1-&#945;) * {0.0 0.0 0.0})<br>
+C = (&#945; * A) + {0.0 0.0 0.0}<br>
+C = (&#945; * A)</p>
+<p>We now introduce an optimized algorithm that uses MMX instructions to alpha
+compose all four channels of a pixel at once:</p>
+<ul>
+  <li>Load one source pixel (4 bytes) into an MMX register (8 bytes) - yes this
+    can be done, take a look at the MMX manual
+  <li>Unpack (bytes to words) the source pixel into an MMX register
+  <li>Copy out the source alpha word into all four words of another MMX register
+  <li>Multiply the two previously mentioned MMX registers together, as this will
+    perform C = (&#945; * A)
+  <li>Shift each word right to divide by 256, thus fitting into a byte per
+    channel
+  <li>Pack (words to bytes) the alpha-composed pixel back together with proper
+    saturation
+  <li>Store the pixel into a general purpose register from the MMX register -
+    again this can be done</li>
+</ul>
+<p>&nbsp;</p>
+</BODY></HTML>

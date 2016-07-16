@@ -1,0 +1,38 @@
+
+------------- MP2 Menu --------------
+  Enter   (T)ext     / (B)inary
+  Print   (M)essage  / (R)buffeR
+  RLE     (E)ncode   / (D)ecode
+------ [ESC] or (Q)uit to exit ------
+
+Enter Binary Data (LSBit .. MSBit): 
+00010 10100 00110 11111 11000 11110 00000 11101 11110 01001 00110 00100
+
+Text Message=
+HELLLLO WORLD
+
+Enter Binary Data (LSBit .. MSBit): 
+00000 11111 01011 00111 11111 00100 00000 11111 00100 00111 11111 00100
+
+Text Message=
+                           *****     *****
+
+Enter Binary Data (LSBit .. MSBit): 
+00000 11111 11111 00000 00000 00111
+
+Text Message=
+                                  *
+
+Enter Binary Data (LSBit .. MSBit): 
+00000 11111 01011 00111 11111 01110
+
+Text Message=
+                           ***************
+
+
+
+LIBMP2 Calls: 
+ -ReadBuffer 
+ -PrintTextMsg 
+ -DecodeRLE 
+

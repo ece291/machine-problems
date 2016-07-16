@@ -1,0 +1,500 @@
+<%
+title = "ECE 291 - MP1"
+subtitle = "MP1"
+%>
+
+<!--#include file="headvb.asp"-->
+
+
+
+
+<h1 align="center">Machine Problem 1: Outline Indenter</h1>
+<div align="center"><center>
+
+<table border=1 width=513>
+  <tr>
+    <td align=right width="64">Assigned</td>
+    <td width="433">Thursday, 6/13</td>
+  </tr>
+  <tr>
+    <td align="right" width="64">Due Date</td>
+    <td width="433">Thursday, 6/20</td>
+  </tr>
+  <tr>
+    <td align="right" width="64">Purpose</td>
+    <td Roman" width="433">Learn to write assembly code. Use looping
+               and branching.  Perform basic string and math operations.</td>
+  </tr>
+  <tr>
+    <td align="right" width="64">Points</font></td>
+    <td width="433">75</td>
+  </tr>
+</table>
+</center></div>
+
+<h2>Introduction</h2>
+
+
+<p>
+
+  I've heard a little rumour that Engineers like to be organized--at least
+  when they're working on the computer.  Outlines are one method for
+  organizing our thoughts and ideas into a presentation.  The problem is
+  many editors don't facilitate good habits like the proper indentation of
+  outlines.  In this MP we will create a program that will read in an
+  existing outline and write a properly indented one.
+</p>
+
+<h2>Problem Description</h2>
+
+<p>
+  To read through a file and decide the proper spacing of the outline, we
+  will follow the following steps:
+</p>
+<ol type="I">
+ <li> Indent the input </li>
+ <ol type="A">
+  <li> Decide the indentation of the line </li>
+  <ol type="1">
+   <li> Read one character from the input </li>
+   <li> If it is a linefeed (LF)
+   <ol type="a">
+    <li> Ignore it by going to I.A.1 </li>
+   </ol>
+   <li> If it is a newline (CR) </li>
+   <ol type="a">
+    <li> This only occurs at a double CR </li>
+    <li> Write a CR and LF to the output </li>
+    <li> Exit the input stage by going to II</li>
+   </ol>
+   <li> If it is whitespace (' ', TAB) </li>
+   <ol type="a">
+    <li> Ignore it by going to I.A.1 </li>
+   </ol>
+   <li> If it is anything else, choose the indentation by leading
+   character</li>
+   <ol type="a">
+    <li> If it's a capital roman numeral ('I', 'V', or 'X')
+    set the indentation level to 0 </li>
+    <li> If it's a capital letter ('A' through 'H')
+    set the indentation level to 1 </li>
+    <li> If it's a Number ('0' through '9')
+    set the indentation level to 2 </li>
+    <li> If it's a lowercase letter ('a' through 'h')
+    set the indentation level to 3 </li>
+    <li> If it's a lowercase roman numeral ('i', 'v', or 'x')
+    set the indentation level to 4 </li>
+   </ol>
+   <li> Write (2 * the indentation level) spaces to the output </li>
+  </ol>
+  <li> Copy the line </li>
+  <ol type="1">
+   <li> Read one character from the input </li>
+   <li> If it is a linefeed </li>
+   <ol type="a">
+    <li> Ignore the linefeed by going to I.B.1 </li>
+   </ol>
+   <li> If it is a newline </li>
+   <ol type="a">
+    <li> Write CR and LF to the output </li>
+    <li> Go to the next item, at I.A.1 </li>
+   </ol>
+   <li> If it is anything else
+   <ol type="a">
+    <li> Write the character to the output </li>
+    <li> Next character of input: go to I.B.1 </li>
+   </ol>
+  </ol>
+ </ol>
+ <li> Summarize the outline
+ <ol type="A">
+  <li> Calculate statistics </li>
+  <li> Display statistics </li>
+ </ol>
+ <li> Exit the program with MP1XIT</li>
+</ol>
+
+Note: Branches I.A and I.B look very similar. The prime difference is
+what they do with Whitespace and Newlines.
+
+<H2>Screen Dump</H2>
+<P>
+ The following screen capture depicts the program as it executes.  It
+ prints the input it received, in indented fashion:
+</p>
+
+<center><img border="0" src="mp1.gif" width="732" height="497"></center>
+
+<H2>MP1 Program Assignment</H2>
+
+<p>In this machine problem, the main procedure is provided for you; however,
+you must write the code to replace the library routines.
+You will replace these procedures from the LIBMP1
+library by commenting out the statements calling the Lib routine
+and adding your code.  Each routine that you write
+should match the output of the library code exactly.  Each of the function calls and their functionality is described below in the
+<b>Subroutines</b> section.
+The best way to get a feel for the program is to run it
+to see how it is supposed to operate.  You can also edit the test
+file to see how various changes will affect the program execution.</p>
+
+<p>Your program is required to:
+ <ol type="I">
+  <li> Output data in the same format as the original source code
+  <li> Reformat any test cases the TAs provide
+  <li> Count the number of lines at each indentation level
+  <li> Display the number and percentage (to the nearest integer) of each
+       indentation level
+  <li> Run efficiently.  Points will be deducted for inefficient algorithms
+       and/or excessive coding.
+ </ol>
+
+
+<p>The program can be run by typing <tt>mp1</tt> at the command prompt.
+If you wish to use the test data files as input, type <tt>mp1 &lt;
+test1.in</tt> at the prompt.  To output to a file and compare the outputs type
+<tt>mp1 &lt; test1.in &gt; test1.mp</tt> and then <tt>fc test1.mp
+test1.out</tt>
+</p>
+
+<h2>Hints</h2>
+<ul>
+<li>The LIBMP1 file contains executable library functions for each of the
+routines that you need to implement.  
+This allows you to run the program and understand how it works before you implement it.  You can test your program with any combinations of your own
+code and library functions.  You will only receive credit, however, for
+the routines that you implement yourself. 
+
+<li>You may define new variables as needed.
+
+<li>You might find it very helpful to write your own helper functions.
+For instance a routine to print the value of the current line to the
+screen might be helpful to use in a few routines.
+
+<li>Be very careful to ensure that your procedure does not destroy any
+of the registers it does not specify as outputs.  The calling procedure
+may use them and expect them to remain unchanged.
+
+<li>You may assume there will be no more than 200 lines at any given
+indentation for any of the TA test files, and that all lines will be
+shorter than 80 characters (including indentation).
+
+<li>START EARLY!  This is the first MP that requires you to write your
+own program.  Composition is much more difficult than comprehension.<p>
+
+<li>Monitor the <a href="news:uiuc.class.ece291">newsgroup</a> for clarifications and help.</p>
+</ul>
+
+<h2>Subroutines</h2>
+
+<p>This assignment has six procedures. You will receive credit by replacing
+each of these seven procedures listed below with your own code. </p>
+
+
+<table BORDER=1 >
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>GetNextHeader</font></b></td>
+
+<td><ul>
+<li>Finds and returns the first non-LF or Whitespace character
+<li>Inputs:
+        <ul>
+	<li>None
+        </ul>
+<li>Outputs:
+        <ul><li>AL = first character, or -1 if first character is CR</ul>
+<li>Calls: KBDIN
+<li>Note: You need to save the registers you alter.&nbsp; To do this, push them
+  all onto the stack in the beginning of the subroutine, and pop them all off
+  the stack at the end.&nbsp; Also, document your functions with descriptive
+  function headers.&nbsp; Look in your lab book for examples or ask a TA.&nbsp;
+  YOU WILL LOSE POINTS IF YOU DON'T WRITE CLEAR, CONCISE FUNCTION HEADERS!!!!
+ </ul></td>
+</tr>
+
+
+<td><b><font size="+1">GetIndent</font></b></td>
+
+<td><ul>
+
+<li>Returns the value for the Header's indent level
+<li>keeps count of lines per that Header Level
+<li>Inputs:
+	<ul>
+	<li> AL = Header Character</ul>
+<li>Outputs:
+	<ul><li> BL = Indent Level
+            <li> proper entry of IndentCount is incremented</ul>
+
+<li>Calls: none
+<li>Note: Always save your registers in every procedure from here on out.  (We're not going to tell you
+again!)
+</ul></td>
+
+<tr VALIGN=TOP>
+<td><b><font size="+1">DisplayIndent</font></b></td>
+
+<td><ul>
+       <li>Displays two spaces for every level of indent
+<li>Inputs:
+        <ul>
+<li>Input:        BL = Indent Level
+               </ul>
+<li>Outputs:
+        <ul><li>Indentation to output</ul>
+<li>Calls: DSPOUT
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font size="+1">DisplayItem</font></b></td>
+
+<td><ul>
+<li>Copies from input to output through (including) a CR.
+<li>Inputs:
+        <ul>
+	<li> AL = first character of the Item
+        </ul>
+<li>Outputs:
+        <ul>
+        <li>Prints item to the output
+</ul>
+<li>Calls: DSPOUT, KBDIN
+<li>Notes:
+ <ul><li> The first character of the Item needs to be displayed.  It is
+ already in AL, so start by displaying it, and not taking more
+ input</li>
+ </ul>
+</ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font size="+1">CalcTotals</font></b></td>
+
+<td><ul>
+<li>Totals the number of lines from the input, and calculates the
+percentage at each header.
+<li>Inputs:
+        <ul>
+	<li> Array IndentCount
+        </ul>
+<li>Outputs:
+        <ul>
+        <li> Updates IndentPercent, TotalLines
+</ul>
+<li>Calls: none
+<li>Notes:
+ <ul><li> To find the percentage, the formula is
+ 100*<i>num</i>/<i>Total</i>.  Make sure you multiply by 100 first.
+ </li><li> Using MUL and DIV is tricky, and may not be covered until the
+ day before this is due.  If you need help, ask a TA or someone who has
+ figured them out.  They are documented in your lab manual.
+ </li>
+ </ul>
+</ul></td>
+</tr>
+<tr VALIGN=TOP>
+<td><b><font size="+1">DispTotals</font></b></td>
+
+<td><ul>
+<li>Displays the Header and Total strings.
+<li>Inputs:
+        <ul>
+	<li> Arrays IndentCount, IndentPercent
+        <li> most ____String variables
+        </ul>
+<li>Outputs:
+        <ul>
+        <li>Prints summary to output.
+</ul>
+<li>Calls: DSPOUT, DSPMSG, BINASC
+<li>Notes:
+ <ul><li> The output must be formatted so all lines are properly
+ aligned, just like the example code does.  Read the INPUT, OUTPUT lists
+ for BINASC carefully, and confer with a TA if you need help.
+ </li>
+ <li> Use the <tt>HeaderTypes<tt> array to write this as a loop.</li>
+ </ul>
+</ul></td>
+</tr>
+                   
+</table>
+
+<h2>Procedure</h2>
+<ul>
+<li>You will begin this MP with the following files:
+    <ul>
+    <li><tt>MP1.ASM</tt>: Program Framework
+    <li><tt>TEST*.IN</tt>: Database record file
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled
+        and linked.
+    <li><tt>LIBMP1.LIB</tt>: Library functions for MP1
+    <li><tt>LIB291.LIB</tt>: General-purpose library functions
+    </ul>
+<li>You may copy these files from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s V:\ece291\mp1 W:\mp1</tt><br>
+    or download the files from this server as <a href="mp1.zip">mp1.zip</a> 
+<li>Add your code to <tt>MP1.ASM</tt>.
+<li>Assemble and link your program by typing<br>
+      <tt>make</tt><Br>
+    This command reads <i>Makefile</i> then invokes MASM and LINK to build 
+    an executable program.  
+<li>Use Turbo Debugger (TD) to find and correct program errors. 
+<li>Verify your program operation by testing the
+    input test file.  You should alter the test file to check 
+    different scenarios with your code.
+</ul>
+
+<h2>Final Steps</h2>
+
+<ol>
+  <li>Demonstrate your MP1.EXE to a TA or to the instructor.&nbsp; The TA or
+    instructor will verify that your program produces the correct output. </li>
+  <li>Be prepared to answer questions about any aspect of the operation of
+   your program. The TAs will not accept an MP if you cannot fully explain
+   the operation of your code and details of your implementation. Delayed
+   MPs will be subject to late penalties as described in the course
+   syllabus (15pts/day).</li>
+  <li>The TA will handin your MP online.
+</ol>
+
+<hr>
+
+<h2>MP1.ASM (program framework)</h2>
+
+<font size=-1><pre>
+; MP1 - Outline Indenter
+;  Your Name
+;  Today's Date
+;
+; Ryan Chmiel, Summer 2002
+; Author: Michael Urman
+; University of Illinois, Urbana-Champaign
+; Dept. of Electrical and Computer Engineering
+;
+; Version 1.0
+
+	BITS	16
+
+;====== SECTION 1: Define constants =======================================
+
+        CR		EQU     0Dh
+        LF		EQU     0Ah
+	BEL		EQU	07h
+	TAB		EQU	09h
+
+;====== SECTION 2: Declare external routines ==============================
+
+; Declare external library routines
+EXTERN kbdin, dspout, dspmsg, binasc, mp1xit
+EXTERN libGetNextHeader, libGetIndent, libDisplayIndent, libDisplayItem
+EXTERN libCalcTotals, libDispTotals
+
+; Declare local routines
+GLOBAL GetNextHeader, GetIndent, DisplayIndent, DisplayItem
+GLOBAL CalcTotals, DispTotals
+
+; Make program variables global
+GLOBAL WelcomeString, TotalLines, IndentCount, IndentPercent, IndentString
+GLOBAL HadString, TotalString, LinesString, PercentString, HeaderTypes, pbuf
+GLOBAL CRLFString
+      
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        resb      64*8
+stacktop:
+        resb      0                     ; work around NASM bug
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+WelcomeString   db   CR,LF,'Welcome to the ECE291 Outline Indenter!'
+                db   CR,LF,CR,LF,'$'
+TotalLines      resw   1
+IndentCount     times 5 db 0
+IndentPercent   times 5 db 0
+IndentString    db   CR,LF,'Indent Level ', '$'
+HadString	db   '. had ', '$'
+TotalString     db   CR,LF,'In total there were ', '$'
+LinesString     db   ' lines at ', '$'
+PercentString   db   '% of the total.', '$'
+CRLFString	db   CR,LF,'$'
+HeaderTypes     db   'I','A','1','a','i'
+pbuf            resb 7
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        mov     ax, cs                  ; Initialize Default Segment register
+        mov     ds, ax  
+        mov     ax, stkseg              ; Initialize Stack Segment register
+        mov     ss, ax
+        mov     sp, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+MAIN:
+	mov     dx, WelcomeString
+	call    dspmsg
+.InputLoop:
+     	call    GetNextHeader           ; Get next header character
+     	cmp     al, -1                  ; or -1 if End of File
+     	je	.InputFinished
+
+     	call    GetIndent               ; Get indent level by Header character
+     	cmp     bl, -1                  ; or -1 if Invalid Header character
+     	je      .InvalidIndent
+
+     	call    DisplayIndent           ; Display Spaces for IndentLevel
+     	call    DisplayItem             ; Display the Item, including char in al
+     	jmp     .InputLoop
+
+.InvalidIndent:
+     	mov     dl, BEL                 ; ring the error bell
+     	call    dspout
+     	jmp     .InputLoop
+
+.InputFinished:
+     	call    CalcTotals              ; Calculate Total Percentages
+     	call    DispTotals              ; Display linecounts and percentages
+     	call    mp1xit                  ; Exit MP1
+
+;====== SECTION 8: Your subroutines =======================================
+
+;;;
+;;; GetNextHeader
+;;;   INPUTS: None
+;;;  OUTPUTS: al = first non-space character of header
+;;;           or -1 if first non-space character is CR
+;;;  PURPOSE: Reads characters, ignoring WhiteSpace, to find the first
+;;;           header character
+GetNextHeader:
+	call	libGetNextHeader
+	ret
+
+GetIndent:
+	call	libGetIndent
+	ret
+
+DisplayIndent:
+	call	libDisplayIndent
+	ret
+
+DisplayItem:
+	call	libDisplayItem
+	ret
+
+CalcTotals:
+	call	libCalcTotals
+	ret
+
+DispTotals:
+	call	libDispTotals
+	ret
+
+</pre></font>
+<!--#include file="foot.asp"-->

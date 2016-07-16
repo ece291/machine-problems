@@ -1,0 +1,717 @@
+<%
+title = "ECE 291 - MP4"
+subtitle = "MP4"
+%>
+<!--#include file="headvb.asp"-->
+<h1 align="center">Machine Problem 4: Gravity Blocks</h1>
+<DIV align="center">
+	<CENTER>
+		<TABLE id="Table2" width="647" border="1">
+			<TR>
+				<TD align="right" width="74">Assigned </TD>
+				<TD width="557">Tuesday, 3/16/04</TD>
+			</TR>
+			<TR>
+				<TD align="right" width="74">&nbsp;Due&nbsp;Date </TD>
+				<TD width="557">Friday, 4/9/03</TD>
+			</TR>
+			<TR>
+				<TD align="right" width="74">Purpose</TD>
+				<TD width="557" Roman>Developing Code in Teams, Protected Mode, High Resolution Graphics,  Gameplay</TD>
+			</TR>
+			<TR>
+				<TD align="right" width="74">Points</TD>
+				<TD width="557">80</TD>
+			</TR>
+		</TABLE>
+	</CENTER>
+</DIV>
+<H2>Introduction</H2>
+<P>Prof. Zbigniew &quot;Trump&quot; Kalbarczyk has given your team its next
+assignment: complete the following machine problem in a timely manner to
+demonstrate your assembly programming abilities.&nbsp; Do you have what it takes
+to succeed?&nbsp; Make a plan.&nbsp; Get the job done.&nbsp; Or you're fired!<br>
+ </P>
+<p align=center><img border="0" src="mp4.jpg" width="645" height="504"></p>
+<H2>Problem Description</H2>
+<p>In this MP, you will be programming a puzzle game called Gravity
+Blocks.&nbsp; The rules of Gravity Blocks are simple.&nbsp; Each of the seven game pieces
+is composed of four smaller blocks, and each block can be one of
+five colors.&nbsp; Randomly generated pieces
+fall from the top of the game board, and when a piece hits a block in the
+game board, the piece will break apart, and its individual blocks will fall
+further down the game board if possible.&nbsp; You need to place the pieces in
+the game board such that matching three (or more) blocks of the same color
+vertically, horizontally, or diagonally will first clear those blocks from the
+board and then cause the blocks resting on top of the cleared blocks (if any) to
+fall down.&nbsp; This process of clearing and dropping blocks continues until no
+more blocks need to be cleared.&nbsp; Thus, by dropping only one piece on to the
+game board, you can set off a sequence of cleared blocks. The object of the game is to clear as many blocks as
+possible.&nbsp; When the blocks in the game board reach the top, the game is
+over.</p>
+<p>You will be implementing the game by doing the following:</p>
+<ul>
+  <li>Writing code for <a href="pmode.html">protected mode</a></li>
+  <li>Displaying the game in <a href="hiresgraph.html">high resolution graphics</a></li>
+  <li>Drawing <a href="alphatext.html"> anti-aliased text</a> with alpha
+    blitting</li>
+  <li>Moving the game pieces with the <a href="input.html">keyboard and mouse</a></li>
+  <li>Designing <a href="gameplay.html">gameplay</a> logic such as collision
+    checking</li>
+</ul>
+<H2>Functions</H2>
+<P>This assignment has 26 functions. You will receive credit by 
+replacing each of the thirty functions listed below with your own code.&nbsp;
+All the functions are C-style functions (parameters on stack, return value in eax/ax/al, all general purpose registers other than esi and edi may be
+clobbered). A function that does not take any parameters will be denoted as <b>void</b>
+within the parentheses. A parameter name prefixed with an asterisk ( * ) means it is a
+pointer, otherwise this parameter is an actual value.&nbsp; The size of the parameters will be denoted as <b>short</b>
+which represents a word (2 bytes) and <b>long</b> represents a double word (4
+bytes).&nbsp; A function that does not return a value will be declared as <b>void</b>,
+otherwise the size of return value will be specified using the previously
+mentioned scheme.&nbsp;
+<h3>void _Initialize(void)</h3>
+      <UL>
+        <LI>Initializes game variables 
+        <LI>Inputs: None 
+        <LI>Outputs: [_NumBlocks], [_Level], [_Score], [_GameFlags], [_MoveDownTime] 
+        <LI>Calls: _GetNextPiece 
+        <LI>Points: 2<LI>Notes: 
+        <UL>
+          <LI>Set number of blocks and score to zero </LI>
+          <LI>Set level to one </LI>
+          <LI>Clear all game flags </LI>
+          <LI>Set [_MoveDownTime] = [_TimerTick] + ( 14 - [_Level] ). The speed stops increasing at level 10.&nbsp; So, if the user
+                reaches a higher level, the previous update should be done as if
+                the user were at level 10. </LI></UL></LI></UL>
+<h3>void _GetNextPiece(void)</h3>
+      <UL>
+        <LI>Generates a new piece 
+        <LI>Inputs: [_Pieces] 
+        <LI>Outputs: [_CurrentPiece], [_XPos], [_YPos], [_GameFlags], [_MoveDownTime] 
+        <LI>Calls: _Random 
+        <LI>Points: 4<LI>Notes: 
+        <UL>
+          <LI>You may used the library provided Random function to get your
+            random numbers 
+          <LI>There are seven game pieces 
+          <LI>Once you get a random number for the piece, multiply it by 16 to get your 
+          offset of the first position of the piece you have chosen in the 
+          Pieces array. Do NOT use the <TT>mul</TT> instruction to do this - 
+          there are much cleaner ways to multiply by 16. 
+          <LI>If you encounter a 0 in the Pieces array, copy the 0 to the
+            CurrentPiece array.&nbsp; Otherwise generate a number for the color
+            of the&nbsp; block and copy the block number to the CurrentPiece
+            array<LI>There are five block colors, and you will need random numbers
+            between 2 and 6 inclusive to choose the block (look at the
+            blocks.png file to see why - the five colored blocks are blocks 2
+            thru 6 in the file) 
+          <LI>The random number generator does not give good sequences of
+            numbers when called with a low <i>MaxNum</i>, such as 5.&nbsp; To
+            get pieces that have more than one block of the same color, you may
+            choose to call the Random function with a somewhat larger value
+            and loop until you get a number between 0 and 4 (the
+            range when you call Random with 5). 
+          <LI>Clear all game flags except the mouse enable flag 
+          <LI>Start the current piece off at (XPos,YPos) = (6,1) in the game
+            board 
+    </LI> 
+          <LI>Set [_MoveDownTime] = [_TimerTick] + ( 14 - [_Level] ).&nbsp; The speed stops increasing at level 10.&nbsp; So, if the user
+                reaches a higher level, the previous update should be done as if
+                the user were at level 10. 
+    </LI></UL></LI></UL><h3>	void _MovePiece(void)</h3>
+      <UL>
+        <LI>Checks to see if the current piece should be moved, and if so, moves current piece in the direction specified by the direction 
+        bits in [_GameFlags]
+        <LI>Inputs: [_GameFlags], [_XPos], [_YPos] 
+        <LI>Outputs: [_GameFlags], [_XPos], [_YPos] 
+        <LI>Calls: _CheckPieceCollision, _SetMousePos, _DrawAll 
+        <LI>Points: 2<LI>Notes: 
+        <UL>
+          <LI>Move piece in desired direction. If it collides with a block/wall 
+          in the game board, move it back to where it was. 
+          <LI>Update appropriate flag when piece is unable to move down any 
+          further. </LI> 
+          <LI>You need to set the direction bits back to &quot;do not move&quot;
+            if you perform a move </LI> 
+          <LI>Set the mouse position if you perform a move </LI> 
+          <LI>Update the screen if you perform a move </LI></UL></LI></UL>
+<p><B><FONT size=+1>void _RotatePieceCW(void)</FONT></B></p>
+      <UL>
+        <LI>Checks to see if current piece should be rotated, and if so, rotates the current piece 90 degrees clockwise
+        <LI>Inputs: [_GameFlags], [_CurrentPiece] 
+        <LI>Outputs: [_GameFlags], [_CurrentPiece] 
+        <LI>Calls: _CheckPieceCollision, _DrawAll 
+        <LI>Points: 4 
+        <LI>Notes:
+        <UL>
+          <LI>You will receive NO credit on this function if you hard code the
+            destinations (i.e. CurrentPiece[0] moves to CurrentPiece[3],
+            CurrentPiece[1] moves to CurrentPiece[7], etc.)&nbsp; You need to
+            come up with an algorithm that calculates the transformations.
+          <LI>Use the TempPiece array as a copy of the CurrentPiece array 
+          <LI>If there is a collision with the rotated piece and the game board, 
+          restore the current piece to what it originally was. 
+    </LI> 
+          <LI>You need to clear the rotate flag if you perform a rotation 
+    </LI> 
+          <LI>Update the screen if you perform a rotation 
+    </LI></UL></LI></UL>
+<p><b><font size="+1">long _CheckPieceCollision(void)</font></b></p>
+      <UL>
+        <LI>Checks for a collision between the current piece and the game board 
+        <LI>Inputs: [_CurrentPiece], [_GameBoard], [_XPos], [_YPos] 
+        <LI>Outputs: None 
+        <LI>Returns: 1 if there is a collision, 0 otherwise
+        <LI>Calls: None 
+        <LI>Points: 3<LI>Notes:
+          <ul>
+            <li>A collision exists when one or more blocks of the current piece
+              overlaps a block (non-zero location) in the game board</li>
+          </ul>
+        </LI></UL>
+<p><B><FONT size=+1>void _PutPieceOnBoard(void)</FONT></B></p>
+      <UL>
+        <LI>Writes the current piece to the game board 
+        <LI>Inputs: [_CurrentPiece], [_GameBoard], [_XPos], [_YPos] 
+        <LI>Outputs: [_GameBoard] 
+        <LI>Calls: None 
+        <LI>Points: 3 
+        <LI>Notes: 
+        <UL>
+          <LI>Only write non-zero values in [_CurrentPiece] to [_GameBoard] 
+        </LI></UL></LI></UL>
+<h3>	long _MarkBlocks(void)</h3>
+      <UL>
+        <LI>Marks the blocks in the game board that are to be cleared 
+        <LI>Inputs: [_GameBoard], [_BlockPosArray] 
+        <LI>Outputs: [_GameBoard] 
+        <LI>Returns: 1 if any blocks were marked, 0 otherwise 
+        <LI>Calls: None 
+        <LI>Points: 6<LI>Notes: 
+        <UL>
+          <LI>Use the lookup table BlockPosArray to get relative offsets of
+            neighboring blocks to the current block you're processing 
+        </LI>
+          <LI>Do NOT run your algorithm over the entire 16x24 game board - you
+            should only run it over the 12x20 area that the pieces can move in 
+        </LI></UL></LI></UL>
+<h3>long _ClearBlocks(void)</h3>
+      <UL>
+        <LI>Clears all marked blocks from the game board 
+        <LI>Inputs: [_GameBoard] 
+        <LI>Outputs: [_GameBoard] 
+        <LI>Returns: number of blocks cleared 
+        <LI>Calls: None 
+        <LI>Points: 3 
+        <LI>Notes: 
+        <UL>
+          <LI>Do NOT run your algorithm over the entire 16x24 game board - you
+            should only run it over the 12x20 area that the pieces can move in 
+        </LI></UL></LI></UL>
+<h3>long _DropBlocks(void)</h3>
+      <UL>
+        <LI>Drops any suspended block down as far as possible in the game board 
+        <LI>Inputs: [_GameBoard] 
+        <LI>Outputs: [_GameBoard] 
+        <LI>Returns: 1 if any blocks were dropped, 0 otherwise 
+        <LI>Calls: None 
+        <LI>Points: 6<LI>Notes: 
+        <UL>
+          <LI>Do NOT run your algorithm over the entire 16x24 game board - you
+            should only run it over the 12x20 area that the pieces can move in 
+        </LI></UL></LI></UL>
+<h3>	void _ClearAllBlocks(void)</h3>
+      <UL>
+        <LI>Writes current piece to game board and then continuously clears and
+          drops blocks until no more need to be cleared
+        <LI>Inputs: [_GameBoard] 
+        <LI>Outputs: [_GameBoard] 
+        <LI>Calls: _PutPieceOnBoard, _MarkBlocks, _ClearBlocks, _DropBlocks, _UpdateStats, _DrawAll, _Delay 
+        <LI>Points: 5 
+        <LI>Notes: 
+        <UL>
+          <LI>You will need a loop in this function that will continually clear
+            and drop blocks, and the loop terminates when one of the conditions
+            below is met.&nbsp; Before this loop, you will need to write the
+            current piece to the game board, update the screen, then drop blocks
+            and update the screen if necessary.
+          <LI>When updating the screen using _DrawAll, do not want to draw
+            the current piece. Also, pause for a certain time interval (you
+            may choose the time - the library code
+            pauses for half a second, or 9 timer ticks)
+          <LI>Update the game stats on every sequence of clearing/dropping
+            blocks
+          <LI>Terminate loop when there are no more blocks to clear
+          <LI>Terminate loop when you don't drop any blocks after clearing
+            blocks</UL></LI></UL>
+<h3>void _Delay(long NumTicks)</h3>
+      <UL>
+        <LI>Delays program execution for the specified number of timer ticks 
+        <LI>Inputs: 
+        <UL>
+          <LI>NumTicks - number of ticks to delay</UL></LI> 
+        <LI>Outputs: None 
+        <LI>Calls: None 
+        <LI>Points: 3 
+        <LI>Notes: 
+        <UL>
+          <LI>Loop until [TimerTick] equals the initial value of [TimerTick]
+            when the function was called plus the number of ticks specified
+          <LI>You need to preserve the value of [_TimerTick] as you would a
+            register.&nbsp; This means you need to save its initial value at the
+            beginning of the function and restore its value at the end.</UL></LI></UL>
+<p><B><FONT size=+1>void _UpdateStats(short NumBlocks, short SequenceNum)</FONT></B></p>
+      <UL>
+        <LI>Updates the user's game stats 
+        <LI>Inputs:&nbsp;
+          <ul>
+            <li>[_Score], [_Level], [_NumBlocks]</li>
+            <li>NumBlocks - number of blocks cleared on this sequence</li>
+            <li>SequenceNum - sequence number</li>
+          </ul>
+        <LI>Outputs: [_Score], [_Level], [_NumBlocks] 
+        <LI>Calls: None 
+        <LI>Points: 2<LI>Notes:
+        <UL>
+          <LI>Level is incremented for every 50 blocks cleared 
+          <LI>Score is updated as follows: <BR>+ ( 10 * <i>NumBlocksCleared</i>
+            * <i>SequenceNumber</i> ) 
+  </LI></UL></LI></UL><h3>	void _ClearScreen(long *DestImage)</h3>
+      <UL>
+        <LI>Clears destination image to black 
+        <LI>Inputs:
+          <ul>
+            <li>DestImage - pointer to beginning of destination image in <tt>ds</tt>
+            </li>
+          </ul>
+        </LI> 
+        <LI>Outputs: Writes to video buffer 
+        <LI>Calls: None 
+        <LI>Points: 2 
+        <LI>Notes: 
+        <UL>
+          <LI>Video buffer size is 640 pixels wide x 480 pixels high x 4 bytes
+            per pixel
+          <LI>Use string instructions for fast performance</UL></LI></UL>
+<h3>void _DrawBlock(long BlockNum, long *DestImage, long *DestOffset)</h3>
+      <UL>
+        <LI>Draws a block at a location in the specified destination 
+        <LI>Inputs: 
+        <UL>
+          <LI>[_BlocksOff]
+          <LI>BlockNum - Block number to draw
+          <LI>DestImage - pointer to beginning of destination image in <tt>ds</tt>
+          <LI>DestOffset - location where upper-left corner of block should be
+            drawn</UL></LI> 
+        <LI>Outputs: draws to video buffer 
+        <LI>Calls: None 
+        <LI>Points: 4<LI>Notes: 
+        <UL>
+          <LI>Each block is 20 pixels wide and 20 pixels high, and there are 7 blocks total</UL></LI></UL>
+<h3>void _DrawGameBoard(long *DestImage, long *DestOffset)</h3>
+      <UL>
+        <LI>Draws entire game board at a location in the specified destination 
+        <LI>Inputs: 
+        <UL>
+          <LI>[_GameBoard]
+          <LI>DestImage - pointer to beginning of destination image in <tt>ds</tt>
+          <LI>DestOffset - location where upper-left corner of board should be
+            drawn</UL></LI> 
+        <LI>Outputs: draws to video buffer 
+        <LI>Calls: _DrawBlock 
+        <LI>Points: 3 
+        <LI>Notes: 
+        <UL>
+          <LI>Loops over all locations in game board, only drawing the non-zero
+            entries
+          <LI>If MSB of current value is 1, draw block number 0; otherwise, the current value is the block number to draw</UL></LI></UL>
+<h3>void _DrawCurrentPiece(long *DestImage, long *DestOffset, short YPos, short
+XPos)</h3>
+      <UL>
+        <LI>Draws current piece at a location in the specified destination 
+        <LI>Inputs: 
+        <UL>
+          <LI>[_CurrentPiece]
+          <LI>DestImage - pointer to beginning of destination image in <tt>ds</tt>
+          <LI>DestOffset - location of upper-left corner of game board in
+            destination
+          <LI>YPos - vertical position in game board to draw piece
+          <LI>XPos - horizontal position in game board to draw piece</UL></LI> 
+        <LI>Outputs: draws to video buffer 
+        <LI>Calls: _DrawBlock 
+        <LI>Points: 3 
+        <LI>Notes: 
+        <UL>
+          <LI>You need to take into account the offset of the game board on the
+            screen and the position of the piece in the game board when drawing
+            the piece to the video buffer
+          <LI>Only draw the blocks (non-zero values) in the CurrentPiece array</UL></LI></UL>
+<h3>void _DrawText(long *StringOffset, long *DestImage, long *DestOffset,
+long Color)</h3>
+      <UL>
+        <LI>Draws an anti-aliased text string at a location in the specified
+          destination 
+        <LI>Inputs: 
+        <UL>
+          <LI>[_FontOff]
+          <LI>StringOffset - offset of string to draw
+          <li>DestImage - pointer to beginning of destination image in <tt>ds</tt>
+          </li>
+          <LI>DestOffset - location where upper-left corner of first character
+            should be drawn
+          <LI>Color - color of the string</UL></LI> 
+        <LI>Outputs: draws to video buffer 
+        <LI>Calls: _AlphaCompose<LI>Points: 5<LI>Notes: 
+        <UL>
+          <LI>Strings are terminated with a '$'
+          <LI>Perform an alpha composition on each pixel before drawing it to
+            the destination
+          <LI>Give the pixel from the font image its color before alpha
+            composing it
+          <LI>See the writeup about drawing <a href="alphatext.html">anti-aliased
+            text</a> for a more detailed description</UL></LI></UL>
+<h3>long _AlphaCompose(long Pixel)</h3>
+      <UL>
+        <LI>Performs an alpha composition of the input pixel 
+        <LI>Inputs: 
+        <UL>
+          <LI>Pixel - input pixel to alpha compose</UL></LI> 
+        <LI>Returns: alpha-composed pixel 
+        <LI>Calls: None 
+        <LI>Points: 4<LI>Notes: 
+        <UL>
+          <LI>This MUST be done using MMX instructions
+          <LI>See the writeup about drawing <a href="alphatext.html">anti-aliased
+            text</a> for a more detailed description</UL></LI></UL>
+<h3>void _InstallKeyboard(void)</h3>
+      <UL>
+        <LI>Installs the keyboard ISR 
+        <LI>Inputs: None 
+        <LI>Outputs: None 
+        <LI>Points: 1 
+        <LI>Notes: 
+        <UL>
+          <LI>You may use a <a href="library.html">library</a>  function to
+            install this interrupt for you </LI>
+          <LI>Don't forget to lock areas the interrupt will access </LI>
+          <li>To get the length of the handler, subtract the start of the
+            handler from the label at the end of the handler (remember, labels
+            are just addresses)</li>
+          </UL></LI></UL><h3>void _RemoveKeyboard(void)</h3>
+      <UL>
+        <LI>Removes the keyboard ISR 
+        <LI>Inputs: None 
+        <LI>Outputs: None 
+        <LI>Points: 1 
+        <LI>Notes: 
+        <UL>
+          <LI>You may use a <a href="library.html">library</a> function to
+            remove this interrupt for you </LI></UL></LI></UL><h3>long _KeyboardISR(void)</h3>
+      <UL>
+        <LI>Handles keyboard input from the user
+        <LI>Inputs:&nbsp;
+          <ul>
+            <li> Keypress waiting at port [_kbPort]</li>
+            <li>[_kbIRQ]</li>
+          </ul>
+        <LI>Outputs: [_GameFlags]
+        <LI>Calls: None
+        <LI>Returns: value to not chain original handler 
+        <LI>Points: 3 
+        <LI>Notes:
+        <UL>
+          <LI>Do not chain the original handler 
+          <LI>ESC key will end the game 
+          <LI>Up arrow key rotates the current piece clockwise 
+          <LI>Left arrow key moves current piece left 
+          <LI>Right arrow key moves current piece right 
+          <LI>Down arrow key moves current piece down </LI> 
+          <LI>The scancodes for the above keys have been defined as constants </LI> 
+          <LI>You do not need to ack with the keyboard, but you do need to ack
+            with the PIC.&nbsp; Do this by writing 20h to port 20h.&nbsp; If (
+            [_kbIRQ] &gt;= 8 ), also write 20h to port 0A0h </LI> 
+          <LI>You need to save/restore the temporary registers you use as this
+            is an ISR </LI></UL></LI></UL><h3>long _InstallMouse(void)</h3>
+      <UL>
+        <LI>Installs the mouse callback 
+        <LI>Inputs: None 
+        <LI>Outputs: [_MouseSeg], [_MouseOff] 
+        <LI>Returns: 1 on error, 0 otherwise 
+        <LI>Calls: _LockArea, _Get_RMCB, DPMI_Int 
+        <LI>Points: 2 
+        <LI>Notes: 
+        <UL>
+          <LI>You cannot call <tt>int 33h</tt> directly - you need to simulate a real
+            mode interrupt by calling DPMI_Int with the appropriate values in
+            the DPMI registers</LI>
+          <LI>Use _Get_RMCB to get a real mode segment and offset  that you pass
+            to <tt>int 33h</tt></LI>
+          <LI>
+            Do not try to pass cs and the offset of MouseCallback
+            directly to <tt>int 33h</tt>: selectors are not the same as segments!</LI>
+          <LI>Don't forget to lock areas the callback
+            will access </LI>
+          <LI>To get the length of the handler, subtract the start of the
+            handler from the label at the end of the handler (remember, labels
+            are just addresses) </LI>
+          <LI>For reference on <tt>int 33h</tt>, function <tt>000Ch</tt>, visit this page: <a href="http://www.delorie.com/djgpp/doc/rbinter/id/87/59.html">http://www.delorie.com/djgpp/doc/rbinter/id/87/59.html</a> 
+            (also look at the linked tables) </LI>
+          <LI>You want the callback to be called on left and right mouse button press as well as on mouse movement. </LI>
+          </UL> 
+        </LI></UL><h3>void _RemoveMouse(void)</h3>
+<ul>
+  <li>Removes the mouse callback
+  <li>Inputs: [_MouseSeg], [_MouseOff]</li>
+  <li>Outputs: None
+  <li>Calls: _Free_RMCB</li>
+  <li>Points: 1</li>
+  <li>Notes
+    <ul class="innerul">
+      <li>Uninstall the mouse callback using before you free the real mode
+        callback.</li>
+      <li>For reference on <tt>int 33h</tt>, function <tt>000Ch</tt>, visit this page: <a href="http://www.delorie.com/djgpp/doc/rbinter/id/87/59.html">http://www.delorie.com/djgpp/doc/rbinter/id/87/59.html</a> 
+        (also look at the linked tables) </li>
+      <li>Use segment:offset 0000:0000 for &quot;no callback&quot; </li>
+    </ul>
+  </li>
+</ul>
+<h3>void _MouseCallback(long *DPMIRegsPtr)</h3>
+      <UL>
+        <LI>Handles mouse input from the user
+        <LI>Inputs:
+          <ul>
+            <li>[_MouseX], [_MouseY], [_GameFlags]</li>
+            <li>DPMIRegsPtr - pointer to DPMI register
+          structure</li>
+          </ul>
+        <LI>Outputs: [_MouseX], [_MouseY], [_GameFlags]
+        <LI>Calls: None 
+        <LI>Points: 4<LI>Notes:
+        <UL>
+          <LI>Use <tt>es </tt>to retrieve mouse data, not <tt>ds</tt>
+          <LI>Use Fields in button state register (see table 3172 linked from URL in
+            InstallMouse function) that you will need:
+            <ul>
+              <li>Bit 0 - left mouse button (high when button is down)</li>
+              <li>Bit 1 - right mouse button (high when button is down)</li>
+            </ul>
+          <li>Update values of [_MouseX] and [_MouseY] when mouse is moved</li>
+          <li> If the mouse is disabled, only process right mouse button clicks
+            since you need to be able to enable the mouse.</li>
+          <li>If ( New_X_Position - Old_X_Position &gt; 5 ), then move the piece
+            right</li>
+          <li>If ( New_X_Position - Old_X_Position &lt; -5 ), then move the
+            piece left</li>
+          <li>If ( New_Y_Position - Old_Y_Position &gt; 5 ), then move the piece
+            down</li>
+          <li>Rotate the piece when the left mouse button is pressed</li>
+          <li>Set the &quot;change in mouse visibility&quot; flag if mouse state
+            goes from enabled to disabled or vice-versa</li>
+          <li>You need to save/restore the temporary registers you use as this
+            is a callback</li>
+          </UL></LI></UL>
+<h3>void _SetMousePos(void)</h3>
+      <UL>
+        <LI>Sets the position of the mouse on the screen
+        <LI>Inputs: [_GameFlags], [_XPos], [_YPos]
+        <LI>Outputs: [_MouseX], [_MouseY]
+        <LI>Calls: DPMI_Int 
+        <LI>Points: 2 
+        <LI>Notes:
+        <UL>
+          <LI>Do not set the mouse position if the mouse is disabled
+          <LI>You will need to set the mouse position to the center of the
+            current piece.&nbsp; Equations to do this are as follows:
+            <ul>
+              <li>X coordinate = Starting column of game board + width of block
+                in pixels * position in game board + horizontal offset of center
+                of piece = 320 + 20 * [_XPos] + 40</li>
+              <li>Y coordinate = Starting row of game board + height of block in
+                pixels * position in game board + vertical offset of center of
+                piece = 0 + 20 * [_YPos] + 40</li>
+            </ul>
+          <li>Use DPMI_Int calls to simulate real mode interrupt <tt> 33h</tt></li>
+          <li>This function may be hard to debug, since the mouse is <b>not
+            visible</b> when it is enabled.&nbsp; To debug it, comment out the
+            UpdateMouseVisibility function so the mouse is always shown
+            (remember to then change it back to normal!).&nbsp; You will also
+            need to run the program in full-screen mode, as the mouse position
+            does not get set in windowed mode.&nbsp;</li>
+          </UL></LI></UL>
+<h3>void _UpdateMouseVisibility(void)</h3>
+      <UL>
+        <LI>Updates status of mouse visibility
+        <LI>Inputs: [_GameFlags]
+        <LI>Outputs: [_GameFlags]
+        <LI>Calls: DPMI_Int 
+        <LI>Points: 2 
+        <LI>Notes:
+        <UL>
+          <LI>If there has been a change in the mouse status (became enabled or
+            was disabled), then update as follows:&nbsp; if the mouse is
+            disabled, show the mouse cursor, and if it is enabled, hide the
+            mouse cursor
+          <LI>Use DPMI_Int calls to simulate real mode interrupt <tt>33h</tt>
+          <LI>Clear the &quot;change in mouse status&quot; flag at the end of
+            the function
+          <LI>You will also need to run the program in full-screen mode when
+            testing this funciton, as the mouse is never hidden in windowed mode</UL></LI></UL>
+<h3>&nbsp;</h3>
+<h3>The following functions have been written for you.&nbsp; You're welcome.</h3>
+<h3>	&nbsp;</h3>
+<h3>	void _MP4Main(void)</h3>
+      <UL>
+        <LI>Runs main game loop and game over loop 
+        <LI>Inputs: None 
+        <LI>Outputs: None 
+        <LI>Calls: _Initialize, _MovePiece, _RotatePieceCW, _ClearAllBlocks, _GetNextPiece,
+          _CheckPieceCollision, _UpdateMouseVisibility, _DrawAll&nbsp; 
+        <LI>Notes: 
+        <UL>
+          <LI>Call Initialize before the main game loop 
+        </LI>
+          <LI>In main game loop (in no particular order):
+            <ul>
+              <li>When a piece cannot move down further, clear all the blocks
+                and then generate a new piece</li>
+              <li>When [_TimerTick] = [_MoveDownTime], move the current piece down
+                and update [_MoveDownTime] as follows: add ( 14 - [_Level] ) to
+                [_MoveDownTime].&nbsp;
+                The speed stops increasing at level 10.&nbsp; So, if the user
+                reaches a higher level, the previous update should be done as if
+                the user were at level 10.</li>
+              <li>Update the screen when a new piece is generated, and draw the
+                current piece</li>
+              <li>Set the &quot;end of game flag&quot; if the blocks pile up to
+                the top of the game board</li>
+              <li>Loop terminates when either the user pressed ESC or when a new
+                piece is generated that collides with blocks in the game board</li>
+              <li>Do not unconditionally call _DrawAll in your main game loop as
+                this will cause your game to move very slow.&nbsp; Only update
+                the screen when necessary, as this is an expensive operation (MovePiece
+                and RotatePieceCW already do this - they call _DrawAll only when a piece
+                is moved or rotated).&nbsp;&nbsp;</li>
+            </ul>
+        </LI>
+          <li>In game over loop:
+            <ul>
+              <li>If user pressed ESC to exit game in above loop, then bypass game
+              over loop.&nbsp; Otherwise, just keep updating the screen, drawing
+              the current piece, until the user presses ESC.</li>
+            </ul>
+          </li>
+          </UL></LI>
+</UL>
+<h3>	void
+_InstallTimer(void)</h3>
+      <UL>
+        <LI>Installs the timer ISR 
+        <LI>Inputs: None 
+        <LI>Outputs: None 
+        <LI>Notes: 
+        <UL>
+          <LI>You may use a <a href="library.html">library</a> function to
+            install this interrupt for you </LI>
+          <LI>Don't forget to lock areas the interrupt will access </LI>
+          <li>To get the length of the handler, subtract the start of the
+            handler from the label at the end of the handler (remember, labels
+            are just addresses)</li>
+          </UL></LI></UL><h3>	void _RemoveTimer(void)</h3>
+      <UL>
+        <LI>Removes the timer ISR 
+        <LI>Inputs: None 
+        <LI>Outputs: None 
+        <LI>Notes: 
+        <UL>
+          <LI>You may use a <a href="library.html">library</a> function to
+            remove this interrupt for you </LI></UL></LI></UL><h3>long _TimerISR(void)</h3>
+      <UL>
+        <LI>Handles timer ticks from the system timer
+        <LI>Inputs: [_TimerTick]
+        <LI>Outputs: [_TimerTick]
+        <LI>Returns: value to chain original handler
+        <LI>Calls: None 
+        <LI>Notes:
+        <UL>
+          <LI>Increment [_TimerTick] with every call of the function 
+          <LI>Chain the original handler 
+          <LI>You need to save/restore the temporary registers you use as this
+            is an ISR</UL></LI></UL>
+<h3>void _DrawAll(long DCPFlag)</h3>
+      <UL>
+        <LI>Draws all items to the video buffer and then updates the screen 
+        <LI>Inputs: 
+        <UL>
+          <LI>DCPFlag - flag that determines whether or not to draw the current
+            piece to the buffer</UL></LI>
+        <li>Outputs: draws to video buffer</li>
+        <LI>Calls: _ClearScreen, _DrawGameBoard, _DrawCurrentPiece, _DrawText, _CopyImageToScreen,
+          _RefreshVideoBuffer, BinAsc</UL>
+<h3>short _Random(short MaxNum)</h3>
+      <UL>
+        <LI>Generates a random number&nbsp; 
+        <LI>Inputs: 
+        <UL>
+          <LI>MaxNum - upper bound on random number</UL></LI>
+        <li>Returns: random number in between 0 and MaxNum -1 inclusive</li>
+        <LI>Calls: None</UL>
+    
+
+<H2>Development Log and Cover Memo</H2>
+
+<P>As you work on each machine problem, you will keep a simple MP 
+development log. The log will document your design decisions, development plan,
+and debugging experiences, including the time you spent on different parts
+of the machine problem. The log may be kept in any form. In general, whenever
+you work on a machine problem, briefly record the starting time, 
+significant design decisions, progress in coding and
+testing, bugs you discovered, and the ending time. Do <I>not</I> record
+simple syntax errors detected by NASM at assembly time; these 
+are not considered to be bugs.&nbsp; </P>
+
+<P>You will submit a cover memo of
+200 to 400 words (up to one page, single spaced). The cover memo
+should answer the following questions, based on the information that you
+record in your MP development log.&nbsp; <b>You should also include a 
+performance rating of each of your team members on a 1-10 scale.&nbsp; Please 
+include their names, netids, and ratings.</b><UL>
+<LI>How much time did you spend on the design, coding, and testing of
+each part or subroutine? </LI>
+<LI>What kinds of defects (bugs) did you find during the development 
+of the program? When did you discover these defects (during
+code review or during testing)? How did you find them?</LI>
+<LI>What you would do differently for the next MP?</LI>
+</UL>
+<p>Type your cover memo into a plain text file in your MP4 directory.</p>
+<p></p>
+<H2>Procedure</H2>
+<ul>
+  <li>Copy the given MP4 files from the network drive to your home directory
+    with the following command:<br>
+    <tt>xcopy /s V:\ece291\mp4 W:\mp4</tt><br>
+    Alternatively, from home you can download the same files as <a href="http://courses.engr.illinois.edu/ece291/mp/mp4/mp4.zip">mp4.zip</a>.<br>
+  <li>Run <tt>make</tt> to build an executable program using the given ECE291
+    library functions.&nbsp; <b>You will also need to run ex291 to set up the
+    graphics display, again only once per DOS session</b>.<br>
+  <li>As with previous MPs, use a text editor to modify the program. As given,
+    the program uses LIBMP4 routines to implement all functionality. To receive
+    full credit for the assignment, you will need to implement each of the
+    subroutines described above with your own code.<br>
+  <li>By modifying a few comments, you can mix and match usage of your own code
+    and Library routines. You may notice that the LIBMP4 routines contain
+    extraneous and difficult-to-read code. They are not meant to be easily
+    unassembled!</li>
+</ul>
+<H2>Final Steps</H2>
+<p>1. Demonstrate your MP4.EXE to a TA. You may be asked to recompile and demo
+the program.</p>
+<p>2. Be prepared to answer questions about any aspect of the operation of your 
+program. The TAs will not accept an MP if you cannot fully explain your code and 
+your implementation. Delayed MPs will be subject to late penalties as described 
+in the course syllabus (8 pts per day).</p>
+<p>3. The TA will complete the code submission procedure.</p>
+<HR>
+
+<H2>MP4.ASM (program framework)</H2><FONT size=-1></FONT>
+<h1><a href="mp4.asm">mp4.asm</a></h1>

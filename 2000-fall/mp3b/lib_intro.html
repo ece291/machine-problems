@@ -1,0 +1,560 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>291 Protected Mode Library Intro</title>
+</head>
+
+<body>
+
+<h1 align="center"><font size="+2"><b><i>Intro to the 291 Protected Mode Library</i></b></font></h1>
+<p>ECE 291 has a nice library of useful protected mode stuff.  There's not
+really a industry standard library for protected mode, so we wrote our own.
+It does very standard things, plus we have
+the (very short and readable) source code which you should look
+through to see what's going on.
+If you have any issues with the library (stuff doesn't work or
+could be made better/clearer), e-mail me at <a href="mailto:pljohnsn@uiuc.edu">pljohnsn@uiuc.edu</a></p>
+<p><font size="+2"><a name="The Proc and Invoke Macros">The Proc and Invoke Macros</a></font></p>
+<p>NASM has very sparse, very clean, very simple syntax.&nbsp; You want to make
+a procedure, you don't bother with all that <b><samp> proc</samp></b> and <b><samp> endp</samp></b> crap that you have to
+do in MASM which makes 291 students think there is something mysterious going
+on.&nbsp; You just give it a label, and <b><samp> call</samp></b> the label.&nbsp; A
+<b><samp> call</samp></b> pushes the
+return address, and a <b><samp> ret</samp></b> pops it off and jumps to it.&nbsp; That's all that's
+going on in MASM anyway, so why not just do it yourself, right?&nbsp; The NASM
+way:</p>
+<table border="1">
+  <tr>
+    <td width="100%"><samp>_main:<br>
+      &nbsp;&nbsp;&nbsp; mov&nbsp;&nbsp; eax,&nbsp;&nbsp; 3<br>
+      &nbsp;&nbsp;&nbsp; mov&nbsp;&nbsp; ebx,&nbsp;&nbsp; 5<br>
+      &nbsp;&nbsp;&nbsp; call&nbsp; </samp><samp>_Add_Two_Things</samp><samp><br>
+      &nbsp;&nbsp;&nbsp; <font color="#808080">; Result in eax</font><br>
+      &nbsp;&nbsp;&nbsp; ret<br>
+      <br>
+      </samp><samp>_Add_Two_Things</samp><samp>:&nbsp; <font color="#808080">; Into eax</font><br>
+      &nbsp;&nbsp;&nbsp; add&nbsp;&nbsp; eax,&nbsp;&nbsp; ebx<br>
+      &nbsp;&nbsp;&nbsp; ret</samp></td>
+  </tr>
+</table>
+<p>This is fine, but if you're going to do a lot of functions, it would be nice
+to have a standard way of passing around parameters and return values and
+stuff.&nbsp; Hey, C has a standard way of doing this, so why don't we just use
+the C-style procedures you all learned about?&nbsp; Not only does this make things
+consistent and standard, but you can call your assembly from C, and your C from
+assembly without a
+problem.&nbsp; C Dictates:</p>
+<ul>
+  <li>Parameters passed on stack in reverse order by the <i>caller</i> before the call is made</li>
+  <li>Names of parameters in the <i> invoked</i> procedure (or called procedure,
+    or callee) are replaced by [EBP + constant]
+    to access them on the stack.
+    <ul>
+      <li>The constant for a particular parameter is some offset from the base
+        pointer, whose value has to do with how many parameters were pushed before
+        that particular parameter.</li>
+      <li>This means you can't change EBP in your function if you want your parameters
+        to continue to work!</li>
+    </ul>
+  </li>
+  <li>Return Values go in EAX, AX, or AL depending on their size</li>
+  <li>EAX, ECX, EDX can be overwritten in a C-Function.
+    <ul>
+      <li>Don't bother preserving these general registers when you write your functions.</li>
+      <li>Don't expect them to be preserved when you invoke other people's
+	functions!</li>
+    </ul>
+  </li>
+  <li>All other registers <i> must</i> be preserved in a C-Function or bad things will
+    happen when you return and the function you return to expects them to have
+    their old values.
+    <ul>
+      <li>This includes EBX, ESI, EDI, EBP, DS, ES, FS, GS</li>
+    </ul>
+  </li>
+  <li>Parameters are removed from stack by the <i> caller</i> after the return.</li>
+</ul>
+<p>This is exactly the calling format the protected mode library follows, and to enforce this consistency
+and make things simpler than doing all this pushing and poping and EBP offset
+calculation every time, there's a bunch of NASM macros so you can do stuff like
+this:</p>
+<table border="1">
+  <tr>
+    <td width="100%"><samp><font color="#FF0000">BITS</font> 32 <font color="#808080"> ; Tell NASM we're using 32-bit protected mode.<br>
+      </font>
+      <br>
+      <font color="#FF0000">
+      GLOBAL</font> _main <font color="#808080"> ; Tells the linker about the label called _main</font><br>
+      <br>
+      <b>%include "myC32.mac"&nbsp; <font color="#808080">; Include the proc /
+      invoke MACROs</font></b><br>
+      <br>
+      <font color="#FF0000">
+      SECTION</font> .text <font color="#808080"> ; Says that this is the start of the code section.</font><br>
+      <br>
+      _</samp><samp>main:<br>
+      &nbsp;&nbsp;&nbsp; mov&nbsp;&nbsp; eax,&nbsp;&nbsp; 3<br>
+      &nbsp;&nbsp;&nbsp; mov&nbsp;&nbsp; ebx,&nbsp;&nbsp; 5<br>
+      &nbsp;&nbsp;&nbsp; <b>invoke</b> _Add_Two_Things, dword eax, dword ebx<br>
+      </samp><samp>&nbsp;&nbsp;&nbsp; <font color="#808080">; Result in eax</font><br>
+      &nbsp;&nbsp;&nbsp; ret</samp><samp><br>
+      <br>
+      <b>proc</b> </samp><samp>_Add_Two_Things</samp><samp><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; %$First_Thing&nbsp;&nbsp; <b>ar</b><b>g</b>&nbsp;&nbsp;&nbsp;
+      4&nbsp;&nbsp;&nbsp; <font color="#808080">; Both Double Word Arguments (4 bytes)</font><br>
+      &nbsp;&nbsp;&nbsp; %$Second_Thing&nbsp; <b>a</b><b>rg</b>&nbsp;&nbsp;&nbsp;
+      4<br>
+      &nbsp;&nbsp;&nbsp;</samp><samp> _Add_Two_Things_arglen&nbsp;&nbsp; equ&nbsp;&nbsp;
+      8&nbsp; <font color="#808080">; Total bytes of arg</font><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <font color="#808080">; VERY important to get right.</font><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; mov&nbsp;&nbsp; eax, [ebp + %$First_Thing]<br>
+      &nbsp;&nbsp;&nbsp; add&nbsp;&nbsp; eax, [ebp + %$Second_Thing]<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; <font color="#808080">; There is no ret, because endproc does<br>
+      &nbsp;&nbsp;&nbsp; ; stack stuff before doing ret itself.</font><br>
+      <br>
+      <b>endproc</b></samp></td>
+  </tr>
+</table>
+<p><font size="+2"><a name="Task 10:  Simple Proc / Invoke Example">Task 10:&nbsp; Simple Proc / Invoke
+Example</a></font></p>
+<ul>
+  <li>Make a new <b><samp>invoke.asm</samp></b> file with this example in it.</li>
+  <li>Copy the <b><samp>myC32.mac</samp> </b> file from the <b><samp>include</samp></b>
+    directory of <a href="pmodelib.zip">pmodelib.zip</a>
+    or the <b><samp> V:\pmodelib</samp></b> folder into your <b><samp>tutorial
+    </samp></b>folder.</li>
+  <li>Look at the <samp><b>myC32.mac</b></samp> file to see the NASM macros.&nbsp;
+    Spend a few minutes looking at the MACROs and looking at the code above that
+    uses them.</li>
+  <li>Add lines to build <b><samp>invoke.exe</samp>&nbsp;</b> to 
+    your Makefile</li>
+  <li>Make it.</li>
+  <li><b><samp>cv32</samp></b> it and see exactly what code the macros actually
+    generated.&nbsp; (<b>Alt-H</b> tells us that <b> F8</b> goes to the next line, where
+    <b> F7</b>
+    will go <i> into</i> a call.)&nbsp; <a href="questions.html#Question10">Question
+    10</a>:&nbsp; From the math the macros do with EBP and ESP, which way does a
+    protected mode stack grow, and which way does it shrink?&nbsp; Compare it to
+    the Real Mode stack.</li>
+</ul>
+<p>For future reference, here's what the MACROs are doing:&nbsp; (Because the
+NASM's MACRO's are hard to read)</p>
+<p><i><b>invoke</b></i></p>
+<ul>
+  <li><b>Push arguments</b> onto the stack (This decrements SP by the total
+    length of the arguments.)</li>
+  <li><b>Call</b> the procedure.
+    <ul>
+      <li><b>Push return address</b> on the stack</li>
+      <li><b>Jump</b> to the procedure</li>
+    </ul>
+  </li>
+  <li><b>Add ESP,&nbsp; total length of arguments</b> to restore the stack to
+    where it was before.&nbsp; This is what the <samp> _Add_Two_Things_arglen </samp>constant is
+    used for, so if it's wrong, you <i>will</i> crash.</li>
+</ul>
+<p><i><b>proc</b></i></p>
+<ul>
+  <li><b>Push EBP</b> to save it's value</li>
+  <li><b>Mov EBP, ESP</b> so we have a reference to get the arguments</li>
+</ul>
+<p><i><b>arg</b></i></p>
+<ul>
+  <li>Defines the <b><samp>%$First_Thing </samp></b>as a constant representing
+    the offset from EBP that this argument was at.&nbsp; That is why they are
+    used by referencing <samp><b>[EBP + %$First_Thing]</b></samp> in the code.</li>
+</ul>
+<p><i><b>endproc</b></i></p>
+<ul>
+  <li><b>Mov ESP, EBP</b> to restore the stack pointer to what it was when we
+    entered.</li>
+  <li><b>Pop EBP</b> to restore it's value to the value the previous procedure
+    was using for <i>its</i> arguments.</li>
+  <li><b>Ret</b> to return to the procedure that called us.</li>
+</ul>
+<p><b>Caution</b>:&nbsp; <b><samp>endproc</samp></b> does a <b><samp>ret</samp></b>!&nbsp;
+MASM's <b><samp>endp</samp></b>'s did not do a ret.&nbsp; The fact that they
+didn't perform a ret caused some people problems before.&nbsp; The fact that
+these <i>do</i> perform a ret will cause some people now.&nbsp; Looking at what <b><samp>endproc</samp></b>
+does, you can see that if you return before letting <b><samp>endproc</samp></b>
+do it's thing, the stack will not be at the return address, so doing the <b><samp>ret</samp></b>
+will jump to some random location.</p>
+
+<p>Remember that these things are just MACROs.&nbsp; They're not magic.&nbsp;
+You have to understand how they work if you're going to use them.&nbsp; If
+nothing else, assembly programming is supposed to teach you that the &quot;Black
+Boxes&quot; they talk about&nbsp; in your CS classes don't exist.&nbsp;
+(Although making your procedures <i>modular</i> is still good practice.)&nbsp;</p>
+
+<p><font size="+2"><a name="C-Style Procedures">C-Style Procedures</a></font></p>
+<p>One of the reasons for defining the invoke MACROs the way they are defined is
+so they will be compatible with C and C++.&nbsp; Because of the way C pushes
+things onto the stack in order to call your function, when you declare a
+procedure using the <b>proc</b> MACRO, you will be able to read the arguments
+right off of the stack just like a compiled C program would.&nbsp; For this
+reason, from now on, I'll give function headers in the cleaner C-style syntax.</p>
+<p><b><samp>int Add_Two_Things(int First_Thing, int Second_Thing)</samp></b>&nbsp;
+means:</p>
+<table border="1" width="100%">
+  <tr>
+    <td width="100%"><samp>
+      <b>proc</b>  _Add_Two_Things<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; %$First_Thing&nbsp;&nbsp; <b>arg</b>&nbsp;&nbsp;&nbsp;
+      4&nbsp;&nbsp;&nbsp; <font color="#808080">; Both Double Word Arguments (4 bytes)</font><br>
+      &nbsp;&nbsp;&nbsp; %$Second_Thing&nbsp; <b>arg</b>&nbsp;&nbsp;&nbsp;
+      4<br>
+      &nbsp;&nbsp;&nbsp; _Add_Two_Things_arglen&nbsp;&nbsp; equ&nbsp;&nbsp;
+      8&nbsp; <font color="#808080">; Total bytes of arg</font><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <font color="#808080">; VERY important to get right.</font><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; mov&nbsp;&nbsp; eax, [ebp + %$First_Thing]<br>
+      &nbsp;&nbsp;&nbsp; add&nbsp;&nbsp; eax, [ebp + %$Second_Thing]<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; <font color="#808080">; There is no ret, because endproc does<br>
+      &nbsp;&nbsp;&nbsp; ; stack stuff before doing ret itself.</font><br>
+      <br>
+      <b>endproc</b> </samp></td>
+  </tr>
+</table>
+&nbsp;
+<ul>
+  <li>Note that in the C-Style declaration, there is no underscore, whereas the
+    ASM code has one.&nbsp; Again, this is because C would automatically add an
+    underscore to the function name.</li>
+  <li>What the types mean
+    <ul>
+      <li>C's <b><samp> char</samp></b> is NASM's <b><samp> byte</samp></b></li>
+      <li>C's <b><samp> short</samp></b> is NASM's <b><samp> word</samp></b></li>
+      <li>C's <b><samp> int</samp></b> is NASM's <b><samp> dword</samp></b></li>
+      <li>C's pointers (like <b><samp>char*)</samp></b> are addresses.&nbsp; (<b><samp>char*</samp></b>
+        means that what's <i>at</i> this address should be treated as a byte.)
+        In 32-bit
+	mode, these addresses are, of course,32-bit <b><samp>dwords</samp></b>.</li>
+    </ul>
+  </li>
+  <li>Return values:
+    <ul>
+      <li>The return value for this <b><samp>Add_Two_Things</samp></b> was an <b><samp>int
+        (dword)</samp></b> so the result of the ASM code went into EAX.</li>
+    </ul>
+  </li>
+</ul>
+
+<P><font size="+2"><a name="Task 11:  Set up a Jump Table">Task 11:&nbsp; Set Up a Jump Table</a></font> </P>
+
+<P>We want our code to be nice and neat again, so for the last time I'll ask you
+to start over with a new skeleton and a new <b><samp>final.asm</samp></b>
+assembly file.&nbsp; In fact, why don't you put everything you have so far into
+a folder called &quot;<b><samp>simple stuff</samp></b>&quot; to get it out of the
+way. </P>
+
+<P>We want the program to sit around and waited for you to press a
+key.&nbsp; Then we want it to perform some function and came back to waiting for a key.&nbsp;
+This is best done with a jump table whose index is the scan code of the key
+press. </P>
+
+<table border="1">
+  <tr>
+    <td width="100%"><font size="2"><samp><font color="#FF0000">BITS</font> 32 <font color="#808080">          ; Tell NASM we're using 32-bit protected mode.</font><br>
+      <br>
+      <b>
+      GLOBAL _main <font color="#808080">     ; Tells the linker about the label called
+      _main</font></b><br>
+      <br>
+      <b>
+      %include "lib291.inc"&nbsp; <font color="#808080">; Includes everything, including proc
+      MASCOs.</font></b><br>
+      <br>
+      <font color="#FF0000">
+      SECTION</font> .bss <font color="#808080">            ; Uninitialized Data Section</font><br>
+      <br>
+      <font color="#FF0000">
+      SECTION</font> .data <font color="#808080">           ; Data Section</font><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; KeyJumpTable<br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; Nothing (0)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Quit <font color="#808080">          ; ESC (1)</font><br>
+      &nbsp;&nbsp;&nbsp; times 55 dd    Just_Return <font color="#808080">   ; 1-Alt (2-56)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; SpaceBar (57)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; CAPSLOCK (58)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             String_Loop <font color="#808080">   ; F1  (59)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Draw_Pixels <font color="#808080">   ; F2  (60)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; F3  (61)</font><br>
+      &nbsp;&nbsp;&nbsp; dd Just_Return <font color="#808080">; F4 (62)&nbsp;</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; F5  (63)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; F6  (64)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; F7  (65)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; F8  (66)&nbsp;</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; F9  (67)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; F10 (68)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; F11 (69)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; F12 (70)</font>&nbsp;<br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; HOME (71)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; UP (72)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; PGUP (73)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; Keypad Minus (74)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; LEFT (75)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; Keypad 5 (76)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; RIGHT (77)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; Keypad Plus (78)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; END (79)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; DOWN (80)</font><br>
+      &nbsp;&nbsp;&nbsp; dd             Just_Return <font color="#808080">   ; PGDN (81)</font><br>
+      &nbsp;&nbsp;&nbsp; times 175 dd   Just_Return <font color="#808080">   ; (82-255)</font><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; Menu_str db 0dh, 0ah, 0dh, 0ah,&nbsp; <font color="#808080">;
+      Two blank lines</font><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; db "F1  - Display String Loop", 0dh, 0ah,<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      db "F2  - Draw some 320x200 pixels", 0dh, 0ah<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; db  "ESC - Quit",  0dh, 0ah, '$'<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; Loop_str    db  "We are in a loop until you hit a key.  Weeee!", 0dh, 0ah,'$'&nbsp;<br>
+      <br>
+      <font color="#FF0000">
+      SECTION</font> .text <font color="#808080">    ; Says that this is the start of the code section.</font><br>
+      <br>
+      _main:&nbsp;<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; call _LibInit  ; Initialize the library
+      <br><br>
+      &nbsp; Just_Return:<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; invoke _print_string, dword Menu_str<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; mov ah, 00h <font color="#808080"> ; Wait for a key to be pressed.</font><br>
+      &nbsp;&nbsp;&nbsp; int 16h<br>
+      &nbsp;&nbsp;&nbsp; mov ecx, 0 <font color="#808080">  ; We'll use ECX as the index into the jump table.</font><br>
+      &nbsp;&nbsp;&nbsp; mov cl, ah <font color="#808080">  ; Moves the Key Code into ECX</font><br>
+      <br>
+      <b>
+      &nbsp;&nbsp;&nbsp; jmp [KeyJumpTable + 4*ecx]&nbsp;</b><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#808080">; We used ECX as an index, and multiplied it by four.</font><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#808080">; <a href="questions.html">Question
+      11</a>: Why do we multiply ECX by four?</font><br>
+      <br>
+      &nbsp; String_Loop:<br>
+      &nbsp;&nbsp;&nbsp; invoke _print_string, dword Loop_str<br>
+      &nbsp;&nbsp;&nbsp; <font color="#808080">; Loop until a key is pressed.</font><br>
+      &nbsp;&nbsp;&nbsp; jmp Just_Return&nbsp;<br>
+      <br>
+      &nbsp; Draw_Pixels:<br>
+      &nbsp;&nbsp;&nbsp; invoke _draw_pixels<br>
+      &nbsp;&nbsp;&nbsp; jmp Just_Return<br>
+      <br>
+      &nbsp; Quit:&nbsp;<br>
+      &nbsp;&nbsp;&nbsp; call _LibExit   ; Free library resources
+      &nbsp;&nbsp;&nbsp; ret<br>
+      <br>
+ <font color="#808080">; void print_string(char* The_String)</font>
+      <br>
+      proc _print_string<br>
+      &nbsp;&nbsp;&nbsp; %$The_String          arg   4<br>
+      &nbsp;&nbsp;&nbsp; _print_string_arglen  equ   4<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; <font color="#808080">; Copy string to global transfer buffer<br>
+      &nbsp;&nbsp;&nbsp; ; Set up global DPMI_Regs structure<br>
+      &nbsp;&nbsp;&nbsp; ; Call library DPMI_Int</font><br>
+      endproc<br>
+      <br>
+      proc _draw_pixels<br>
+      &nbsp;&nbsp;&nbsp; <font color="#808080">; Draw Stuff</font><br>
+      endproc<br>
+      <br>
+      <font color="#808080">
+      ; The rest of the procedures from here on out...</font></samp></font></td>
+  </tr>
+</table>
+<ul>
+  <li>Take a look at <a href="lib_reference.html">Library Function
+    Reference</a> to see what I'm getting you into.</li>
+  <li>Take a look at <samp><b>V:\pmodelib\src\dpmi_int.asm</samp></b>
+    &nbsp;
+    <ul>
+      <li>Notice that <b><samp>DPMI_Regs</samp></b> is now a global variable.</li>
+      <li>Notice that the DOS <b><samp>_Transfer_Buf</samp></b> is also
+        global.</li>
+    </ul>
+  </li>
+  <li> Take a look at what <b><samp>_LibInit</samp></b> does in <b><samp>V:\pmodelib\src\lib_load.asm</samp></b> 
+    <ul>
+      <li>It allocates some memory</li>
+      <li>It allocates a DOS Transfer Buffer and saves the selectors and
+        segments in <i> global</i> variables.</li>
+    </ul>
+  </li>
+  <li>You don't know what something does or how it does it, look at the code.&nbsp; That's how real engineering works!</li>
+</ul>
+<p>Did you miss Question 11:&nbsp; Could this be because you just blindly copied
+and pasted without reading it first!?&nbsp; Come on!&nbsp; Let's go!&nbsp; You
+and me! Outside, right now!</p>
+<p><font size="+2"><a name="Task 12:  Linking to the Library">Task 12:&nbsp;
+Linking to the Library</a></font></p>
+<p>We need to link this new <b><samp>final.asm</samp></b> to the library
+code.  A library is just a archive of .o files.
+You can link the library into your <b><samp>final.exe</samp></b>
+as if it were just another <b><samp>.o</samp></b> file.</p>
+<ul>
+  <li> <b><samp>V:/pmodelib/lib291.a</samp></b>  goes on your <b><samp>gcc</samp> </b>line so it gets linked
+    into to all of your applications.</li>
+  <li>Dependencies get updated:
+    <ul>
+      <li> <samp> <b> final.exe</b></samp>  goes onto the <b><samp>all:</samp></b> 
+        rule.</li>
+    </ul>
+  </li>
+</ul>
+<p>Here's an updated Makefile that does all that stuff:</p>
+<table border="1" width="100%">
+  <tr>
+    <td width="100%"><samp>all: final.exe<br>
+      <br>
+      clean:<br>
+      &nbsp;&nbsp;&nbsp;&nbsp; rm -f *.o final.exe *.lst *.map<br>
+      <br>
+      final.exe: final.o<br>
+      &nbsp;&nbsp;&nbsp;&nbsp; gcc -o final final.o v:/pmodelib/lib291.a<br>
+      <br>
+      .asm.o:<br>
+      &nbsp;&nbsp;&nbsp;&nbsp; nasm -f coff -iv:/pmodelib/include/ $&lt; -l $*.lst</samp></td>
+  </tr>
+</table>
+&nbsp;
+<p>Only after you get everything to build, fill in the functionality into <b><samp>final.asm</samp></b>&nbsp;
+I want you to use the library functions to do all the stuff you did
+    yourself before:</p>
+Implement the <b><samp>print_string(char* The_String)</samp></b>
+<ul>
+  <li>Be careful about the arguments here:
+    <ul>
+      <li>What gets pushed onto the stack as a parameter when <b><samp>print_string(char*
+        The_String)</samp></b> is invoked is the <i>address</i> of a
+        string.&nbsp; (The address of the first character in the string.)</li>
+      <li>To get the <i>value</i> of this parameter on the stack (the parameter's
+        value is an address in this case), you do <samp><b>dword [ebp + %$The_String]</b> </samp></li>
+      <li>What you get is the <i>address</i> of the first byte of the string,
+        which you have to dereference again with another set of []'s to get the
+        actual bytes.</li>
+    </ul>
+  </li>
+      <li>Use the global transfer buffer that was allocated in <b><samp>_main</samp></b>
+        to transfer the string data into an area of memory that DOS can access.</li>
+      <li>Put values into the global <b><samp>DPMI_Regs</samp></b> structure like
+        did when you had your own structure.</li>
+      <li>Call the library's <samp><font size="2"><b>DPMI_Int</b></font></samp>
+        with the appropriate arguments.</li>
+</ul>
+<p><font size="+2"><a name="File Handling Routines">File Handling Routines</a></font></p>
+<p>Reading files is very important.
+File handling is something you definitely
+call library functions for, so we'll use the library file routines.&nbsp; Basic
+operations on a file:&nbsp; Open, Read, Write, Close.&nbsp; Not too hard.&nbsp;
+We won't be doing any writing, so I'll only talk about the first three.</p>
+<p>Look at the library's <b><samp>filefunc.asm</samp></b> file.&nbsp; The file defines
+the file handling routines as C-style, invokable procedures.&nbsp; Look at the <a href="lib_reference.html">Library
+Function Reference</a>:</p>
+<table border="1" width="100%">
+  <tr>
+    <td width="100%">
+      <p align="center"><b><samp><a href="lib_reference.html#OpenFile">OpenFile</a></samp></b></p>
+      <p align="left"><samp><br>
+      int OpenFile(char *Filename, short WriteTo);<br>
+      &nbsp;&nbsp; Purpose: Opens a file for reading or writing.<br>
+      &nbsp;&nbsp; Inputs:  Filename, (path)name of the file to read<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WriteTo, 1 if create &amp; open for writing, 0 for open to read<br>
+      &nbsp;&nbsp; Outputs: DOS handle to file&nbsp; (-1 if error)</samp></td>
+  </tr>
+  <tr>
+    <td width="100%">
+      <p align="center"><b><samp><a href="lib_reference.html#ReadFile">ReadFile</a></samp></b></p>
+      <p><samp> int ReadFile(int Handle, short BufSeg, void *Buffer, unsigned int Count);<br>
+      &nbsp;&nbsp; Purpose: Reads from a file.<br>
+      &nbsp;&nbsp; Inputs:  Handle, DOS handle of the file to read from<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; BufSeg, selector in which Buffer resides<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	    Buffer, pointer (into BufSeg) of buffer to read into<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;	    Count, number of bytes to read into buffer<br>
+      &nbsp;&nbsp; Outputs: Number of bytes actually read</samp></td>
+  </tr>
+  <tr>
+    <td width="100%">
+      <p align="center"><b><samp><a href="lib_reference.html#CloseFile">CloseFile</a></samp></b></p>
+      <p><samp> void CloseFile(int Handle);<br>
+      &nbsp;&nbsp; Purpose: Closes an open file.<br>
+      &nbsp;&nbsp; Inputs:  Handle, DOS handle of the file to close.<br>
+      &nbsp;&nbsp; Outputs: None</samp></td>
+  </tr>
+</table>
+<p>What is a Filehandle?&nbsp; Well, a handle is something that a library or an
+operating system gives you which is usually pretty meaningless outside it's
+intended context.&nbsp; The OS has a big table of which files are open and who
+has them open.&nbsp; When your program opens a file, it puts information about
+the file you want into the table and returns something like an index into the
+table.&nbsp; When you tell it &quot;read from the file whose handle I gave
+you,&quot; it looks in it's table and knows where the file is on disk and how
+much of it you've already read, etc.</p>
+<p><a href="questions.html#Question11">Question 11:</a>&nbsp; What interrupts are the library routines calling?&nbsp; What do they do?&nbsp; Give me
+numbers and names.</p>
+<p><font size="+2"><a name="Task 13:  Read a Text File">Task 13:&nbsp; Read a Text
+File</a></font></p>
+<p>Another little thing to add to the list off stuff you can now do in protected
+mode:</p>
+
+<ul>
+  <li>Make a new text file called &quot;<b><samp>readme.txt</samp></b>&quot; in
+    your directory.</li>
+  <li>Write some funny stuff in it.</li>
+  <li>Create a variable called <b><samp>text_file_name</samp></b> as a
+    null-terminated C-style string.&nbsp; (Last character is byte 0, not ASCII
+    zero.)</li>
+</ul>
+<p>Make another KeyJumpTable entry for this functionality which just calls a
+procedure for printing out the file.&nbsp; When you write <i>and</i> call routines, be
+<i>very</i> careful about the length of the arguments because the macros do no type
+checking and you <i>will</i> corrupt your stack!</p>
+<ul>
+  <li>Open the file by invoking <b><samp>OpenFile(...)</samp></b> with the
+    appropriate parameters.
+    <ul>
+      <li>Remember that <samp><b>char *Filename</b></samp> is <i>address</i> of
+        the string you want to pass in (a <b><samp>dword</samp></b>).</li>
+    </ul>
+  </li>
+  <li>Define a new buffer to hold the file contents.</li>
+  <li>Read the file directly into your buffer by invoking <b><samp>ReadFile(...)</samp></b>
+    with:
+    <ul>
+      <li>Handle = the filehandle that <b><samp>OpenFile(...)</samp></b> returned in eax.</li>
+      <li>BufSeg = the selector of your buffer:&nbsp; ds if you allocated it in
+        the .bss section.</li>
+      <li>Buffer = 0h, since you want to write to the beginning of your buffer.</li>
+      <li>Count = The length of the buffer minus three (since we still need to
+	add the CR, LF, and '$' so it doesn't print forever.)</li>
+    </ul>
+  </li>
+  <li><b><samp>ReadFile(...)</samp></b> will return the number of bytes it actually
+    read in eax.&nbsp; Put a CR, LF, and '$' in the Buffer starting at this
+    offset.
+    <ul>
+      <li>If the file was bigger than the buffer, it will only read up to three before the end of the buffer because that's the count we gave it.</li>
+      <li>If it's smaller, it will read until the end of the file.</li>
+    </ul>
+  </li>
+  <li>Display the buffer using your <b><samp>print_string</samp></b> code.</li>
+  <li>Invoke <b><samp>CloseFile(...)</samp></b> with the filehandle returned by <b><samp>OpenFile(...)</samp></b>
+  </li>
+</ul>
+<p>Make it, run it, and trace through the library code once to see what it's
+doing.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,105 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 2</title>
+</head>
+
+<body>
+<p>
+<table cellpadding=3 width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Lockwood, Fall 1996</td></tr></table>
+<h2> </h2>
+<center><h1>Machine Problem 2<Br>Grading Report</h1></center>
+<p>
+
+<center>
+<table border=1>
+<form>
+<tr><td>Name:
+<tr><td>Date Submitted 
+<tr><td>Graded By:
+<tr><Td><input type=checkbox name="gold_star">Gold Star: 
+        Programming Excellence</td></tr>
+<tr><Td><input type=checkbox name="gradebook">Data copied to floppy 
+<tr><Td><input type=checkbox name="gradebook">Score recorded
+</td></tr>
+</table>
+</form>
+<p>
+
+<table border=1 cellpadding=3>
+<tr><Th>Category</th><th>Points</th><th>Min</th><th>Max</th></tr>
+<tr><td>ReadInput  </td><td><pre> </pre></td>  <td>0</td><td>20</td></tr>
+<tr><td>DispOutput </td><td><pre> </pre></td>  <td>0</td><td>15</td></tr>
+<tr><td>Calculate  </td><td><pre> </pre></td>  <td>0</td><td>15</td></tr>
+<tr><td>Subtotal       </td><td><pre> </pre></td>  <td>0</td><td>50</td></tr>
+<tr><td>Penalty/Bonus </td><td><pre> </pre></td><td>-25</td><td>5</td></tr>
+<tr><td>Total </td><td><pre> </pre></td>  <td>0</td><td>50</td></tr>
+</table>
+<p>
+
+</center> <p>
+
+<h2>Functionality</h2>
+  <ul>
+  <li>Program works for various interactive operations
+    <ul>
+    <li>Test -6/2=-3: <i>6 [enter] N [enter] 2 [enter] / [enter] == -3 </i>
+    <li>Test -3*2=-6: <i>3 [enter] N [enter] 2 [enter] * [enter] == -6 </i>
+    <li>Test Factorial(0)=1: <i>0 [enter] ! [enter] == 1</i>
+    <li>Test for 2's complement display of binary numbers: <Br>
+      <i>1 [enter] N [enter] MH [enter] == FFFF <Br>
+      1 [enter] N [enter] MB [enter] == 1111111111111111</i>
+    <li>Test input of Hex & Binary Numbers<br>
+      <i>MB [enter] 1101 [enter] MD == 13</i><br>
+      <i>MH [enter] 1B [enter] == 16+11=27</i>
+    </ul> <p>
+  <li>Demonstrate functional run of MP2.IN 
+    <ul>
+    <li>MP2 < MP2.IN
+        <i>Produces final output==FFD4</i>
+    <li><i>If there are problems using the file, verify that linefeeds
+       (Defined as LF) is treated like a space (ignored).  The input
+       file contains CR followed by LF (DOS ASCII Text format).  This
+       can cause problems for the following ReadInput call.</i><p>
+  </ul>
+  </ul>
+<h2>Components</h2>
+  <ul>
+  <li><b>ReadInput</b>  <i>(20 pts)</i>
+    <ul>
+    <li>Accepts Decimal Input
+    <li>Accepts Hex/Binary Input
+    <li>Accepts mode changes (test uppercase MB, MD, MH)
+    <li>Ignores comments and linefeeds (LF is defined in constant section)
+    <li>Uppercase 'L' does not print 'Lockwood'
+    <li>Reasonable Coding Techniques 
+    <li>Reasonable Comments
+    <li>Modular (Interchangable with library function)
+    </ul><p><xmp>
+    </xmp>
+  <li><b>DispOutput</b> <i>(15 pts)</i>
+    <ul>
+    <li>Displays Decimal
+    <li>Displays Binary
+    <li>Displays Hex
+    <li>Prints Binary/Decimal using a <i>reasonable</i> algorithm.
+    <li>Reasonable Coding Techniques
+    <li>Reasonable Comments
+    <li>Modular (Interchangable with library function)
+    </ul><p> <xmp>
+    </xmp>
+  <li><b>Calculate</b> <i>(15 pts)</i>
+    <ul>
+    <li>Performs all standard 1- and 2- operand instructions (math & logic)
+    <li>Calculates factorial.
+    <li>Factorial -13 is not 'an unlucky number'
+    <li>Reasonable Coding Techniques 
+    <li>Reasonable Comments
+    <li>Modular (Interchangable with library function)
+    </ul>
+  </ul><p>
+
+
+</body>

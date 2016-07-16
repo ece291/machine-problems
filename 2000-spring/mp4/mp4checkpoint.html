@@ -1,0 +1,131 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD><TITLE>ECE291 Machine Problem 4 Checkpoint</TITLE>
+<BODY>
+<TABLE cellPadding=3 width="100%">
+  <TBODY>
+  <TR>
+    <TD align=left width="33%">ECE291</TD>
+    <TD align=middle width="34%">Computer Engineering II</TD>
+    <TD align=right width="33%">Polychronopoulos, Spring 2000</TD></TR></TBODY></TABLE>
+<H1 align=center>Machine Problem 4 and 5: Checkpoint Grading Sheet</H1>
+<CENTER>
+<P><I><FONT size=-1>Please print this page and provide it to the TA when you 
+demonstrate the checkpoint. 
+<BR>When you submit this, the TA should: 
+<BR>check your solutions,
+<BR>ask a random question that tests your understanding of the checkpoint's procedures,
+<BR>and assign points for each item on the list.
+</FONT></I></P></CENTER>
+<CENTER>
+<P>
+<FORM></CENTER>
+<CENTER>
+<TABLE cellPadding=7>
+  <TBODY>
+  <TR>
+    <TD>
+      <TABLE>
+        <TBODY>
+        <TR>
+          <TD align=right>Name: </TD>
+          <TD><INPUT name=name size=30></TD></TR>
+        <TR>
+          <TD align=right>Date Submitted: </TD>
+          <TD><INPUT name=submitted></TD></TR>
+        <TR>
+          <TD align=right>Demo To: </TD>
+          <TD><INPUT name=demoto size=6></TD></TR></TBODY></TABLE></TD>
+</TR></TBODY></TABLE></CENTER>
+<P></FORM>
+<TABLE border=1 cellPadding=3 width="100%">
+  <TBODY>
+  <TR>
+    <TH>Category</TH>
+    <TH>Points</TH>
+    <TH>Min</TH>
+    <TH>Max</TH></TR>
+  <TR>
+    <TD><b>_DrawText</b>
+      <ul>
+        <li>Correctly draws text on the backbuffer.</li>
+	<li>Uses 32-bit string instructions for maximum speed.</li>
+      </ul>
+    </TD>
+    <TD><PRE> </PRE></TD>
+    <TD>0</TD>
+    <TD>5</TD></TR>
+  <TR>
+    <TD><b>_TransparentBlit</b>
+      <ul>
+        <li>Correctly draws a image on the backbuffer, with transparency.</li>
+        <li>Does not draw pixels of the image with color index 0.</li>
+      </ul>
+    </TD>
+    <TD><PRE> </PRE></TD>
+    <TD>0</TD>
+    <TD>5</TD></TR>
+  <TR>
+    <TD><B>_RefreshScreen</B>
+      <ul>
+        <li>Correctly copies the entire 320x200 backbuffer to the screen.</li>
+	<li>Uses 32-bit string instructions for maximum speed.</li>
+	<li>Optionally waits for a screen retrace to prevent tearing.</li>
+      </ul>
+    </TD>
+    <TD><PRE> </PRE></TD>
+    <TD>0</TD>
+    <TD>4</TD></TR>
+  <TR>
+    <TD><b>_LoadMap</b>
+      <ul>
+        <li>Correctly loads the Map file into the proper data locations.</li>
+	<li>Ignores all nonhexidecimal characters.</li>
+        <li>Loads the hex-encoded map into the Map array.</li>
+        <li>Loads the hex-encoded respawn points into the RespawnPoints array.</li>
+      </ul>
+    </TD>
+    <TD><PRE> </PRE></TD>
+    <TD>0</TD>
+    <TD>5</TD></TR>
+  <TR>
+    <TD><b>KeyboardISR</b>
+      <ul>
+        <li>Correctly handles keyboard interrupts.</li>
+        <li>Does not chain to the old handler.</li>
+        <li>Resets the PIC.</li>
+      </ul>
+    </TD>
+    <TD><PRE> </PRE></TD>
+    <TD>0</TD>
+    <TD>2</TD></TR>
+  <TR>
+    <TD><b>MouseCallback</b>
+      <ul>
+        <li>Correctly handles mouse callbacks.</li>
+      </ul>
+    </TD>
+    <TD><PRE> </PRE></TD>
+    <TD>0</TD>
+    <TD>3</TD></TR>
+  <TR>
+    <TD><b>TimerISR</b>
+      <ul>
+        <li>Correctly handles timer interrupts.</li>
+        <li>Chains to the old handler.</li>
+      </ul>
+    </TD>
+    <TD>&nbsp;</TD>
+    <TD>0</TD>
+    <TD>1</TD></TR>
+  <TR>
+    <TD><B>Penalty</B> <BR><I>After 5pm, Tue 4/4/2000: -5 pts/weekday </I></TD>
+    <TD><PRE> </PRE></TD>
+    <TD>-25</TD>
+    <TD>0</TD></TR>
+  <TR>
+    <TD><B>Functionality Total</B><BR>
+    <em>This total will be added to the functionality total on the MP4 grading sheet.</em></TD>
+    <TD><PRE> </PRE></TD>
+    <TD><B>0</B></TD>
+    <TD><B>25</B></TD></TR>
+</TBODY></TABLE></BODY></HTML>

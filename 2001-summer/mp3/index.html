@@ -1,0 +1,630 @@
+<%
+title = "ECE 291 - MP3"
+subtitle = "MP3"
+%>
+
+<!--#include file="headvb.asp"-->
+
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <title>MP3</title>
+</head>
+<body bgcolor="#FFFFFF">
+&nbsp;
+
+<center>
+<h1>
+Machine Problem 3: Flying Blocks 291</h1>
+</center>
+
+<center><table BORDER="1" CELLPADDING=3 WIDTH="60%" >
+<tr>
+<td ALIGN=RIGHT><b>Assigned</b></td>
+
+<td>Thursday, July 5, 2001</td>
+</tr>
+
+<tr>
+<td ALIGN=RIGHT><b>Purpose</b></td>
+
+<td>Text-Mode Graphics, Timer and Keyboard Interrupts</td>
+</tr>
+
+<tr>
+<td ALIGN=RIGHT><b>Points</b></td>
+
+<td>75</td>
+</tr>
+
+<tr>
+<td ALIGN=RIGHT><b>Due Date</b></td>
+
+<td>Thursday, July 12 - 5:00pm</td>
+</tr>
+</table></center>
+<!--<Center><IMG SRC="../../icon/construct.gif" >This MP is under construction</Center>-->
+<h2>
+Introduction</h2>
+<blockquote>
+<p>
+This MP has been designed to introduce you to Text-Mode Video, look-up tables,
+and interrupt service routines.</p>
+</blockquote>
+
+<h2>
+Problem Description</h2>
+
+<center><img SRC="mp3.gif" BORDER=0 width="652" height="512"></center>
+
+<blockquote>
+  <p>This MP was designed to be short for a mp3 for this class because of the
+  limited time available to complete it.&nbsp; It could have actually been an
+  interesting game to play with a little more work; however it is still an
+  instructive assignment.</p>
+  <p><font size="3">In this MP, we're going to hook into the computer's keyboard
+  and timer interrupts, to run some of the code asynchronously from the main
+  loop. Asynchronously means, in this sense, that you never know ahead of time
+  when it will run. You could have two move opcodes, or a compare and a
+  conditional jump, and either could be interrupted to run the Interrupt Service
+  Routine (ISR). More on this shortly.</font></p>
+</blockquote>
+<h2>
+Implementation</h2>
+<h3>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</h3>
+<blockquote>
+  <h3> Interrupt Service Routines</h3>
+  <p>Hardware Interrupts are generated when various hardware events occur.&nbsp;
+  Examples include the timer, which triggers 18.2 times per second, the
+  keyboard, which triggers for every key press and release, and the mouse which
+  triggers for any movement or button press or release. These interrupts are the
+  hardware's way of saying &quot;I need attention,&quot; so that the rest of the
+  time the CPU can completely ignore such devices, and just execute code.</p>
+  <p>When the interrupt happens, the CPU is informed.&nbsp; The current opcode
+  finishes execution, and then the current program is interrupted. This is when
+  your Interrupt Service Routine (ISR) is executed. As it happens between two effectively random lines of your program,
+  the ISR needs to save all registers and the flags. The hardware takes care of
+  part of this (by pushing of
+  the flags); the rest you must take care of by using IRET instead of RET (to pop the
+  flags), and saving your registers like normal.</p>
+  <h3>Text-Mode Video</h3>
+  <p>We will be using memory mapped I/O.&nbsp; Which means that you will want to
+  move 0B800h into ES and explicitly make it your segment when writing to&nbsp;
+  the screen. e.g. [es:bx].&nbsp; Remember that each character in text-mode
+  video has both an attribute and an ascii component.&nbsp; The size of the
+  screen is 80 by 25 characters.</p>
+  <h3>The Timer ISR</h3>
+  <p>The timer will be used to add delay where we need it in our program. For
+  instance we do not want the blocks to immediately zoom up to the top.&nbsp; So
+  we add some delay between each attempt at percolating the blocks up.&nbsp; We
+  could have implemented a system to keep track of what level of difficulty the
+  user was at, and then appropriately sped up the program; however this was not
+  done. Every time the timer ISR is called, increment
+  the tick counter, [TimerTick].&nbsp;</p>
+  <h3>The Keyboard ISR</h3>
+  <p>When your keyboard handler is called, you know a key has been pressed or
+  released. Unfortunately, you don't know what key, whether it was pressed or
+  released, and whether the press is a true press or an auto-repeat press.
+  There's no way for us find out the last (except keeping track yourself), but
+  as for which key and press or release, you can (and must) find this out by
+  asking the keyboard for the scancode. See the lab manual, page 75 or
+  thereabouts, for information on retrieving these scancodes. The
+  pages after that describe how scancodes work.</p>
+  <p>If you look at the scancodes, and you look at your ascii table, the first
+  thing you'll probably notice is that there's no connection. If you then look
+  down at the keyboard, however, you may notice a general correlation between
+  the scancode and the location of the key, with ESC being scancode 1, and the
+  numbers following an increasing pattern.</p>
+  <h3>The Game Lookup Tables</h3>
+  <p>All the information about the current status of game needs to be stored
+  efficiently somewhere so that it is easy to access.&nbsp; This can best done
+  with a lookup table.&nbsp; In this MP we will be using the following two
+  lookup tables:</p>
+  <ul>
+    <li><code>Gameboard</code>
+      <ul>
+        <li>This is a 24 x 24 array representing the gameboard.</li>
+        <li>Each byte is used to index into the Colors table to find the color
+          of the corresponding block in the gameboard.</li>
+      </ul>
+    </li>
+    <li><code>Colors</code>
+      <ul>
+        <li>Each entry in Colors is a word representing a color in text-mode
+          video.</li>
+        <li>Colors first entry is zero, and its last is a '$'</li>
+        <li>NUM_COLORS is a constant equal to the number of entries in Colors
+          excluding the initial zero.</li>
+      </ul>
+    </li>
+  </ul>
+  <h3>The Game Status Flags</h3>
+  <p>&nbsp;All the information pertaining to the status of the game is held in [GameFlags],
+  a byte-sized variable.&nbsp; Each bit of it represents a different flag, but
+  not all bits are used.&nbsp; Lets call the lowest order bit, bit 0 and so on..</p>
+      <ul>
+        <li>Bit 0 = 1 indicates exit program</li>
+        <li>Bit 3 = 1 indicates move right</li>
+        <li>Bit 4 = 1 indicates move left</li>
+        <li>Bit 5 = 1 indicates change color</li>
+        <li>Bit 6 = 1 indicates place block on gameboard ('shoot')</li>
+      </ul>
+  <p>&nbsp;</p>
+</blockquote>
+
+<h2>
+Procedures</h2>
+
+<ul>
+<li>
+This assignment has 15 procedures. You will receive credit for this
+assignment by replacing each of the fifteen procedures listed below with
+your own code.</li>
+
+<li>
+Experiment with the working code to gain a full understanding of how the
+program works.</li>
+
+<li>
+Use defined constants/variables where appropriate.</li>
+
+<li>
+Comment ALL the functions and make sure that they preserve all register
+values.&nbsp; Be sure to include function headers for ALL functions that
+you write.</li>
+
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li>
+<b><font size="+1">DrawGameboard</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose :</b>   Draw the gameboard to the screen.</li>
+
+<li>
+<b>Inputs :</b> None</li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls :</b>   <code>None</code></li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+<li>Loop over the <code>bytes in [Gameboard]</code>, drawing them to the screen
+  starting at <code>GAMEBOARD_OFF</code>, and looping for 24 rows of 24
+  characters each.</li>
+<li>Make sure to also draw the blanks onto the screen instead of just skipping
+  them.</li>
+</ul>
+
+<li>
+<b>Points : 10</b>
+
+</li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">DrawPalette</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose : </b>Draws the palette of colors that appears on the right.</li>
+
+<li>
+<b>Inputs : </b>None
+</li>
+
+<li>
+<b>Outputs :</b>
+ None
+</li>
+
+<li>
+<b>Calls : </b>None</li>
+
+<li>
+<b>Notes :</b>
+<ul>
+  <li>Draw starting at PALETTE_OFF</li>
+  <li>Lookup in the [Colors] array to find all the colors.</li>
+</ul>
+</li>
+
+</ul>
+
+<ul>
+
+<li><b>Points : 6 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">DrawArrow</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose :</b>   Draw the arrow that appears under the gameboard.</li>
+
+<li>
+<b>Inputs : </b>None</li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls : </b>None</li>
+
+<li>
+<b>Notes :</b> &nbsp;
+<ul>
+  <li>[APos] is the offset of the arrow from ARROW_OFF</li>
+  <li>Make sure to clear all 20 locations where the arrow might have been before
+    drawing it.</li>
+</ul>
+</li>
+
+<li>
+<b>Points : 4</b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">DrawPaletteArrow</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose :</b> Draws the arrow that appears below the palette.</li>
+
+<li>
+<b>Inputs : </b>None</li>
+
+<li>
+<b>Outputs : </b>None&nbsp;</li>
+
+<li>
+<b>Calls : </b>None</li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+<li>Fairly identical to DrawArrow.</li>
+<li>Use [PAPos] and PAL_ARROW_OFF for this one.</li>
+</ul>
+
+<li>
+<b>Points : 4 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">InstallTimer, RemoveTimer</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose : </b>These palette procedures Install and Remove the Timer ISR</li>
+
+<li>
+<b>Inputs : </b>location of <code>TimerISR</code></li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls : </b>Interrupt 21h</li>
+
+<li>
+<b>Notes :</b> See <a href="http://www.ctyme.com/intr/int-21.htm">http://www.ctyme.com/intr/int-21.htm</a></li>
+
+</ul>
+
+<ul>
+
+<li>
+<b>Points : 3 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">TimerISR</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose : </b>Increment counters and set update to track player's time</li>
+
+<li>
+<b>Inputs : </b>None</li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls : </b>Original Timer ISR</li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+<li>Don't forget to call the original handler (this is called chaining) to
+  ensure the functionality that is dependant on the timer</li>
+<li>See <a href="http://www.ece.uiuc.edu/ece291/lecture/lockwood/l11.html">Lecture 14</a>
+  for more information on writing and installing ISRs</li>
+<li>Increment [TimerTick] each time.</li>
+</ul>
+
+<li>
+<b>Points : 4 </b></li>
+</ul>
+</ul>
+
+<ul>
+<li>
+<b><font size="+1">Delay</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose :</b> To wait for the specified number of ticks.</li>
+
+<li>
+<b>Inputs :</b>  ax = number of ticks to delay for</li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls :</b>   <code>None</code></li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+<li>[TimerTick] should be preserved so push and pop it.</li>
+
+</ul>
+
+<li>
+<b>Points : 5</b>
+
+</li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">InstallKeyboard, RemoveKeyboard</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose : </b>These procedures Install and Remove the Keyboard ISR</li>
+
+<li>
+<b>Inputs : </b>location of <code>KeyboardISR</code></li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls : </b>Interrupt 21h</li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+
+<li>
+ See <a href="http://www.ctyme.com/intr/int-21.htm">http://www.ctyme.com/intr/int-21.htm</a></li>
+</ul>
+
+<li>
+<b>Points : 3 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">KeyboardISR</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose : </b>Sets [GameFlags] correctly such that the rest of the program will react to the keyboard inputs.</li>
+
+<li>
+<b>Inputs : </b>None
+</li>
+
+<li>
+<b>Outputs :</b>
+ None
+</li>
+
+<li>
+<b>Calls : </b>None</li>
+
+<li>
+<b>Notes :</b>
+<ul>
+  <li>See the lab manual for a skeleton ISR</li>
+  <li>Remember to check for key presses and releases (highest bit of scancode
+    set =&gt; key release)</li>
+  <li>Upon a keyrelease clear the appropriate movement flags instead of doing it
+    in MoveArrow</li>
+  <li>Set the appropriate bit of [GameFlags] correctly depending on the scancode
+    received.</li>
+  <li>Check the constants already defined for some of the scancodes.</li>
+</ul>
+</li>
+
+</ul>
+
+<ul>
+
+<li><b>Points : 12</b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>PercolateUp</b></font>
+    <ul>
+      <li><font size="3"><b>Purpose : </b>Make all the blocks in the gameboard simultaneously
+        move up if their aren't any blocks above them.</font></li>
+      <li><font size="3"><b>Inputs : </b>None</font>
+      </li>
+      <li><font size="3"><b>Outputs : </b>None</font></li>
+      <li><font size="3"><b>Calls : </b>None</font></li>
+      <li><b><font size="3">Notes :&nbsp;</font></b>
+        <ul>
+          <li><font size="3">Observe how the blocks go up and stack there.</font></li>
+          <li><font size="3">Simply start at the top of the gameboard and move a
+            block up if there is not a block just above it.</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 12</b></font></li>
+    </ul>
+  </li>
+</ul>
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>CheckShot</b></font>
+    <ul>
+      <li><font size="3"><b>Purpose :</b> Inputs a block into the gameboard at
+        the appropriate location when spacebar is pressed.</font></li>
+      <li><font size="3"><b>Inputs : None</b></font>
+      </li>
+      <li><font size="3"><b>Outputs :&nbsp;None </b></font>
+      </li>
+      <li><font size="3"><b>Calls : </b><code><b>None</b></code></font></li>
+      <li><b><font size="3">Notes :&nbsp;</font></b>
+        <ul>
+          <li>Check the 2nd highest bit of [GameFlags] to ascertain whether a
+            block was &quot;shot&quot; (spacebar was pressed).</li>
+          <li>Input the correct index in the gameboard by looking at [PAPos].</li>
+          <li>Input at the correct location in gameboard by looking at [APos].</li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 4 </b></font></li>
+    </ul>
+  </li>
+</ul>
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>ChangeColor</b></font>
+    <ul>
+      <li><font size="3"><b>Purpose : </b>Sets [PAPos] when the up arrow is
+        pressed.</font></li>
+      <li><font size="3"><b>Inputs :&nbsp;None </b></font>
+      </li>
+      <li><font size="3"><b>Outputs :&nbsp;None </b></font>
+      </li>
+      <li><font size="3"><b>Calls : </b>DrawPaletteArrow</font></li>
+      <li><b><font size="3">Notes :&nbsp;</font></b>
+        <ul>
+          <li>Check the 3rd highest bit of [GameFlags] to ascertain whether
+            color change is needed (whether up arrow was pressed).</li>
+          <li><font size="3">Remember to rotate at the end of the palette.</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 4 </b></font></li>
+    </ul>
+  </li>
+</ul>
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>MoveArrow</b></font>
+    <ul>
+      <li><font size="3"><b>Purpose : </b>Sets [APos] when left or right arrow
+        is pressed.</font></li>
+      <li><font size="3"><b>Inputs : </b>None</font>
+      </li>
+      <li><font size="3"><b>Outputs : </b>None</font></li>
+      <li><font size="3"><b>Calls : </b>DrawArrow</font></li>
+      <li><b><font size="3">Notes :&nbsp;</font></b>
+        <ul>
+          <li>Make sure the arrow always stays under the gameboard.</li>
+          <li>The 4th and 5th highest bits of [GameFlags] represent a move right
+            and left respectively when set.</li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 4 </b></font></li>
+    </ul>
+  </li>
+</ul>
+<p>
+<i>Monitor the newsgroup and this on-line section for revisions to the
+MP or to the write-up</i>
+</p>
+<h2>Procedure</h2>
+<ul>
+  <li>You will begin this MP with the following files:
+    <ul>
+      <li><tt>MP3.ASM</tt>: Program Framework
+      <li><tt>Makefile</tt>: Specifies how and when programs are assembled and
+        linked.
+      <li><tt>LIBMP3.LIB</tt>: Library functions for MP3
+      <li><tt>LIB291.LIB</tt>: General-purpose library functions</li>
+    </ul>
+  <li>
+  <p align="left">You may copy these files from the network drive to your home directory
+    with the following command:<br>
+    <tt>xcopy /s V:\ece291\mp3 W:\mp3 <br>
+  </tt>or download the files from this server as
+  <a href="http://courses.engr.illinois.edu/ece291/mp/mp3/mp3.zip">mp3.zip</a><br>
+  <li>Add your code to <tt>MP3.ASM</tt>.
+  <li>Assemble and link your program by typing<br>
+    <tt>make</tt><br>
+    This command reads <i>Makefile</i> then invokes NASM and LINK to build an
+    executable program.
+  <li>Use Turbo Debugger (TD) to find and correct program errors.
+  <li>Verify your program operation by testing the input test file. You should
+    alter the test file to check different scenarios with your code.</li>
+</ul>
+<h2>Final Steps</h2>
+<p>1. Demonstrate your MP3.EXE to a TA. You may be asked to recompile and demo
+the program. Your program must work with all given input.</p>
+<p>2. Be prepared to answer questions about any aspect of the operation of your
+program. The TAs will not accept an MP if you cannot fully explain your code and
+your implementation. Delayed MPs will be subject to late penalties as described
+in the course syllabus (10/pts per day).</p>
+<p>3. The TA will complete the code submission procedure.</p>
+<p>&nbsp;</p>
+
+<hr>
+
+<h2><a href="mp3.asm"><b>mp3.asm</b></a></h2>
+
+</body>
+</html>
+
+<!--#include file="foot.asp"-->

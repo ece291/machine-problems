@@ -1,0 +1,225 @@
+<%
+title = "ECE 291 - MP1"
+subtitle = "MP1"
+%>
+
+<!--#include file="headvb.asp"-->
+
+      <H1 align=center>Machine Problem 1: Restaurant Guide</H1>
+      <DIV align=center>
+      <CENTER>
+      <TABLE border=1 width=513>
+        <TBODY>
+        <TR>
+          <TD align=right width=64>Assigned</TD>
+          <TD width=433>Thursday, 5 September 2002</TD></TR>
+        <TR>
+          <TD align=right width=64>Due Date</TD>
+          <TD width=433>Wednesday, 18 September 2002, 5:00 p.m.</TD></TR>
+        <TR>
+          <TD align=right width=64>Purpose</TD>
+          <TD width=433 Roman?>To construct a program with decisions and loops.
+          To master the use of the debugging tool.</TD></TR>
+        <TR>
+          <TD align=right width=64>Points</FONT></TD>
+          <TD width=433>25</TD></TR></TBODY></TABLE></CENTER></DIV>
+          
+
+<BLOCKQUOTE>
+Perlis: Some principles: every interesting program has at least
+one variable, one branch, one loop ...<BR>
+Strachey:  And at least one bug!<BR>
+<I>-- NATO Software Engineering Conference, 1970</I>
+</BLOCKQUOTE>
+
+<P>You will write a program that retrieves the names of some of Professor
+Loui's favorite restaurants in Champaign-Urbana.
+When you demonstrate your program, you will use Turbo Debugger (TD).</P>
+
+<P>Files for MP1 are on the <tt>V:</tt> drive in the directory <tt>V:\ece291\mp1</tt>.
+In this directory are the program framework <tt>mp1.asm</tt> and a 
+running version of the program <tt>mp1lab.exe</tt>. There are no 
+subroutines for this program other than those in LIB291. You should start by
+copying these files to your home directory with the following command: <BR>
+<TT>xcopy /s V:\ece291\mp1 W:\mp1</TT><BR>
+You may download the files from the server as 
+<A href="http://courses.engr.illinois.edu/ece291/mp/mp1/mp1.zip">mp1.zip</A>  </p>
+
+<P>Reading: Lab Notes Section 4.2 (Variations on Loops), 
+Chapter 6 (Debugging Tools)</P>
+
+<H2>Program Specification</H2>
+
+<P>Your program will have the list with the records shown below:</P>
+<PRE>
+namlst  DB      'IM Biaggis     ','$'
+        DB      'MI Fiesta Cafe ','$'
+        DB      'CI First Wok   ','$'
+        DB      'AE Kennedys    ','$'
+        DB      'AM Milos       ','$'
+        DB      'IM Olive Garden','$'
+        DB      'AI Panera      ','$'
+        DB      'PI Papa Dels   ','$'
+        DB      'MM Radio Maria ','$'
+        DB      'AM Silvercreek ','$'
+        DB      'IE Timpones    ','$'
+endlst  DB      'CE Yen Ching   ','$'
+</PRE>
+
+<P>In each record the first letter describes the type of restaurant: <BR>
+A - American,    C - Chinese,     I - Italian,
+M - Mexican/Caribbean,     P - Pizza <BR>
+The second letter describes the price level: <BR>
+E - Expensive,   M - Moderate,    I - Inexpensive<BR>
+The list of restaurant names is in alphabetical order.  Each record
+comprises 16 bytes, including the byte for "$".</P>
+
+<P>The program types a prompt character "<tt>?</tt>" on the display screen.
+Then it reads in and echoes two characters from the keyboard.  Using
+a loop, the program inspects each record.  With calls to subroutine
+<tt>dspmsg</tt>, the program types out every restaurant name such that the
+first letter of the record matches the first character from the user,
+and the second letter matches the second character from the user.  The
+"*" character matches every letter.  For example, if the input is <tt>AM</tt>,
+then the program types out "<tt>Milos</tt>" and "<tt>Silvercreek</tt>".  If the input
+is <tt>C*</tt>, then the program types out all Chinese restaurants.  If the
+input is <tt>*I</tt>, then the program types out all inexpensive restaurants.</P>
+
+<P>If no records match the input pattern, then the program types out
+"<tt>No records found</tt>" with subroutine <tt>dspmsg</tt>.  For example, if the input
+is <tt>PE</tt>, then the program types out "<tt>No records found</tt>".</P>
+
+<P>The program should use carriage returns and line feeds between
+restaurant names to make the output readable.</P>
+
+<P>After it produces the appropriate output, the program returns to
+the beginning and prompts the user for another pair of characters.</P>
+
+<P>When the user presses the Esc key, the program exits immediately
+by calling <tt>dosxit</tt>.</P>
+
+<P>In the real world, when programs are used or modified by others,
+clear documentation is essential.  Documentation standards are discussed
+in the Lab Notes in Section 1.1 (Machine Problems).</P>
+
+<P>You may use the subroutines in LIB291 without penalty.</P>
+
+<H2>Development Log and Cover Memo</H2>
+
+<P>As you work on each machine problem, you will keep a simple MP 
+development log. The log will document your design decisions, development plan,
+and debugging experiences, including the time you spent on different parts
+of the machine problem. The log may be kept in any form. In general, whenever
+you work on a machine problem, briefly record the starting time, 
+significant design decisions, progress in coding and
+testing, bugs you discovered, and the ending time. Do <I>not</I> record
+simple syntax errors detected by NASM at assembly time; these 
+are not considered to be bugs.</P>
+
+<P>For each machine problem, beginning with MP1, you will submit a cover memo of
+200 to 400 words (up to one page, single spaced). The cover memo
+should answer the following questions, based on the information that you
+record in your MP development log. 
+<UL>
+<LI>How much time did you spend on the design, coding, and testing of
+each part or subroutine? (MP1 has no assigned subroutines; simply report your total time.)</LI>
+<LI>What kinds of defects (bugs) did you find during the development 
+of the program? When did you discover these defects (during
+code review or during testing)? How did you find them?</LI>
+<LI>What you would do differently for the next MP?</LI>
+</UL>
+Type your cover memo into a plain text file in your W:\mp1 directory
+</P>
+
+<H2>Photograph</H2>
+
+<P> To receive full credit for MP1, you must have your photo taken. Photos will be posted on
+the ECE 291 Web site but will be accessible only by students enrolled in the course.</P>
+
+<H2>Demonstration</H2>
+
+<P>Demonstrate your program to a TA or to the instructor.  You will
+be asked to use Turbo Debugger to</P>
+<OL>
+<LI>display the contents of several bytes in memory</LI>
+<LI>start your program with a breakpoint at the beginning of your
+search loop </LI>
+<LI>single step through a few instructions,</LI>
+<LI>change the contents of a memory byte, and</LI>
+<LI>change the contents of a register.</LI></OL>
+<P>After a successful demonstration, you will submit your source program and
+cover memo via the MP1 Gradesheet.</P>
+
+ <HR>
+
+      <H2>mp1.asm (program framework)</H2><FONT size=-1><PRE>
+; MP1 - Restaurant Guide
+; Your name
+; Date
+;
+; This program illustrates the use of a simple loop for data retrieval,
+; logic tests with multiple comparisons, and addressing modes.
+
+    BITS    16
+
+;====== SECTION 1: Define constants =======================================
+
+        CR      EQU     0Dh
+        LF      EQU     0Ah
+
+; You may define other constants here
+
+;====== SECTION 2: Declare external procedures ============================
+
+EXTERN  kbdine, dspout, dspmsg, dosxit
+
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        RESB      64*8
+stacktop:
+        RESB    0                       ; NASM bug workaround 
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+hdmsg   DB      CR,LF,'MP1: Type two letters after the question mark','$'
+prompt  DB      CR,LF,'? ','$'
+nonemsg DB      CR,LF,'No records found','$'
+xitmsg  DB      CR,LF,'MP1: Exit to DOS','$'
+namlst  DB      'IM Biaggis     ','$'
+        DB      'MI Fiesta Cafe ','$'
+        DB      'CI First Wok   ','$'
+        DB      'AE Kennedys    ','$'
+        DB      'AM Milos       ','$'
+        DB      'IM Olive Garden','$'
+        DB      'AI Panera      ','$'
+        DB      'PI Papa Dels   ','$'
+        DB      'MM Radio Maria ','$'
+        DB      'AM Silvercreek ','$'
+        DB      'IE Timpones    ','$'
+endlst  DB      'CE Yen Ching   ','$'
+
+; You may declare additional variables here
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        MOV     AX, CS                  ; Initialize Default Segment register
+        MOV     DS, AX  
+        MOV     AX, stkseg              ; Initialize Stack Segment register
+        MOV     SS, AX
+        MOV     SP, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+main:
+
+; Your program goes here
+
+        CALL    dosxit                  ; Exit to DOS
+
+</pre></font>
+<!--#include file="foot.asp"-->

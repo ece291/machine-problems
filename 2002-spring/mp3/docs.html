@@ -1,0 +1,163 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv=Content-Type content="text/html; charset=unicode"><%
+title = "ECE291 Machine Problem 3"
+subtitle = "Machine Problem 3: Main Function"
+%>
+<!--#include file="headvb.asp"-->
+<BODY>
+
+<h1 align="center">Machine Problem 3: Nybbles</h1>
+
+<!-- <span class="update"><strong>Updates:</strong></span><br>
+
+2/10 A new version of libmp2.lib is available that fixes the one character case
+with KMP, and the search word being terminated by a '$' in the word grid.
+-->
+
+<a name="io"><h2>Input and Output</h2></a>
+<p>This MP will use primarily interrupt-driven I/O.&nbsp; This is what allows
+our main function to be so simple, but it comes at a cost of increased debugging
+complexity: you can almost never use the debugger to debug code within your
+Interrupt Service Routine.&nbsp; For this reason among others, keep them as short as
+possible. Then you can debug them by hand as needed.</p>
+<h3>Interrupt Service Routines</h3>
+<p>Hardware Interrupts are generated when various hardware events occur.&nbsp;
+Examples include the timer, which triggers 18.2 times per second, the keyboard,
+which triggers for every key press and release, the serial port, which depending
+on the interrupt enable register, triggers each time the receive buffer is full,
+and the mouse which triggers for any movement or button press or release. These
+interrupts are the hardware's way of saying &quot;I need attention,&quot; so
+that the rest of the time the CPU can completely ignore such devices, and just
+execute code.</p>
+<p>When the interrupt happens, the CPU is informed.&nbsp; The current opcode
+finishes execution, and then the current program is interrupted. This is when
+your interrupt service routine (ISR) is executed. As it happens between two
+effectively random lines of your program, the ISR needs to save all registers
+and the flags. The hardware takes care of part of this (by pushing of the
+flags); the rest you must take care of by using IRET instead of RET (to pop the
+flags), and saving your registers like normal.</p>
+<h3>The Keyboard ISR</h3>
+<p>When our keyboard handler is called, we know a key has been pressed or
+released. Unfortunately, we don't know what key, whether it was pressed or
+released, and whether the press is a true press or an auto-repeat press. There's
+no way for us find out the last (except keeping track), but as for which key and
+press or release, we can (and must) find this out by asking the keyboard for the
+scancode. See section 10.1.2.2 of the&nbsp; lab manual for information on
+retrieving these scancodes. The pages after that describe how scancodes work.</p>
+<p>There are only a few keys that are important to Nybbles.&nbsp; These are the
+arrow keys, and the escape key. You'll find constants for these declared at the
+top to make working with them easier.</p>
+<h3>Text-Mode Video</h3>
+<p>We will be using memory mapped I/O.&nbsp; Which means that you will want to
+move 0B800h into ES and explicitly make it your segment when writing to&nbsp;
+the screen. e.g. [es:bx]. Remember that each character in text-mode video
+has both an attribute and an ascii component.&nbsp; The size of the screen is
+normally 80
+by 25 characters, but we'll be using a mode that is 80x50 (just like 25 line
+modes for addressing, but it has more available).&nbsp; Consult the lectures or homework 3 for more details
+on how text-mode video works. Notice especially how to convert from a row and
+column to an offset.</p>
+
+<a name="logic"><h2>Game Logic</h2></a>
+<p>After collecting the input, it needs to be tied together into into a cohesive
+game. Since we need to enforce the rules of the game, here's some more detail
+on what the rules are: </p>
+
+<p>At each step, a worm must move forward, or turn 90 degrees and thus move left
+or right. Since this happens according to a timer, there is a limited amount of
+time for either the player or the AI to make a decision about what to do.
+Furthermore, since entering an occupied map location causes the worm to lose,
+there is some incentive for careful choices. Finally, the goal of the game is to
+collect food represented by the numbers that appear on the screen. This in turn
+increases difficulty, as the length of the worm increases with each item of
+food it eats, decreasing the available space. </p>
+
+<h3>Movement </h3>
+
+<p>Movement is handled in three steps:</p>
+<ol>
+  <li>If the worm doesn't need to grow, delete the tail segment (logically and
+    visibly)
+    <ul>
+      <li>If instead the worm does need to grow, increase the current size</li>
+    </ul>
+  </li>
+  <li>Add the new head segment visibly</li>
+  <li>Handle collisions at the new head: either extend the worm logically or report a loss</li>
+</ol>
+<h3>Collisions </h3>
+
+<p>There are several types of collisions due to the four things a worm can
+collide with:</p>
+<ul>
+  <li>Nothing (0)
+    <ul>
+      <li>By far the most common case, and the simplest</li>
+    </ul>
+  </li>
+  <li>Food ('1' through '9')
+    <ul>
+      <li>This is good as it indicates the worm will need to grow. Just increase the
+        growth size by SEGSIZE</li>
+    </ul>
+  </li>
+  <li> Wall (-1)
+    <ul>
+      <li>A worm who hits the wall loses</li>
+    </ul>
+  </li>
+  <li> Worm (one of the Worm.color values)
+    <ul>
+      <li>Similarly, a worm who hits a worm (itself or its opponent) loses</li>
+    </ul>
+  </li>
+</ul>
+
+<p>You detect which of the above collisions it is by checking the map at the
+head of the worm for one of the above parenthetical numbers. You can slightly
+optimize this search by checking for an empty space, a number, or anything else.
+Upon collision with a worm or the wall the winlose flag must be set. Set this to
+1 if the player collided (the opponent wins), 2 if the opponent collided (the
+player wins) or 3 for a mutual collision.</p>
+
+<h3>Worm Data</h3>
+
+<p>All of each worm's data is stored in a &quot;struc&quot; (structure).&nbsp;
+This allows us to store the same kind of information in blocks and refer to the
+entire block by a single address. Since both worm structures are structurally
+the same, we can write a single function (e.g, MoveWorm) instead of a variant
+for each player (e.g., MovePlayer, and MoveOpponent). To access the data in the
+structure, use commands like the following:</p>
+
+<blockquote>
+  <p><code>mov ax, [bx+Worm.size]&nbsp;&nbsp;&nbsp; ; sets ax to the size
+  element of the Worm structure at offset bx</code></p>
+
+</blockquote>
+<p>In this example, Worm.size is a constant defined by the structure
+declaration. Look at the structure declaration for more structure element names.
+Note that this comment is intentionally a sportscaster type comment, and don't
+use the like in your submitted code.</p>
+
+<p>The words in Worm.body are stored in a circular queue. The one with the
+largest address is the head, and the one with the smallest address is the
+tail.&nbsp; But not always. Since we can only declare a finite amount of space
+in the array, once the head is in the largest spot available, the next location
+it will take is the smallest. It will keep wrapping through this array as
+necessary. What this means to your functions is that when you update the head or
+tail pointers you must wrap at the maximum size (MAXLENGTH). Then you can place
+your segment inside the array.&nbsp; It's a word composed of a low byte being
+the row of your worm (y), and a high byte being the column (x).</p>
+
+<a name="main"><h2>Main Function</h2></a>
+<p>Each iteration of the main function needs to do the following things:</p>
+<ul>
+  <li>Get the opponent's next move</li>
+  <li>Wait for update to become non-zero</li>
+  <li>Handle player's, then opponent's, movement</li>
+  <li>Handle player's, then opponent's, collisions</li>
+  <li>Set update back to zero</li>
+</ul>
+
+</BODY></HTML>

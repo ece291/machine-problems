@@ -1,0 +1,831 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD><STYLE><!--
+strike { background-color: #aaa; }
+	    --></STYLE>
+<%
+title = "ECE291 Machine Problem 4"
+subtitle = "Machine Problem 4"
+%>
+<!--#include file="headvb.asp"-->
+<BODY>
+
+<h1 align="center">Machine Problem 4: Graphical 291Hack</h1>
+
+<div align="center"><center>
+<table border=0 cellpadding=2 cellspacing=2 width="60%">
+  <tr><td align=right bgcolor="#efefef"><b>Assigned</b></td>
+    <td bgcolor="#efefef">Tuesday, 7/8/2002</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Due Date</b></td>
+    <td bgcolor="#efefef">Thursday, 7/14/2002</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Purpose</b></td>
+      <td bgcolor="#efefef">Protected Mode, Graphics.</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Points</b></td>
+    <td bgcolor="#efefef">75</td></tr>
+</table>
+</center></div>
+
+<h2>Introduction</h2>
+
+<p>291Hack, your <a href="../mp3/">MP3</a>, is a good base for an
+interactive environment.  Unfortunately, modern audiences aren't often
+interested in text games, no matter how pretty they are.  We will extend
+291Hack into Graphical 291Hack, by moving into protected-mode, and adding
+graphics.</p>
+
+<p>Moving into protected mode necessitated many internal changes to the
+skeleton that MP3 provides.  Rather than have you rewrite any of this
+code, we provide you with working protected-mode versions of the
+otherwise-unchanged functions.  This allows you to concentrate on the
+new functionality.  Make sure you familiarize yourself with the new
+variable declarations.</p>
+
+<h2>Problem Description</h2>
+
+<img align=center class=noprint src=mp4.png width=645 height=511>
+
+<p>The internal representation of our world is much the same.  For
+further details, refer back to the <a href="../mp3/">MP3 writeup</a>.
+Be aware that some sizes have changed, particularly that of the pesky
+Items array.  Now each item is properly a power of two, so you can
+easily index it with either shifts, or some of the new options available
+in protected-mode.</p>
+
+<p>Similarly, anywhere that offsets were being stored in a lookup-table,
+they are now 32 bits per offset.  That is the another aspect of the
+nature of protected-mode programming.</p>
+
+<!--
+<h3>What's New</h3>
+
+<p>The only entirely new aspect to Networked 291Hack is its networking.
+Networking is a tedious and bug-ridden task, especially in assembly.
+Lightening this load, many of the annoying details of setting up the
+networking are provided for you.  What you have to implement is the
+actual data transfer.  Full details are available in the <a
+    href="network.html">networking section</a> of this writeup.</p>
+-->
+<h3>What's Changed</h3>
+
+<p>We're programming in <a href="pmode.html">protected mode</a>.  We're
+using <a href="hiresgraph.html">high resolution graphics</a> instead of
+piddly-old (but still useful!) text mode.  No longer do you draw to <tt>[es:di]</tt>, you draw to the buffer located at <tt>[_ScreenOff]</tt>.</p>
+
+<p>Drawing our 291Hack world in graphics has many similarities to how we
+did it in text-mode, but there are many important differences.  To this
+end, you must implement five functions again, from scratch: DrawMap and
+DrawString, and the three Keyboard related functions.</p>
+
+<p>Each of the drawing functions have become more complicated because
+graphics are more flexible, and thus require more work.  Make sure you
+familiarize yourself with <a href="hiresgraph.html">basics of graphics
+    programming</a> before diving into the full descriptions of DrawMap
+and DrawString.</p>
+
+<p>The keyboard functions become somewhat shorter; make sure to check
+the <a href="/ece291/books/labmanual/pmodelib-ref.html">pmodelib reference</a> for more
+details</p>
+
+<h3>DrawMap</h3>
+
+<p>The Map is still stored in exactly the same fashion.  Each byte still
+has a 4 bit number in the lower nybble, and some flags in the upper
+nybble:</p>
+
+<table border>
+    <tr>
+	<td width="12%"><em>visible</em></td>
+	<td width="12%"><em>seen</em></td>
+	<td width="12%"><em>solid</em></td>
+	<td width="12%">(unused)</td>
+	<td width="12%">bit 3</td>
+	<td width="12%">bit 2</td>
+	<td width="12%">bit 1</td>
+	<td width="12%">bit 0</td>
+    </tr>
+    <caption>Information for each tile (byte) in <tt>Map</tt></caption>
+</table>
+
+<p>Drawing the map is still fundamentally the same.  For each tile of
+the map that you examine, it will be either <em>visible</em>,
+<em>seen</em>, or completely invisible.  Unlike previously, however, we
+cannot fit the entire map on screen at once, so we must only draw a
+portion of the map most closely surrounding the character.</p>
+
+<h4>Tiles</h4>
+
+<p>Start drawing the map at (VIS_TILE_WIDTH-1)/2 tiles left of the
+character, and (VIS_TILE_HEIGHT-1)/2 tiles above the character.  Only
+run for VIS_TILE_WIDTH tiles horizontally, and VIS_TILE_HEIGHT tiles
+vertically.  This gets us what is currently a 20x15 tile section of our
+80x40 map, with our character at centered at (9,7) relative to the
+screen.</p>
+
+<p>For each of these 20x15 tiles, choosing what to draw is very much
+like in 291Hack: if it's <em>visible</em> draw it.  If it's not
+<em>visible</em>, but has been <em>seen</em> draw it at half-intensity
+(divide each channel by 2 with a shift).  If it's neither
+<em>visible</em> nor <em>seen</em> draw it as solid black.</p>
+
+<p>Drawing a tile is more work than drawing a single character in
+text-mode video.  Instead of a single read and write, you must do
+TILE_WIDTH*TILE_HEIGHT (32*32) reads and writes.  Each of these are of a
+dword (RGBA), and while pixels in a row are adjacent in memory, adjacent
+rows require skipping forward in memory by the difference in source/dest
+width and TILE_WIDTH.  The source tiles start at <tt>[_TileOff]</tt>,
+and are offset by 32*4*(tile index).  The Tiles image is MAP_TILES_WIDTH
+(512 pixels) wide.</p>
+
+<h4>Items</h4>
+
+<p>After all the tiles are drawn, loop through the Items array for items
+located on visible map locations (<tt>[_Items+(item offset) +
+    Item.MapOff]</tt>), that are not in someone's pocket
+(<tt>[_Items+(item offset) + Item.type] & ITEM_INPOCKET == 0</tt>).</p>
+
+<p>Calculate their screen position (consider their relative position to
+the character, and the character's relative position from the corner),
+and draw them.</p>
+
+<p>Drawing them is similar to drawing the map tiles in that there are
+TILE_WIDTH*TILE_HEIGHT pixels to copy.  But unlike the map tiles, some
+of these pixels are partially or even fully transparent.  For best
+visual effects, perform an <a href="alpha.html">AlphaCompose</a> on each
+blit.  For decent visual effects, only write the destination pixel if
+the source pixel has an alpha channel over 80h.<p>
+
+<p>The source images for item tiles start at <tt>[_ItemOff]</tt>, and
+are also offset by 32*4*(item type index).  The item image is
+ITEMS_WIDTH (320 pixels) wide.</p>
+
+<h4>Players</h4>
+
+<p>Drawing the players is exactly like drawing the items, but should be
+done after all images are drawn.  The player image is the last tile in <tt>[_ItemOff]</tt>, item number <tt>PLAYER_ITEM</tt>.</p>
+
+<h3>DrawString</h3>
+
+<p>Like DrawMap, DrawString has become more complicated to work in a
+graphical framework.  It further discards the limitations we had in
+text mode, by using a <a href="varfont.html">variable-width font</a>.  
+The short summary of how to draw with a variable-width font follows;
+see the linked page for futher details.</p>
+
+<p>The "cursor" starts at a position (X,Y) which is passed into
+DrawString.  Starting at this position, a single character is drawn in
+the following steps:<p>
+
+<ul>
+    <li>Advance the cursor by <tt>Letter.Left</tt> pixels (can be
+    negative!)</li>
+    <li>(Advance the cursor by <tt>Kerning<em>[prevchar][curchar]</em></tt> pixels)</li>
+    <li>Draw a <tt>Letter.Width</tt>*Font_Height rectangle (with pseudo
+    or real alpha composition as above)</li>
+    <li>Advance the cursor by the remainder of <tt>Letter.Advance</tt> pixels (can be greater than Advance, if Left or Kerning was negative).</li>
+</ul>
+
+<h3>Keyboard Input</h3>
+
+<p>Since our handlers in MP3 were so simple, very little has changed
+here.  But because we're in <a href="pmode.html">protected mode</a>, and
+using <a href="hiresgraph.html">high resolution graphics</a>, even <a
+    href="input.html">keyboard input</a> has changed slightly.  Make
+sure to check with the <a
+    href="/ece291/books/labmanual/pmodelib-ref.html">pmodelib
+    reference</a> until you understand how to <a
+    href="/ece291/books/labmanual/pmodelib-ref-int.html">install and
+    remove interrupts</a> in protected mode.</p>
+
+<h2>Implementation</h2>
+
+<p>For this program you will write 5 modular procedures:</p>
+
+<table border>
+<!--<tr><th>MP4Main</th><td>
+<ul>
+    <li>Waits for and handles user input</li>
+  <li>Inputs:
+  <ul><li>None</li></ul></li>
+  <li>Outputs:
+  <ul><li>None</li></ul></li>
+  <li>Pseudocode Loop Iteration:
+  <ul>
+      <li>Clear Input to zero</li>
+      <li>Wait for nonzero Input</li>
+      <li>Clear status display</li>
+      <li>if Input maps to <tt>'a'</tt> through <tt>'z'</tt>
+      <ul><li>DropItem(Input - 'a')</li></ul></li>
+      <li>else if Input maps to <tt>' '</tt>
+      <ul><li>PickUp()</li></ul></li>
+      <li>else if Input maps to <tt>ESC</tt>
+      <ul><li>Exit Main</li></ul></li>
+      <li>else if Input maps to <tt>INPUT_*</tt>
+      <ul><li>translate Input motion constant to dx, dy</li>
+	  <li>MoveChar(dx, dy)</li>
+	  <li>DrawMap()</li></ul></li>
+      </li>
+  </ul>
+  </li>
+  <li>Notes:
+  <ul>
+      <li>Call MoveChar() and DrawMap() to set up and draw the
+      screen the first time</li>
+      <li>Remember that Input holds a scancode, not an ascii
+      character</li>
+  </ul></li>
+</ul>
+</td></tr>-->
+
+<tr><th>void DrawMap(void)</th><td>
+<ul>
+    <li>Draws the Map to the screen.</li>
+<li>Inputs:
+<ul>
+    <li>variables <tt>_Map</tt>, <tt>[_TileOff]</tt>, <tt>_Items</tt>,
+    <tt>[_ItemOff]</tt>, _Player</li>
+    <li>Constant <tt>PLAYER_ITEM</tt></li>
+</ul></li>
+<li>Outputs: 
+<ul> <li>Screen Representation</li> </ul>
+</li>
+<li>Notes:
+<ul>
+    <li>Draw all <em>seen</em> tiles with half intensity</li>
+    <li>Draw all <em>visible</em> tiles with full intensity</li>
+    <li>Draw all Items (with alpha composition) on <em>visible</em> tiles and not in your pocket in reverse order so they stack in the order you will pick them up.</li>
+    <li>Draw the Character (with alpha composition)</li>
+</ul></li>
+</ul>
+</td></tr>
+
+<!--<tr><th>MoveChar</th><td>
+<ul>
+    <li>Move the character, is possible, and update visibility</li>
+<li>Inputs:
+<ul>
+    <li>dl = x translation (-1, 0 or 1)</li>
+    <li>dh = y translation (-1, 0 or 1)</li>
+</ul></li>
+<li>Outputs:
+<ul>
+    <li>Character position (<tt>Player</tt>)</li>
+    <li>Tile visibility (<tt>Map</tt>)</li>
+</ul></li>
+<li>Notes:
+<ul>
+    <li>Motion of (0, 0) is legal.</li>
+    <li>Don't recalculate visibility unless necessary.</li>
+    <li>Update visibility by clearing <em>visible</em> from all tiles,
+    moving the character, and recalculating <em>visible</em> (and
+    <em>seen</em>) with the LOS algorithm.</li>
+    <li>Display "Can't go that way" if the desired tile is solid</li>
+    <li>Watch out for the 5x5 vs 6x6 difference in our possible visibility
+    and shadow maps.</li>
+    <li>It may be beneficial to split out the code to handle a single
+    quadrant into a separate procedure, called four times.</li>
+</ul></li>
+ </ul>
+</td></tr>-->
+
+<!--<tr><th>PickUp</th><td>
+<ul>
+    <li>Take an item from the current location, and place it in you Pocket</li>
+    <li>Inputs:
+    <ul>
+	<li>Player's Location (<tt>Player</tt>)</li>
+	<li>Array of items (<tt>Items</tt>)</li>
+	<li>Pocket of items (<tt>Pocket</tt>)</li>
+    </ul></li>
+    <li>Outputs:
+    <ul>
+	<li>Updates item in <tt>Items</tt></li>
+	<li>Updates index in <tt>Pocket</tt></li>
+    </ul></li>
+    <li>Notes:
+    <ul>
+	<li>Just grab the first item if there's more than one.</li>
+	<li>Set <em>inpocket</em> for <tt>Items[first found]</tt>
+	<li>Find the first pocket for the item</li>
+	<li>set <tt>Pocket[first available]</tt> to <tt>first found</tt> (Item index)</li>
+	<li>Display "Picked up <em>[desc]</em> (<em>[key]</em>)"
+	where <em>[desc]</em> is the description from <tt>ItemDesc</tt>
+	and <em>[key]</em> is the <tt>Pocket</tt> index + 'a' (the key
+	to drop this item)</li>
+	<li>Display "Nothing to pick up" if no item is available</li>
+    </ul></li>
+</ul>
+</td></tr>-->
+
+<!--<tr><th>DropItem</th><td>
+<ul>
+    <li>Drops an item back onto the map</li>
+    <li>Inputs:
+    <ul>
+	<li><tt>bx</tt> = index of item in <tt>Pocket</tt></li>
+	<li>Player's Location (<tt>Player</tt>)</li>
+	<li>Array of items (<tt>Items</tt>)</li>
+	<li>Pocket of items (<tt>Pocket</tt>)</li>
+    </ul></li>
+    <li>Outputs:
+    <ul>
+	<li>Updates item in <tt>Items</tt></li>
+	<li>Updates index in <tt>Pocket</tt></li>
+    </ul></li>
+    <li>Notes:
+    <ul>
+	<li>Get <tt>Items</tt> index from <tt>Pocket[pocketindex]</tt></li>
+	<li>Set <tt>Pocket[pocketindex]</tt> to <em>empty</em></li>
+	<li>Set (x, y) for <tt>Items[index]</tt> to <tt>Player</tt>'s (x, y)</li>
+	<li>Clear <em>inpocket</em> for <tt>Items[index]</tt></li>
+	<li>Display "Dropped <em>[desc]</em>" where <em>[desc]</em> is
+	the description from <tt>ItemDesc</tt> </li>
+	<li>Display "Can't drop that" if that pocket was already empty</li>
+    </ul></li>
+</ul>
+</td></tr>-->
+
+<tr><th>int DrawString(int x, int y, char *string)</th><td>
+<ul>
+    <li>Draws a string on to the screen</li>
+    <li>Inputs:
+    <ul>
+	<li><tt>x, y</tt> = (x, y) location to start string</li>
+	<li><tt>string</tt> = address of a <tt>0</tt> terminated string</li>
+    </ul></li>
+    <li>Outputs:
+    <ul>
+	<li>x location where the following string should start</li>
+    </ul></li>
+    <li>Notes:
+    <ul>
+	<li>Use any color you like; <tt>_WhitePixel</tt> is suggested.</li>
+    </ul></li>
+</ul>
+</td></tr>
+
+<tr><th>_InstallKeyboard<br>_RemoveKeyboard<br>_KeyboardISR</th><td>
+<ul>
+    <li>Install, Remove, Handle keyboard interrupts</li>
+    <li>Inputs:
+    <ul>
+	<li>None</li>
+    </ul></li>
+    <li>Outputs:
+    <ul>
+	<li><tt>_Input</tt> written by <tt>KeyboardISR</tt></li>
+    </ul></li>
+    <li>Notes:
+    <ul>
+	<li><tt>_KeyboardISR</tt> should set <tt>_Input</tt> to the
+	scancode received, if and only if it is a keypress (no
+	releases!).</li>
+	<li><tt>_InstallKeyboard</tt> needs to use <tt>_LockArea</tt> to ensure
+	all areas of memory that <tt>_KeyboardISR</tt> accesses are locked in
+	memory.  This includes the code for <tt>_KeyboardISR</tt> itself!</li>
+    </ul></li>
+</ul>
+</td></tr>
+</table>
+
+<H2>Hints</H2>
+<ul>
+
+  <li>The libmp4 file contains executable library functions 
+  for each of the routines that you need to implement. This allows you to run 
+  the program and understand how it works before you implement it. You can test 
+  your program by stepping through&nbsp;it and making sure the display and 
+  comparison functions work correctly. You will only receive credit, however, 
+  for the routines that you implement yourself. </li>
+
+  <li>When debugging your code in Turbo Debugger, you will 
+  find it helpful to use the memory window to show you the memory location of 
+  the file and strings. You can also use the watch window to keep track of 
+  variables in your code. </li>
+
+  <li>Run the program many times to get a good feel of 
+  it.&nbsp; Your final program with your code should resemble our version.&nbsp; 
+  Formatting aesthetics aren't as important as correctly operating code. </li>
+
+  <li>Do not forget to push and pop to avoid clobbering 
+  registers! </li>
+
+  <li>Push and Pop can also be used on memory, as long as 
+  you specify the size and it's word-sized or larger. You don't have to move it 
+  into a register first. (Yes, this does appear to break the two-memory access 
+  rule. Don't worry!) </li>
+
+  <li>Remember to include function headers for&nbsp;and 
+  write comments in each of your functions!&nbsp; Headers should give a general 
+  idea of what the function does and have a list of inputs, outputs, and called 
+  functions.&nbsp; Commenting should be specific enough to allow a function to 
+  be understood by just reading the comments.&nbsp; Commenting every line, 
+  however, is excessive and may cost you some points. </li>
+
+  <li>START EARLY! </li>
+
+  <li>Monitor the <A href="news:uiuc.class.ece291">newsgroup</a> for
+clarifications and help.</li>
+
+</ul>
+
+<h2>Procedure</h2>
+<ul>
+  <li>You will begin this MP with the following files:
+  <ul>
+    <li><tt>MP4.ASM</tt>: Program Framework
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled and
+    linked.
+    <li><tt>libmp4.a</tt>: Library functions for MP4
+    <li><tt>lib291.a</tt>: General-purpose library functions </li></ul>
+  <li>You may copy these files from the network drive to your home directory
+  with the following command: <br><tt>xcopy /s V:\ece291\mp4 W:\mp4</tt><br>or
+  download the files from this server as <A href="mp4.zip">mp4.zip</A>
+  <li>Add your code to <tt>MP4.ASM</tt>.
+  <li>Assemble and link your program by typing<br><tt>make</tt><br>This command
+  reads <em>Makefile</em> then invokes NASM and LINK to build an executable
+  program.
+  <li>Use Turbo Debugger (TD) to find and correct program errors.</li>
+</ul>
+
+<h2>Final Steps</h2>
+<ol>
+
+  <li>Demonstrate your MP4.EXE to a TA. You may be asked to 
+  recompile and demo the program. Your program must work with all given input.</li>
+
+  <li>Be prepared to answer questions about any aspect of the operation
+  of your program. The TAs will not accept an MP if you cannot fully
+  explain the operation of your code and the details of your
+  implementation. Delayed MPs will be subject to late penalties as
+  described in the course syllabus (15pts/day).</li>
+
+  <li>The TA will handin your MP online.</li>
+
+</ol>
+
+<hr>
+
+<h2>MP4.ASM (program framework)</h2>
+
+<small><pre>
+; MP3 - 291hack
+;  Your Name
+;  Today's Date
+;
+; Ryan Chmiel, Summer 2002
+; Author: Peter Johnson, Michael Urman
+; University of Illinois, Urbana-Champaign
+; Dept. of Electrical and Computer Engineering
+;
+; Version 1.0
+
+%include "lib291.inc"
+;%include "libmp4.inc"
+
+	BITS	32
+
+	GLOBAL _main
+
+;====== SECTION 1: Define constants =======================================
+
+	ESC		EQU 01h	; scancode, not ascii
+
+	TILE_VISIBLE	EQU 80h
+	TILE_SEEN	EQU 40h
+	TILE_SOLID	EQU 20h	; sight AND walking
+
+	ATTR_SEEN	EQU 00h
+	ATTR_VISIBLE	EQU 80h
+
+	MAX_POCKET	EQU 26
+	MAX_TYPES	EQU 32
+
+	MAP_WIDTH	EQU 80
+	MAP_HEIGHT	EQU 40
+
+	ITEM_INPOCKET	EQU 80h
+	POCKET_EMPTY	EQU -1
+
+	PLAYER_ITEM	EQU 9
+
+	VIS_TILE_WIDTH	EQU 20
+	VIS_TILE_HEIGHT	EQU 15
+	TILE_WIDTH	EQU 32
+	TILE_HEIGHT	EQU 32
+	MAP_CENTER_OFF	EQU 7*MAP_WIDTH+9
+
+	FONT_DATA_SIZE	EQU 8+256*8+256*256
+	FONT_WIDTH_OFF  EQU 0
+	FONT_HEIGHT_OFF EQU 4
+	FONT_LOOKUP_OFF EQU 8
+	FONT_KERN_OFF   EQU 8+256*8
+
+	MAP_TILES_WIDTH	EQU 512
+	ITEMS_WIDTH	EQU 320
+	SCREEN_WIDTH	EQU 640
+	SCREEN_HEIGHT	EQU 480
+
+	MSG_X		EQU 10
+	MSG_Y		EQU 6
+
+	; directional scancodes
+	INPUT_UPLEFT	EQU 47h ; home
+	INPUT_UP	EQU 48h	; up arrow
+	INPUT_UPRIGHT	EQU 49h ; pgup
+	INPUT_DOWNLEFT	EQU 4Fh	; end
+	INPUT_LEFT	EQU 4Bh	; left arrow
+	INPUT_RIGHT	EQU 4Dh	; right arrow
+	INPUT_DOWN	EQU 50h	; down arrow
+	INPUT_DOWNRIGHT	EQU 51h	; pgdn
+
+;====== SECTION 2: Declare external routines ==============================
+
+; Declare external library routines
+EXTERN _libDrawMap, _libDrawString, _MoveChar, _PickUp, _DropItem
+EXTERN _libInstallKeyboard, _libRemoveKeyboard 
+_libDrawString_arglen	EQU	12
+_MoveChar_arglen	EQU	8
+_DropItem_arglen 	EQU	4
+
+; Declare local routines global (so library routines can use them)
+GLOBAL _DrawMap, _DrawString
+GLOBAL _InstallKeyboard, _RemoveKeyboard
+
+; Make program variables global (so library routines can use them)
+GLOBAL _ItemDesc, _Items, _Items.end, _Pockets, _Input, _Player,
+GLOBAL _CantPickUp, _PickedUp, _Dropped, _CantDrop, _PocketsFull, _KeyMsg,
+GLOBAL _CantGo, _ShadowWork, _WhitePixel, _RoundingFactor
+GLOBAL _ScreenOff, _FontOff, _FDatOff, _TileOff, _ItemOff
+GLOBAL _kbINT, _kbPort, _kbIRQ
+
+; External program variables
+EXTERN _Map		; The game map (see map.asm)
+EXTERN _ShadowMaps	; Precalculated shadow maps for vis check (shadows.asm)
+
+SECTION .bss
+
+_kbINT		resb	1
+_kbIRQ		resb	1
+_kbPort		resw	1
+
+_GraphicsMode	resw	1	; ex291 graphics mode
+
+; Temporary calculation space for shadow map
+_ShadowWork  resb 6*6
+
+_ScreenOff	resd	1
+_FontOff	resd	1
+_FDatOff	resd	1
+_TileOff	resd	1
+_ItemOff	resd	1
+
+SECTION .data
+
+;====== SECTION 5: Declare variables for main procedure ===================
+
+_FN_Font	db 'arialbd.png',0
+_FN_FDat	db 'arialbd.dat',0
+_FN_Tile	db 'maptiles.png',0
+_FN_Item	db 'itemtile.png',0
+
+align 4
+_ItemDesc
+	dd .0, .1, .2, .3, .4, .5, .6
+	times 19 dd .x
+    .0	db 'A Delicious Apple',0
+    .1	db 'A Poisonous Mushroom',0
+    .2	db 'An MP3 File',0
+    .3  db 'A Spider',0
+    .4  db 'A National Semiconductor AND Chip',0
+    .5  db 'Power for your ECE110 Car',0
+    .6  db 'A Wrench: the ultimate debugger',0
+    .x	db 'Nothing',0
+
+; Item structure (describes the byte organization of the Items array)
+STRUC Item
+.Type		resd	1	; MSB (bit 7) is 1 if in pocket
+				;  (the constant ITEM_INPOCKET is or'ed in)
+				; Bits 6-0 are index into _ItemOff and
+				;  ItemDesc arrays.
+.MapOff		resd	1	; Offset into the map array (Y*MAP_WIDTH+X)
+ENDSTRUC
+align 4
+_Items
+    dd 2, 6*MAP_WIDTH+25
+    dd 3, 5*MAP_WIDTH+28
+    dd 1, 6*MAP_WIDTH+25
+    dd 0, 9*MAP_WIDTH+55
+    dd 2,18*MAP_WIDTH+60
+    dd 4,24*MAP_WIDTH+15
+    dd 5,32*MAP_WIDTH+72
+    dd 6,36*MAP_WIDTH+20
+.end
+NUM_MAP_ITEMS	EQU ($-_Items)/8
+
+_Player	dd 14*MAP_WIDTH+35
+
+_Pockets	times MAX_POCKET db POCKET_EMPTY
+
+_Input	db 0
+
+_WhitePixel	dd 00FFFFFFh
+_RoundingFactor dd 00800080h, 00800080h
+
+_CantPickUp	db 'Nothing to pick up',0
+_PickedUp	db 'Picked Up ',0
+_Dropped	db 'Dropped ',0
+_CantDrop	db "Can't drop that",0
+_PocketsFull	db 'Pockets full',0
+_KeyMsg		db ' ( )',0
+_CantGo		db "Can't go that way",0
+
+; Keyboard lookup table (ascii). starts at 10h
+ASCIILookup_start	equ	10h
+ASCIILookup
+db 'qwertyuiop'
+db 0,0,0,0
+db 'asdfghjkl'
+db 0,0,0,0,0
+db 'zxcvbnm'
+db 0,0,0,0,0,0
+db ' '
+.end
+
+; Keyboard lookup table 2 (keypad), starts at 47h
+KeypadLookup_start	equ	47h
+KeypadLookup
+dd -1, -1	; home
+dd  0, -1	; up
+dd  1, -1	; pgup
+dd  0,  0
+dd -1,  0	; left
+dd  0,  0
+dd  1,  0	; right
+dd  0,  0
+dd -1,  1	; end
+dd  0,  1	; down
+dd  1,  1	; pgdn
+.end
+
+;====== SECTION 7: Main procedure =========================================
+
+_main:
+	call	_LibInit
+
+	; Alocate Screen Buffer
+	invoke	_AllocMem, dword SCREEN_WIDTH*SCREEN_HEIGHT*4
+	cmp	eax, -1
+	je	near .memerror
+	mov	[_ScreenOff], eax
+
+	; Allocate Data and Image Buffers (except for Font image)
+	invoke	_AllocMem, dword FONT_DATA_SIZE + (MAP_TILES_WIDTH*TILE_HEIGHT + ITEMS_WIDTH*TILE_HEIGHT)*4
+	cmp	eax, -1
+	je	near .memerror
+	mov	[_FDatOff], eax
+	add	eax, FONT_DATA_SIZE
+	mov	[_TileOff], eax
+	add	eax, MAP_TILES_WIDTH*TILE_HEIGHT*4
+	mov	[_ItemOff], eax
+
+	; Load font data.. do this first so we know how big the font image is
+	invoke  _OpenFile, dword _FN_FDat, word 0
+	push	eax
+	invoke	_ReadFile, eax, dword [_FDatOff], dword FONT_DATA_SIZE
+	pop	eax
+	invoke	_CloseFile, eax
+
+	; Allocate Font Image
+	mov	eax, [_FDatOff]
+	mov	edx, [eax+FONT_WIDTH_OFF]	; width
+	imul	edx, dword [eax+FONT_HEIGHT_OFF]; width*height
+	shl	edx, 2				; width*height*4
+	invoke	_AllocMem, edx
+	cmp	eax, -1
+	je	near .memerror
+	mov	[_FontOff], eax
+
+	; Load font and tile images
+	invoke	_LoadPNG, dword _FN_Font, dword [_FontOff], dword 0, dword 0
+	invoke	_LoadPNG, dword _FN_Tile, dword [_TileOff], dword 0, dword 0
+	invoke	_LoadPNG, dword _FN_Item, dword [_ItemOff], dword 0, dword 0
+
+	; Graphics Init
+	invoke	_InitGraphics, dword _kbINT, dword _kbIRQ, dword _kbPort
+	test	eax, eax
+	jnz	near .graphicserror
+
+	; Find Graphics Mode: 640x480x32, allow driver-emulated modes
+	invoke	_FindGraphicsMode, word SCREEN_WIDTH, word SCREEN_HEIGHT, word 32, dword 1
+	mov	[_GraphicsMode], ax
+
+	invoke	_InstallKeyboard
+	invoke	_SetGraphicsMode, word [_GraphicsMode]
+
+	call	_MP4Main
+	call	_RemoveKeyboard
+
+.graphicserror
+	call	_ExitGraphics
+
+.memerror
+	call	_LibExit
+	ret
+
+;====== MP4Main ===========================================================
+_MP4Main:
+	push	edi
+
+	; Set up initial visibility
+	xor	edx, edx		; No movement
+	invoke	_MoveChar, dword edx, dword edx
+
+	call	_DrawMap
+.loop:
+	invoke	_CopyToScreen, dword [_ScreenOff], dword SCREEN_WIDTH*4, dword 0, dword 0, dword SCREEN_WIDTH, dword SCREEN_HEIGHT, dword 0, dword 0
+
+.wait:
+	; Wait for new input
+	movzx	ebx, byte [_Input]
+	test	ebx, ebx
+	jz	.wait
+	mov	byte [_Input], 0	; Clear input
+
+	; Clear the status line (overkill this way)
+	push	ebx
+	call	_DrawMap
+	pop	ebx
+
+	; Check for a-z and space characters
+	cmp	bl, ASCIILookup_start
+	jb	.notascii
+	cmp	bl, ASCIILookup_start+ASCIILookup.end-ASCIILookup
+	ja	.notascii
+	mov	bl, [ASCIILookup+ebx-ASCIILookup_start]
+	cmp	bl, ' '
+	je	.pickup
+	test	ebx, ebx
+	jz	.loop
+
+	sub	ebx, 'a'
+	invoke	_DropItem, ebx
+	jmp	short .loop
+
+.pickup:
+	call	_PickUp
+	jmp	short .loop
+
+.notascii:
+	cmp	bl, ESC
+	je	.done
+
+	; Check for keypad movement characters
+	cmp	bl, KeypadLookup_start
+	jb	.loop
+	cmp	bl, KeypadLookup_start+(KeypadLookup.end-KeypadLookup)/8
+	ja	.loop
+	sub	ebx, KeypadLookup_start
+	invoke	_MoveChar, dword [KeypadLookup+ebx*8], dword [KeypadLookup+ebx*8+4]
+	test	eax, eax
+	jz	.loop
+	call	_DrawMap
+	jmp	.loop
+
+.done:
+	pop	edi
+	ret
+
+;====== SECTION 8: Your subroutines =======================================
+
+;====== DrawMap ===========================================================
+proc _DrawMap
+	invoke _libDrawMap
+	ret
+endproc
+
+;====== DrawString ========================================================
+proc _DrawString
+.x	arg	4
+.y	arg	4
+.str	arg	4
+
+	invoke _libDrawString, dword[ebp+.x], dword[ebp+.y], dword[ebp+.str]
+	ret
+endproc
+_DrawString_arglen	EQU	12
+
+;====== InstallKeyboard ===================================================
+_InstallKeyboard
+	call _libInstallKeyboard	; This only installs _libKeyboardISR
+	ret
+
+;====== RemoveKeyboard ====================================================
+_RemoveKeyboard:
+	call _libRemoveKeyboard
+	ret
+
+;====== KeyboardISR =======================================================
+_KeyboardISR
+	; your code here
+_KeyboardISR_end
+</pre></small>
+<!--#include file="foot.asp"-->

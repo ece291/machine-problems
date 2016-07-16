@@ -1,0 +1,637 @@
+<HTML xmlns="http://www.w3.org/1999/xhtml"><HEAD><TITLE>ECE 390 Machine Problem 4</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=windows-1252"><LINK 
+href="/ece390/ece390.css" type=text/css rel=stylesheet></HEAD>
+<BODY>
+<TABLE class=header cellSpacing=0 cellPadding=0 width="100%">
+  <TBODY>
+  <TR>
+    <TD class=half vAlign=top align=left>
+      <P><A href="http://courses.engr.illinois.edu/ece390"><IMG 
+      src="/ece390/icon/ece390.jpg"></A><BR><B>  Computer 
+      Engineering II</B><BR><B>  <SPAN class=red>Machine Problem 
+      4</SPAN></B></P></TD>
+    <TD class=half vAlign=center align=right>
+      <TABLE class=maxheight cellSpacing=1 cellPadding=0 width="100%" 
+        border=0><TBODY>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/schedule.html">Schedule</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/labsched.html">Lab 
+            schedule</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/hw.asp">Homework</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/books/labmanual/">Lab 
+            Manual</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/mp.asp">Machine 
+            Problems</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/resources">Resources</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/mp/mp0/fp">Final 
+            Project</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/user/photos">Photos</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/grades">Gradebook</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/feedback.asp">Feedback</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/syllabus.html">Syllabus</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/archive">Archives</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/lecture">Lectures</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/resources/turbo.zip">Download 
+            NASM</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390">Home</A>  </TD>
+          <TD>  <A 
+            href="https://courses.engr.illinois.edu/ece390/admin">Restricted 
+            access</A></TD></TR></TBODY></TABLE></TD></TR>
+  <TR>
+    <TD class=spacer colSpan=2><IMG height=8 alt="" src="" 
+  width=100></TD></TR></TBODY></TABLE>
+
+<TABLE cellSpacing=1 cellPadding=7 width="100%" border=0>
+  <TBODY>
+  <TR>
+    <TD vAlign=top>
+      <H1 align=center>Machine Problem 4: Breakout</H1>
+      <DIV align=center>
+      <CENTER>
+      <TABLE width=513 border=1>
+        <TBODY>
+        <TR>
+          <TD align=right width=64>Assigned</TD>
+          <TD width=433>Tuesday, 11 October 2005</TD></TR>
+        <TR>
+          <TD align=right width=64>Due Date</TD>
+          <TD width=433>Wednesday, 26 October 2005, 5:00 p.m.</TD></TR>
+        <TR>
+          <TD align=right width=64>Purpose</TD>
+          <TD width=433 Roman?>To understand interrupt-driven I/O, control of 
+            the video display, arrays, and queues.</TD></TR>
+        <TR>
+          <TD align=right width=64>Points</FONT></TD>
+          <TD width=433>60</TD></TR></TBODY></TABLE></CENTER></DIV>
+      <BLOCKQUOTE>Computers are to computing as instruments are to music. 
+        Software is the score, whose interpretation amplifies our reach and 
+        lifts our spirit.... As in the case of music, the invisibility of 
+        software is no more mysterious than where your lap goes when you stand 
+        up. The true mystery ... is how so much can be accomplished with the 
+        simplest of materials, given the right architecture. --Alan Kay, 
+        <I>Scientific American</I>, September 1984 </BLOCKQUOTE>
+<p><b>Corrected 19 October 2005: Added <tt>BRow, BCol</tt> as outputs of Task1. 
+Changed <tt>CALL libKbdInt</tt> to <tt>JMP libKbdInt</tt>.  -- MCL</b></p>
+      <P>You will write a program MP4 that implements the popular Breakout video 
+      game.</P>
+      <P>Files for MP4 are on the <TT>V:</TT> drive in the directory 
+      <TT>V:\ece390\mp4</TT>. In this directory are the program framework 
+      <TT>mp4.asm</TT> and a running version of the program <TT>mp4lab.exe</TT>. 
+      Lab versions of subroutines are in <TT>libmp4.lib</TT>, which contains all 
+      subroutines of LIB291 plus libInit, libKbdInt, libTask1, libTask2, 
+      libTask3, libNewPosition, libGenBrick, libEnq, and libDeq. You will use 
+      mp4xit instead of dosxit. You should start by copying these files to your 
+      home directory with the following command: <BR><TT>xcopy /s V:\ece390\mp4 
+      W:\mp4</TT><BR>You may download the files from the server as <A 
+      href="http://courses.engr.illinois.edu/ece390/mp/mp4/mp4.zip">mp4.zip</A> </P>
+      <P>Reading: Lab Notes, Sections 10.1 (Keyboard), 11.1 (Text Mode) 
+      <BR>Reference: Lab Notes, Section 11.3 (Interrupt 10h)</P>
+      <H2>Program Specification</H2><IMG src="mp4fig.jpg"> 
+      <P>A ball bounces around the screen. When the ball hits the top, left, or 
+      right border of the screen, it reflects. When the ball strikes a colored 
+      brick, the brick disappears, and the ball bounces. When the ball strikes 
+      the paddle at the bottom of the display, the ball bounces with a new velocity 
+      that depends on the part of the paddle that it strikes. When the ball 
+      drops below the bottom of the display, the game stops, and the user must 
+      regenerate the ball. 
+      <P>The display responds to the following key presses:
+      <UL>
+        <LI>Left arrow: begin moving the paddle to the left 
+        <LI>Right arrow: begin moving the paddle to the right 
+        <LI>Down arrow: stop the paddle 
+        <LI>Up arrow: regenerate the ball after it has disappeared from the 
+        screen 
+        <LI>Space bar: toggle between running and stopped for the ball 
+        <LI>Esc key: exit program immediately </LI></UL>
+      <P>
+      The paddle moves continuously to the left or to the right until either it reaches
+      a boundary of the display or the user presses the Down arrow. 
+      </P>
+      <P>The display looks best in 20 point Lucinda Console font. To change the font used 
+      by the display, right-click on the title bar of the Command Prompt window. 
+        </P>
+      <H2>Program Organization</H2>
+      <p>The program uses 80x25 text mode for the display. </p>
+      <p>Bricks appear on rows 5 through 12.  Each brick is 5 locations wide;
+      thus, there are 16 bricks on each row.  Adjacent bricks have different colors;
+      no brick is white.</p>
+      <p>The paddle is drawn in white on the bottom row.  It is 18 locations wide, 
+      divided into six zones.  When the ball hits the paddle, it rebounds with a horizontal
+      velocity of -3, -2, -1, +1, +2, or +3, depending on the zone it hits.</p>
+      <P>The program uses the following global variables:
+      <PRE>
+SavKOff RESW    1                       ; Keyboard interrupt vector
+SavKSeg RESW    1
+SavTOff RESW    1                       ; User timer interrupt vector
+SavTSeg RESW    1
+BTicks  DW      0                       ; Number of timer ticks for ball move
+PTicks  DW      0                       ; Number of timer ticks for paddle move
+BRow    DB      15                      ; Position of ball: row
+BCol    DB      40                      ; Position of ball: column
+BHoriz  DB      1                       ; Horizontal velocity of ball, -3 to +3
+BVert   DB      1                       ; Vertical velocity of ball, +1 or -1
+NewRow  RESB    1                       ; New position of ball when it moves
+NewCol  RESB    1
+PCol    DB      37                      ; Location of paddle: leftmost column
+BState  DB      1                       ; State of ball: 1=moving, 0=stopped, -1=gone
+PState  DB      0                       ; State of paddle: -1=left, 0=stopped, 1=right</PRE>
+      <P>
+      <UL>
+        <LI><TT>SavKOff</TT> and <TT>SavKSeg</TT> are the offset and segment 
+        words in the original keyboard interrupt vector (type 9). Similarly 
+        <TT>SavTOff</TT> and <TT>SavTSeg</TT> are the offset and segment words 
+        in the original user timer interrupt vector (type 1Ch). 
+        </LI>
+        <li><tt>BRow</tt> and <tt>BCol</tt> specify the current row and column of the ball.
+        <tt>BHoriz</tt> and <tt>BVert</tt> specify the current horizontal and vertical
+        components of the ball's velocity.</li>
+        <li><tt>NewRow</tt> and <tt>NewCol</tt> are the outputs of the NewPosition subroutine,
+        which calculates the new position of the ball when it moves
+        <li><tt>BTicks</tt> counts the number of timer ticks since the ball last moved.
+        When enough ticks have elapsed, the ball moves <tt>BHoriz</tt> locations in the 
+        horizontal direction and <tt>BVert</tt> locations in the vertical direction.
+        When <tt>BVert</tt> is positive, the ball moves down the display to
+        the next row.
+        </UL>
+      <P>The program uses a circular queues to store keyboard scan codes. The
+      queue implementation differs from the implementations in class and in Fall 2004.
+<PRE>
+QBeg    EQU     0                       ; Beginning offset of queue area
+QCap    EQU     2                       ; Capacity of of queue
+QFront  EQU     4                       ; Index of front item
+QRear   EQU     6                       ; Index of next place to put rear item
+QData   EQU     8                       ; Byte to input or output
+
+KQList  RESB    0                       ; Parameter list for Keyboard Queue
+KQBeg   DW      KQArea                  ; Offset of Keyboard Queue area
+KQCap   DW      10
+KQFront DW      0
+KQRear  DW      0
+KQData  RESB    1
+KQArea  RESB    10
+</PRE>The queue is specified by a parameter list. The first word of the 
+      list specifies the offset of the first byte of the queue area, where data 
+      are stored. The second word is the capacity of the queue <i>c</i>. The third word 
+      of the parameter list is the <I>index</I> of the byte at the front of the 
+      queue, and the fourth word is the <I>index</I> of the byte that will be
+      new rear of the queue. These indices run from 0 to the <i>c</i>-1. 
+      The byte at the front of the queue is the next to be dequeued.  If the front
+      and rear indices are equal, then the queue is empty.  If the the rear index
+      is either one less than the front index, or one less than the front index
+      plus <i>c</i>, then the queue is full.  (So the maximum number of bytes
+      that can be stored in the queue is actually <i>c</i>-1.)  Enq 
+      uses the Data byte on the parameter list for the item to be enqueued, and 
+      Deq delivers the dequeued item into this byte. 
+      <P></P>
+      <P>This queue structure will be used with multiple queues in MP5.</P>
+      <P>The mp4.asm program framework has the user timer interrupt service 
+      routine TimerInt and a random number generator subroutine Rand. </P>
+      <P>You will write the code to replace the 
+      library subroutines libInit, libKbdInt, libTask1, libTask2, libTask3, 
+      libNewPosition, libGenBrick, libEnq, and libDeq. You will 
+      replace these subroutines from the libmp4 library by deleting the 
+      statements that call the libmp4 subroutine and by adding your own code. 
+      Each subroutine that you write should match the output of the library 
+      subroutine exactly.  Document each subroutine with a header. </P>
+      <TABLE border=1>
+        <TBODY>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Init</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Initializes interrupt vectors and the video display 
+              <LI>Inputs: None 
+              <LI>Outputs: 
+              <UL>
+                <LI><TT>SavTOff, SavTSeg, SavKOff, SavKSeg </TT></LI></UL>
+              <LI>Calls: GenBrick 
+              <LI>Init saves the old user timer and Keyboard interrupt vectors 
+              and changes them to point to the interrupt service routines 
+              TimerInt and KbdInt. Init uses <TT>INT 10h</TT> to select 80x25 
+              text video mode and to clear the display area (with black at every
+              location). Init calls
+              GenBrick repeatedly to draw the bricks. Init draws the ball and
+              paddle at their initial positions. Init sets <TT>BTicks</TT> and 
+              <tt>PTicks</tt> to zero. </LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>KbdInt</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Interrupt service routine for keyboard 
+              <LI>Inputs: None 
+              <LI>Outputs: None 
+              <LI>Calls: Enq 
+              <LI>KbdInt enqueues the scan code from the keyboard onto the 
+              Keyboard Queue with a call to Enq. Most of this routine is 
+              specified on page 93 of the ECE 390 Lab Notes. </LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Task1</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Processes one scan code byte 
+              <LI>Inputs: None 
+              <LI>Outputs:
+              <ul><li><tt>BState, PState, BTicks, BRow, BCol</tt></li></ul> 
+              <LI>Calls: 
+              <ul><li>Deq, mp4xit</li></ul> </LI>
+              <li>Task1 first checks that 
+            the Keyboard Queue is nonempty. If so, then Task1 dequeues the byte 
+            at the front of the Keyboard Queue. </li>
+            <li>If the byte is the scan code for the 
+            ESC key, then Task1 restores the old interrupt vectors and exits to 
+            DOS.</li> 
+            <li>If the byte is the scan code for the space bar and <tt>BState</tt>
+            is not -1, then Task1 
+            toggles the value of <TT>BState</TT> between 1 and 0 and resets 
+            <TT>BTicks</TT> to zero (why?). 
+            <li>If the byte is the scan code for the
+            Left arrow, Right arrow, or Down arrow key, then Task1 sets <tt>PState</tt>
+            accordingly.</li>
+            <li>If the byte is the scan code for the Up arrow key and
+            the ball is currently gone (<tt>BState</tt> is -1), then Task1 
+            creates the ball at its
+            original position again and starts the ball again by setting <tt>BState</tt>
+            to 1 and <tt>BTicks</tt> to zero (why?). </li>
+            </UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Task2</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Updates the display of the ball
+              <LI>Inputs: 
+              <ul><li><tt>BTicks, BRow, BCol</tt></li></ul> 
+              <LI>Outputs: 
+              <UL>
+                <LI><TT>BTicks, BRow, BCol</TT> </LI></UL>
+              <LI>Calls: NewPosition 
+              <LI>Task2 exits if either the ball is stopped or <tt>BTicks</tt> indicates 
+              that fewer than 3 clock ticks (the constant <tt>BSpeed</tt>) have elapsed.
+              Otherwise, Task2 subtracts 3 from <tt>BTicks</tt>. Then
+              Task2 calls NewPosition to determine where the ball would move and reads
+              the video memory to determine the displayed color at that position.</li>
+              <li>If the new position is currently black, then 
+              Task2 erases the current ball and draws the ball at its new position.</li>
+              <li>If the new position is currently white, then the ball has hit
+              the paddle. Task2 makes the ball bounce upward, with a horizontal
+              velocity that depends on the part of the paddle hit by the ball.
+              The paddle has six zones, each of 3 locations; from left to right,
+              depending on the zone hit by the ball,
+              the new horizontal velocity is -3, -2, -1, +1, +2, or +3</li>
+              <li>Otherwise, the ball has hit a colored brick.  Task2 erases the
+              brick from the screen, draws the ball at its new position (where part
+              of the brick was), and negates the vertical velocity so that the ball 
+              will bounce on its next move.</li>
+              </LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Task3</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Moves the paddle 
+              <LI>Inputs: 
+              <UL>
+                <LI><TT>PTicks, PState, PCol</TT> </LI></UL>
+              <LI>Outputs: 
+              <UL>
+                <LI><TT>PTicks, PCol</TT> </LI></UL>
+              <LI>Calls: None
+              <LI>Task3 exits if <tt>PTicks</tt> indicates that no clock ticks have
+              elapsed since it was last updated.  Otherwise, Task3 decrements <tt>PTicks</tt>.
+              Then depending on the value of
+              <tt>PState</tt>, Task3 may move the paddle one location to the left or
+              to the right, but not past the display boundary.</LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>NewPosition</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Calculates the new position of the ball, with bounces off the top, left, and right 
+              boundaries of the display
+              <LI>Inputs:
+              <ul><li><tt>BRow, BCol, BHoriz, BVert</tt>
+              </ul> 
+              <LI>Outputs:
+              <ul><li><tt>NewRow, NewCol</tt> -- new position of ball
+              <li><tt>BHoriz, BVert</tt> -- updated velocities if bounce off top, left, or right
+              </ul> 
+              <LI>Calls: None 
+              <LI>NewPosition calculates <tt>NewRow</tt> and <tt>NewCol</tt>.</LI>
+              <li>If <tt>NewRow</tt> < 0, then NewPosition negates <tt>NewRow</tt> and
+              <tt>BVert</tt> to make the ball bounce off the top boundary.</li>
+              <li>If <tt>NewCol</tt> < 0, then NewPosition negates <tt>NewCol</tt> 
+              and <tt>BHoriz</tt> to make the ball bounce off the left boundary. </li>
+              <li>If <tt>NewCol</tt> > 79, then NewPosition replaces the value of <tt>NewCol</tt>
+              and negates <tt>BHoriz</tt> to make the ball bounce off the right boundary.</li> 
+              </UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>GenBrick</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Generates a brick of a random color 
+              <LI>Inputs: 
+              <UL>
+                <LI><TT>DH, DL</TT> -- row and leftmost column for brick </LI></UL>
+              <LI>Output: 
+              <UL>
+                <LI>None </LI></UL>
+              <LI>Calls: Rand 
+              <LI>GenBrick calls Rand to choose a new random color in the range from
+              01h to 0Eh (not black or white). If this color is the same as the color of the brick
+              above or to the left of position <tt>DH, DL</tt>, then GenBrick calls
+              Rand again, repeating this process until a different color is chosen.
+              Then GenBrick draws the brick on the screen.</LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Enq</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Enqueues a byte on a circular queue 
+              <LI>Inputs: 
+              <UL>
+                <LI>(BX) = offset of queue list structure 
+                <LI>[BX+QData] = byte to enqueue </LI></UL>
+              <LI>Outputs: None 
+              <LI>Calls: None 
+              <LI>If the queue is not full, then Enq enqueues the byte at [BX+QData] onto the 
+              rear of the circular queue.  Then Enq updates [BX+QRear]. 
+              </LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Deq</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Dequeue a byte from a circular queue 
+              <LI>Input: 
+              <UL>
+                <LI>(BX) = offset of queue list structure </LI></UL>
+              <LI>Output: 
+              <UL>
+                <LI>[BX+QData] = byte dequeued </LI></UL>
+              <LI>Calls: None 
+              <LI>If the queue is not empty, then Deq dequeues the byte from the 
+              front of the queue, places the byte in [BX+QData], and updates 
+             [BX+QFront]. </LI></UL></TD></TR></TBODY></TABLE>
+      <H2>Optional Features</H2>
+      <UL>
+        <LI>You may change the symbols used for the ball and for squares that 
+        constitute the paddle and bricks.
+        <li>You may keep a score (number of bricks cleared) and show it on the paddle
+        <LI>You may increase the speed as the score increases. 
+        <LI>You may display a message when all bricks have been cleared or at other times
+        toward the top of the display. </LI></UL>
+      <H2>Friendly Advice</H2>
+      <UL>
+        <LI>The libmp4.lib file contains executable library subroutines for each 
+        of the routines that you need to implement. The library subroutines 
+        allow you to run the program and understand how it works before you 
+        implement it. You can test your program with any combinations of your 
+        own code and library subroutines. You will receive credit only for the 
+        subroutines that you implement yourself. 
+        <LI>You may define memory words and bytes for variables as needed. Variables
+        associated with a subroutine should be declared between the header comments and 
+        name label of the subroutine. 
+        <li>In Task2, you could define an array of 18 entries for the new horizontal
+        velocities of the ball, depending on which part of the paddle it strikes.
+        <LI>You may design and implement additional subroutines. For example, 
+        you could write a subroutine that places a character on the screen by 
+        writing to the video memory directly (see page 110 in the Lab Notes). 
+        You could write a subroutine that reads from the video memory.
+        Be sure to modify the Calls lines in 
+        the headers of the subroutines that call these additional subroutines. 
+        <LI>You should hide the cursor when it is not being used. 
+        <LI>Each subroutine should save and restore any registers that it uses, 
+        except for registers that deliver subroutine outputs. The caller may use 
+        registers without outputs and expect them to remain unchanged. 
+        <LI>Monitor the Web Board for clarifications and help. 
+        <LI>START EARLY! </LI></UL>
+      <H2>Demonstration, Documentation, and Grading</H2>
+      <P>Demonstrate your program to an ECE 390 staff member. You will also 
+      be asked why Task1 sets BTicks to zero after the user presses the space 
+      bar.</P>
+      <P>As before, keep an MP development log and write a cover memo, which 
+      should be submitted with the program after the demonstration. The cover 
+      memo should address the following questions: 
+      <UL>
+        <LI>How much time did you spend on each subroutine, from planning and 
+        design through final debugging? 
+        <LI>What kinds of defects (bugs) did you find during the development of 
+        the program? When did you discover these defects (during code review or 
+        during testing)? How did you find them? 
+        <LI>What did you learn about design, coding, testing, and debugging in 
+        this MP? 
+        <LI>What went well in your work on this MP? What did not? 
+        <LI>What you would do differently for the next MP? </LI></UL>
+      <P>Your program will be graded according to the clarity of your design and 
+      the quality of your documentation.</P>
+      <P>Gradesheet:<BR>Init 6 points, KbdInt 3 points, Task1 9 points, Task2 12 
+      points, Task3 3 points, GenBrick 3 points, NewPosition 6 points,
+      Enq/Deq 6 points <BR>Style and documentation 
+      8 points, Cover memo 4 points</P>
+      <HR>
+
+      <H2>mp4.asm (program framework)</H2><FONT size=-1>
+<PRE>
+; MP4 - Breakout program
+; This program implements a version of the Breakout video game
+
+; Your name
+; Date
+
+        BITS    16
+
+;====== SECTION 1: Define constants =======================================
+
+        KVEC    EQU     0024h           ; Location of Keyboard Vector
+        TVEC    EQU     0070h           ; Location of User Timer Vector
+        ESCSCAN EQU     1               ; Scan code for ESC key
+        SPSCAN  EQU     57              ; Scan code for spacebar
+        UP      EQU     72              ; Scan code for up arrow
+        LEFT    EQU     75              ; Scan code for left arrow
+        RIGHT   EQU     77              ; Scan code for right arrow
+        DOWN    EQU     80              ; Scan code for down arrow
+        ROWS    EQU     25              ; Number of rows in entire display
+        COLS    EQU     80              ; Number of columns in entire display
+        BLENGTH EQU     5               ; Length of brick
+        PLENGTH EQU     18              ; Length of paddle
+
+        Square  EQU     0DBh            ; Extended ASCII for square in brick
+        Ball    EQU     09h             ; Extended ASCII for ball
+        BSpeed  EQU     3               ; Clock ticks before ball moves
+        PSpeed  EQU     1               ; Clock ticks before paddle moves
+        White   EQU     0Fh             ; Color attribute for white
+        Black   EQU     00h             ; Color attribute for black
+        
+;====== SECTION 2: Declare external procedures ============================
+
+EXTERN  ascbin, binasc, kbdin, dspout, dspmsg, dosxit
+EXTERN  libInit, libKbdInt, libTask1, libTask2, libTask3 
+EXTERN  libNewPosition, libGenBrick, libEnq, libDeq, mp4xit
+EXTERN  Rand, TimerInt
+GLOBAL  SavKOff, SavKSeg, SavTOff, SavTSeg, BTicks, PTicks
+GLOBAL  BRow, BCol, BHoriz, BVert, NewRow, NewCol, PCol, BState, PState 
+GLOBAL  Rnum, KQData, KQList, KQFront, KQRear
+GLOBAL  Init, KbdInit, Task1, Task2, Task3, NewPosition, GenBrick, Enq, Deq
+
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        RESB    64*8
+stacktop:
+        RESB    0                       ; NASM bug workaround 
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+
+SavKOff RESW    1                       ; Keyboard interrupt vector
+SavKSeg RESW    1
+SavTOff RESW    1                       ; Timer interrupt vector
+SavTSeg RESW    1
+BTicks  DW      0                       ; Number of timer ticks for ball move
+PTicks  DW      0                       ; Number of timer ticks for paddle move
+
+BRow    DB      15                      ; Position of ball: row
+BCol    DB      40                      ; Position of ball: column
+BHoriz  DB      1                       ; Horizontal velocity of ball, -3 to +3
+BVert   DB      1                       ; Vertical velocity of ball, +1 or -1
+NewRow  RESB    1                       ; New position of ball when it moves
+NewCol  RESB    1
+PCol    DB      37                      ; Location of paddle: leftmost column
+
+BState  DB      1                       ; State of ball: 1=moving, 0=stopped, -1=gone
+PState  DB      0                       ; State of paddle: -1=left, 0=stopped, 1=right
+
+QBeg    EQU     0                       ; Beginning offset of queue area
+QCap    EQU     2                       ; Capacity of of queue
+QFront  EQU     4                       ; Index of front item
+QRear   EQU     6                       ; Index of next place to put rear item
+QData   EQU     8                       ; Byte to input or output
+
+KQList  RESB    0                       ; Parameter list for Keyboard Queue
+KQBeg   DW      KQArea                  ; Offset of Keyboard Queue area
+KQCap   DW      10
+KQFront DW      0
+KQRear  DW      0
+KQData  RESB    1
+KQArea  RESB    10
+
+Rnum    DW      1                       ; Current stored random number
+
+; You may declare additional variables here
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        MOV     AX, CS                  ; Initialize Data Segment register
+        MOV     DS, AX  
+        MOV     AX, stkseg              ; Initialize Stack Segment register
+        MOV     SS, AX
+        MOV     SP, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+main:
+        MOV     AH, 2Ch                 ; Get current time of day
+        INT     21h                     ;   (DH) = secs, (DL) = hundredths of secs
+        MOV     WORD [Rnum], DX         ; Initialize stored random number
+
+        CALL    Init                    ; Initialization
+.mainLoop:
+        CALL    Task1     
+        CALL    Task2
+        CALL    Task3
+        JMP    .mainLoop
+
+; Interrupt service routine for timer        
+TimerInt:
+        INC     WORD [CS:BTicks]
+        INC     WORD [CS:PTicks]
+        IRET        
+        
+; Subroutine Rand 
+; Generates random number
+;       Inputs  (CX) -- range of random number
+;               Rnum -- current stored random number
+;       Ouputs  (AX) -- random number in range 0 .. (CX)-1
+;               Rnum -- new value of stored random number
+C2053   DW      2053
+C13849  DW      13849
+C216M1  DW      0FFFFh                  ; 2^16 - 1
+RandOut RESW    1
+
+Rand:
+        PUSHA
+        MOV     AX, WORD [Rnum]         ; Current random number
+        MUL     WORD [C2053]
+        ADD     AX, WORD [C13849]
+        ADC     DX, 0                   ; Propagate carry to DX
+        DIV     WORD [C216M1]           ; Remainder is in DX
+        MOV     WORD [Rnum], DX         ; New random number
+        MOV     AX, DX 
+        MOV     DX, 0                   ; Prepare for division
+        DIV     CX
+        MOV     [RandOut], DX           ; In range 0, ..., (CX) - 1
+        POPA
+        MOV     AX, [RandOut]
+        RET            
+
+Init:
+        CALL    libInit
+        RET
+        
+KbdInt:
+        JMP     libKbdInt
+        
+Task1:
+        CALL    libTask1
+        RET
+        
+Task2:
+        CALL    libTask2
+        RET
+        
+Task3:
+        CALL    libTask3
+        RET
+        
+NewPosition:
+        CALL    libNewPosition
+        RET
+
+GenBrick:
+        CALL    libGenBrick
+        RET
+       
+Enq:
+        CALL    libEnq
+        RET
+        
+Deq:
+        CALL    libDeq
+        RET
+</PRE></FONT></TD></TR></TBODY></TABLE>
+<TABLE class=dark cellSpacing=0 cellPadding=0 width="100%">
+  <TBODY>
+  <TR>
+    <TD><A href="http://courses.engr.illinois.edu/ece390/"><IMG src="/ece390/icon/go-back.gif"> Return to ECE390 Home Page</A></TD>
+    <TD align=right>Fall 2005</TD></TR></TBODY></TABLE></BODY></HTML> 

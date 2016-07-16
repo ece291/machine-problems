@@ -1,0 +1,795 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 2</title>
+</head>
+
+<body bgcolor=ffffff>
+<p>
+<table cellpadding=3 width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Moorman, Summer 1999</td></tr></table>
+<h2> </h2>
+
+
+<center><h1>Machine Problem 2: Big Calculator </h1></center>
+<p>
+<center><table border=1 cellpadding=3 width=60%>
+  <tr><td align=right><b>Due Date</b></td><td>Tuesday 7/6/99</td></tr>
+  <tr><td align=right><b>Purpose</b></td><td>
+     Subroutines, User I/O, Math 
+     </td></tr>
+   <tr><td align=right><b>Points</b></td><td>50</td></tr>
+</table>
+</center>
+
+<!--
+<p><img src="../../icon/construct.gif">This MP is under construction <p>
+-->
+
+<h2>Introduction</h2>
+
+<p>
+   The invention of the calculator was a wonderful addition to the
+   engineers toolbox.  In any such digital calculator or
+   computer, the numbers must be manipulated using a base unit of
+   storage that is 8 bits, 16 bits, or 32 bits in size.  Since the
+   maximum value of a number is quickly limited by these base units,
+   another method must be used for large numbers.
+
+<p>
+   In order to perform calculations on such large numbers the
+   individual operations must be broken into smaller tasks.  In
+   this way we can store large numbers and perform math calculations
+   on these numbers.
+
+<p>
+   In this machine problem you will write a program that performs
+   some simple math operations on very large numbers.  This Big
+   Calculator will take input from the keyboard for two different
+   operands.  The program can then perform some logical comparisons
+   on the two operands, or some simple math operations.
+
+
+<h2>Problem Description</h2>
+
+<p>
+   The functionality of this program can be broken into three
+   significant parts.  These involve the input/ouput of the
+   operands, the logical operations, and the math operations.
+   In order to perform the necessary functions you will also
+   need to write some base procedures that are used in a number
+   of the subroutines.
+
+<h3>I/O</h3>
+<p>
+   The I/O section of the problem involves the input and output of
+   large numbers in a form that is easily entered and read by the
+   user.  The user can explicitly enter the value for either
+   operand 1 or operand 2.  The two variables <tt>Op1</tt> and
+   <tt>Op2</tt> are used to store these operands.  The first
+   character in the variable is used to keep track of the sign
+   of the operand ('-' for negative and just 0 for positive).
+   The size of the operand should be limited to the value defined
+   in the constant <tt>MaxLength</tt>.
+<p>
+   Data is entered as characters from the keyboard which are ASCII
+   values.  These values should be converted to decimal digits 0-9
+   and stored in the array with one byte used for each digit.
+   Invalid data should not be allowed.  Once
+   the operand has been input the entire number should be shifted
+   to the end of the array such that the least significant digit is
+   located at the end of the array.  Note that both operands are
+   initializes with a trailing End of String (<tt>EOS</tt>) that
+   should never need to be changed.  Following are a few examples
+   as to how a number would be stored.  In each example the
+   <tt>MaxLength</tt> is set to 10.
+<p>
+   Example: 2974  (with <tt>MaxLength</tt> = 10)
+   <xmp>Op1 = 00 00 00 00 00 00 02 09 07 04 24 </xmp>
+
+   Example: -132  (with <tt>MaxLength</tt> = 10)
+   <xmp>Op1 = 2D 00 00 00 00 00 00 01 03 02 24 </xmp>
+
+   Example: -980760543  (with <tt>MaxLength</tt> = 10)
+   <xmp>Op1 = 2D 09 08 00 07 06 00 05 04 03 24 </xmp>
+
+<p>
+   In order to output a string to the screen the values in the
+   operand variables need to be converted back to ASCII values.
+
+<h3>Logic Operations</h3>
+
+<p>
+   The logic section of the program should support the comparison
+   of the two operations.  It should be able to test if operand 1
+   is greater than operand 2 and if both operands are equal.  This
+   must be done on a byte by byte comparison from the most
+   significant character to the least significant character.
+
+<h3>Math Operations</h3>
+
+<p>
+   The math section need only support the simple operations of
+   addition and subtraction.  Either of these operations should
+   be able to operate on two operands of any sign.  The
+   subtraction operation should take operand 1 - operand 2.
+
+<p>
+   The operations must add or subtract the operands a byte at a
+   time starting from the least significant digit and working
+   towards the most significant digit.  Care must be taken to
+   account for either individual additions that are greater
+   than 9 or subtractions that require a borrow.
+
+                        
+<h2>User Interface</h2>
+  <ul>
+  <li>You are given the framework of a program which provides
+      a menu-driven interface. <p>
+
+  <li>By selecting an option from the menu, the user can:
+      <ul>
+      <li>Enter operand 1 or operand 2
+      <li>Print the operands to the screen
+      <li>Check if operand 1 > operand 2
+      <li>Check if operand 1 = operand 2
+      <li>Compute  operand 1 + operand 2
+      <li>Compute  operand 1 - operand 2
+      </ul><p>
+
+  <li>All data is entered and displayed from left-to-right with
+      the Most Significant Digit first.
+
+  </ul>
+
+<h2>Sample Input & Output</h2>
+<ul>
+
+<li>Results from a sample run of the program are shown below:<br>
+    (<b>Boldface</b> letters are were provided as input)<p>
+<table border=1><tr><td><tt>
+------------- MP2 Menu -------------<br>
+  Enter:  Operand(1)    Operand(2)<br>
+          (S)how Operands<br>
+<br>
+  Logical Operations:<br>
+          (>) Greater Than<br>
+          (=) Is Equal<br>
+<br>
+  Mathematical Operations:<br>
+          (+) Addition<br>
+          (-) Subtraction<br>
+<br>
+  Redisplay (M)enu<br>
+<br>
+------ [ESC] or (Q)uit = exit ------<br>
+<br>
+&gt</tt><b>S</b><tt><br>
+Operand 1:  0<br>
+Operand 2:  0<br>
+&gt</tt><b>=</b><tt><br>
+The operands are equal<br> 
+&gt</tt><b>1</b><tt><br>
+Operand: 529<br>
+&gt</tt><b>2</b><tt><br>
+Operand: 917<br>
+&gt</tt><b>=</b><tt><br>
+The operands are not equal<br> 
+&gt</tt><b>&gt</b><tt><br>
+Operand1 is not greater than Operand2<br> 
+&gt</tt><b>S</b><tt><br>
+Operand 1:  529<br>
+Operand 2:  917<br>
+&gt</tt><b>+</b><tt><br>
+Addition Result:  1446<br>
+&gt</tt><b>-</b><tt><br>
+Subtraction Result: -388<br>
+&gt</tt><b>1</b><tt><br>
+Operand: -54<br>
+&gt</tt><b>S</b><tt><br>
+Operand 1: -54<br>
+Operand 2:  917<br>
+&gt</tt><b>&gt</b><tt><br>
+Operand1 is not greater than Operand2<br> 
+&gt</tt><b>+</b><tt><br>
+Addition Result:  863<br>
+&gt</tt><b>Q</b><br>
+
+</pre></td></tr></table>
+<p>
+
+<li>To get a feel for the program, run the library-based MP2.EXE 
+    program interactively.
+    Try entering different operands and performing various operations.
+<p>
+
+<li>A sample input data, <tt>test1.in</tt>, is included with this MP.  <br>
+    Use the following command to pipe this file into MP2: <br>
+    <tt>mp2 &lt test1.in</tt><br>
+    Your results should match <tt>test1.out</tt>. 
+<p>
+
+<li>Your program should work for all types of data.  <Br>
+    TAs will provide you with additional test cases when you demo your MP.
+</ul>
+
+
+<h2>Data Structures</h2>
+  <ul>
+  <li>A few variables have already been defined for you in the program
+      framework.  <p>
+     <ul>
+     <li><b>Op1</b>: Variable to hold the data for operand 1. <br>
+        First byte is reserved for sign.<p>
+     <li><b>Op2</b>: Variable to hold the data for operand 2. <br>
+        First byte is reserved for sign.<p>
+     <li><b>Result</b>: Variable to hold the data for result calculations.<br>
+        First byte is reserved for sign.<p>
+     </ul> <p>
+   <li>The following constant has also been defined:<p>
+     <ul>
+     <li><b>MaxLength</b> == 40 <i>bytes</i></b>,<br>
+        This is the maximum number of characters allowed in the number.<p>
+     </ul>
+  </ul>
+
+<h2>Procedures</h2>
+
+  <ul>
+  <li>This assignment has eight procedures.  
+      You will receive credit for this
+      assignment by replacing each of the eight
+      procedures listed below with your own code.  
+  <li>Experiment with the working code 
+      to gain a full understanding of how the programs works.
+  <li>Your program should exactly match the functionality of the library 
+      subroutines.
+  <li>All subroutines should be <i>modular</i>.  They should use the stack to
+      <i>preserve</i> the value of any registers they may modify.  
+  </ul>
+
+<ul>
+
+
+<li><font size=+1><b>GetOperand</b></font>
+  <ul>
+  <li><b>Purpose</b>: Procedure to get a new operand input from the user.
+     <ul>
+     <li>Converts input numbers into decimal digits
+     <li>Accepts negative numbers
+     <li>Allows backspacing (BS = ASCII 8)
+     <li>Prevents Underflow and Overflow of variables <br>
+         (i.e., writing past the beginning or end of operand)
+     <li>Terminates with a carriage return  (CR = ASCII 13)
+     <li>Rejects any invalid input and beeps (BEEP = ASCII 7)
+     </ul>
+  <li><b>Inputs</b>: SI = offset of string to place input number
+  <li><b>Outputs</b>: Decimal digits are placed in the array of
+        size <tt>MaxLength</tt> pointed to by input SI.  Digits
+        should be right justified in the array.
+  <li><b>Hint</b>: To erase a character from the screen, print 
+   a backspace, then whitespace, then backspace. <br>
+   For conversion of digits 0-9: Hex = Decimal = ASCII - Constant
+  <li><b>Points</b>: 10
+  </ul><p>
+       
+<li><font size=+1><b>ShowString</b></font>
+  <ul>
+  <li><b>Purpose</b>: Output the value of a string to the screen.  
+     <ul>
+     <li>Output should terminate on <tt>EOS</tt>
+     <li>Sign should be correctly output
+     <li>Leading zeros should be ignored
+     <li>If the string is zero then a single 0 should be output
+     </ul>
+  <li><b>Inputs</b>: SI = offset of string to output
+  <li><b>Outputs</b>: String value to screen
+  <li><b>Points</b>: 5
+  </ul><p>
+
+<li><font size=+1><b>ShowOperands</b></font>
+  <ul>
+  <li><b>Purpose</b>: Output both operands to the screen  
+  <li><b>Inputs</b>:
+      <ul>
+      <li> SI = offset of operand 1
+      <li> DI = offset of operand 2
+      </ul>
+  <li><b>Outputs</b>: Both operands to screen
+  <li><b>Calls</b>: <i>ShowString</i>
+  <li><b>Points</b>: 2
+  </ul><p>
+
+
+<li><font size=+1><b>Compare</b></font>
+  <ul>
+  <li><b>Purpose</b>: Base procedure to compare two operands
+  <li><b>Inputs</b>:
+      <ul>
+      <li>SI = offset of operand 1
+      <li>DI = offset of operand 2
+      </ul>
+  <li><b>Outputs</b>: DL
+      <ul>
+      <li> DL = 1 if Op1 &gt Op2
+      <li> DL = 0 if Op1 = Op2
+      <li> DL = -1 if Op1 &lt Op2
+      </ul>
+  <li><b>Hint</b>: First check signs then raw digits.
+  <li><b>Points</b>: 5
+  </ul><p>
+
+
+<li><font size=+1><b>LogicOperations</b></font>
+  <ul>
+  <li><b>Purpose</b>: Procedure to check and output if two operands
+        are equal to or greater than each other.
+  <li><b>Inputs</b>: 
+     <ul>
+     <li>SI = offset of operand 1 
+     <li>DI = offset of operand 2 
+     <li>AL = '=' for IsEqual check
+     <li>AL = '&gt' for GreaterThan check 
+     </ul>
+  <li><b>Output</b>: Correct comparison message output to screen
+  <li><b>Calls</b>: <i>Compare</i>
+  <li><b>Points</b>: 5
+  </ul><p>
+
+
+<li><font size=+1><b>AddCore</b></font>
+  <ul>
+  <li><b>Purpose</b>: This is the core functionality needed to add
+        any two operands.  This should work for any combination of
+        positive or negative operands.
+  <li><b>Input</b>:
+     <ul>
+     <li> SI = offset of operand 1
+     <li> DI = offset of operand 2
+     </ul>
+  <li><b>Output</b>:
+     <ul>
+     <li>Correct addition result placed in variable <tt>Result</tt><br>
+        This variable is right justified with the sign in the first byte.
+     </ul>
+  <li><b>Calls</b>: <i>Compare</i>
+  <li><b>Hint</b>: First determine the sign of the answer and find out if
+        you really need to add or subtract the operands.
+  <li><b>Points</b>: 13
+  </ul><p>
+
+<li><font size=+1><b>AddOperation</b></font>
+  <ul>
+  <li><b>Purpose</b>: Procedure to add two operands
+  <li><b>Inputs</b>:
+     <ul>
+     <li> SI = offset of operand 1
+     <li> DI = offset of operand 2
+     </ul>
+  <li><b>Output</b>:
+     <ul>
+     <li>Correct addition results are output to the screen
+     </ul>
+  <li><b>Calls</b>: <i>AddCore</i> and <i>ShowString</i>
+  <li><b>Points</b>: 5
+  </ul><p>
+
+<li><font size=+1><b>SubtractOperation</b></font>
+  <ul>
+  <li><b>Purpose</b>: Procedure to subtract two operands
+  <li><b>Inputs</b>:
+     <ul>
+     <li> SI = offset of operand 1
+     <li> DI = offset of operand 2
+     </ul>
+  <li><b>Output</b>:
+     <ul>
+     <li>Correct subtraction results are output to the screen
+     </ul>
+  <li><b>Calls</b>: <i>AddCore</i> and <i>ShowString</i>
+  <li><b>Hint</b>: Remember subtraction is just addition with a sign change
+  <li><b>Points</b>: 5
+  </ul><p>
+</ul>
+
+<h2>Preliminary Procedure</h2>
+<ul>
+<li>Copy the 
+    empty MP2 program (<tt>MP2.ASM</tt>), 
+    sample input file (<tt>test1.in</tt>),
+    corresponding output files (<tt>test1.out</tt>),
+    libraries (<tt>libmp2.lib</tt>, <tt>lib291.lib</tt>), and 
+    <tt>Makefile</tt> from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s V:\ece291\mp2 W:\mp2</tt><br>
+    Alternatively, from home, you can download the same files as 
+    <a href="mp2.zip">mp2.zip</a>.
+<li>As with MP0 and MP1, run <tt>NMake</tt> to build an executable program 
+    using the given ECE291 library functions.
+<li>As with MP0 and MP1, use a text editor to modify the program.
+    As given, the program uses LIBMP2 routines 
+    to implement all
+    functionality.  To receive full credit for the assignment,
+    you will need to implement each of the subroutines described above with
+    your own code.
+<li>Use CodeView (<tt>CV</tt>) to debug and test your program.
+    Because you only receive credit for procedures that function completely
+    as specified, it is best to debug each routine individually.  
+<li>By modifying a few comments, you can mix and match usage of your 
+    own code and Library routines.  You may notice that the LIBMP2
+    routines contain extraneous and difficult-to-read code.  They 
+    are not meant to be unassembled!
+</ul>
+
+
+
+<h2>Final Steps</h2>
+<ol>
+<li>Print a copy of the <a href="mp2grade.html">MP2 grading sheet</a>.
+<li>Demonstrate MP2.EXE to a TA or to the instructor.  
+  <ul>
+   <li>Be prepared to answer questions about any aspect of the operation 
+       of your program.  The TAs will not accept an MP if you cannot fully
+       explain all operations of your code.
+  <li>Your program must work for all possible data patterns.
+      Additional test patterns will be listed on the grade sheet.
+  </ul>
+<li>Handin in your program by running: <br>
+    <tt>A:\Handin </tt> <i>YourWindowsLogin</i>
+<li>Print <font color="red">MP2.ASM </font> using <i>GreenPrint32</i>
+<li>Staple the MP2 grading sheet to the front of your MP2.ASM file
+    and give both to the same TA that approved your demonstration.
+</ol>
+
+<hr>
+
+<h2>MP2.ASM (Program framework)</h2>
+<font size=-1> <xmp>
+
+        TITLE ECE291: Big Calculator - Your Name - Date
+
+COMMENT *
+        Big Calculator
+
+        For this MP, you will write an interactive program which
+        performs simple mathematical calculations on large numbers.
+
+        ECE291: Machine Problem 2
+        Jay R. Moorman
+        University of Illinois
+        Dept. of Electrical & Computer Engineering
+        Summer 1999
+
+        Ver 1.0
+        *
+
+;====== Constants =========================================================
+
+NULL    EQU 0
+BEEP    EQU 7
+BS      EQU 8
+CR      EQU 13
+LF      EQU 10
+EOS     EQU 24
+
+ESCKEY  EQU 27
+SPACE   EQU 32
+
+MaxLength     EQU 40 ; Limit input numbers 
+PUBLIC MaxLength     ; Declare public for library use
+
+;====== Externals =========================================================
+
+; -- LIB291 Routines (Free) ---
+
+extrn kbdine:near, kbdin:near, dspout:near   ; LIB291 Routines
+extrn dspmsg:near, binasc:near, ascbin:near  ; (Always Free)
+
+extrn mp2xit:near ; Exit program with a call to this procedure
+
+; -- LIBMP2 Routines (Replace these with your own code) ---
+
+extrn LibGetOperand:near        ; Get operand via user input
+extrn LibShowString:near        ; Output a string number to screen
+extrn LibShowOperands:near      ; Output operands to screen
+extrn LibCompare:near           ; Compare two operands
+extrn LibLogicOperations:near   ; Perform Logic comparisons
+extrn LibAddCore:near           ; Core math of add procedure
+extrn LibAddOperation:near      ; Procedure to add two operands
+extrn LibSubtractOperation:near ; Procedure to subtract two operands
+
+
+;====== SECTION 3: Define stack segment ===================================
+stkseg  segment stack                   ; *** STACK SEGMENT ***
+        db      64 dup ('STACK   ')     ; 64*8 = 512 Bytes of Stack
+stkseg  ends
+
+;====== SECTION 4: Define code segment ====================================
+cseg    segment public  'CODE'          ; *** CODE SEGMENT ***
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== SECTION 5: Variables ==============================================
+
+; First byte is reserved for the sign
+Op1    db   0,MaxLength-1 dup(?),EOS     ; String for operand 1
+Op2    db   0,MaxLength-1 dup(?),EOS     ; String for operand 2
+Result db   0,(2*MaxLength)-1 dup(?),EOS ; String for resulting calculation
+
+crlf    db CR,LF,'$' ; Carriage return + Linefeed for new line
+PBuf    db 7 dup(?)
+
+MenuMessage db CR,LF
+        db  '------------- MP2 Menu -------------',CR,LF
+        db  '  Enter:  Operand(1)    Operand(2)'  ,CR,LF
+        db  '          (S)how Operands'           ,CR,LF,CR,LF
+        db  '  Logical Operations:'               ,CR,LF
+        db  '          (>) Greater Than'          ,CR,LF
+        db  '          (=) Is Equal'              ,CR,LF,CR,LF
+        db  '  Mathematical Operations:'          ,CR,LF
+        db  '          (+) Addition'              ,CR,LF
+        db  '          (-) Subtraction'           ,CR,LF,CR,LF
+        db  '  Redisplay (M)enu'                  ,CR,LF,CR,LF
+        db  '------ [ESC] or (Q)uit = exit ------',CR,LF,'$'
+Prompt      db '>','$'
+
+OpMsg     db CR,LF,'Operand: ','$'
+Op1Msg    db CR,LF,'Operand 1: ','$'
+Op2Msg    db CR,LF,'Operand 2: ','$'
+LogicMsg1 db CR,LF,'The operands are equal ','$'
+LogicMsg2 db CR,LF,'The operands are not equal ','$'
+LogicMsg3 db CR,LF,'Operand1 is greater than Operand2 ','$'
+LogicMsg4 db CR,LF,'Operand1 is not greater than Operand2 ','$'
+AddMsg    db CR,LF,'Addition Result: ','$'
+SubMsg    db CR,LF,'Subtraction Result: ','$'
+
+
+PUBLIC Result
+
+; Tables
+InputTable db ESCKEY,'Q','q','M','m'
+           db '1','2','S','s'
+           db '>','=','+','-'
+           db Null
+
+JmpTable   dw offset MainDone
+           dw offset MainDone
+           dw offset MainDone
+           dw offset DisplayMenu
+           dw offset DisplayMenu
+           dw offset GetOp1
+           dw offset GetOp2
+           dw offset ShowOp
+           dw offset ShowOp
+           dw offset LogicOp
+           dw offset LogicOp
+           dw offset AddOp
+           dw offset SubOp
+
+;====== Procedures ========================================================
+
+
+; Your Subroutines go here !
+; ---- ----------- -- ----
+
+;--------------------------------------------------------
+; Procedure to get a new operand from the user
+;       Only allow valid input numbers
+;       Must accept negative numbers
+;       Allow backspace, but not past beginning of string
+;       Don't allow greater than MaxLength characters
+;       All input characters should be converted
+;               to decimal numbers
+; Input:  SI = offset of string to input number
+; Output: 
+;         
+; Destroys: 
+; Calls:
+;--------------------------------------------------------
+
+GetOperand Proc NEAR
+
+        call LibGetOperand      ; Comment out and replace with your own code
+
+        ret
+GetOperand ENDP
+
+
+;--------------------------------------------------------
+; Procedure to show a string
+; Input:  SI = offset of string
+; Output: String to display
+;         
+; Destroys:
+; Calls:
+;--------------------------------------------------------
+
+ShowString Proc NEAR
+
+        call LibShowString      ; Comment out and replace with your own code
+
+        ret
+ShowString ENDP
+
+
+;--------------------------------------------------------
+; Procedure to show operands
+; Input:  SI = offset of operand 1
+;         DI = offset of operand 2
+; Output: 
+;         
+; Destroys: 
+; Calls: ShowString
+;--------------------------------------------------------
+
+ShowOperands Proc NEAR
+
+        call LibShowOperands    ; Comment out and replace with your own code
+
+        ret
+ShowOperands ENDP
+
+
+;--------------------------------------------------------
+; Procedure to compare two operands
+; Input:  SI = offset of operand 1
+;         DI = offset of operand 2
+; Output: DL = 1  if Op1 > Op2
+;            = 0  if Op1 = Op2
+;            = -1 if Op1 < Op2
+;
+; Destroys: DX
+; Calls:
+;--------------------------------------------------------
+
+Compare Proc NEAR
+
+        call LibCompare         ; Comment out and replace with your own code
+
+        ret
+Compare ENDP
+
+
+;--------------------------------------------------------
+; Procedure to see if two operands are equal or greater than
+;    each other.
+; Input:  SI = offset of operand 1
+;         DI = offset of operand 2
+;         AL = '=' for IsEqual
+;         AL = '>' for GreaterThan
+; Output: Correct message output to screen
+;         
+; Destroys: 
+; Calls: Compare
+;--------------------------------------------------------
+
+LogicOperations Proc NEAR
+
+        call LibLogicOperations ; Comment out and replace with your own code
+
+        ret
+LogicOperations ENDP
+
+
+;--------------------------------------------------------
+; Core add procedure
+; Input:  SI = offset of operand 1
+;         DI = offset of operand 2
+; Output: Correct result put in Result variable
+;         
+; Destroys: 
+; Calls: Compare
+;--------------------------------------------------------
+
+AddCore Proc NEAR
+
+        call LibAddCore         ; Comment out and replace with your own code
+
+        ret
+AddCore ENDP
+
+
+;--------------------------------------------------------
+; Procedure to add two operands
+; Input:  SI = offset of operand 1
+;         DI = offset of operand 2
+; Output: Correct result output to screen
+;         
+; Destroys: 
+; Calls: AddCore, ShowString
+;--------------------------------------------------------
+
+AddOperation Proc NEAR
+
+        call LibAddOperation    ; Comment out and replace with your own code
+
+        ret
+AddOperation ENDP
+
+
+;--------------------------------------------------------
+; Procedure to subtract two operands
+; Input:  SI = offset of operand 1
+;         DI = offset of operand 2
+; Output: Correct result output to screen
+;         
+; Destroys: 
+; Calls: AddCore, ShowString
+;--------------------------------------------------------
+
+SubtractOperation Proc NEAR
+
+        call LibSubtractOperation ; Comment out and replace with your own code
+
+        ret
+SubtractOperation ENDP
+
+
+;====== Main procedure ====================================================
+
+main    Proc FAR
+        mov  ax, cseg
+        mov  ds, ax
+
+DisplayMenu:
+        mov  dx, offset MenuMessage
+        call dspmsg                     ; Display Menu
+
+MainLoop:
+        mov  dx, offset crlf
+        call dspmsg
+        mov  dx, offset Prompt
+        call dspmsg
+
+MainRead:
+        mov  bx,0                       ; Initialize to check input
+        mov  si, offset Op1             ; Assume Op1 operation Op2
+        mov  di, offset Op2
+        call kbdin                      ; Read Input
+
+LpRead: cmp  InputTable[bx],Null        ; Check if end of table
+        je   MainRead                   
+        cmp  al,InputTable[bx]          ; Check for key match
+        je   MatchGood
+        inc  bx                         ; Check next
+        jmp  LpRead
+
+MatchGood:
+        mov  dl,al                      ; Output character
+        call dspout
+        shl  bx,1                       ; Multiply by 2
+        jmp  JmpTable[bx]               ; Jump to proper address
+
+
+GetOp1: call GetOperand
+        jmp  MainLoop
+
+GetOp2: mov  si, offset Op2
+        call GetOperand
+        jmp  MainLoop
+
+ShowOp: call ShowOperands
+        jmp  MainLoop
+
+LogicOp:
+        call LogicOperations
+        jmp  MainLoop
+
+AddOp:  call AddOperation
+        jmp  MainLoop
+SubOp:  call SubtractOperation
+        jmp  MainLoop
+
+
+MainDone:
+        call mp2xit                     ; Exit to DOS
+
+main    endp
+
+cseg    ends
+        end     main
+
+
+
+</xmp>
+</body>

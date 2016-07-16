@@ -1,0 +1,210 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv=Content-Type content="text/html; charset=unicode"><%
+title = "ECE291 Machine Problem 3"
+subtitle = "Machine Problem 3: Main Function"
+%>
+<!--#include file="headvb.asp"-->
+<BODY>
+
+<h1 align="center">Machine Problem 3: Nybbles</h1>
+
+<!-- <span class="update"><strong>Updates:</strong></span><br>
+
+2/10 A new version of libmp2.lib is available that fixes the one character case
+with KMP, and the search word being terminated by a '$' in the word grid.
+-->
+
+<a name="main"><h2>Main Function</h2></a>
+<p>Each iteration of the main function needs to do the following things:</p>
+<ul>
+  <li>wait for update to become non-zero</li>
+  <li>if using the serial port
+    <ul>
+      <li>transmit local worm movement</li>
+    </ul>
+  </li>
+  <li>handle player, then opponent, movement</li>
+  <li>handle player, then opponent, collisions</li>
+  <li>set update back to zero</li>
+</ul>
+
+<a name="io"><h2>Input and Output</h2></a>
+<p>This MP will use primarily interrupt-driven I/O.&nbsp; This is what allows
+our main function to be so simple, but it comes at a cost of increased debugging
+complexity: you can almost never use the debugger to debug code within your
+Interrupt Service Routine.&nbsp; For this reason, keep them as short as
+possible, so you can debug them by hand as needed.</p>
+<h3>Interrupt Service Routines</h3>
+<p>Hardware Interrupts are generated when various hardware events occur.&nbsp;
+Examples include the timer, which triggers 18.2 times per second, the keyboard,
+which triggers for every key press and release, the serial port, which depending
+on the interrupt enable register, triggers each time the receive buffer is full,
+and the mouse which triggers for any movement or button press or release. These
+interrupts are the hardware's way of saying &quot;I need attention,&quot; so
+that the rest of the time the CPU can completely ignore such devices, and just
+execute code.</p>
+<p>When the interrupt happens, the CPU is informed.&nbsp; The current opcode
+finishes execution, and then the current program is interrupted. This is when
+your interrupt service routine (ISR) is executed. As it happens between two
+effectively random lines of your program, the ISR needs to save all registers
+and the flags. The hardware takes care of part of this (by pushing of the
+flags); the rest you must take care of by using IRET instead of RET (to pop the
+flags), and saving your registers like normal.</p>
+<h3>The Keyboard ISR</h3>
+<p>When our keyboard handler is called, we know a key has been pressed or
+released. Unfortunately, we don't know what key, whether it was pressed or
+released, and whether the press is a true press or an auto-repeat press. There's
+no way for us find out the last (except keeping track), but as for which key and
+press or release, we can (and must) find this out by asking the keyboard for the
+scancode. See section 10.1.2.2 of the&nbsp; lab manual for information on
+retrieving these scancodes. The pages after that describe how scancodes work.</p>
+<p>There are only a few keys that are important to Nybbles.&nbsp; These are the
+arrow keys, and the escape key. You'll find constants for these declared at the
+top to make working with them easier.</p>
+<h3>Text-Mode Video</h3>
+<p>We will be using memory mapped I/O.&nbsp; Which means that you will want to
+move 0B800h into ES and explicitly make it your segment when writing to&nbsp;
+the screen. e.g. [es:bx].&nbsp; Remember that each character in text-mode video
+has both an attribute and an ascii component.&nbsp; The size of the screen is 80
+by 25 characters.&nbsp; Consult lecture eleven of this semester for more details
+on how text-mode video works. Notice especially how to convert from a row and
+column to an offset.</p>
+<h3>Serial Communication</h3>
+<p>Serial communication is handled by the hardware.&nbsp; The details of the
+data transfer (which look worse than a memory timing diagram from ECE290) and
+masked by a simple set of port I/Os (covered in section 10.1.2.2 of the lab
+manual). However, since there are many choices (transfer speed, data parity,
+etc.) that change the waveforms, these must be set prior to sending data across
+the serial link.</p>
+<p>There are two serial ports on each computer in the lab. Each work
+identically, but are accessed at different I/O ports, and trigger different
+interrupts. The exact numbers for these are conveniently declared as constants,
+which provides meaning to what are otherwise arbitrary numbers. Each serial port
+has several I/O ports associated with it, summarized in Table 1. To access any
+of these ports, you must add the base port (either COM1BASE or COM2BASE) to the
+offset port number, and put in in DX for use with the opcode IN or OUT. There is
+one subtlety to accessing the registers on the serial port that these I/O ports
+are mapped to: to conserve I/O ports, some I/O ports serve double duty depending
+on the contents of another port.</p>
+<center>
+<table border="1">
+  <tbody>
+    <tr>
+      <td><b>Base Address</b></td>
+      <td><b>DLAB</b></td>
+      <td><b>Read/Write</b></td>
+      <td><b>Abr.</b></td>
+      <td><b>Register Name</b></td>
+    </tr>
+    <tr>
+      <td rowSpan="3">+ 0</td>
+      <td>=0</td>
+      <td>Write</td>
+      <td>-</td>
+      <td>Transmitter Holding Buffer</td>
+    </tr>
+    <tr>
+      <td>=0</td>
+      <td>Read</td>
+      <td>-</td>
+      <td>Receiver Buffer</td>
+    </tr>
+    <tr>
+      <td>=1</td>
+      <td>Read/Write</td>
+      <td>-</td>
+      <td>Divisor Latch Low Byte</td>
+    </tr>
+    <tr>
+      <td rowSpan="2">+ 1</td>
+      <td>=0</td>
+      <td>Read/Write</td>
+      <td>IER</td>
+      <td>Interrupt Enable Register</td>
+    </tr>
+    <tr>
+      <td>=1</td>
+      <td>Read/Write</td>
+      <td>-</td>
+      <td>Divisor Latch High Byte</td>
+    </tr>
+    <tr>
+      <td rowSpan="2">+ 2</td>
+      <td>-</td>
+      <td>Read</td>
+      <td>IIR</td>
+      <td>Interrupt Identification Register</td>
+    </tr>
+    <tr>
+      <td>-</td>
+      <td>Write</td>
+      <td>FCR</td>
+      <td>FIFO Control Register</td>
+    </tr>
+    <tr>
+      <td>+ 3</td>
+      <td>-</td>
+      <td>Read/Write</td>
+      <td>LCR</td>
+      <td>Line Control Register</td>
+    </tr>
+    <tr>
+      <td>+ 4</td>
+      <td>-</td>
+      <td>Read/Write</td>
+      <td>MCR</td>
+      <td>Modem Control Register</td>
+    </tr>
+    <tr>
+      <td>+ 5</td>
+      <td>-</td>
+      <td>Read</td>
+      <td>LSR</td>
+      <td>Line Status Register</td>
+    </tr>
+    <tr>
+      <td>+ 6</td>
+      <td>-</td>
+      <td>Read</td>
+      <td>MSR</td>
+      <td>Modem Status Register</td>
+    </tr>
+    <tr>
+      <td>+ 7</td>
+      <td>-</td>
+      <td>Read/Write</td>
+      <td>-</td>
+      <td>Scratch Register</td>
+    </tr>
+  </tbody>
+</table>
+<font size="-1">Table 1: Serial Port Control Registers</font></center>
+<p>What you need to do is the following:</p>
+<h4>Set the Baud Rate</h4>
+<p>We will be using 9600 BPS (BAUD). This requires a divisor of 12d (0Ch) to be
+placed in the Divisor Latch. Remember to write this to the Divisor Latch Low
+Byte register and to the Divisor Latch High Byte register separately; I/O ports
+cannot be addressed sequentially in a single mov like memory can.</p>
+<p>Furthermore, the Divisor Latch registers are two of the registers that are
+only available if the Divisor Latch Access Bit (DLAB) is 1.&nbsp; The DLAB is
+the most significant bit of the Line Control Register (LCR), which you can set
+by OUTing an appropriate value to COMBASE+3.&nbsp;</p>
+<h4>Set the Data Size</h4>
+<p>FIXME: PARAMS?</p>
+<h4>Unmask the IRQ</h4>
+<p>Port 21h contains the IRQ mask for the master PIC. To enable an IRQ, you must
+write a 0 to the corresponding bit.&nbsp; For example, to enable IRQs 0,1, and
+2, while disabling all other IRQs, write the value 0F8h to port 21h. Rather than
+just arbitrarily overwriting whatever mask is there, you should read the current
+mask and then use logic opcodes to clear the bit for the desired IRQ.</p>
+<h4>Set the IRQ Trigger</h4>
+<p>FIXME : PARAMS?</p>
+<p>The least significant bit of the Interrupt Enable Register (IER) tells the
+serial port if it should generate a hardware interrupt whenever data is
+received. Set it.</p>
+<p>DLAB is just the most significant bit of the Line Control Register and can
+thus be set or cleared rather easily simply by writing to port COMxBASE+3.&nbsp;
+The least significant bit of the Interrupt Enable Register when set causes the
+ISR to be jumped to only when the Receiver Buffer is full.&nbsp;</p>
+</BODY></HTML>

@@ -1,0 +1,138 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 5</title>
+</head>
+
+<body>
+<p>
+<table cellpadding=3 width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Lockwood, Spring 1997</td></tr></table>
+
+
+<center><h1>Machine Problem 5: Grading Report</h1></center>
+<p>
+<center><i>Please print this page and provide it to the TA when you
+demonstrate your machine problem. 
+Use <i>MP5GR</i> to verify just graphic routines or
+<i>MP5</i> to verify all routines.
+ The TA should verify each functionality
+item, initial the 'Demo' box, assign functionality and bonus points,
+then copy your files to the HANDIN floppy.  
+This page should be stapled to the front of your printed .ASM program.
+</i>
+<p>
+
+<form>
+<table border=0 cellpadding=7><tr><td>
+<table border=0 cellpadding=1>
+<tr><td align=right>Name: </td><td><input name="name" size=30>
+<tr><td align=right>Date Submitted: </td><td><input name="submitted" size=20>
+<tr><td align=right>Demo To: </td><td><input name="demoto" size=6>
+ Graded By: <input name="gradedby" size=6>
+</td></tr></table>
+</td><td>
+<table border=1>
+<tr><Td><input type=checkbox name="gradebook">Handin to floppy 
+<tr><Td><input type=checkbox name="gradebook">Score recorded
+<tr><Td><input type=checkbox name="gold_star">Gold Star<br>
+        <i>Programming Excellence</i></td></tr>
+</td></tr>
+</table>
+</td></tr></table>
+</form>
+</center>
+
+<table border=1 cellpadding=3 width=100%>
+<tr><Th>Category</th><th>Points</th><th>Min</th><th>Max</th></tr>
+
+<tr><td><b>LoadBMP</b>  <ul>
+    <li>Loads BMP File from disk to memory
+    <li>Prints Error message if file cannot be opened
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>4</td></tr>
+
+<tr><td><b>StoreBMP</b>  <ul>
+    <li>Converts BMP data to raw screen image data 
+    <li>Converts 16 image colors: I B G R - I R G B
+    <li>Allows images to be stored anywhere in array
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>4</td></tr>
+
+<tr><td><b>DrawBMP</b>  <ul>
+    <li>Writes image to screen  
+    <li>Uses optimized string operations with 32-bit registers
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>4</td></tr>
+
+<tr><td><b>DrawBox</b>  <ul>
+    <li>Draw filled 32x32 square on the screen at specified location
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>4</td></tr>
+
+<tr><td><b>DrawEmptyBox</b>  <ul>
+    <li>Draw empty 32x32 square box on the screen at specified location
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>4</td></tr>
+
+<tr><td><b>MyImage.bmp</b>  <ul>
+    <li>Student has created a 32x32 bitmapped image that
+        that resembles themself.
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>4</td></tr>
+
+<tr><td><b>JoyCalibrate</b>  <ul>
+    <li>Used in conjunction with <i>JoyStickMove</i> (below)
+    <li>Prevents movement with stick is left in center position.
+        given that stick originates in center position.
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>4</td></tr>
+
+<tr><td><b>JoyStickMove</b>  <ul>
+    <li>Moves position up, down, left, and right depending on stick position
+    <li>Sets ExitFlag, ItNum, and TagNum depending on stick buttons
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>4</td></tr>
+
+<tr><td><b>ReDrawScreen</b>  <ul>
+    <li>Draws Every active player in PlayerArray to the screen
+    <li>Removes images when a player is departing.
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>9</td></tr>
+
+<tr><td><b>NetPost</b>  <ul>
+    <li>Processes incoming datagrams from network 
+    <li>Properly handles tagging of players and avoids "tag-back"
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>9</td></tr>
+
+
+<tr><td><b>Functionality SubTotal</b>  
+  </td><td><pre> </pre></td>  <td>0</td><td>50</td></tr>
+
+<tr><td><b>Modularity</b> <i>(* percentage of code written)</i> <br>
+  <ul>
+  <li>Lacks appropriate use of additional subroutines to avoid code
+      duplication.
+  <li>Violates specifications for given subroutines
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>Technique & Style</b>  <i>(* percentage of code written)</i><br>
+  <ul>
+  <li>Compact and Efficient code
+  <li>Extraneous use of code, registers and/or variables: -3 <Br>
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>Comments</b> <i>(* percentage of code written)</i> <br>
+  <ul>
+  <li>Clear and precise comments: +5
+  <li>Sports Announcer-type comments: -1
+  <li>Sparse and/or unclear comments: -3
+  </ul>
+
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+<tr><td><b>Penalty/Bonus</b> <br>
+    <i>Before Thr 5/8/97: +1 pt/day</i><br>
+    <i>Deadline after Thr 5/8/97: -5 pts/day </i>
+    </td><td><pre> </pre></td><td>-50</td><td>5</td></tr>
+
+<tr><td><b>Total</b> </td><td><pre> </pre></td>  <td>0</td><td>50</td></tr>
+
+
+</table>
+<p>
+</center>
+</body>

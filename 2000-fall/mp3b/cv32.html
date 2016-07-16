@@ -1,0 +1,179 @@
+<HTML>
+<HEAD><TITLE>CV32 Quick Reference</TITLE></HEAD>
+<BODY>
+<CENTER>
+<H1>Welcome to CV32!</H1>
+<H3>(Based on the Sally Full Screen Debugger)</H3>
+</CENTER>
+This program is copyright 1994 by Morten Welinder.<BR>
+CV32 modifications copyright 1999-2000 by Peter Johnson.<BR>
+For further copyright information, including other
+parties claims, please read the manual.<BR>
+<P>
+<B>The following keys are globally defined:</B><BR>
+<TABLE border=1><TR>
+<TD>Alt-C</TD><TD>Select code (disassembly) pane.</TD>
+</TR><TR><TD>Alt-E</TD><TD>Evaluate expression.</TD>
+</TR><TR><TD>Alt-G</TD><TD>Select GDT pane.</TD>
+</TR><TR><TD>Alt-H</TD><TD>Select help pane.</TD>
+</TR><TR><TD>Alt-I</TD><TD>Select IDT pane.</TD>
+</TR><TR><TD>Alt-L</TD><TD>Select LDT pane.</TD>
+</TR><TR><TD>Alt-M</TD><TD>Select module pane.</TD>
+</TR><TR><TD>Alt-N</TD><TD>Select numeric processor (fpu) pane.</TD>
+</TR><TR><TD>Alt-S</TD><TD>Select stack pane.</TD>
+</TR><TR><TD>Alt-W</TD><TD>Select where-is (symbol list) pane.</TD>
+</TR><TR><TD>Alt-X</TD><TD>Exit right away.</TD>
+</TR><TR><TD>Tab</TD><TD>Select next pane.</TD>
+</TR><TR><TD>BackTab</TD><TD>Select previous pane.</TD>
+</TR><TR><TD>F1</TD><TD>Select help pane (alias for Alt-H).</TD>
+</TR><TR><TD>C-F4</TD><TD>Evaluate expression (alias for Alt-E).</TD>
+</TR><TR><TD>Alt-F5</TD><TD>Show debugged program's screen.</TD>
+</TR><TR><TD>F7</TD><TD>Execute single instruction.</TD>
+</TR><TR><TD>C-F7</TD><TD>Add watch.</TD>
+</TR><TR><TD>F8</TD><TD>Execute till next instruction.</TD>
+</TR><TR><TD>F9</TD><TD>Run program.</TD>
+</TR><TR><TD>F10</TD><TD>Select pane via menu.</TD>
+</TR><TR><TD>Alt-F10</TD><TD>Misc. functions.</TD>
+</TR><TR><TD>Up,Down,Left,Right</TD><TD>Move focus up/down/left/right one step.</TD>
+</TR><TR><TD>Alt-Up,Alt-Down</TD><TD>Move horizontal split up/down.</TD>
+</TR><TR><TD>PgUp,PgDn</TD><TD>Move focus up/down one page.</TD>
+</TR><TR><TD>Home,End</TD><TD>Move focus to beginning/end of pane.</TD>
+</TR><TR><TD>Ctrl-F2</TD><TD>Reset program</TD>
+</TR></TABLE>
+
+<P>
+<B>Expressions can use:</B><BR>
+<TABLE border=1><TR>
+<TD>numbers</TD><TD>Decimal, hex, and octal is supported.</TD>
+</TR><TR><TD>operators</TD><TD>More or less the full C set (not counting
+                the assignment operators) is supported.</TD>
+</TR><TR><TD>parentheses</TD><TD>For grouping.
+</TR><TR><TD>symbols</TD><TD>The value is the address of the symbol.  An
+                initial underscore may be omitted if that
+                name is not used for another symbol.</TD>
+</TR><TR><TD>registers</TD><TD>8-, 16-, and 32-bit registers are supported.
+                If there is a symbol with the same name as a
+                register then a `%' must be prepended to the
+                name.</TD>
+</TR><TR><TD>'expr:size'</TD><TD>Reduces the operand to `size' bytes.</TD>
+</TR><TR><TD>'[expr]'</TD><TD>Evaluates to the 32-bit value at that address.</TD>
+</TR></TABLE>
+
+<I>All evaluation is done with 32-bit signed values, except
+shifts which use unsigned values.</I></P>
+
+
+<P>
+<B>Code pane keys:</B><BR>
+<TABLE border=1><TR>
+<TD>F2</TD><TD>Set breakpoint.</TD>
+</TR><TR><TD>F4</TD><TD>Run to instruction at focus.</TD>
+</TR><TR><TD>Return</TD><TD>Go to source.</TD>
+</TR><TR><TD>C-Left,C-Right</TD><TD>Start disassembly one byte earlier/later.</TD>
+</TR><TR><TD>C-g</TD><TD>Go to specified address.</TD>
+</TR><TR><TD>C-n</TD><TD>Set eip to instruction at cursor.</TD>
+</TR><TR><TD>C-o</TD><TD>Go to origin, i.e., current eip.</TD>
+</TR></TABLE>
+
+<P>
+<B>Register pane keys:</B><BR>
+<TABLE border=1><TR>
+<TD>C-d</TD><TD>Decrement register.</TD>
+</TR><TR><TD>C-i</TD><TD>Increment register.</TD>
+</TR><TR><TD>C-n</TD><TD>Negate register.</TD>
+</TR><TR><TD>C-z</TD><TD>Zero register.</TD>
+</TR><TR><TD>=</TD><TD>Enter new expression for register.</TD>
+</TR></TABLE>
+
+<P>
+<B>Flag pane keys:</B><BR>
+<TABLE border=1><TR>
+<TD>Space</TD><TD>Toggle flag.</TD>
+</TR><TR><TD>1,s</TD><TD>Set flag.</TD>
+</TR><TR><TD>0,r</TD><TD>Reset flag.</TD>
+</TR></TABLE>
+
+<I>Only the user flags are listed.  These are:</I><BR>
+<TABLE border=1><TR>
+<TH>Flag</TH><TH>Name</TH><TH>0 means</TH><TH>1 means</TH>
+</TR><TR><TD>c</TD><TD>Carry</TD><TD>none</TD><TD>carry</TD>
+</TR><TR><TD>p</TD><TD>Parity</TD><TD>odd</TD><TD>even</TD>
+</TR><TR><TD>a</TD><TD>Auxiliary</TD><TD>clear</TD><TD>half-carry</TD>
+</TR><TR><TD>z</TD><TD>Zero</TD><TD>nonzero</TD><TD>zero</TD>
+</TR><TR><TD>s</TD><TD>Sign</TD><TD>positive</TD><TD>negative</TD>
+</TR><TR><TD>i</TD><TD>Interrupt</TD><TD>disabled</TD><TD>enabled</TD>
+</TR><TR><TD>d</TD><TD>Direction</TD><TD>down</TD><TD>up</TD>
+</TR><TR><TD>o</TD><TD>Overflow</TD><TD>none</TD><TD>overflow</TD>
+</TR></TABLE>
+
+<P>
+<B>Breakpoint pane keys:</B><BR>
+<TABLE border=1><TR>
+<TD>Delete</TD><TD>Delete breakpoint.</TD>
+</TR><TR><TD>Enter</TD><TD>Edit condition and trigger count.</TD>
+</TR><TR><TD>C-g</TD><TD>Go to code affected by breakpoint.</TD>
+</TR></TABLE>
+<I>For code breakpoints you can enter a condition and a
+count controling when the breakpoint is triggered.</I>
+
+
+<P>
+<B>Data pane keys:</B><BR>
+<TABLE border=1><TR>
+<TD>C-Left,C-Right</TD><TD>Start data display one byte earlier/later.</TD>
+</TR><TR><TD>C-b</TD><TD>Display data as bytes.</TD>
+</TR><TR><TD>C-c</TD><TD>Go to the the current instruction.</TD>
+</TR><TR><TD>C-g</TD><TD>Go to specified address.</TD>
+</TR><TR><TD>C-l</TD><TD>Display data as 32-bit words (`longs').</TD>
+</TR><TR><TD>C-s</TD><TD>Go to the stack.</TD>
+</TR><TR><TD>C-w</TD><TD>Display data as 16-bit words.</TD>
+</TR><TR><TD>F2</TD><TD>Set data write breakpoint at focus.</TD>
+</TR><TR><TD>Alt-F2</TD><TD>Set data read/write breakpoint at focus.</TD>
+</TR><TR><TD>=</TD><TD>Enter new value or string.</TD>
+</TR></TABLE>
+
+<P>
+<B>Numeric processor pane keys:</B><BR>
+<TABLE border=1><TR>
+<TD>C-e</TD><TD>Empty register.
+</TR><TR><TD>C-z</TD><TD>Zero register.</TD>
+</TR><TR><TD>C-n</TD><TD>Negate register.</TD>
+</TR><TR><TD>=</TD><TD>Enter new value for register.</TD>
+</TR></TABLE>
+
+<P>
+<B>Stack pane keys:</B><BR>
+<TABLE border=1><TR>
+<TD>Enter</TD><TD>Go to code.</TD>
+</TR></TABLE>
+
+<P>
+<B>Where-is pane keys:</B><BR>
+<TABLE border=1><TR>
+<TD>Enter</TD><TD>Go to code/data.</TD>
+</TR><TR><TD>=</TD><TD>Enter new search expression.</TD>
+</TR></TABLE>
+
+<P>
+<B>Module pane keys:</B><BR>
+<TABLE border=1><TR>
+<TD>Enter</TD><TD>Show source for module.</TD>
+</TR></TABLE>
+
+<P>
+<B>Source pane keys:</B><BR>
+<TABLE border=1><TR>
+<TD>F2</TD><TD>Set breakpoint.</TD>
+</TR><TR><TD>F4</TD><TD>Run to instruction at focus.</TD>
+</TR><TR><TD>F8</TD><TD>Execute till next line or function return.</TD>
+</TR><TR><TD>Enter</TD><TD>Show code for line.</TD>
+</TR></TABLE>
+
+<P>
+<B>Watch pane keys:</B><BR>
+<TABLE border=1><TR>
+<TD>Delete</TD><TD>Delete watch.</TD>
+</TR><TR><TD>=</TD><TD>Add watch.</TD>
+</TR></TABLE>
+</BODY>
+</HTML>

@@ -1,0 +1,306 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>ECE291 Machine Problem 5</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.01Gold (Win95; I) [Netscape]">
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<TABLE WIDTH="100%" >
+<TR>
+<TD align=left   width=33%>ECE291</TD>
+
+<TD align=center width=34%>Computer Engineering II</TD>
+
+<TD align=right  width=33%>Plavcan, Summer 1997</TD>
+</TR>
+</TABLE>
+
+<H1 ALIGN=CENTER>Machine Problem 4: Paintboard<BR>
+Part II (Network Routines)</H1>
+
+<CENTER><TABLE BORDER=1 WIDTH="60%" >
+<TR>
+<TD align=right><B>Assigned</B></TD>
+
+<TD>Wednesday, July 23, 1997 </TD>
+</TR>
+
+<TR>
+<TD align=right><B>Due Date</B></TD>
+
+<TD>Tuesday, July 29, 1997, 5pm</TD>
+</TR>
+
+<TR>
+<TD align=right><B>Purpose: </B></TD>
+
+<TD>NetBIOS datagram broadcast/receive/callback</TD>
+</TR>
+
+<TR>
+<TD align=right><B>Points</B></TD>
+
+<TD>35</TD>
+</TR>
+</TABLE></CENTER>
+
+<P><!--
+
+<img src="../../icon/construct.gif"> This page is under construction</a>
+
+--></P>
+
+<H2>Introduction</H2>
+
+<P>Part II of MP4 will link together multiple paintboards into a networked
+group &quot;whiteboard&quot;, which everyone can see and write to. this
+is accomplished through the use of NetBIOS, a standard network interface
+available to users of DOS and Windows 95. Our new Paintboard supports three
+modes: standalone (network off), network leader, and network follower.
+When in StandAlone mode, the proram is identical to MP4 Part I. When in
+Leader mode, the program will broadcast the position of the mouse cursor
+and the button/color information. The network followers will all read this
+data, and move their mouse cursors and draw accordingly.</P>
+
+<H2>Network Implementation</H2>
+
+<P>The Paintboard's network functions support datagram broadcast:</P>
+
+<OL>
+<LI>Multiple followers per leader</LI>
+
+<LI>Multiple independent groups allowed</LI>
+
+<LI>Remote clear/save/testore/quit all supported</LI>
+
+<H2><IMG SRC="paint2.gif" HEIGHT=200 WIDTH=320 ALIGN=RIGHT></H2>
+</OL>
+
+<UL>
+<LI><I>All routines should preserve the values of any registers modified</I>
+</LI>
+
+<LI><I>Use proper segments where needed</I></LI>
+</UL>
+
+<P>There is no new source file for this part of the MP, only a new library
+with working versions of the network functions.You are encouraged to use
+these functions while you are debugging your code. Download MP4 Part II:<A HREF="mp4b.zip">mp4b.zip</A></P>
+
+<P>Once you have rewritten you coded your own Main and DrawScreen routines,
+you may write the other routines in any order that you wish. For all procedures,
+input and output values are passed to and from the procedures via registers.
+If a register is not specified as an output, its value should not be altered
+by the routine.</P>
+
+<H2>Library Subroutines</H2>
+
+<UL>
+<P>The following routines are included in MP4B.LIB for your use. Replace
+PAINT.INC in MP4.ASM with PAINT2.INC to provide a template for Network
+Control Blocks, and extra bitmaps fro DrawScreen.<BR>
+<I><U>You must replace these routines with your own code. </U></I></P>
+</UL>
+
+<UL>
+<TABLE BORDER=1 WIDTH="90%" >
+<TR VALIGN=TOP>
+<TD><B><FONT SIZE=+1>NetSend</FONT></B></TD>
+
+<TD>Send a datagram over NetBIOS using function A0h 
+<P><U>Inputs:</U> <BR>
+DS:DI - pointer to source buffer<BR>
+DS:SI - pointer to group name (16 bytes long)<BR>
+CX - length of buffer</P>
+
+<P><U>Outputs:<BR>
+</U>AL - NetBIOS return code</P>
+
+<P>This should be called by the network leader to report the mouse position/status.
+the buffer is 8 bytes long, and is of the format:</P>
+
+<TABLE BORDER=1 >
+<TR>
+<TD>Offset</TD>
+
+<TD>+0</TD>
+
+<TD>+2</TD>
+
+<TD>+4</TD>
+
+<TD>+6</TD>
+
+<TD>+7</TD>
+</TR>
+
+<TR>
+<TD>Value</TD>
+
+<TD>reserved</TD>
+
+<TD>X position</TD>
+
+<TD>Y position</TD>
+
+<TD>button status</TD>
+
+<TD>current <BR>
+drawing <BR>
+color</TD>
+</TR>
+</TABLE>
+</TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD><B><FONT SIZE=+1>NetRecv</FONT></B></TD>
+
+<TD>Install an ISR to receive a datagram using function A1h 
+<P><U>Inputs:</U> <BR>
+CS:DX - pointer to callback ISR<BR>
+DS:DI - pointer to input buffer<BR>
+CX - length of buffer</P>
+
+<P><U>Outputs:<BR>
+</U>AL - NetBIOS return code</P>
+
+<P>This routine should be used to install the NetPost procedure. The NetRecv
+procedure will return immediately, but when an incoming packet arrives,
+the callback ISR will be executed. Once a packet is received, a new call
+to NetRecv must be made to prepare for the next incoming packet.</P>
+</TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD><B><FONT SIZE=+1>NetPost</FONT></B></TD>
+
+<TD>Callback ISR for incoming datagrams 
+<P><U>Inputs:</U> <BR>
+None<BR>
+<U>Outputs:<BR>
+</U>None</P>
+
+<P>This routine should read the contents of the incoming packet, and set
+semaphore variables to report the mouse position and status.<BR>
+A global variable named NDONE has been defined. If this variable is 0,
+then NetPost should make a new call to NetRecv.</P>
+</TD>
+</TR>
+
+<TR>
+<TD>
+<H3>LibMain</H3>
+</TD>
+
+<TD>Psuedocode: 
+<OL>
+<LI>Set to mode 13h, clear the screen</LI>
+
+<LI>call DrawScreen</LI>
+
+<LI>get mouse position (either from Mouspos or fromthe semaphores set in
+Netpost)</LI>
+
+<LI>if mouse has just crossed between the drawing area and the toolbar
+region (~x=268), change the mouse cursor to glove (toolbar side) or arrow
+(drawing side) using MouseShape</LI>
+
+<LI>if mouse button is not pressed, goto 3</LI>
+
+<LI>if in drawing region, plot a pixel, goto 3</LI>
+
+<LI>if in toolbar region, find which button has been pressed:</LI>
+
+<UL>
+<LI>Palette: select a new color</LI>
+
+<LI>Clear: use DrawBox to clear drawing region to black</LI>
+
+<LI>Save: use GetBitMap to save drawing region</LI>
+
+<LI>Restore: use PutBitMap to restore the saved image</LI>
+
+<LI>Quit: goto to mode 3, exit program with mp4xit</LI>
+</UL>
+
+<LI>Goto 3</LI>
+</OL>
+</TD>
+</TR>
+
+<TR>
+<TD VALIGN=CENTER>
+<H3>DrawScreen</H3>
+</TD>
+
+<TD>Change this procedure to display a netork &quot;OFF&quot;,&quot;FOLLOW&quot;,&quot;LEAD&quot;
+button at the location (270,161) the three bitmaps are located in PAINT2.INC</TD>
+</TR>
+</TABLE>
+
+<P>In additon, the following routines have been given to you freely for
+your use. In addition, all of the exisiting MP4A.LIB routines are present.<BR>
+<I><U>You do not have to replace these procedures, as they cover issues
+beyond the scope of this MP:</U></I></P>
+
+<TABLE BORDER=1 WIDTH="90%" >
+<TR VALIGN=TOP>
+<TD VALIGN=CENTER><B><FONT SIZE=+1>NetInit</FONT></B></TD>
+
+<TD>Initialize the network<BR>
+<U>Inputs:</U> <BR>
+DS:SI - pointer to a string conatining the group name (16 bytes long)<BR>
+<U>Outputs:<BR>
+</U>AL - return code<BR>
+
+<P>This routine prepares NetBIOS with the name of your group. The only
+valid return codes are 0 and 0Dh. Any other should be considered an error,
+and the program should abort.</P>
+</TD>
+</TR>
+
+<TR>
+<TD><B><FONT SIZE=+1>NetDone</FONT></B></TD>
+
+<TD>Remove names from NetBIOS directory.<BR>
+<U>Inputs:</U> <BR>
+DS:SI - pointer to string containing the group name (16 bytes long)<BR>
+<U>Outputs:<BR>
+</U>None<BR>
+
+<P>Call this from your main before calling MP4xit</P>
+</TD>
+</TR>
+
+<TR>
+<TD><B><FONT SIZE=+1>MouseTo</FONT></B></TD>
+
+<TD>Move the mouse cursor to a new location<BR>
+<U>Inputs:</U> <BR>
+CX - x coordinate<BR>
+DX- y- coordinate<BR>
+<U>Outputs:<BR>
+</U>None 
+<P>Call this from your NetPost procedure.</P>
+</TD>
+</TR>
+</TABLE>
+
+<H2>Hints:</H2>
+
+<OL>
+<LI>The ISR is simple to write if you use lots of semaphores to pass information
+back to the main program</LI>
+
+<LI>When the network leader is not moving their mouse, the program should
+NOT broadcast information.</LI>
+</OL>
+</UL>
+
+<P>
+<HR></P>
+
+</BODY>
+</HTML>

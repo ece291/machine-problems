@@ -1,0 +1,327 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv=Content-Type content="text/html; charset=unicode"><%
+title = "ECE291 Machine Problem 3"
+subtitle = "Machine Problem 3"
+%>
+<!--#include file="headvb.asp"-->
+<BODY>
+
+<h1 align="center">Machine Problem 3: Nybbles</h1>
+
+<div align="center"><center>
+<table border=0 cellpadding=2 cellspacing=2 width="60%">
+  <tr><td align=right bgcolor="#efefef"><b>Assigned</b></td>
+    <td bgcolor="#efefef">Monday, 2/25/2002</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Due Date</b></td>
+    <td bgcolor="#efefef">Wednesday, 3/13/2002</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Purpose</b></td>
+    <td bgcolor="#efefef">Software and Hardware Interrupts, Text-Mode Video,
+      Artifical Intelligence</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Points</b></td>
+    <td bgcolor="#efefef">75</td></tr>
+</table>
+</center></div>
+
+<span class="update"><strong>Updates:</strong></span><br>
+2/28 HandleCollisions was corrected to reference Worm.grow instead of Worm.size
+<br>3/07 TimerISR inputs/outputs re-worded slightly
+
+<h2>Problem Description</h2>
+
+<p>Many of you are probably familiar with the basis for this game: you control a
+worm-like character that is in constant motion.  The goal of Nybbles is to byte all the food (which increases the length of your
+worm) without running into a wall or even into yourself. (And yes, the bad pun
+is intended. It won't be mentioned again).</p>
+
+<p>Here we will extend this classic into a two player game against a computer
+AI.  We will be using 80x50 character text-mode-video and both
+keyboard and timer interrupts. We will poll the AI for its next move at the
+beginning of timeslice.
+</p>
+
+<h2>Further Details
+</h2>
+
+<ul>
+  <li><a href="docs.html#io">Input/Output</a></li>
+  <li><a href="docs.html#logic">Game Logic</a></li>
+  <li><a href="docs.html#main">Main Function</a></li>
+</ul>
+
+<h2>Subroutines</h2>
+
+<p>In this section there is a listing of the inputs, outputs, and
+summarized actions of each function you will need to write. Refer to
+the above linked information for more details on what is required.</p>
+
+<h3>MP3Main</h3>
+<ul>
+  <li><b>Inputs:</b>  Reads from [quit], [update], and move elements
+    of worm structures</li>
+  <li><b>Outputs:</b>  none directly</li>
+<!--
+  <li><b>Outputs:</b>  Writes to [Map], and [update]</li>
+-->
+  <li><b>Purpose:</b>  Provide the main loop during which worms advance, collide,
+    grow as necessary, and win</li>
+  <li><b>Calls:</b>   MoveWorm, HandleCollisions, AIWorm</li>
+  <li><b>Hints:</b>    Follow the order on the details page</li>
+</ul>
+<h3>MoveWorm</h3>
+<ul>
+  <li><b>Inputs:</b> bx = offset of player or opponent worm structure
+  </li>
+  <li><b>Outputs:</b>  none directly</li>
+  <li><b>Purpose:</b>  Moves the worm in one of the four directions</li>
+  <li><b>Calls:</b> GetWormHead, RedrawWorm, AddHeadSeg</li>
+  <li><b>Hints:</b>  Movement is only allowed forward or perpendicular to the
+    current direction</li>
+</ul>
+<h3>RedrawWorm</h3>
+<ul>
+  <li><b>Inputs:</b> bx = offset of player or opponent worm structure
+  </li>
+  <li><b>Outputs:</b>  Writes to grow and size elements of the worm structure, [Map], and the screen.</li>
+  <li><b>Purpose:</b>  Draws the new head segment and (possibly) removes the old tail
+    segment</li>
+  <li><b>Calls:</b> DelTailSeg</li>
+  <li><b>Hints:</b>
+    <ul>
+      <li>Don't remove the old tail segment if the worm needs to grow; instead
+        update the size and grow elements</li>
+      <li>If you remove the tail segment, remember to overwrite the copy on the
+	screen AND in [Map]</li>
+      <li>Let HandleCollision add the new head segment to [Map]</li>
+    </ul>
+  </li>
+</ul>
+<h3>AddHeadSeg</h3>
+<ul>
+  <li><b>Inputs:</b>
+    <ul>
+      <li>bx = offset of player or opponent worm structure</li>
+      <li>cx = x,y coordinate for new segment</li>
+    </ul>
+  </li>
+  <li><b>Outputs:</b>  Writes to body and head elements of the worm structure</li>
+  <li><b>Purpose:</b>  Add the leading segment of the worm</li>
+  <li><b>Calls:</b>  none</li>
+  <li><b>Hints:</b> &nbsp;
+    <ul>
+      <li>Don't forget about the circular nature of the body array</li>
+      <li>Remember that the head element is a direct pointer, not an offset from
+        the worm structure</li>
+    </ul>
+  </li>
+</ul>
+<h3>DelTailSeg</h3>
+<ul>
+  <li><b>Inputs:</b> bx = offset of player or opponent worm structure</li>
+  <li><b>Outputs:</b>  Writes to body and tail elements of the worm structure</li>
+  <li><b>Purpose:</b>  Delete a segment at the worm's tail</li>
+  <li><b>Calls:</b>  none</li>
+  <li><b>Hints:</b> &nbsp;
+    <ul>
+      <li>Don't forget about the circular nature of the body array</li>
+      <li>Remember that the tail element is a direct pointer, not an offset from
+        the worm structure</li>
+    </ul>
+  </li>
+</ul>
+<h3>GetWormHead</h3>
+<ul>
+  <li><b>Inputs:</b> bx = offset of player or opponent worm structure</li>
+  <li><b>Outputs:</b>
+    <ul>
+      <li>cx = segment at worm head</li>
+      <li>dx = segment just before worm head</li>
+    </ul>
+  </li>
+  <li><b>Purpose:</b>  gets the x,y locations of the head and &quot;neck&quot;
+    segments</li>
+  <li><b>Calls:</b>  none</li>
+  <li><b>Hints:</b>  Navigate the circular list carefully</li>
+</ul>
+<h3>HandleCollisions</h3>
+<ul>
+  <li><b>Inputs:</b>
+    <ul>
+      <li>bx = offset of player or opponent worm structure</li>
+      <li>Reads from [Map]</li>
+    </ul>
+  </li>
+  <li><b>Outputs:</b>  Writes to [quit], [winlose], [Map], and possibly the Worm.grow
+	structure</li>
+  <li><b>Purpose:</b>  Detect collisions with numbers and obstacles</li>
+  <li><b>Calls:</b>   GetWormHead, CreateNumber</li>
+  <li><b>Hints:</b>  Don't check for all different possibilities.</li>
+</ul>
+<h3>CreateNumber</h3>
+<ul>
+  <li><b>Inputs:</b>
+    Reads from [level]
+  </li>
+  <li><b>Outputs:</b>  Writes to [level], [numloc], [Map] and the screen</li>
+  <li><b>Purpose:</b>   Place the next number</li>
+  <li><b>Calls:</b>  rand</li>
+  <li><b>Hints:</b>
+    <ul>
+      <li>[numloc] is an x,y stored in a word</li>
+      <li>Make sure the location in the Map is available, or get a new random location</li>
+    </ul>
+  </li>
+</ul>
+<h3>AIWorm</h3>
+<ul>
+  <li><b>Inputs:</b>
+    <ul>
+      <li>bx = offset of opponent worm structure</li>
+      <li>  Reads from [Map], [numloc], any helper data you decide to use</li>
+    </ul>
+  </li>
+  <li><b>Outputs:</b> Writes to the Worm.move structure
+    element, any helper data you decide to use</li>
+  <li><b>Purpose:</b>  Chooses the next move of the computer controlled worm</li>
+  <li><b>Calls:</b>  any helper functions you decide to use</li>
+  <li><b>Hints:</b>
+    <ul>
+      <li>[numloc] is an x,y stored in a word</li>
+      <li>Scoring on this function is unusual; make sure you understand it</li>
+    </ul>
+  </li>
+</ul>
+<h3>KeyboardISR</h3>
+<ul>
+  <li><b>Inputs:</b>  Reads from the keyboard port</li>
+  <li><b>Outputs:</b>  Writes to the player Worm.move structure
+    element</li>
+  <li><b>Purpose:</b>  Set the move element of the player worm struct</li>
+  <li><b>Calls:</b> none</li>
+  <li><b>Hints:</b>  Use the MOVE_(DIRECTION) constants declared at the top.</li>
+</ul>
+<h3>TimerISR</h3>
+<ul>
+  <li><b>Inputs:</b>  Reads from [counter], Worm.move elements of player
+    and opponent worm structures</li>
+  <li><b>Outputs:</b>  Writes to [counter], [update], Worm.move elements of player
+    and opponent worm structures</li>
+  <li><b>Purpose:</b>  Times the game, giving the worms a constant speed update
+    by setting game control variables</li>
+  <li><b>Calls:</b> none</li>
+  <li><b>Hints:</b>
+    <ul>
+      <li>Don't change a non-zero move element</li>
+      <li>If [counter] is above or equal to DELAYTICKS, subtract DELAYTICKS, set [update], and set
+        the move elements if needed</li>
+      <li>Chain into the old timer ISR</li>
+    </ul>
+  </li>
+</ul>
+<h3>InstallInt</h3>
+<ul>
+  <li><b>Inputs:</b>
+    <ul>
+      <li>al = interrupt number</li>
+      <li>dx = offset of new vector</li>
+      <li>si = offset to store old vector</li>
+    </ul>
+  </li>
+  <li><b>Outputs:</b> none</li>
+  <li><b>Purpose:</b> save offset of the old ISR, and install a new ISR</li>
+  <li><b>Calls:</b> none</li>
+  <li><b>Hints:</b>  See lecture notes and/or DOS interrupt subfunctions 25h and
+    35h</li>
+</ul>
+<h3>RemoveInt</h3>
+<ul>
+  <li><b>Inputs:</b>
+    <ul>
+      <li>al = interrupt number</li>
+      <li>si = offset of original vector</li>
+    </ul>
+  </li>
+  <li><b>Outputs:</b> none</li>
+  <li><b>Purpose:</b> restore original ISR</li>
+  <li><b>Calls:</b> none</li>
+  <li><b>Hints:</b>  See InstallInt</li>
+</ul>
+
+
+<H2>Hints</H2>
+<ul>
+
+  <li>The libmp3 file contains executable library functions 
+  for each of the routines that you need to implement. This allows you to run 
+  the program and understand how it works before you implement it. You can test 
+  your program by stepping through it and making sure the display and 
+  comparison functions work correctly. You will only receive credit, however, 
+  for the routines that you implement yourself. 
+
+  <li>When debugging your code in Turbo Debugger, you will 
+  find it helpful to use the memory window to show you the memory location of 
+  the file and strings. You can also use the watch window to keep track of 
+  variables in your code. 
+
+  <li>Run the program many times to get a good feel of 
+  it. Your final program with your code should resemble our version.
+  Formatting aesthetics aren't as important as correctly operating code. 
+
+  <li>Do not forget to push and pop to avoid clobbering 
+  registers! 
+
+  <li>Using constants makes your code easier to read, and thus easier to debug! 
+
+  <li>Remember to include function headers for and 
+  write comments in each of your functions! Headers should give a general 
+  idea of what the function does and have a list of inputs, outputs, and called 
+  functions. Commenting should be specific enough to allow a function to 
+  be understood by just reading the comments. Commenting every line, 
+  however, is excessive and may cost you some points. 
+
+  <li>START EARLY! 
+
+  <li>Monitor the <A href="news:uiuc.class.ece291">newsgroup</a> for
+clarifications and help.</li>
+
+</ul>
+
+<h2>Procedure</h2>
+<ul>
+  <li>You will begin this MP with the following files:
+  <ul>
+    <li><tt>MP3.ASM</tt>: Program Framework
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled and
+    linked.
+    <li><tt>libmp3.lib</tt>: Library functions for MP3
+    <li><tt>lib291.lib</tt>: General-purpose library functions </li></ul>
+  <li>You may copy these files from the network drive to your home directory
+  with the following command: <br><tt>xcopy /s V:\ece291\mp3 W:\mp3</tt><br>or
+  download the files from this server as <a href="mp3.zip">mp3.zip</a>
+  <li>Add your code to <tt>MP3.ASM</tt>.
+  <li>Assemble and link your program by typing<br><tt>make</tt><br>This command
+  reads <em>Makefile</em> then invokes NASM and LINK to build an executable
+  program.
+  <li>Use Turbo Debugger (TD) to find and correct program errors.</li>
+</ul>
+
+<h2>Final Steps</h2>
+<ol>
+
+  <li>Demonstrate your MP3.EXE to a TA. You may be asked to 
+  recompile and demo the program. Your program must work with all given input. 
+
+  <li>Be prepared to answer questions about any aspect of 
+  the operation of your program. The TAs will not accept an MP if you cannot 
+  fully explain your code and your implementation. Delayed MPs will be subject 
+  to late penalties as described in the course syllabus (10% pts per day). 
+
+  <li>The TA will complete the code submission procedure.</li>
+
+</ol>
+
+<hr>
+
+<h2><a href="mp3.asm">MP3.ASM</a> (program framework)</h2>
+
+</BODY></HTML>

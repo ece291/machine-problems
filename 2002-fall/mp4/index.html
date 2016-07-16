@@ -1,0 +1,564 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD><STYLE><!--
+strike { background-color: #aaa; }
+	    --></STYLE>
+<%
+title = "ECE291 Machine Problem 4"
+subtitle = "Machine Problem 4"
+%>
+<!--#include file="headvb.asp"-->
+<BODY>
+
+
+<TABLE border=0 cellPadding=7 cellSpacing=1 width="100%">
+  <TBODY>
+  <TR>
+    <TD vAlign=top>
+      <H1 align=center>Machine Problem 4: Interrupts and Text Mode Video</H1>
+      <DIV align=center>
+      <CENTER>
+      <TABLE border=1 width=513>
+        <TBODY>
+        <TR>
+          <TD align=right width=64>Assigned</TD>
+          <TD width=433>Tuesday, 15 October 2002</TD></TR>
+        <TR>
+          <TD align=right width=64>Due Date</TD>
+          <TD width=433>Wednesday, 30 October 2002, 5:00 p.m.</TD></TR>
+        <TR>
+          <TD align=right width=64>Purpose</TD>
+          <TD width=433 Roman?>To understand interrupt-driven I/O, control
+          of the video display, and queues.</TD></TR>
+        <TR>
+          <TD align=right width=64>Points</FONT></TD>
+          <TD width=433>60</TD></TR></TBODY></TABLE></CENTER></DIV>
+          
+<BLOCKQUOTE>
+Imagine if all cars had nonstandard engines that were built by hand.
+And imagine that each make of car needed its own special fuel, which
+had to be hand blended in a laboratory.... Computer users have come
+to accept such a bizarre situation as normal.  Most software is still
+constructed piece by piece by highly trained craftsmen--a costly and
+inefficient practice reminiscent of the blacksmiths and wood-carvers
+of past centuries."  --Robert Haavind, <i>Technology Review</i>, Feb/Mar 1992
+</BLOCKQUOTE>
+
+<P>You will write a program MP4 that implements the popular worm video game.
+This program is similar to the Nybbles machine problem assigned in Spring 2002,
+but the internal structure is completely different.</p>
+
+<P>Files for MP4 are on the <tt>V:</tt> drive in the directory <tt>V:\ece291\mp4</tt>.
+In this directory are the program framework <tt>mp4.asm</tt> and a 
+running version of the program <tt>mp4lab.exe</tt>. Lab versions of subroutines
+are in <tt>libmp4.lib</tt>, which contains all subroutines of LIB291 plus 
+libInit, libKbdInt, libTask1, libTask2, libCheckLegal, libGenFood, libEnq, 
+and libDeq. You will use mp4xit instead of dosxit.
+You should start by copying these files to your home directory with the following command: <BR>
+<TT>xcopy /s V:\ece291\mp4 W:\mp4</TT><BR>
+You may download the files from the server as 
+<A href="http://courses.engr.illinois.edu/ece291/mp/mp4/mp4.zip">mp4.zip</A>  </p>
+
+<p> Reading: Lab Notes, Sections 10.1 (Keyboard), 11.1 (Text Mode) <br>
+Reference: Lab Notes, Section 11.3 (Interrupt 10h)</p>
+
+<H2>Program Specification</H2>
+
+<p>
+A multi-segment worm travels across the 80x25 display screen.
+The user presses the arrow keys to change the direction of the worm head
+right, up, left, and down.
+When the worm head reaches a food pellet, the worm grows by 4 body segments.
+The game ends when the worm head hits the boundary of the display or one
+of its current body segments. Pressing the ESC key exits the program.
+</p> 
+
+<h2>Program Organization</h2>
+
+<P>In this machine problem, the main procedure is provided for you; 
+however, you must write the code to replace the library subroutines 
+libInit, libKbdInt, libTask1, libTask2, libCheckLegal, libGenFood, libEnq, and
+libDeq. You will replace these subroutines from the libmp4 library by deleting the 
+statements that call the libmp4 subroutine and by adding your own code. 
+Each subroutine that you write should match the output of the library 
+subroutine exactly.</P>
+
+<p>
+The program uses the following global variables:
+<pre>
+SavKOff RESW    1                       ; Keyboard interrupt vector
+SavKSeg RESW    1
+SavTOff RESW    1                       ; User timer interrupt vector
+SavTSeg RESW    1
+Ticks   DW      0                       ; Number of timer ticks
+Dir     DW      0                       ; 0=right, 1=up, 2=left, 3=down
+State   DB      0                       ; Positive if growing, 0 if normal,
+                                        ;   -1 if stopped
+Food    DW      0FFFFh                  ; Location of food pellet
+</pre>
+<p>
+<tt>SavKOff</tt> and <tt>SavKSeg</tt> are the offset and segment
+words in the original keyboard interrupt vector (type 9). 
+Similarly <tt>SavTOff</tt>
+and <tt>SavTSeg</tt> are the offset and segment words in the original user
+timer interrupt vector (type 1Ch).<br>
+<tt>Dir</tt> specifies the current direction of movement of the worm head: 0 
+for moving right, 1 for up, 2 for left, 3 for down.
+<br>
+<tt>State</tt> is -1 if the worm has stopped, 0 if it is moving normally, and
+a positive value if it is growing. For a growing worm, <tt>State</tt> specifies
+the number of body segments to be added.
+<br>
+<tt>Food</tt> specifies the location of the food pellet: row in high byte, 
+column in low byte.
+</p>
+
+<p>
+The program uses two circular queues: a Keyboard Queue to store keyboard scan
+codes and a Worm Queue to store the locations of body segments of the worm. The 
+implementation of these queues is different from the implementations in class
+and in Spring 2002.
+<pre>
+QBeg    EQU     0                       ; Beginning offset of queue area
+QCap    EQU     2                       ; Capacity of of queue
+QFront  EQU     4                       ; Index of front item
+QRear   EQU     6                       ; Index of rear item
+QCount  EQU     8                       ; How many items currently in queue
+QData   EQU     10                      ; Byte to input or output
+
+KQList  RESB    0                       ; Parameter list for Keyboard Queue
+KQBeg   DW      KQArea                  ; Offset of Keyboard Queue area
+KQCap   DW      10
+KQFront DW      0
+KQRear  DW      -1
+KQCount DW      0
+KQData  RESB    1
+KQArea  RESB    10
+
+WQList  RESB    0                       ; Parameter list for Worm Queue
+WQBeg   DW      WQArea                  ; Offset of Worm Queue area
+WQCap   DW      80*25*2
+WQFront DW      0                       ; Index of tail of worm
+WQRear  DW      -1                      ; Index of head of worm
+WQCount DW      0
+WQData  RESB    1
+WQArea  RESB    80*25*2
+</pre>
+Each queue is specified by a parameter list.  The first word of the list
+specifies the offset of the first byte of the queue area, where data are stored.
+The second word is the capacity of the queue.
+The third word of the parameter list is the <i>index</i> of the byte at the front 
+of the queue, and the fourth word is the <i>index</i> of the byte at the rear
+of the queue.  These indices run from 0 to the capacity minus 1.  The byte at
+the front of the queue is the first to be dequeued.  The byte at the rear of the
+queue was the last to be enqueued.  The fifth word of the parameter list is
+a count of the number of items currently stored in the queue.  Enq uses the
+Data byte on the parameter list for the item to be enqueued, and Deq delivers
+the dequeued item into this byte.
+</p>
+On the Worm Queue, information about the location of each body segment occupies
+two bytes: the location column and row enqueued in the order
+column first, then row second.
+<p>
+</p>
+
+<p>The mp4.asm program framework has the User timer interrupt service routine
+TimInt and a random number generator subroutine Rand.
+</p>
+
+<P>You will replace each of the subroutines listed below with your own code.
+Document each subroutine with a header. 
+</P>
+      <TABLE border=1>
+        <TBODY>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Init</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Initializes interrupt vectors, the video display, and the worm
+              <LI>Inputs: 
+              <UL>
+                <LI>None</LI></UL>
+              <LI>Outputs: 
+              <UL>
+                <LI>SavTOff, SavTSeg, SavKOff, SavKSeg</LI></UL>
+              <LI>Calls: Enq</li> 
+              <LI> 
+Init saves the old User timer and Keyboard interrupt vectors and changes
+them to point to the interrupt service routines TimerInt and KbdInt. Init uses
+<tt>INT 10h</tt> to select 80x25 text video mode and to clear the display area. 
+Init displays the initial
+worm with four body segments, including the head, at the middle of the screen
+and calls Enq to enqueue each column and row of the body segments onto the
+Worm Queue.
+              </LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>KbdInt</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Interrupt service routine for keyboard
+              <LI>Inputs: 
+              <UL>
+                <LI>None</LI></UL>
+              <LI>Outputs: 
+              <UL>
+                <LI>None</LI></UL>
+              <LI>Calls: Enq</li> 
+              <LI> 
+KeyInt enqueues the scan code from the keyboard onto the Keyboard Queue
+with a call to Enq.
+Most of this routine is specified on page 91 of the ECE 291 Lab Notes.
+              </LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Task1</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Processes one scan code byte 
+              <LI>Inputs: 
+              <UL>
+                <LI>None</LI></UL>
+              <LI>Outputs: 
+              <UL>
+                <LI>None </li></ul>
+              <LI>Calls: Deq
+              <LI>
+Task1 first checks that the Keyboard Queue is nonempty.  If so, then 
+Task1 dequeues the byte at the front of the Keyboard Queue. If it is 
+the scan code for the ESC key, then Task1 restores the old interrupt
+vectors and exits to DOS. If the byte is the scan code for an arrow
+key, then Task1 changes Dir appropriately. Otherwise, no action is taken.
+              </LI></UL></TD></tr>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Task2</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Update the display of the worm 
+              <LI>Inputs: 
+              <ul>
+                <li>none </LI></ul>
+              </li>
+              <LI>Outputs: 
+              <UL>
+                <LI> None </li></UL>
+              <LI>Calls: Deq, Enq, CheckLegal, GenFood </LI>
+              <li> 
+Task2 exits if either fewer than 3 ticks have elapsed or the 
+State is -1. Otherwise, Task2 subtracts 3 from Ticks. If State
+is 0, then Task2 dequeues the column and row of the worm's tail from
+the Worm Queue and erases the display of the tail.  If State is
+greater than 0, then Task2 omits this step but decrements State
+by 1. Next, Task2 updates the position of the head in the
+direction specified by Dir. Task2 calls CheckLegal to determine
+whether the new head position would be outside the display 
+screen or a location of part of the body of the worm. If it is,
+then Task2 changes State to -1 to stop the worm and changes
+the display of the head. Otherwise, if the new position is legal,
+then Task2 replaces the current head by a regular body character,
+displays the head in the new position, and enqueues the column and
+row of the new head position onto the Worm Queue. If the new
+head position is the same as the location of a food pellet, then
+Task2 calls GenFood to generate a new food pellet and adds 4
+to State.
+         </li></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>CheckLegal</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Determines whether a position is inside the boundaries
+              and not part of the worm body
+              <LI>Inputs: 
+              <UL>
+                <LI> (DL) = column</LI>
+                <li> (DH) = row </li>
+              </UL>
+              <LI>Output: 
+              <UL>
+                <LI> (CL) = 1 if legal, 0 if not</LI></UL>
+              <LI>Calls: None </li>
+              <li>
+CheckLegal inspects entries on the Worm Queue to determine whether
+the input location specified by DL and DH is currently part of the 
+body of the worm.  If the input location is part of the body of the
+worm or outside the 80x25 area, then CheckLegal sets CL to 0.
+Otherwise, CheckLegal sets CL to 1.
+</LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>GenFood</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Generates a food pellet at a random location
+              <LI>Inputs: 
+              <ul>
+                <li>None
+                </LI></ul>
+              </li>
+              <LI>Outputs: 
+              <UL>
+                <LI> Food </li></UL>
+              <LI>Calls: CheckLegal, Rand </LI>
+              <li> 
+GenFood calls Rand to generate a random column and a random row,
+then calls CheckLegal; if the random location is currently part
+of the worm body, then GenFood repeats this process.
+Once GenFood determines that the location is legal, it stores the new
+location in Food and displays a food pellet on the screen.
+ </LI></UL></TD></tr>
+         <TR vAlign=top>
+          <TD><B><FONT size=+1>Enq</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Enqueues a byte on a circular queue
+              <LI>Inputs: 
+              <ul>
+                <li>(BX) = offset of queue list structure</li>
+                <li>[BX+QData] = byte to enqueue
+                </LI></ul>
+              </li>
+              <LI>Outputs: 
+              <UL>
+                <LI> None </li></UL>
+              <LI>Calls: None</LI>
+              <li> 
+If the count of the number of bytes on the queue is less than the maximum,
+then Enq enqueues the byte at [BX+QData] onto the rear of the circular queue,
+updating [BX+QCount] and [BX+QRear].
+ </LI></UL></TD></tr>
+         <TR vAlign=top>
+          <TD><B><FONT size=+1>Deq</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Dequeue a byte from a circular queue
+              <LI>Input: 
+              <ul>
+                <li>(BX) = offset of queue list structure</li>
+                </ul>
+              </li>
+              <LI>Output: 
+              <UL>
+                <li>[BX+QData] = byte dequeued
+                </LI></UL>
+              <LI>Calls: None</LI>
+              <li> 
+If the queue is not empty, then Deq dequeues the byte from the
+front of the queue, places the byte in [BX+QData], and updates
+[BX+QCount] and [BX+QFront].
+ </LI></UL></TD></tr>
+ </TBODY></TABLE>
+
+<h2>Optional Features</h2>
+<ul>
+<li>You may choose your own colors and characters for the worm head, worm body,
+and food pellet.</li>
+<li>You may draw a border at the boundary of the display. By drawing a boundary,
+you would reduce the number of rows and columns available for the worm and
+the food pellets.</li>
+<li>You may keep count of the number of food pellets the worm has eaten and
+print the score when the game ends.</li>
+<li>You may increase the speed of the worm as the game progresses.
+</ul>
+
+<H2>Friendly Advice</H2>
+<UL>
+<LI>The libmp4.lib file contains executable library subroutines for each of 
+the routines that you need to implement. The library subroutines allow
+you to run the program and understand how it works before you implement it. 
+You can test your program with any combinations of your own code and library 
+subroutines. You will receive credit only for the subroutines that 
+you implement yourself. </li>
+<LI>You may define new memory variables as needed. Variables associated with a 
+subroutine should be declared between the header comments and name label of the
+subroutine.</li>
+<li>You may design and implement additional subroutines.</li>
+<li>Each subroutine should save and restore any registers that it uses,
+except for registers that deliver subroutine outputs.  The caller 
+may use registers without outputs and expect them to remain unchanged. </li>
+<li>To hide the cursor, Init can use INT 10h to move the cursor
+to a location not on the display, such as row 25.</li>
+<li>KbdInt should save and restore all registers that it uses. </li>
+<li>The part of Task1 that dequeues a byte from the Keyboard Queue is a critical
+section. Protect it with CLI/STI. </li>
+<li>Access entries in the Worm Queue carefully. For each body segment
+there is a pair of bytes; the column location is in the lower address, the row
+in the higher address of the pair.
+<LI>Monitor the newsgroups <A href="news:uiuc.class.ece291">uiuc.class.ece291</A> 
+and for <A href="news:uiuc.class.ece291.announce">uiuc.class.ece291.announce</A>
+clarifications and help.</li>
+<LI>START EARLY!</LI>
+</UL>
+
+<h2>Demonstration, Documentation, and Grading</h2>
+<p>Demonstrate your program to an ECE 291 staff member. He will ask you several
+questions about the operation of your program.</p>
+<p>As before, keep an MP development log and write a cover memo, which should
+be submitted with the program after the demonstration.
+The cover memo should address the following questions:
+<UL>
+<LI>How much time did you spend on each subroutine, from
+planning and design through final debugging? </LI>
+<LI>What kinds of defects (bugs) did you find during the development 
+of the program? When did you discover these defects (during
+code review or during testing)? How did you find them?</LI>
+<LI>What did you learn about design, coding, testing, and debugging
+in this MP?</LI>
+<LI>What went well in your work on this MP?  What did not?</LI>
+<LI>What you would do differently for the next MP?</LI>
+<LI>If you did the optional debugging exercises, then 
+please comment on the usefulness of those exercises.
+</UL>
+<p>Your program will be graded according to the clarity of your design
+and the quality of your documentation.</p>
+
+<HR>
+
+      <H2>mp4.asm (program framework)</H2><FONT size=-1>
+      <PRE>
+; MP4 - Worm program
+
+; Michael Loui
+; 5 October 2002
+
+; This program implements a version of the worm video game
+
+        BITS    16
+
+;====== SECTION 1: Define constants =======================================
+
+        CR      EQU     0Dh             ; Carriage return
+        LF      EQU     0Ah             ; Line feed
+        BS      EQU     08h             ; Backspace
+        SPACE   EQU     20h             ; Space
+        KVEC    EQU     0024h           ; Location of Keyboard Vector
+        TVEC    EQU     0070h           ; Location of User Timer Vector
+        ESCSCAN EQU      1              ; Scan code for ESC key
+        UP      EQU     72              ; Scan code for up arrow
+        LEFT    EQU     75              ; Scan code for left arrow
+        RIGHT   EQU     77              ; Scan code for right arrow
+        DOWN    EQU     80              ; Scan code for down arrow
+        ROWS    EQU     25              ; Number of rows on screen
+        COLS    EQU     80              ; Number of columns on screen
+
+; You may redefine the attribute/character constants below
+        Smile   EQU     0E02h           ; Worm head: smile 
+        Dead    EQU     0E0Fh           ; Dead worm head
+        Body    EQU     0EFEh           ; Worm body segment
+        
+;====== SECTION 2: Declare external procedures ============================
+
+EXTERN  ascbin, binasc, kbdin, dspout, dspmsg, dosxit
+EXTERN  libInit, libKbdInt, libTask1, libTask2, libCheckLegal
+EXTERN  libGenFood, libEnq, libDeq
+GLOBAL  SavKOff, SavKSeg, SavTOff, SavTSeg, Ticks
+GLOBAL  Dir, State, Food, KQList, WQList
+
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        RESB    64*8
+stacktop:
+        RESB    0                       ; NASM bug workaround 
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+hdmsg   DB      CR,LF,'This is MP4LAB','$'
+
+SavKOff RESW    1                       ; Keyboard interrupt vector
+SavKSeg RESW    1
+SavTOff RESW    1                       ; Timer interrupt vector
+SavTSeg RESW    1
+Ticks   DW      0                       ; Number of timer ticks
+
+Dir     DW      0                       ; 0=right, 1=up, 2=left, 3=down
+State   DB      0                       ; Positive if growing, 0 normal,
+                                        ;   -1 if stopped
+Food    DW      0FFFFh                  ; Location of food pellet
+        
+QBeg    EQU     0                       ; Beginning offset of queue area
+QCap    EQU     2                       ; Capacity of of queue
+QFront  EQU     4                       ; Index of front item
+QRear   EQU     6                       ; Index of rear item
+QCount  EQU     8                       ; How many items currently in queue
+QData   EQU     10                      ; Byte to input or output
+
+KQList  RESB    0                       ; Parameter list for Keyboard Queue
+KQBeg   DW      KQArea                  ; Offset of Keyboard Queue area
+KQCap   DW      10
+KQFront DW      0
+KQRear  DW      -1
+KQCount DW      0
+KQData  RESB    1
+KQArea  RESB    10
+
+WQList  RESB    0                       ; Parameter list for Worm Queue
+WQBeg   DW      WQArea                  ; Offset of Worm Queue area
+WQCap   DW      COLS*ROWS*2
+WQFront DW      0                       ; Index of tail of worm
+WQRear  DW      -1                      ; Index of head of worm
+WQCount DW      0
+WQData  RESB    1
+WQArea  RESB    COLS*ROWS*2
+
+R       DW      1                       ; Current stored random number
+
+; You may declare additional variables here
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        MOV     AX, CS                  ; Initialize Default Segment register
+        MOV     DS, AX  
+        MOV     AX, stkseg              ; Initialize Stack Segment register
+        MOV     SS, AX
+        MOV     SP, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+main:
+        CALL    Init                    ; Initialization
+        
+        MOV     AH, 2Ch                 ; Get current time of day
+        INT     21h                     ;   (DH) = secs, (DL) = hundredths of secs
+        MOV     WORD [R], DX            ; Initialize stored random number
+        CALL    GenFood                 ; First food pellet
+    
+.Loop:
+        CALL    Task1     
+        CALL    Task2
+        JMP     .Loop
+
+; Interrupt service routine for timer        
+TimerInt:
+        ADD     WORD [CS:Ticks], 1
+        IRET        
+        
+; Subroutine Rand 
+; Generates random number
+;       Inputs  (CX) -- range of random number
+;               R -- current stored random number
+;       Ouput   (AX) -- random number in range 0 .. (CX)-1
+C2053   DW      2053
+C13849  DW      13849
+C216M1  DW      0FFFFh                  ; 2^16 - 1
+RandOut RESW    1
+
+Rand:
+        PUSHA
+        MOV     AX, WORD [R]            ; Current random number
+        MUL     WORD [C2053]
+        ADD     AX, WORD [C13849]
+        ADC     DX, 0                   ; Propagate carry to DX
+        DIV     WORD [C216M1]           ; Remainder is in DX
+        MOV     WORD [R], DX            ; New random number
+        MOV     AX, DX 
+        MOV     DX, 0                   ; Prepare for division
+        DIV     CX
+        MOV     [RandOut], DX           ; In range 0, ..., (CX) - 1
+        POPA
+        MOV     AX, [RandOut]
+        RET            
+
+;====== SECTION 8: Your subroutines =======================================
+
+</PRE></FONT></TD></TR></TBODY></TABLE>
+<!--#include file="foot.asp"-->

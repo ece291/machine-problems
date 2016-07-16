@@ -1,0 +1,155 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>Development Environment</title>
+</head>
+
+<body>
+
+<P><FONT size=+2><U>Development Environment</U></FONT></P>
+<P>The development environment used for this MP is different from all of your other MP's.  For this
+MP, you will be using the DJGPP compiler system and the NASM assembler.</P>
+<P>DJGPP is a complete 32-bit C/C++ development system for Intel 80386 (and higher) PCs
+running DOS (or Win95/98/NT). It includes ports of many GNU development utilities (gcc, g++,
+gdb, etc). The development tools require a 80386 or newer computer to run, as do the programs
+they produce. In most cases, the programs it produces can be sold commercially without license
+or royalties.</P>
+<P>NASM is the Netwide Assembler, a free portable assembler for the Intel 80x86 microprocessor
+series, which uses the traditional Intel instruction mnemonics and syntax.  It has extensive macro
+capabilities and is generally more straightforward in usage (fewer directives and assumptions)
+than MASM.&nbsp; There is an <i>excellent</i> helpfile about NASM in <a href="file:///C:/djgpp/contrib/nasm/doc/nasmdoc.hlp">V:\djgpp\contrib\nasm\doc\nasmdoc.hlp</a>&nbsp;
+(This is a helpfile for a slightly older version of NASM, so some of the macro
+stuff might be different, and we'll put it on the desktop of the lab machines.)</P>
+<P>The programs produced by DJGPP run 32-bit protected mode.  The transition from real-mode to
+protected-mode is provided by the DJGPP real-mode stub, which calls DPMI (the DOS Protected
+Mode Interface).  DPMI is also used by DJGPP programs to allocate memory, set interrupt
+vectors, and perform protected-mode to real-mode (and vice-versa) interrupt call translations. 
+DPMI functionality is provided by all versions of Windows and under plain DOS by a free utility
+(included with DJGPP) called CWSDPMI.</P>
+<P>Normally setting up DJGPP and NASM requires the downloading of numerous (20+) ZIP files
+and some minor configuration.  However, a fully installed and configured version of DJGPP is
+available on the lab machines.  This installation also includes NASM 0.98, the latest version of
+NASM.  To set the environment variables required by DJGPP, run <a href="file:///C:/djgpp/djgpp.bat">V:\djgpp\djgpp.bat</a>&nbsp;
+(This should be done automatically in autoexec.bat on the lab machines.)</P>
+<P>If you want to develop at home, everything you need is in the <a href="file:///C:/djgpp/djgpp.bat">V:\djgpp\</a>
+directory.&nbsp; Just copy this folder onto your own machine and run <a href="file:///C:/djgpp/djgpp.bat">djgpp.bat</a>
+to set the path.</P>
+
+<p><b>Stuff to Do:</b></p>
+<p>Make an tutorial folder.&nbsp; Make an basic.asm file.&nbsp; Put this into the
+basic.asm file:&nbsp; (I know we could have made an tutorial.zip with everything in it,
+but then you wouldn't learn anything.)</p>
+<table border="1" width="100%" height="100">
+  <tr>
+    <td width="100%" height="94"><pre>BITS 32          ; Tell NASM we're using 32-bit protected mode.
+
+GLOBAL _main     ; Tells the linker about the label called _main
+
+SECTION .text    ; Says that this is the start of the code section.
+     
+_main:           ; Code execution will start at the label called _main
+   mov eax, 42   ; The simplest thing I could think of
+   ret           ; Return to DJGPP's crt0 library startup code</pre></td>
+  </tr>
+</table>
+
+<P>Type &quot;<b><samp>nasm -f coff basic.asm&nbsp; -l basic.lst</samp></b>&quot;&nbsp;&nbsp;
+A quick run of &quot;<b><samp>nasm -hf</samp></b>&quot; will inform you that this assembles your .asm
+file and creates &quot;<b><samp>basic.o</samp></b>&quot; in the form of a coff object file.&nbsp;
+(This is the format that the DJGPP linker can read.)&nbsp; The object file contains
+your assembled code, your data, and information about your variable and label
+names so that the linker can link your object file with other object files. It
+also creates a list file called &quot;<b><samp>basic.lst</samp></b>&quot; which the debugger uses
+to match up lines of code with assembled opcodes.&nbsp; This is just a text
+file, so you can look at it in a text editor.&nbsp; Look at it.&nbsp; You see
+your code with line numbers, addresses, and data tacked on to your code.</P>
+
+<P>Type &quot;<b><samp>objdump --disassemble-all basic.o</samp></b>&quot; to disassemble the
+object file that NASM created.&nbsp; Look at stuff.&nbsp; This is the
+information that's in an object file.<b><br>
+</b><br>
+Type &quot;<b><samp>ld -o basic --cref -Map basic.map v:/djgpp/lib/crt0.o basic.o -Lv:/djgpp/lib
+-Lv:/djgpp/lib/gcc-lib/djgpp/2.81 -lgcc -lc</samp></b>&quot; which runs the linker to
+take our basic.o file and link it with a bunch of standard C and C++
+libraries.&nbsp; (You don't actually use any of these libraries, but you still
+need to do this because it's the ctr0.o where your _main is actually
+called.)&nbsp; A linker takes a bunch of assembled object files and sticks them
+all in the same object file.&nbsp; You can call routines or access variables in
+my .asm files as long as I declare them public.&nbsp; When I declare something
+public, NASM will put a put it's name and address into the object file it
+creates.&nbsp; Your .asm file, with it's reference to my routine or variable,
+will be assembled into an object file with an unresolved link.&nbsp; The linker
+takes these two object files, matches up the names, and puts the address of my
+routine into your code instead of just a name.&nbsp; You can run &quot;<b><samp>ld --h
+| more</samp></b>&quot; to see what this command-line means.&nbsp; (That's what I had
+to do.)</P>
+
+<ul>
+  <li>&quot;<b><samp>-o simple</samp></b>&quot; sets the linker's output file to a file
+    called &quot;simple&quot; (with no extension.)</li>
+  <li>&quot;<b><samp>--cref</samp></b>&quot; creates an output cross reference table.&nbsp;
+    This adds cross references (what's calling what) into the map file.</li>
+  <li>&quot;<b><samp>-Map tutorial.map</samp></b>&quot; tells it to create a map file called
+    &quot;tutorial.map&quot;&nbsp; This is used by the debugger to get the offsets
+    of the modules and the functions.&nbsp; It doesn't give the offset of every
+    line, though.&nbsp; For this, you need the list file from NASM.&nbsp; Open
+    up the map file to see what kind of information it has.</li>
+  <li>&quot;<b><samp>v:/djgpp/lib/crt0.o basic.o</samp></b>&quot; tells the linker the
+    object files to link together and in what order.&nbsp; The first thing you
+    list will be the first thing that will go into the output file, and the
+    place where program execution starts. The first thing you want in your
+    output file is crt0.o&nbsp;&nbsp; This is the standard C library that sets
+    up some stuff (environment variables, command line, etc) and finally call's
+    your C-style _main.&nbsp; The second object we link in is, of course, the
+    object you created with your _main.</li>
+  <li>&quot;<b><samp>-Lv:/djgpp/lib -Lv:/djgpp/lib/gcc-lib/djgpp/2.81</samp></b>&quot; Sets
+    up two paths for the libraries.</li>
+  <li>&quot;<b><samp>-lgcc -lc</samp></b>&quot; tells the linker to link in GCC's &quot;libgcc.a&quot;
+    and &quot;libc.a&quot; libraries. (The &quot;-l&quot; takes the name you
+    give it, sticks on a &quot;lib&quot; in front, a &quot;.a&quot; in back, and
+    looks in the library paths you gave it with &quot;-L&quot; for this file.)</li>
+</ul>
+<p>Type &quot;<b><samp>objdump --disassemble-all simple > out.txt</samp></b>&quot; and look
+at out.txt (which is now huge) to see the dump of the object file it created
+with all the libraries.&nbsp; Find &lt;start&gt; and &lt;exit&gt;.&nbsp;
+&lt;start&gt; is where protected mode execution actually starts.&nbsp; It
+eventually calls your &lt;_main&gt;&nbsp; When &lt;_main&gt; returns, you end up
+in the &lt;exit&gt; code which calls the &lt;_exit&gt; code which calls the &lt;__exit&gt;
+code.&nbsp; This is how C works.&nbsp; Be afraid.&nbsp; Be very afraid.</p>
+<p>Type &quot;<b><samp>stubify simple</samp></b>&quot;&nbsp; which takes the raw coff format
+executable that ld spits out.&nbsp; It creates a real-mode DOS executable that:
+makes the switch from real-mode to protected mode, requests memory for your
+program, loads your program, and begins execution at the first instruction
+(which is at the beginning of crt.o)</p>
+<p>Type &quot;<b><samp>objdump --disassemble-all basic.exe > out.txt</samp></b>&quot; and
+look at out.txt to see the dump of the with the stub added.&nbsp; &quot;Hey, it
+looks the same!&quot;&nbsp; I think this is because all of the GNU development
+tools strip off the .exe headers and the stubs.</p>
+<p>Type &quot;<b><samp>simple</samp></b>&quot; to <i>finally</i> run your program.&nbsp;
+Nothing happened?&nbsp; Good.&nbsp; Awe at the fact that you only actually
+had one line of your own assembly, yet twenty million things had to go on to get
+you into and out of protected mode, to load your code, to interact with the
+operating system, to toggle the bits in the microprocessor, to manipulate the
+quantum state of billions and billions of electrons, etc, etc...</p>
+<p>Type &quot;<b><samp>cv32 simple</samp></b>&quot; to actually see what's going on.&nbsp;
+This is the best 32-bit debugger we have so far.&nbsp; Hit <b>F8</b> a few times
+to step through.&nbsp; (Go slow, or you'll miss your one line!) <b>Alt-H</b>
+brings up a help screen.&nbsp; <b>Alt-X</b> exits.&nbsp; More on this after we
+have a better program to debug.</p>
+
+<P><FONT size=+2><U>What Actually Happened When You Ran Your Program</U></FONT></P>
+<P>The startup of a DJGPP protected-mode program is far more complex than a real-mode MASM
+program.  First, DOS reads in the real-mode stub and executes it.  This real-mode stub checks to
+see if DPMI is available, and then uses it to switch to
+protected mode.  After switching to protected mode, it then asks the operating
+system to allocate memory for the program's
+code and data segments, loads the protected mode image from disk, and then directs processor
+execution into the DJGPP crt0 library startup code.  Crt0 does some dirty work such as reading
+the command line and initializing the standard library, and then runs your _main.</P>
+
+</body>
+
+</html>

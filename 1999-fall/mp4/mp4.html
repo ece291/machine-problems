@@ -1,0 +1,1061 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD><TITLE>MP4</TITLE>
+<META content="text/html; charset=iso-8859-1" http-equiv=Content-Type>
+<BODY bgColor=#ffffff>&nbsp; 
+<TABLE border=0 cellPadding=3 width="100%">
+  <TR>
+    <TD align=left width="33%">ECE291</TD>
+    <TD align=middle width="34%">Computer Engineering II</TD>
+    <TD align=right width="33%">Kalbarczyk, Fall 1999</TD></TR></TABLE>
+<CENTER>
+<H1>Machine Problem 4: Paint Application</H1></CENTER>
+<CENTER>
+<TABLE border=1 cellPadding=3 width="60%">
+  <TR>
+    <TD align=right><B>Purpose</B></TD>
+    <TD>Video graphics, Image data, Geometry, Frame-Buffer</TD></TR>
+  <TR>
+    <TD align=right><B>Points</B></TD>
+    <TD>50</TD></TR>
+  <TR>
+    <TD align=right><B>Due Date</B></TD>
+    <TD>Tuesday 11/09/99 </TD></TR></TABLE></CENTER>
+
+<!-- <CENTER><B><I>This MP is under Construction</I></B></CENTER> -->
+
+<H2>Introduction</H2>
+<P>
+One of the first programs I loved to play with when I was first learning
+computers was the paint program that came with my Apple IIe.  It was the
+ultimate outlet for young creative genius, as my parents would have led
+me to believe.  But all happy stories come to an end: I grew up and I
+realized that using such a program is not all there is to happiness.
+Instead, creating a program that lets others create is the obvious path
+to self-fulfillment.
+</P> <P>
+Enter ECE291.  It will be your job to realize this childhood dream I
+just made up.  By writing a basic paint program, you will learn many
+things.  One is how to manage video mode 13h, the first video mode one
+should be introduced to.  Another is handling the mouse and keyboard
+together.  Thirdly, double buffering as more than a flicker reduction
+device.  The fourth is the framework that modern computing systems
+follow in a much more intricate form: the asynchronous Event Queue with
+the synchronous Event Loop.
+</P>
+<CENTER><IMG SRC=mp4.gif ALIGN=CENTER width="652" height="459"></CENTER>
+<H2>Event Loops</H2>
+<P>
+Windows follows the notion of an Event Loop: a user or the network can
+provide asynchronous interrupt events, be it data coming in from the
+web, typing on the keyboard, or motion of the mouse.  As ISRs must be
+kept short, the program cannot handle everything it must do in response
+to the interrupts within the ISR.  Instead, it adds a record of the
+event to a queue.  The program runs as one massive state-machine loop,
+in which it reads in an event from the queue, processes it, and loops
+again.
+</P><P>
+The Paint Application will let you keep this Event Queue simple - only
+Mouse data must be considered.  All keyboard input will be handled
+synchronously (part of the main loop of the program, not an ISR).  The
+mouse must be handled as an ISR.
+</P>
+<H2>Handling the Mouse</H2>
+<P>
+Writing a full ISR for a mouse would probably be a complete pain to
+debug.  Luckily for us, the provided ISR is very well designed: it
+provides a method to implement a Callback function.  The ISR will handle
+reading the mouse and will only call your callback on the occasions you
+ask it to.  Check the information in your lab book, and in the books in
+the lab (ask a TA), or on the Web.  For this application, you will only
+need to monitor the left button and pointer motion.  Place the event in
+the Event Queue - our minimal event loop.
+</P>
+<H2>The Event Queue</H2>
+The event queue is used to ensure no mouse movements get lost while you
+are handling the previous ones.  You will need to understand this to
+construct your mouse handler so it can talk to Main. To implement the
+queue we need a structure which contains all information for each event,
+and we need to keep track of the locations currently filled by the
+queue.  For this queue, we will use a circular array representation;
+just remember these rules:
+<UL>
+ <LI><TT>Queue</TT> is the queue (<TT>offset Queue</TT> refers to the
+ front of the queue)
+ <LI><TT>QueueFirst</TT> holds the offset of the first entry in the
+ queue.
+ <LI><TT>QueueNumEvents</TT> holds the number of Events in the queue.
+ <LI>Use <TT>QUEUE_ELEMENTS</TT> (number of events that fit into the
+ queue) and <TT>QUEUE_SIZE</TT> (total number of bytes allocated for the
+ queue) to calculate the positions of the elements, and to not write
+ outside of the queue.
+ <LI>If <TT>QueueNumEvents</TT> is equal to <TT>QUEUE_ELEMENTS</TT>,
+ then no elements may be added to the queue.
+ <LI>If <TT>QueueNumEvents</TT> is zero, it implies the Queue is empty.
+</UL>
+</P><P>
+The Event structure is as follows:<BR>
+<PRE>Event  STRUC
+  X       dw    ?       ; X coordinate in screen pixels from left
+  Y       dw    ?       ; Y coordinate in screen pixels from top
+  Buttons db    ?       ; Button status (in mouse handler format)
+Event ENDS</PRE><BR>
+This allows us to pass information around carefully, and efficiently.
+When you add an event to the queue, increase the <TT>QueueNumEvents</TT>
+counter appropriately.  Don't forget to wrap around the tail end of the
+queue when placing the event in memory.  Follow the rule that if
+increasing it causes you to run into the front of the
+<TT>QueueFirst</TT> you should not add it.  Instead, you would normally
+set some error flag, but we will not bother to handle this.
+</P><P>
+Another time you should not add anything to your queue is when it is a
+redundant event.  Specifically, if there is anything in your queue, and
+the current event has the same buttons pressed as the last event, do
+<b>not</b> add the new event to your queue.
+</P>
+<CENTER><IMG SRC="queue.gif" WIDTH=382 HEIGHT=203 ALIGN="center"></CENTER>
+<P>
+Use <TT>SIZEOF EVENT</TT> to refer to the number of bytes in an event,
+and <TT>(EVENT PTR [BX]).X</TT> to refer to the X data for an event at
+the offset stored in bx (si and di work as well), etc.
+</P>
+<H2>The Main Loop</H2>
+<P>
+The Main Loop is what brings the program together.  It will read in the
+information gathered by your mouse handler and call the appropriate
+functionality of your program.  If you're drawing a rectangle, and you
+have moved the mouse, it will refresh the screen to show the new
+rectangle, only committing it to the buffer once the mouse button is
+pressed.  
+</P><P>
+This code is provided free of charge.  You can count on main working as
+long as your functions work correctly and preserve all changed
+registers.  If you do not preserve registers, there are no such
+guarantees.
+</P><P>
+All events occur when you click the mouse button.  You click once to
+select the line tool, a second time to select the starting position of
+the line, and a third time to select the end position of the line.  Text
+is stored for good when you press enter.
+</P>
+<H2>The Double Buffer</H2>
+<P>
+Double Buffering is a method of doing all video operations on a
+duplicate block in memory and then blasting them all at once to the real
+video memory.  This reduces flicker and actually speeds things up (due
+to the lower number of separate writes to the more slowly accessed video
+system).  We are going to primarily use it to speed things up, but also
+use it to give us one level of preview.
+</P><P>
+We get this level of preview by making our functions able to write to
+either the <B>screen</B> or the <B>ScreenBuffer</B>.  When we have
+selected one point in a line, for example, as we move the mouse we can
+draw the would-be line to the current mouse position as a preview on the
+<B>screen</B>.  When we then click to select the second point, we commit
+the change by writing the results to the <B>ScreenBuffer</B>.
+</P><P>
+The buffer will be called <B>ScreenBuffer</B>.  <B>ScreenBuffer</B>
+holds 320x200=64,000 bytes of data, and therefore is kept in its own
+segment <B>SBSeg</B>.  This exact copy of what will go onto the screen
+is in the same form as the memory mapped video memory you will be
+accessing, so you can merely copy the data from one to the other.  To
+access this other segment you will need to use the keyword
+<B><TT>SEG</TT></B>.  <B><TT>SEG</TT></B> works much like
+<B><TT>Offset</TT></B> does in that it assembles to a constant value -
+that of the segment the variable is in.  <TT>(Seg ScreenBuffer):[offset
+ScreenBuffer]</TT> effectively computes to the linear address of your
+ScreenBuffer (but is not a useful thing to assemble).  For example,
+consider this code: 
+
+</P><P>
+<TABLE border=1 cellPadding=0>
+  <TR>
+    <TD><TT>MySeg SEGMENT PUBLIC 'DATA1'<BR>&nbsp;&nbsp;Var1 
+      DB<BR>
+      &nbsp;&nbsp;Var2 DW<BR>
+      MySeg ENDS<BR>
+      .<BR>
+      .<BR>
+      .<BR>
+      MOV AX, SEG  Var1<BR>
+      MOV ES, AX <BR>
+      MOV ES:Var1, 10</TT></TD></TR></TABLE>
+
+</P><P>
+After the last three lines are executed, ES will contain the segment that 
+<TT>Var1</TT> is contained within, i.e., <TT>MySeg</TT>, and 10 will be
+written to the actual variable Var1 (in the proper segment). 
+</P><P>
+Now, the important part.  For this paint program we want to use a
+technique called rubberbanding to keep the user informed about what he
+is drawing.  For instance, you click the mouse on one point, and as you
+move the mouse before you release it, you want the currently chosen line
+to show on the screen.  Meanwhile, since it hasn't been chosen yet, you
+want to not save it to your actual picture data.  Instead, write it
+directly to <TT>VidSeg</TT> without writing to the buffer.
+</P><P>
+We will handle this by passing a parameter to each drawing function
+which identifies the segment to which the drawing should be done.  This
+segment will either be that of your buffer or that of the mapped video
+memory.  By writing the function modularly, only main needs to handle
+this information.
+</P>
+<H2>Drawing Pixels</H2>
+<P>
+To draw a pixel to the screen, you must figure out where in memory it
+resides.  Thankfully, those who created the memory mapping system didn't
+have a mean streak.  For a given point X<SUB>1</SUB>,Y<SUB>1</SUB>,
+merely multiply Y<SUB>1</SUB> by the row width, then add X<SUB>1</SUB>.
+This is your offset to the chosen segment.  This is very much like text
+mode, but there is one vital difference:  in text mode, there were two
+bytes per character, whereas in Mode 13h graphics there is one byte per
+pixel in a 320x200 pixel screen.
+</P><P>
+Unfortunately, you must consider one other issue.  Your program's user
+must not be able to draw lines all over the screen -- they must be
+restricted to the drawing area.  For convienence, some constants have
+been EQU declared: <TT>MINX</TT>, <TT>MINY</TT>, <TT>MAXX</TT>, and
+<TT>MAXY</TT>.  These paired coordinates are all valid coordinates, but
+they are the smallest and largest (respectively) that you may draw to.
+Don't forget you can do math with these like (MINX-1) that you can't do
+with variables.  This is legal because it is assembled to a single
+immediate number.  Note: this may be especially crucial in FloodFill.  
+</P>
+<H2>Drawing Lines</H2>
+<P>
+There are many methods for drawing lines.  For an example of one called
+Bresenham's Line Algorithm, see <a
+href="/ece291/lecture/l19.html">Lecture 19</A>.  The following
+paragraphs in this writeup describe another.
+</P><P>
+In order to compute the (x,y) coordinates for each point, P, along a
+line, we must choose an indepedent variable. If we choose y as the
+independent variable, then our code will need to compute x as a function
+of y for all points between the endpoints of the line. For the line
+connecting P<SUB>1</SUB> and P<SUB>2</SUB>, we can compute each (x,y)
+point as x = x<SUB>1</SUB> +
+(y-y<SUB>1</SUB>)*(x<SUB>2</SUB>-x<SUB>1</SUB>)/(y<SUB>2</SUB>-y<SUB>1</SUB>)
+for each value of y between y<SUB>1</SUB> and y<SUB>2</SUB>. The
+following figure illustrates how this is done: 
+</P>
+<CENTER><IMG src="pointslope.jpg" width="361" height="230"></CENTER>
+
+<H2>General Notes</H2>
+<UL>
+ <LI>Look at the Grading Sheet to know what we are looking for in your
+ finished MP.
+ <LI>Print only the Grade Sheet, 4-UP, Double-Sided, under retribution
+ from Your Friendly TAs.
+ <LI>Test out your program versus the Grade Sheet to make sure your
+ program works perfectly <B>before</b> asking to handin.
+</UL>
+<H2>Procedures</H2>
+<UL>
+  <LI>This assignment has several procedures. As usual, you will receive credit 
+  by replacing each of the procedures listed below with your own code. 
+  <LI>Experiment with the working code to gain a full understanding of how the 
+  program works. The library version of LIBMP4 contains fully functional 
+  versions of the routines. Much of their functionality can be seen by running 
+  the program and testing each of the buttons.
+  <LI>All subroutines should be <I>modular</I>. For this MP, we will be using 
+  C-style procedures. To simplify coding, MASM provides the <TT>INVOKE</TT> and 
+  the <TT>PROTO</TT> directives. The <TT>PROTO</TT> directive allows you to 
+  define a C-style function, and the <TT>INVOKE</TT> directive allows you to 
+  call a C-style function. For example, the following code would define a 
+  function MyFunc with word-size parameters Input1 and Input2: 
+  <LI>Debugging may be attempted with CodeView, but be forewarned that
+  it is difficult.  CodeView needs to be told that the graphics mode is
+  switched, and that the mouse is being used.  Use the command line
+  <TT>CV /50 /S /M MP4</TT> for this MP, and be warned that the mouse
+  won't work from within CodeView.  Alternately, write some test invokes
+  into Main, and you can codeview them with just <TT>CV /50 /S MP4</TT>.
+  <P>
+  <TABLE border=1 cellPadding=0>
+    <TR>
+      <TD><FONT face=courier size=-2>MyFunc PROTO near C, Input1:word, 
+        Input2:word<BR><BR>Variable dw 9<BR><BR>MyFunc PROC near C uses SI DI, 
+        Input1:word, Input2:word<BR><BR>..<BR>MOV SI, Input1 ; Let MASM 
+        automatically compute Input1==SS:[BP+4]<BR>MOV DI, Input2 ; Let MASM 
+        automatically compute Input2==SS:[BP+6]<BR>..<BR>RET<BR>MyFunc 
+        ENDP<BR><BR>.<BR>.<BR>.<BR><BR>MOV BX, 5<BR><BR>INVOKE MyFunc, BX, 
+        Variable <BR>. . . </FONT></TD></TR></TABLE><BR>Notice that when 
+  defining our procedure, we use the <B><TT>uses</TT></B> clause to have MASM 
+  automatically save registers SI and DI for us. This way, we do not need to 
+  push and pop registers to save them. Effectively, MASM generates the following 
+  code: 
+  <P>
+  <TABLE border=1 cellPadding=0>
+    <TBODY>
+    <TR>
+      <TD><FONT face=courier size=-2>MyFunc PROTO near C, Input1:word, 
+        Input2:word<BR><BR>Variable dw 9<BR><BR>MyFunc PROC near<BR>PUSH 
+        BP<BR>MOV BP, SP<BR><BR>PUSH SI<BR>PUSH DI<BR><BR>MOV SI, SS:[BP+4]; Near 
+        procedures have 2 less bytes on stack <BR>MOV DI, SS:[BP+6]; Near 
+        procedures have 2 less bytes on stack<BR>.<BR>.<BR>.<BR><BR>POP 
+        DI<BR>POP SI<BR><BR>POP BP<BR>RET <BR>MyFunc 
+        ENDP<BR><BR>.<BR>.<BR>.<BR><BR>MOV BX, 5<BR><BR>PUSH Variable<BR>PUSH 
+        BX<BR>CALL MyFunc . . . </FONT></TD></TR></TBODY></TABLE><BR>It is important 
+  that you not use register AX as an argument to a function. This is because 
+  MASM uses AX to push some types of arguments to the stack, thereby overwriting 
+  any input you may have provided. You can find more information about MASM 
+  directives using <tt>masm /h</TT>. 
+  <P></P>
+
+<!-- Procedures -->
+<LI><B><FONT size=+2>WritePixel</FONT></B>
+<UL>
+  <LI><B>Purpose:</B> Draws pixel in specified location on segment Target
+  <LI><B>Inputs:</B> X1, Y1, Color, Target
+  <LI><B>Outputs:</B> None
+  <LI><B>Notes:</B> Make sure to clip X1,Y1 values so the pixel is only drawn within drawing-area boundaries
+  <LI><B>Points:</B> 4
+</UL>
+<LI><B><FONT size=+2>ReadPixel</FONT></B>
+<UL>
+  <LI><B>Purpose:</B> Reads pixel from specified location in segment Target
+  <LI><B>Inputs:</B> X1, Y1, Target
+  <LI><B>Outputs:</B> al = color
+  <LI><B>Points:</B> 4
+</UL>
+<LI><B><FONT size=+2>DrawLine</FONT></B>
+<UL>
+  <LI><B>Purpose:</B> Draws line from X1,Y1 to X2,Y2 on Target
+  <LI><B>Inputs:</B> X1,Y1, X2,Y2, Color, Target
+  <LI><B>Outputs:</B> None
+  <LI><B>Notes:</B> Use any desired algorithm.  Think about it before
+  asking the TAs.
+  <LI><B>May Call:</B> DrawPixel
+  <LI><B>Points:</B> 7
+</UL>
+<LI><B><FONT size=+2>DrawRectangle</FONT></B>
+<UL>
+  <LI><B>Purpose:</B> Draws Rectangle with opposite corners X1,Y1, X2,Y2
+  <LI><B>Inputs:</B> X1,Y1, X2,Y2, Color, Target
+  <LI><B>Outputs:</B> None
+  <LI><B>Notes:</B> Sides are parallel to the screen.  Think about it
+  before asking the TAs.
+  <LI><B>May Call:</B> DrawPixel
+  <LI><B>Points:</B> 4
+</UL>
+<LI><B><FONT size=+2>FloodFill</FONT></B>
+<UL>
+  <LI><B>Not Required!</B>
+  <LI><B>Purpose:</B> Fills area on Target segment
+  <LI><B>Inputs:</B> X1, Y1, Color, Target
+  <LI><B>Outputs:</B> None
+  <LI><B>Notes:</B> Fill can be implemented either recursively or iteratively, replacing all connected areas of the same color as selected with the new color.  Think about it before asking the TAs.
+  <LI><B>Calls:</B> DrawPixel
+  <LI><B>Points:</B> 0 - implement this for a Blue Star
+</UL>
+<LI><B><FONT size=+2>DrawText</FONT></B>
+<UL>
+  <LI><B>Purpose:</B> Draw String at Chosen Position
+  <LI><B>Inputs:</B>
+    <UL>
+      <LI>TextString - offset to '$' terminated string
+      <LI>X1,Y1, Color, Target - Upper Left Corner and Color to draw text in, on what target.
+    </UL>
+  <LI><B>Outputs:</B> None
+  <LI><B>Notes:</B>
+    <UL>
+      <LI>Reads a bitmap of a character from <TT>Fontmap</TT>. Look at the <TT>Letters.pcx</TT> file to see how these bitmaps are arranged. Any character that does not have a valid bitmap should just be displayed as a filled 8x8 block.
+      <LI>The text string that is provided as input is terminated with a '$'.
+      <LI>The text string should appear transparent on top of other pixels.
+      <LI>Notice that the bitmaps use dark blue pixels (palette entry 1) to mark each letter. The blue color should be replaced with Color. Non-blue pixels represent invisible pixels and should not be replaced in the final image.
+    </UL>
+  <LI><B>Hints:</B>
+    <UL>
+      <LI>Use the given lookup table to determine where the bitmaps are located.
+      <LI>Don't forget to clip text appropriately when writing text to the drawing-area.
+    </UL>
+  <LI><B>May Call:</B> DrawPixel
+  <LI><B>Points:</B> 8
+</UL>
+<LI><B><FONT size=+2>LoadPCX</FONT></B>
+<UL>
+  <LI><B>Purpose:</B> Load PCX into buffer
+  <LI><B>Inputs:</B>
+    <UL>
+      <LI>LoadSeg - Segment of buffer for loading PCX
+      <LI>LoadOffset - Offset of buffer
+      <LI>Filename - Offset of 0 terminated filename string
+    </UL>
+  <LI><B>Outputs:</B>
+    <UL>
+      <LI>ax = Wid of PCX
+      <LI>bx = Height of PCX
+    </UL>
+  <LI><B>Notes:</B>
+    <UL>
+      <LI>You may assume the PCX will be 320x200, but still return the
+      width and height in ax and bx
+      <LI>Watch end of screen boundary cases; see your lab notebook!
+    </UL>
+  <LI><B>Points:</B> 5
+</UL>
+<LI><B><FONT size=+2>DrawPCX</FONT></B>
+<UL>
+  <LI><B>Purpose:</B> Draws a PCX onto target
+  <LI><B>Inputs:</B>
+    <UL>
+      <LI>X1, Y1 - upper-left corner placement of image data in target
+      320x200 segment -- <B>Ignore these and assume 0,0</B>, but be
+      warned that the Load Button won't function correctly when you do so.
+      <LI>Wid, Height - Size of source PCX -- <B>Ignore these and assume
+      320x200</B>
+      <LI>LoadSeg - Segment PCX was loaded into
+      <LI>LoadOffset - Offset PCX was loaded into
+      <LI>ToArea - whether to mask PCX to drawing area
+      <LI>Target - what target segment to draw on.
+    </UL>
+  <LI><B>Notes:</B> This is used both for Buffer->Screen transfers as
+  well as PCX->Buffer Transfers
+  <LI><B>Points:</B> 8
+</UL>
+<LI><B><FONT size=+2>InstallMouse</FONT></B>
+<UL>
+  <LI><B>Purpose:</B> Install MouseCallback
+  <LI><B>Inputs:</B> None
+  <LI><B>Outputs:</B> CF=1 on error, 0 otherwise
+  <LI><B>Notes:</B>
+    <UL>
+      <LI>We want to trigger on mouse movement and left button
+      presses/releases.
+      <LI>See your lab notebook, notes above.
+    </UL>
+  <LI><B>Points:</B> 4 (Shared with RemoveMouse; you must do both for the points)
+</UL>
+<LI><B><FONT size=+2>MouseCallback</FONT></B>
+<UL>
+  <LI><B>Purpose:</B> Repackages mouse information for main loop to handle
+  <LI><B>Inputs:</B>
+    <UL>
+      <LI>Mouse Status from ISR<UL>
+          <LI> AX = condition mask causing call
+          <LI> CX = horizontal cursor position (0..639)
+          <LI> DX = vertical cursor position (0..199)
+          <LI> DI = horizontal counts
+          <LI> SI = vertical counts
+          <LI> DS = mouse driver data segment
+          <LI> BX = button state: bit 0 is left button (1=pressed)
+      </UL>
+      <LI>MouseEventMask (not passed)
+    </UL>
+  <LI><B>Outputs:</B> Packaged information in Event Queue
+  <LI><B>Notes:</B>
+    <UL>
+      <LI>Only add events to the queue if the button status changes, or the queue is empty.
+      <LI>Wrap around the end of the Queue appropriately.
+      <LI>Report events in terms of screen pixels
+    </UL>
+  <LI><B>Hints:</B>
+    <UL>
+      <LI>Use MouseEventMask to decide what events the main program needs.
+      <LI>Don't call functions (asynchronously) from Mousehandler - MainLoop will call them synchronously
+      <LI>What is a fast way to divide by two?
+    </UL>
+  <LI><B>Points:</B> 6
+</UL>
+<LI><B><FONT size=+2>RemoveMouse</FONT></B>
+<UL>
+  <LI><B>Purpose:</B> Remove the MouseCallback prior to exiting the program
+  <LI><B>Inputs:</B> None
+  <LI><B>Outputs:</B> None
+  <LI><B>Points:</B> 4 (Shared with InstallMouse; you must do both for the points)
+</UL>
+<LI><B><FONT size=+2>MainLoop</FONT></B>
+<UL>
+  <LI><B>Not Required!</B>
+  <LI><B>Purpose:</B> Handle all controlling aspects of the program
+  <LI><B>Notes:</B>
+    <UL>
+      <LI>You don't need to implement this - it is already given!
+      <LI>Keep track of Paint291's state.
+      <LI>Read from the Event Queue to decide next action.
+      <LI>If there are no events, wait until there are.
+      <LI>Call the other functions modularly.
+    </UL>
+  <LI><B>Hints:</B>
+    <UL>
+      <LI>Declare more variables to hold extra information like last pixel(s) in a polygon, etc.
+      <LI>Don't make called functions require state memory.
+    </UL>
+  <LI><B>Points:</B> Possible Gold Star if you implement this.  But you
+  <I>really</I> don't want to.
+</UL>
+<!-- End Procedures -->
+</UL>
+<H2>Preliminary Procedure</H2>
+<UL>
+  <LI>Copy the empty MP4 program (<TT>MP4.ASM</TT>), the libraries 
+  (<TT>libmp4.lib</TT> and <TT>lib291.lib</TT>), and the <TT>Makefile</TT> from 
+  the network drive to your home directory with the following command: 
+  <BR><TT>xcopy /S V:\ece291\mp4 W:\mp4</TT> <BR>Alternatively, from home, you 
+  can download the same files as <A href="mp4.zip">mp4.zip</A>. 
+  <LI>As before, run <TT>NMake</TT> to build an executable program using the 
+  given ECE291 library functions. 
+  <LI>Use CodeView (<TT>CV</TT>) to debug and test your program. Because you 
+  only receive credit for procedures that function completely as specified, it 
+  is best to debug each routine individually. </LI></UL>
+<H2>Revision History</H2>
+<UL>
+  <LI>Version 1.0: (10/28/99) - First code release 
+<BR><I>Monitor the newsgroup and this on-line section for revisions 
+  to the MP or to the writeup</I></LI></UL>
+<H2>Final Steps</H2>
+<OL>
+  <LI>Print a copy of the <A href="mp4grade.html">MP4 grading sheet</A>. 
+  <LI>Demonstrate the first checkpoint of MP4.EXE to a TA or to the instructor. 
+  <UL>
+    <LI>Be prepared to answer questions about any aspect of the operation of 
+    your program. The TAs will not accept an MP if you cannot fully explain all 
+    operations of your code. </LI></UL>
+  <LI>Demonstrate the second checkpoint of MP4.EXE to a TA or to the instructor. 
+
+  <UL>
+    <LI>Be prepared to answer questions about any aspect of the operation of 
+    your program. The TAs will not accept an MP if you cannot fully explain all 
+    operations of your code. </LI></UL>
+  <LI>Handin in your program by running: 
+  <UL>
+    <LI><TT>A:\Handin </TT><I>YourWindowsLogin</I> 
+    <LI>Print <TT>MP4.ASM</TT> </LI></UL>
+  <LI>Staple the MP4 grading sheet to the front of your MP4.ASM file and give 
+  both to the same TA that approved your demonstration. </LI></OL>
+<HR>
+
+<H2>MP4.ASM</H2><FONT size=-1><PRE> 
+
+TITLE ECE291:MP4-Paint - Your Name - Date
+
+.MODEL LARGE   ; Allow multiple segments to be defined
+.486	       ; Allow generation of code which requires an 80486 or better
+
+COMMENT % Paint
+
+	  ECE291: Machine Problem 4
+	  Prof. Zbigniew Kalbarczyk
+	  University of Illinois
+	  Dept. of Electrical & Computer Engineering
+	  Guest Designer: Michael Urman
+	  Fall 1999
+	  
+	  Ver. 1.0
+
+	  Revision History:
+	  1.0: - Initial release
+	%
+
+
+
+;====== Constants =========================================================
+
+VIDSEG	   EQU 0A000h	   ; VGA Video Segment Adddress
+VIDTEXTSEG EQU 0B800h
+CR	   EQU 13
+LF	   EQU 10
+
+S_LINE	   EQU 1	   ; values used in the State variable
+S_RECT	   EQU 2
+S_POLY	   EQU 4
+S_FILL	   EQU 8
+S_TEXT	   EQU 16
+
+SCREEN	   EQU VIDSEG	   ; values for Render state variable
+BUFFER	   EQU seg ScreenBuffer
+
+NO_MASK	   EQU 0
+YES_MASK   EQU 1
+
+KEY_BUFFER_SIZE EQU 320/8  ; size of buffer for keyboard input.
+
+Event STRUC
+  X	  dw	?
+  Y	  dw	?
+  Buttons db	?
+Event ENDS
+
+QUEUE_SIZE	equ	QUEUE_ELEMENTS * Sizeof EVENT
+QUEUE_ELEMENTS	equ	13
+
+MINX    EQU     4
+MINY    EQU     5
+MAXX    EQU     259
+MAXY    EQU     194
+
+;====== Segments ==========================================================
+
+PUBLIC ScreenBuffer, SkinBuffer, PCXBuffer, FontMap, Scratchpad
+PUBLIC LoadPCX
+
+SBSeg segment 'DATA1'
+    ScreenBuffer DB 65535 dup(?)
+SBSeg ENDS
+
+SKSeg segment 'DATA2'
+    SkinBuffer DB 65535 dup (?)
+SKSeg ENDS
+
+PBSeg segment 'DATA3'
+    PCXBuffer DB 48640 dup (?)
+PBSeg ENDS
+
+FontSeg segment 'DATA4'
+    Fontmap DB 65535 dup (?)
+FontSeg ENDS
+
+ScrSeg segment 'DATA5' ; Used by LoadPCX
+    Scratchpad DB 65535 dup(?)
+ScrSeg ENDS
+	
+stkseg	segment stack			; *** STACK SEGMENT ***
+	db	2048 dup ('STACK   ')	; 2048*8 = 16384 Bytes of Stack
+stkseg	ends
+
+;====== Function type declarations ========================================
+
+extrn kbdin:near		   ; LIB291 routines are always Free
+extrn binasc:near, dspout:near, dspmsg:near, binasc:near
+extrn rsave:near, rrest:near
+extrn mp4xit:near
+extrn LibRedrawBuffer:near
+extrn LibInstallMouse:near
+extrn LibMouseCallback:far
+extrn LibRemoveMouse:near
+extrn SetPalette:near
+extrn CheckEvents:near
+extrn EscPressed:byte
+extrn EventOccurred:byte
+extrn Events:word
+extrn QueueFirst:word
+extrn QueueNumEvents:word
+
+PUBLIC MouseCallback
+
+
+
+extrn dosxit:near		   ; Exit Routine
+
+WritePixel PROTO near C X1:word, Y1:word, Color:byte, Target:word
+
+ReadPixel PROTO near C X1:word, Y1:word, Target:word
+
+DrawLine PROTO near C X1:word, Y1:word,
+		      X2:word, Y2:word,
+		      Color:byte, Target:word
+
+DrawRectangle PROTO near C X1:word, Y1:word,
+			   X2:word, Y2:word,
+			   Color:byte, Target:word
+
+FloodFill PROTO near C X1:word, Y1:word, Color:byte, Target:word
+
+DrawText PROTO near C TextString:word, X1:word, Y1:word, Color:byte, Target:word
+
+LoadPCX PROTO near C LoadSeg:word, LoadOffset:word, Filename:word
+
+DrawPCX PROTO near C X1:word, Y1:word,
+		     Wid:word, Height:word,
+		     LoadSeg:word, LoadOffset:word, toArea:byte, Target:word
+
+LibWritePixel PROTO near C X1:word, Y1:word, Color:byte, Target:word
+
+LibReadPixel PROTO near C X1:word, Y1:word, Target:word
+
+LibDrawLine PROTO near C X1:word, Y1:word,
+		      X2:word, Y2:word,
+		      Color:byte, Target:word
+
+LibDrawRectangle PROTO near C X1:word, Y1:word,
+			   X2:word, Y2:word,
+			   Color:byte, Target:word
+
+LibFloodFill PROTO near C X1:word, Y1:word, Color:byte, Target:word
+
+LibDrawText PROTO near C TextString:word, X1:word, Y1:word, Color:byte, Target:word
+
+LibLoadPCX PROTO near C LoadSeg:word, LoadOffset:word, Filename:word
+
+LibDrawPCX PROTO near C X1:word, Y1:word,
+		     Wid:word, Height:word,
+		     LoadSeg:word, LoadOffset:word, toArea:byte, Target:word
+
+ModeGraph	PROTO near C	; Switch video mode to graphics (Given)
+
+ModeText	PROTO near C	; Switch video mode to text (Given)
+
+;====== Begin Code/Data segment ==========================================
+cseg	segment public 'CODE'  
+	assume	cs:cseg, ds:cseg, es:nothing
+
+FontFile db	 'letters.pcx',0   ; Filename of PCX file with font images
+SkinFile db	 'skin.pcx',0	   ; Filename of Paint skin
+Padding db	64 dup (0)
+Queue	Event QUEUE_ELEMENTS+1 dup(&lt;&gt;)
+; these are declared in the Library file.  This is how:
+;QueueFirst	dw	offset Queue - QUEUE_SIZE
+;QueueNumEvents	dw	0
+
+PUBLIC FontFile, SkinFile
+PUBLIC Queue
+PUBLIC Letters
+
+; FontMap is a 320x200 PCX File containing 8x8 letters
+; ABCDEFGHIJKLMNOPQRSTUVWXYZ
+; abcdefghijklmnopqrstuvwxyz
+; 01234567890
+;
+; Letters is a 256-word lookup table that
+; maps each ASCII value to a location in FontMap
+; Our program need only map letters, digits, space, and period.
+
+Letters dw	32 dup ((320*16)+(8*11))
+	dw	(320*16)+(8*12) ; ' '
+	dw	13 dup ((320*16)+(8*11))
+	dw	(320*16)+(8*10) ; '.'
+	dw	(320*16)+(8*11)
+	dw	(320*16)+(8*0)	; '0'
+	dw	(320*16)+(8*1)	; '1'
+	dw	(320*16)+(8*2)	; '2'
+	dw	(320*16)+(8*3)	; '3'
+	dw	(320*16)+(8*4)	; '4'
+	dw	(320*16)+(8*5)	; '5'
+	dw	(320*16)+(8*6)	; '6'
+	dw	(320*16)+(8*7)	; '7'
+	dw	(320*16)+(8*8)	; '8'
+	dw	(320*16)+(8*9)	; '9'
+	dw	7 dup ((320*16)+(8*11))
+	dw	(320*0)+(8*0)	; 'A'
+	dw	(320*0)+(8*1)	; 'B'
+	dw	(320*0)+(8*2)	; 'C'
+	dw	(320*0)+(8*3)	; 'D'
+	dw	(320*0)+(8*4)	; 'E'
+	dw	(320*0)+(8*5)	; 'F'
+	dw	(320*0)+(8*6)	; 'G'
+	dw	(320*0)+(8*7)	; 'H'
+	dw	(320*0)+(8*8)	; 'I'
+	dw	(320*0)+(8*9)	; 'J'	
+	dw	(320*0)+(8*10)	; 'K'
+	dw	(320*0)+(8*11)	; 'L'
+	dw	(320*0)+(8*12)	; 'M'
+	dw	(320*0)+(8*13)	; 'N'
+	dw	(320*0)+(8*14)	; 'O'
+	dw	(320*0)+(8*15)	; 'P'
+	dw	(320*0)+(8*16)	; 'Q'
+	dw	(320*0)+(8*17)	; 'R'
+	dw	(320*0)+(8*18)	; 'S'
+	dw	(320*0)+(8*19)	; 'T'
+	dw	(320*0)+(8*20)	; 'U'
+	dw	(320*0)+(8*21)	; 'V'
+	dw	(320*0)+(8*22)	; 'W'
+	dw	(320*0)+(8*23)	; 'X'
+	dw	(320*0)+(8*24)	; 'Y'
+	dw	(320*0)+(8*25)	; 'Z'
+	dw	6 dup ((320*16)+(8*11))
+	dw	(320*8)+(8*0)	; 'a'
+	dw	(320*8)+(8*1)	; 'b'
+	dw	(320*8)+(8*2)	; 'c'
+	dw	(320*8)+(8*3)	; 'd'
+	dw	(320*8)+(8*4)	; 'e'
+	dw	(320*8)+(8*5)	; 'f'
+	dw	(320*8)+(8*6)	; 'g'
+	dw	(320*8)+(8*7)	; 'h'
+	dw	(320*8)+(8*8)	; 'i'
+	dw	(320*8)+(8*9)	; 'j'	
+	dw	(320*8)+(8*10)	; 'k'
+	dw	(320*8)+(8*11)	; 'l'
+	dw	(320*8)+(8*12)	; 'm'
+	dw	(320*8)+(8*13)	; 'n'
+	dw	(320*8)+(8*14)	; 'o'
+	dw	(320*8)+(8*15)	; 'p'
+	dw	(320*8)+(8*16)	; 'q'
+	dw	(320*8)+(8*17)	; 'r'
+	dw	(320*8)+(8*18)	; 's'
+	dw	(320*8)+(8*19)	; 't'
+	dw	(320*8)+(8*20)	; 'u'
+	dw	(320*8)+(8*21)	; 'v'
+	dw	(320*8)+(8*22)	; 'w'
+	dw	(320*8)+(8*23)	; 'x'
+	dw	(320*8)+(8*24)	; 'y'
+	dw	(320*8)+(8*25)	; 'z'
+	dw	132 dup ((320*16)+(8*12))
+
+
+public fontfile, letters
+
+;====== Procedures ==========================================
+
+;
+; Procedures
+;
+
+;;;
+;;; ModeGraph
+;;;	Switches to 320x200x256 VGA.
+;;; 
+
+ModeGraph proc near C uses ax
+     mov     ax, 0013h
+     int     10h	  ; VBIOS call to switch into 
+     ret		  ; Mode 13h 320x200, 8-bit color
+ModeGraph endp
+
+;;; 
+;;; ModeText
+;;;	Switches to 80x50 text mode.
+;;;
+
+ModeText proc near C uses ax bx
+     mov     ax, 1202h
+     mov     bl, 30h
+     int     10h	  ; vBIOS call to switch into
+     mov     ax, 3	  ; text-mode video w/50 lines
+     int     10h
+     mov     ax, 1112h
+     mov     bl, 0
+     int     10h
+     ret
+ModeText endp
+
+
+;;;
+;;; WritePixel
+;;;	Draw a pixel at the specified location in the buffer or on
+;;;	screen in the chosen color
+;;;
+;;; INPUTS
+;;;	X      = X coordinate of pixel
+;;;	Y      = Y coordinate of pixel
+;;;	Color  = Color of pixel
+;;;	Target = Segment to write to (screen or buffer)
+;;;
+
+WritePixel PROC near C X1:word, Y1:word, Color:byte, Target:word
+	; Replace the following line with your code!
+	Invoke	LibWritePixel, X1, Y1, Color, Target 
+	ret
+WritePixel	 endp
+
+
+;;;
+;;; ReadPixel
+;;;	Read a pixel at the specified location in the buffer or in the
+;;;	screen, returning the color
+;;;
+;;; INPUTS
+;;;	X      = X coordinate of pixel
+;;;	Y      = Y coordinate of pixel
+;;;	Target = Segment for reading from (screen or buffer)
+;;;
+;;; OUTPUTS
+;;;	al     = color of pixel
+
+ReadPixel	PROC near C X1:word, Y1:word, Target: word
+	Invoke	LibReadPixel, X1, Y1, Target
+	ret
+ReadPixel	endp
+
+ 
+;;;
+;;; DrawLine
+;;;	Draw a line between two arbitrary (X,Y) points
+;;;
+;;; INPUTS
+;;;	X1,Y1  = X and Y for point 1
+;;;	X2,Y2  = X and Y for point 2
+;;;	Color  = Color to drawn line in
+;;;	Target = Segment for drawing to (screen or buffer)
+
+DrawLine	PROC near C X1:word, Y1:word,
+			    X2:word, Y2:word,
+			    Color:byte, Target:word
+
+	; Replace the following line with your code!
+	Invoke	LibDrawLine, X1,Y1, X2,Y2, Color, Target
+	ret
+DrawLine	endp	    
+
+
+;;;
+;;; DrawRectangle
+;;;	Draws a rectangle with corners X1,Y1, X2,Y2
+;;; 
+;;; INPUTS
+;;;	X1,Y1  = one corner of the rectangle
+;;;	X2,Y2  = opposite corner of the rectangle
+;;;	Color  = Color to draw lines in
+;;;	Target = Segment for drawing to (screen or buffer)
+	
+DrawRectangle PROC near C X1:word, Y1:word,
+			  X2:word, Y2:word,
+			  Color:byte, Target:word
+
+	; Replace the following line with your code!
+	Invoke LibDrawRectangle, X1,Y1, X2,Y2, Color, Target
+	ret
+DrawRectangle endp
+
+
+;;;
+;;; FloodFill
+;;;	Fills a "nice" (non-concave) area with the specified color 
+;;;	on the chosen target (screen or buffer)
+;;;
+;;; INPUTS
+;;;	X1,Y1  = Starting location for the flood fill
+;;;	Color  = Color to fill with
+;;;	Target = Segment for filling (screen or buffer)
+
+FloodFill PROC near C X1:word, Y1:word, Color:byte, Target:word
+	; Replace the following line with your code!
+	Invoke LibFloodFill, X1, Y1, Color, Target
+	ret
+FloodFill endp
+
+
+;;;
+;;; DrawText
+;;;	Draws a text string at X1, Y1, in a chosen color
+;;;
+;;; INPUTS
+;;;	TextString = offset of a '$' terminated string of text
+;;;	X1, Y1	   = Upper left corner of text
+;;;	Color	   = Color to write text in
+;;;	Target	   = Segment for drawing text (screen or buffer)
+;;;
+
+DrawText proc near C TextString:word, X1:word, Y1:word, Color:byte, Target: word
+	; Replace the following line with your code!
+	Invoke LibDrawText, TextString, X1,Y1, Color, Target
+	ret
+DrawText endp
+
+
+;;;
+;;; LoadPCX
+;;;    Loads specified PCX file into specified location in memory
+;;;
+;;; INPUTS
+;;;	LoadSeg	    = segment in which to write decompressed file
+;;;	LoadOfffset = offset at which to write decompressed file
+;;;	Filename    = offset of null terminated filename
+;;;
+;;; NOTES
+;;;	See lab manual!
+
+LoadPCX PROC near C LoadSeg:word, LoadOffset:word, Filename:word
+	; Replace the following line with your code!
+	Invoke	LibLoadPCX, LoadSeg, LoadOffset, Filename
+	ret
+LoadPCX endp
+
+
+;;;
+;;; DrawPCX
+;;;	Draws a loaded PCX on the target
+;;;
+;;; INPUTS
+;;;	X1,Y1	   = upper-left corner of pixel-data
+;;;	Wid,Height = Size of pixel-data
+;;;	LoadSeg	   = Segment data should be read from
+;;;	Offset	   = offset within read segment to start reading from
+;;;	Mask	   = when true, don't draw outside of picture area
+;;;	Target	   = Segment to write to (screen or buffer)
+;;;
+;;; NOTES
+;;;	Remember to assume you are writing to a 320x200 destination while
+;;;	reading from a specified width and height.  Clip as necessary.
+;;;
+DrawPCX PROC near C X1:word, Y1:word,
+		    Wid:word, Height:word,
+		    LoadSeg:word, LoadOffset:word,
+		    toArea:byte, Target:word
+
+	Invoke LibDrawPCX, X1,Y1, Wid,Height,
+	       LoadSeg, LoadOffset, toArea, Target
+	ret
+DrawPCX endp
+
+
+;;;
+;;; InstallMouse
+;;;   Installs the mouse handler callback by calling the appropriate
+;;;   interrupt procedure
+;;;
+
+InstallMouse proc near
+	call LibInstallMouse	; Replace this line with your code!
+	ret
+InstallMouse endp
+
+
+;;;
+;;; MouseHandler
+;;;	Handles Mouse events by entering them into the action queue
+;;;
+;;; INPUTS
+;;;	as the mouse handler provides
+;;;
+;;; OUTPUTS
+;;;	new queue entry
+;;;
+
+MouseCallback proc far
+	call LibMouseCallback
+	ret
+MouseCallback endp
+
+
+;;;
+;;; RemoveMouse
+;;;	Removes the mouse handler callback by calling the appropriate
+;;;	interrupt procedure
+;;;
+
+RemoveMouse proc near
+	call LibRemoveMouse	; Replace this line with your code!
+	ret
+RemoveMouse endp
+
+;====== MAIN ==========================================
+
+_main PROC FAR
+	mov	ax,cseg		; Set default segment equal to code segment
+	mov	ds,ax
+	mov	ax,VidSeg	; Initalize extra segment for Video graphics
+	mov	es,ax
+
+	invoke	LoadPCX, seg FontMap, offset FontMap, offset FontFile
+	invoke	ModeGraph	; Switch VGA into grahics mode
+	call	SetPalette	; Ensure the first 16 entries are correct
+	invoke	LoadPCX, seg ScreenBuffer, offset ScreenBuffer, offset SkinFile
+	call	InstallMouse
+	jc	QuitMain	; Quit on mouse failure
+	call	LibRedrawBuffer
+	
+MainLoop:
+	call	CheckEvents ; zero flag if no events, bx for which event
+	cmp	EscPressed, 1
+	je	QuitMain
+	cmp	EventOccurred, 1
+	jne	MainLoop
+
+	; Process the event, which will update the screen as necessary
+	; for rubber-banding, etc.
+	shl	bx, 1
+	call	Events[bx]
+
+	jmp	MainLoop
+
+QuitMain:
+	call	RemoveMouse
+	invoke	ModeText	; Switch back to text mode
+
+	call	mp4xit
+
+_main ENDP
+
+;====== END MAIN ============================================
+
+cseg	ends
+	end    _main
+</PRE></FONT></BODY></HTML>

@@ -1,0 +1,590 @@
+<html>
+
+<head>
+<title>ECE 291</title>
+</head>
+
+<body bgcolor="#FFFFFF">
+<div align="center"><center>
+
+<table border="0" width="100%" cellspacing="0" cellpadding="0">
+  <tr>
+    <td width="33%" align="left">ECE 291</td>
+    <td width="33%" align="center">Computer Engineering II</td>
+    <td width="33%" align="right">Potts, Spring 2001</td>
+  </tr>
+</table>
+</center></div>
+
+<h1 align="center">Machine Problem 1: Blackjack</h1>
+<div align="center"><center>
+
+<table border=1 width=60%>
+  <tr>
+    <td align=right>Assigned</td>
+    <td>Tuesday 1/30/01</td>
+  </tr>
+  <tr>
+    <td align="right">Due Date</td>
+    <td>Wednesday 2/7/01</td>
+  </tr>
+  <tr>
+    <td align="right">Purpose</td>
+    <td Roman">Deal with high levels of branching. Use input strings. Make 
+    use of arrays.</td>
+  </tr>
+  <tr>
+    <td align="right">Points</font></td>
+    <td>50</td>
+  </tr>
+</table>
+</center></div>
+
+<h2>Introduction</h2>
+
+
+<p>The card game blackjack is one of the simplest and most elegant card games in 
+existence, and one of the most well known. Your assignment for this 
+project will be to write the functions that will comprise a game of 
+blackjack with an 
+automated dealer, and a control routine that will figure out when a hand 
+has gone over 21. 
+</p>
+
+<CENTER><IMG SRC=mp1.jpg ALIGN=CENTER width="652" height="331"></CENTER>
+
+
+<h2>Problem Description</h2>
+
+
+<p>The game of blackjack is very simple: essentially the point of the game 
+is to come as close to a total of 21 as possible, without going over. You 
+will be competing with a dealer, who will be attempting to do the same. </p>
+
+<p>The calculation of totals is very simple: all cards 2-10 count as their 
+value, all face cards count for 10, and Aces as 11. Suits do not
+count for anything. While you have the ability to "hit" (receive 
+another card) or "stay" (stop receiving new cards) whenever you wish, the 
+dealer will always hit when it is lower than 17, and always stay when it 
+is 17 or higher. If&nbsp; either the dealer or the player goes over, they lose,
+if the dealer and the player tie, the player wins, otherwise the highest total
+wins.You will be able to see all of your cards and all of the dealer's cards
+after each turn. This makes strategy important while playing, as you 
+will have to estimate the probability that the dealer has a useful card, 
+and guess his "hole card" (the hidden card) by his actions. 
+The game stops when there are less than 10 cards left.</p>
+
+
+<H2>MP 1 Program Assignment</H2>
+
+<p>Your job in this assignment will be to provide rewrites of certain 
+precompiled library routines described below. A working MP will be 
+provided for you to get a feel for the game, as well as an .ASM file with 
+calls to the pre-written library routines. You should go through the 
+routines one by one, replacing these calls with your own code.</p>
+
+<p>The program can be run by typing <tt>mp1</tt> at the
+command prompt.
+</p>
+
+
+<h2>Hints</h2>
+<ul>
+<li>The LIBMP1 file contains executable library functions for each of the
+routines that you need to implement.  
+This allows you to run the program and understand how it works before you 
+implement it.  You can test your program by stepping through the game and 
+making sure the display and comparison functions work correctly.  You will only receive credit, however, for
+the routines that you implement yourself. <p>
+
+<li>When debugging your code in Turbo Debugger, you will find it helpful to use
+the memory window to show you the memory location of the file and strings.
+You can also use the watch window to keep track of variables in your 
+code, such as the shuffled deck and the dealt hands.<p>
+
+<li>Do not assume that the file starts at memory location 0.<p>
+
+<li>You may define new variables and function as needed.<p>
+
+<li>Play the game a lot before attempting to code it.  All messages and 
+characteristics of the program not listed in this writeup should still be 
+implemented.<p>
+	
+<li>The card array is stored thusly (in the deck variable):<p>
+<ul>
+	<li>(0 - 12) : Hearts (0-8 = numbers 2 to 10, 9 = Jack, 10 = Queen, 11 = King, 12 = Ace)
+	<li>(13 - 25) : Diamonds (13 - 21 = numbers 2 to 10, 22 = Jack, 23 = Queen, 24 = King, 25 = Ace)
+	<li>(26 - 38) : Clubs (26 - 34 = numbers 2 to 10, 35 = Jack, 36 = Queen, 37 = King, 38 = Ace)
+	<li>(39 - 51) : Spades (39 - 47 = numbers 2 to 10, 48 = Jack, 49 = Queen, 50 = King, 51 = Ace)
+	<li>A previously dealt card will have a value of 1, whereas an undealt card 
+	will have a value of 0.<p>
+</ul>
+	
+<li>Input is CASE SENSITIVE, so pay attention to what you input.<p>
+
+<li>Be very careful if you call another procedure not to destroy registers
+that the calling procedure uses.<p>
+
+<li>Remember to include function headers for each of your functions!<p>
+
+<li>Remember to include comments within the functions you write!<p>
+
+<li>START EARLY!<p>
+
+<li>Monitor the <a href="news:uiuc.class.ece291">newsgroup</a> for 
+clarifications and help.</p>
+
+</ul>
+
+<h2>Subroutines</h2>
+
+<p>This assignment has six procedures. You will receive credit by 
+replacing
+each of these six procedures listed below with your own code. Assume 
+these function call library routines such as dspmsg as needed.</p>
+
+
+<table BORDER=1 >
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>CheckBlackJack</font></b></td>
+
+<td><ul>
+    
+<li>Checks to see if the player or the dealer has hit 21
+<li>Inputs: DealerTotal, DealerCards, PlayerTotal, PlayerCards
+<li>Outputs: BlackJack
+<li>Calls: dspmsg
+ </ul></td>
+</tr>
+
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>DealCards</font></b></td>
+
+<td><ul>
+    
+<li>Deals out two cards to the player and the dealer
+<li>Inputs: deck
+<li>Outputs: deck, DealerHand, DealerCards, PlayerHand, PlayerCards, CardsLeft
+<li>Calls: libRandom
+ </ul></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>DealPlayer</font></b></td>
+
+<td><ul>
+<li>Deals out a card to the player's hand
+<li>Inputs: deck
+<li>Outputs: deck, PlayerCards, PlayerHand, CardsLeft,&nbsp;
+<li>Calls: libRandom
+</ul></td>
+</tr>
+
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>DealDealer</font></b></td>
+
+<td><ul>
+<li>Deals out a card to the dealer's hand
+<li>Inputs: deck
+<li>Outputs: deck, DealerCards, DealerHand, CardsLeft,&nbsp;
+<li>Calls: libRandom
+</ul></td>
+</tr>
+
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>Status</font></b></td>
+
+<td><ul>
+<li>Figures out the totals, displays the cards
+<li>Inputs: none
+<li>Outputs: PlayerTotal, DealerTotal
+<li>Calls: dspmsg, DisplayCard
+</ul></td>
+</tr>
+
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>Display Card</font></b></td>
+
+<td><ul>
+       <li>Displays an individual card
+<li>Inputs: dx = offset of message, si = offset of Hand, cx = number of cards
+<li>Outputs: none
+<li>Calls: dspmsg
+</ul></td>
+</tr>
+
+
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>libRandom</font></b></td>
+
+<td><ul>
+       <li>Gets an evenly distributed number between 0 and MaxRand
+<li>Inputs: cx = MaxRand
+<li>Outputs: AX = random number between 0 and MaxRand
+<li>Calls: none
+<li>NOTE: This routine is provided in the library, you do not have to write 
+it.
+</ul></td>
+</tr>
+
+
+</table>
+
+<h2>Procedure</h2>
+<ul>
+<li>You will begin this MP with the following files:
+    <ul>
+    <li><tt>MP1.ASM</tt>: Program Framework
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled
+        and linked.
+    <li><tt>LIBMP1.LIB</tt>: Library functions for MP1
+    <li><tt>LIB291.LIB</tt>: General-purpose library functions
+    </ul>
+<li>You may copy these files from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s V:\ece291\mp1 W:\mp1</tt><br>
+    or download the files from this server as <a 
+href="mp1.zip">mp1.zip</a> 
+<li>Add your code to <tt>MP1.ASM</tt>.
+<li>Assemble and link your program by typing<br>
+      <tt>make</tt><Br>
+    This command reads <i>Makefile</i> then invokes NASM and LINK to build 
+    an executable program.  
+<li>Use Turbo Debugger (TB) to find and correct program errors. 
+<li>Verify your program operation by testing the
+    input test file.  You should alter the test file to check 
+    different scenarios with your code.
+</ul>
+
+<h2>Final Steps</h2>
+
+<p>1. Demonstrate your MP1.EXE to a TA. You may be asked to recompile and demo the program. Your program must work with all given input.</p>
+
+<p>2. Be prepared to answer questions about any aspect of the operation of your program. The TAs will not accept an MP if you cannot fully
+explain your code and your implementation. Delayed MPs will be subject to late penalties as described in the course syllabus (10/pts per day).</p>
+
+<p>3. The TA will complete the code submission procedure.</p>
+
+<hr>
+
+<h2>MP1.ASM (program framework)</h2>
+
+<font size=-1><pre>
+
+; MP1 - Your Name - Today's Date
+;
+;
+;
+;
+
+	BITS	16
+
+;====== SECTION 1: Define constants =======================================
+
+        CR      EQU     0Dh
+        LF      EQU     0Ah
+        BEL     EQU     07h
+
+;====== SECTION 2: Declare external procedures ============================
+
+EXTERN  kbdine, dspout, dspmsg, dosxit,ascbin,binasc
+
+; This function is given to you - you do NOT have to write it
+EXTERN  _libRandom
+
+; You will have to write these functions
+EXTERN  _libCheckBlackJack, _libDealCards, _libDealPlayer
+EXTERN  _libDealDealer, _libStatus, _libDisplayCard
+
+GLOBAL deck, playerHand, PlayerCards, PlayerTotal
+GLOBAL dealerHand, DealerCards, DealerTotal
+GLOBAL StatusBuffer, BlackJack, CardsLeft
+GLOBAL action, HitFlag, greeting, question
+GLOBAL Hitmsg, Betmsg, Staymsg, Exitmsg, Playermsg, Dealermsg
+GLOBAL Dealmsg, DStaymsg, PBlackJack, DBlackJack
+GLOBAL PlayerOvr, DealerOvr, PlayWin, DealWin, GameOvr, total
+GLOBAL _DisplayCard
+
+EXTERN Jumptable, Suittable
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        resb      64*8
+stacktop:
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+deck       	    times 52 db  0             ;Array of cards (1=chosen, 0= not)
+
+playerHand      times 5  db  0              ;Array of cards in the players hand
+                                            ;     indexed 0-51
+
+PlayerCards              db  0                 ;Number of cards in player's hand
+PlayerTotal	             db  0                 ;Players total card value
+
+dealerHand      times 5  db  0              ;Array of cards in the dealers hand
+                                            ;     indexed 0-51
+DealerCards              db  0		     ;Number or cards in dealer's hand
+DealerTotal	             db  0		     ;Players total card value
+
+StatusBuffer    times 7  db 0	              ;this is a 7 byte buffer used for
+ 					              ;binasc and ascbin functions
+BlackJack db 0			; 1 if either player or dealer has blackjack
+CardsLeft                db 52		;number of cards left in the deck
+action	             db 0			;used for Hit or Stay
+HitFlag                  db 0			;Determines if Player is done hitting
+greeting   db      CR,LF,'Welcome to 291 BlackJack',CR,LF,'$'
+question   db	 CR,LF,'What do you want to do? (H)it or (S)tay?    ','$' 
+Hitmsg     db      CR,LF,'You have chosen to hit! ',CR,LF,'$' 
+Betmsg     db      CR,LF,'You have chosen to bet',CR,LF,'$'
+Staymsg    db      CR,LF,'You have chosen to stay',CR,LF,'$'
+Exitmsg    db      CR,LF,'Goodbye!!!!!!!!!!!',CR,LF,'$'
+Playermsg  db      CR,LF,'Player&quot;s cards are:',CR,LF,'$' 
+Dealermsg  db      CR,LF,'Dealer&quot;s cards are:',CR,LF,'$' 
+Dealmsg    db      CR,LF,'The Dealer decides to hit!',CR,LF,'$' 
+DStaymsg   db      CR,LF,'The Dealer decides to stay!',CR,LF,'$' 
+PBlackJack db      CR,LF,'The Player has a blackjack! New Hand',CR,LF,'$'
+DBlackJack db      CR,LF,'The Dealer has a blackjack! New Hand',CR,LF,'$'
+PlayerOvr  db      CR,LF,'The Player has gone over 21! New Hand',CR,LF,'$'
+DealerOvr  db      CR,LF,'The Dealer has gone over 21! New Hand',CR,LF,'$'
+PlayWin    db      CR,LF,'The Player has won! New Hand',CR,LF,'$'
+DealWin    db      CR,LF,'The Dealer has won! New Hand',CR,LF,'$'
+GameOvr    db 	 CR,LF,'Less than 10 cards left, GAME OVER',CR,LF,'$'
+total      db      '           total: ','$'
+
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        mov     ax, cs                  ; Initialize Default Segment register
+        mov     ds, ax  
+        mov     ax, stkseg              ; Initialize Stack Segment register
+        mov     ss, ax
+        mov     sp, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+MAIN:
+        mov     dx, greeting           ; Begin
+        call    dspmsg                   
+        
+	
+NewHand:					;Checks to see if game can go on, then deals
+	mov byte [HitFlag],0
+	cmp byte [CardsLeft],10
+	jg .Deal
+	mov dx, GameOvr
+	call dspmsg
+	jmp .mpExit
+	
+.Deal
+	call _DealCards
+	call _Status
+	call _CheckBlackJack
+
+        cmp byte[BlackJack], 1
+        je NewHand
+
+.HitorStay					;checks for a win, then plays
+	cmp byte [PlayerTotal],21
+	jne .POverChk
+	mov dx, PlayWin
+	call dspmsg
+	jmp NewHand
+
+.POverChk						;determines if player has gone over
+	cmp byte [PlayerTotal], 21
+	jl .DealerChk
+	mov dx, PlayerOvr
+	call dspmsg
+	jmp NewHand
+
+.DealerChk						;determines if dealer has gone over
+	cmp byte [DealerTotal],21
+	jne .DOverChk
+	mov dx, DealWin
+	call dspmsg
+	jmp NewHand
+
+.DOverChk
+	jl .5Cards
+	mov dx, DealerOvr
+	call dspmsg
+	jmp NewHand
+.5Cards					;determines if player has 5 cards
+	cmp byte [PlayerCards],5
+	jl .Question
+
+.ForceWin
+	mov al, byte [PlayerTotal]
+	cmp al, byte [DealerTotal]
+	jl .PlayerLose
+	mov dx, PlayWin
+	call dspmsg
+	jmp NewHand
+
+.PlayerLose
+	mov dx, DealWin
+	call dspmsg
+	jmp NewHand
+.Question
+	mov dx, question
+	call dspmsg
+	call    kbdine   
+      mov     [action], al                ; Save result
+            
+.CheckHit:
+        cmp     byte [action], 'H'        ; Check if Hit
+        jne     .NotHit
+        mov     dx, Hitmsg                ; Print Hit Message
+        call    dspmsg
+	  call	_DealPlayer
+
+	  call _Status
+		
+	  cmp byte [PlayerTotal],21
+	  jg near .HitorStay
+        jmp     .Question
+
+.NotHit:
+        cmp     byte [action], 'S'         ; Check if Stay
+        jne     .mpExit
+	  mov     byte [HitFlag],1           ;Dealer can hit if he wants to
+        mov     dx, Staymsg                ; Print Stay Message
+        call    dspmsg
+        ;jmp     .ForceWin
+
+.DealerDecide				;dealer logic
+	cmp byte [DealerTotal], 16
+	jge .DealerStay
+	call _DealDealer
+	mov dx, Dealmsg
+	call dspmsg
+	call _Status
+	cmp byte [DealerTotal],21
+	jg near .DealerChk
+	cmp byte [HitFlag],1
+	je .DealerDecide
+	jmp .HitorStay
+.DealerStay
+	
+	
+	mov dx, DStaymsg
+	call dspmsg
+
+	cmp byte [HitFlag],1
+	jne .Continue
+	jmp .ForceWin
+.Continue
+	jmp .HitorStay
+
+.mpExit:
+        mov     dx, Exitmsg             ; Type out exit message
+        call    dspmsg
+
+.FinalExit:
+        call    dosxit                  ; Exit to DOS
+
+;--------------------------------------------------------------------------------
+;---						CheckBlackJack()
+;
+;--------------------------------------------------------------------------------
+_CheckBlackJack
+	
+        call    _libCheckBlackJack
+        ret
+
+
+;---------------------------------------------------------------------------------
+;---						DealCards()
+;
+;---------------------------------------------------------------------------------
+
+_DealCards
+
+        call    _libDealCards
+        ret
+
+
+;---------------------------------------------------------------------------------
+;---						DealPlayer()
+;
+;---------------------------------------------------------------------------------
+
+_DealPlayer
+
+        call    _libDealPlayer
+        ret
+
+;---------------------------------------------------------------------------------
+;---						DealDealer()
+;
+;---------------------------------------------------------------------------------
+
+_DealDealer
+
+        call    _libDealDealer
+        ret
+
+;-------------------------------------------------------------------------------------
+;--				Status()
+;
+;
+;-------------------------------------------------------------------------------------
+_Status
+
+        call    _libStatus
+        ret
+
+;-------------------------------------------------------------------------------------
+;--				DisplayCard()
+;
+;
+;-------------------------------------------------------------------------------------
+
+_DisplayCard
+
+        call    _libDisplayCard
+        ret
+
+
+</pre>
+
+
+</body>
+
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

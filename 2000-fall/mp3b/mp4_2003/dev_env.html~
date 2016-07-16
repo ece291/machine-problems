@@ -1,0 +1,147 @@
+<html>
+
+<head>
+<title>Development Environment</title>
+</head>
+
+<body>
+
+<h1 align="center"><FONT size=+2><b><i>Development Environment</i></b></FONT></h1>
+<P>The development environment used in this MP is different from all of the
+previous MPs.  For this MP (and all of MP5),
+you will be using the DJGPP compiler system. and the NASM assembler.&nbsp;
+.&nbsp;
+&quot;Our players at home&quot; can download and unzip <a href="/ece291/resources/djgpp.zip">djgpp.zip</a>.  A word of warning: MP4 will <b>not</b> work at home unless you have
+Windows 2000 or WinXP.</P>
+<table border="1" width="100%">
+  <tr>
+    <td><a href="http://www.gnu.org/"><img border="0" src="brave_gnu_world.jpg" width="155" height="84"></a></td>
+    <td><b><i><a href="http://www.delorie.com/djgpp/">DJGPP</a></i></b> is a complete 32-bit C/C++ development system for Intel 80386 (and higher) PCs
+running DOS (or Win95/98/NT). It includes ports of many standard GNU development utilities
+      (gcc, g++, gdb, etc). The development tools require a 80386 or newer computer to run, as do the programs
+they produce. In most cases, the programs it produces can be sold commercially without license
+or royalties.</td>
+  </tr>
+</table>
+
+<P>&nbsp;</P>
+<table border="1" width="100%">
+  <tr>
+    <td>
+      <p align="center"><a href="http://www.web-sites.co.uk/nasm/"><img border="0" src="nasm-new.gif" width="358" height="57"></a></td>
+  </tr>
+  <tr>
+    <td><b><i>NASM</i></b> is the Netwide Assembler, a free, portable assembler for the Intel 80x86 microprocessor
+series, which uses the traditional Intel instruction mnemonics and syntax.&nbsp;
+      (This is more readable than DJGPP's own assembler which uses a bizzare
+      looking, backwards AT&amp;T syntax.)&nbsp;  It has extensive macro
+capabilities and is generally more straightforward in usage (fewer directives and assumptions)
+than MASM.&nbsp; There is an <i>excellent</i> helpfile about NASM in <a href="nasmdoc.hlp">nasmdoc.hlp</a>&nbsp;
+(This is a helpfile for a slightly older version of NASM, so some of the macro
+stuff might be different.)&nbsp; It's also in the <b><samp> V:\</samp></b> drive on the lab
+machines.  This help file also includes a great instruction reference, so keep
+it handy even when you aren't using NASM.</td>
+  </tr>
+</table>
+<P>&nbsp;</P>
+<table border="1" width="100%">
+  <tr>
+    <td><b><i>DPMI</i></b> is the DOS Protected Mode Interface used by
+      DJGPP.&nbsp; The programs produced by DJGPP run 32-bit protected mode.  The transition from real-mode to
+protected-mode is provided by the DJGPP real-mode stub, which calls DPMI.  DPMI is also used by DJGPP programs to allocate memory, set interrupt
+vectors, and perform protected-mode to real-mode (and vice-versa) interrupt call translations.</td>
+    <td>
+      <p align="center"><b>DPMI Calls</b></p>
+      <p><a href="http://www.ece.uiuc.edu/ece291/class-resources/pmode/dpmi/index.html"><img border="0" src="dpmi.gif" width="245" height="59"></a></td>
+  </tr>
+</table>
+<P>The development environment is already set up for you on the lab machines.  If you want to develop at home, everything you need is in <a href="/ece291/resources/djgpp.zip">djgpp.zip</a>.&nbsp; Just
+unzip this onto your own machine, set the
+environment variables above, and you're good to go.</P>
+
+<p><font size="+2"><a name="Task 2: Beating the Simplest Program to Death">Task 2: Beating the Simplest Program to Death</a></font></p>
+<p>Make an empty <b><samp>tutorial</samp></b> folder.&nbsp; Make an <b><samp> basic.asm</samp></b> file.&nbsp;
+Type this code into the <b><samp>
+basic.asm</samp></b> file:</p>
+<table border="1">
+  <tr>
+    <td width="100%" height="94"><pre><font color="#FF0000">BITS</font> 32          <font color="#808080">; Tell NASM we're using 32-bit protected mode.</font>
+
+<font color="#FF0000">GLOBAL</font> _main     <font color="#808080">; Tells the linker about the label called _main</font>
+
+<font color="#FF0000">SECTION</font> .text    <font color="#808080">; Says that this is the start of the code section.</font>
+     
+_main:           <font color="#808080">; Code execution will start at the label called _main</font>
+   mov eax, 42   <font color="#808080">; The simplest program you'll write in this class.</font>
+   ret           <font color="#808080">; Return to DJGPP's crt0 library startup code</font></pre></td>
+  </tr>
+</table>
+
+<P>To into the directory and type &quot;<b><samp>nasm -f coff basic.asm&nbsp; -l basic.lst</samp></b>&quot;&nbsp;&nbsp;
+A quick run of &quot;<b><samp>nasm -hf</samp></b>&quot; will inform you that this assembles your
+&quot;<b><samp>basic.asm</samp></b>&quot; file and creates &quot;<b><samp>basic.o</samp></b>&quot; in the form of a COFF object file.&nbsp;
+(This is the format that the DJGPP linker can read.)&nbsp; The object file contains
+your assembled code, your data, and information about your variable and label
+names so that the linker can link your object file with other object files. It
+also creates a list file called &quot;<b><samp>basic.lst</samp></b>&quot; which the debugger uses
+to match up lines of code in your <b><samp>.asm</samp></b> file with assembled opcodes.&nbsp;
+<b><samp>basic.lst</samp></b> is just a text
+file, so you can look at it in a text editor.&nbsp; Look at it.&nbsp; You see
+your code with line numbers, addresses, and data tacked on to your code.&nbsp; <a href="questions.html#Question2">Question
+2:</a>&nbsp; What is the opcode for ret?&nbsp; How many bytes were the two
+opcodes?</P>
+
+<P>Type &quot;<b><samp>objdump --disassemble-all basic.o</samp></b>&quot; to disassemble the
+object file that NASM created and print it's contents to the screen.&nbsp; (This
+step doesn't actually <i>do</i> anything, it's just to see how NASM works.)&nbsp; Look at stuff.&nbsp; This is the
+information that's in an object file.&nbsp; <a href="questions.html#Question3">Question 3:</a>&nbsp;
+How much of the mov opcode was actually opcode and how much data?&nbsp;
+Hint:&nbsp; Find the hex value of your data in the opcode.<b><br>
+</b><br>
+Type &quot;<b><samp>gcc -o basic basic.o</samp></b>&quot;
+which runs gcc, which runs the linker to
+take our <b><samp>basic.o</samp></b> file and link it with the DJGPP startup
+code to make it an executable.</P>
+
+<P>A linker takes a bunch of assembled object files and sticks them
+all into one big object file.&nbsp; You can call routines or access variables in
+<i>
+my</i> <b><samp> .asm</samp></b> files as long as I declare them public.&nbsp; When I declare something
+public, NASM will put a put it's name and address into the object file it
+creates.&nbsp; <i>Your</i> <b><samp>.asm</samp></b> file, with it's reference to my routine or variable,
+will be assembled into an object file with an unresolved link.&nbsp; The linker
+takes these two object files, matches up the names, and puts the address of my
+routine into your code instead of just an unresolved name.</P>
+<p>Type &quot;<b><samp>objdump --disassemble-all basic > out.txt</samp></b>&quot; and look
+at out.txt (which is now huge) to see the dump of the object file it created
+with all the libraries.&nbsp; Find &lt;_qsort>.&nbsp; Find &lt;start&gt; and &lt;exit&gt;.&nbsp;
+&lt;start&gt; is where protected mode execution actually starts.&nbsp; It
+eventually calls your &lt;_main&gt;&nbsp; When &lt;_main&gt; returns, you end up
+in the &lt;exit&gt; code which calls the &lt;_exit&gt; code which calls the &lt;__exit&gt;
+code.&nbsp; This is how C works.&nbsp; Be afraid.&nbsp; Be very afraid.</p>
+<p>Type &quot;<b><samp>basic</samp></b>&quot; to run your program.&nbsp;
+Nothing happened?&nbsp; Good.&nbsp; Awe at the fact that you only actually
+had one line of your own assembly, yet twenty million things had to go on to get
+you into and out of protected mode, to load your code, to interact with the
+operating system, to toggle the bits in the microprocessor, to manipulate the
+quantum state of billions and billions of electrons, etc, etc...</p>
+<p>Type &quot;<b><samp>cv32 basic</samp></b>&quot; to actually see what's going on.&nbsp;
+This is the best 32-bit debugger we have so far.&nbsp; Hit <b>F8</b> a few times
+to step through.&nbsp; (Go slow, or you'll miss your one line!) <b>Alt-H</b>
+brings up a help screen.&nbsp; <b>Alt-X</b> exits.&nbsp; More on this after we
+have a better program to debug.</p>
+
+<P><FONT size=+2><a name="What Actually Happened When You Ran Your Program">What Actually Happened When You Ran Your Program</a></FONT></P>
+<P>The startup of a DJGPP protected-mode program is far more complex than a real-mode MASM
+program.  First, DOS reads in the real-mode stub and executes it.  This real-mode stub checks to
+see if DPMI is available, and then uses it to switch to
+protected mode.  After switching to protected mode, it then asks the operating
+system to allocate memory for the program's
+code and data segments, loads the protected mode image from disk, and then directs processor
+execution into the DJGPP library startup code. This startup code does some dirty work such as reading
+the command line and initializing the standard library, and then runs your <b><samp>_main</samp></b>.
+</P>
+
+</body>
+
+</html>

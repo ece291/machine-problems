@@ -1,0 +1,38 @@
+
+                            NETWORK TAG
+----------------------------------------------------------------------
+ECE291: Machine Problem 5
+Prof. John W. Lockwood
+University of Illinois, Dept. of Electrical & Computer Engineering
+Spring 1997
+Documentation: http://www.ece.uiuc.edu/~ece291/mp/mp5/mp5.html
+Revision 1.0
+----------------------------------------------------------------------
+
+MP5.EXE      : MP5 built using all library routines
+               Requires: 486 or better CPU, NetBIOS, and Joystick
+               Instructions: Move joystick to navigate around screen
+                             Press joystick trigger button to self-tag
+                             Press both joystick buttons to quit
+
+MP5GR.EXE    : Code for testing MP5 Graphic routines
+
+MYIMAGE.BMP  : Your 32x32, 16-color bitmapped image (must be 630 bytes)
+               This file loaded by MP5.EXE and MP5GR.EXE
+
+DOG.BMP      : Scooby-Dooby Doo bitmap
+            
+LIB291.LIB   : ECE291 Standard library routines (Free)
+NETLIB.LIB   : NetBIOS library routines (Free)
+LIBMP5GR.LIB : MP5 Graphic Routines
+LIBMP5.LIB   : All MP5 Routines
+
+MP5GR.ASM    : Starting code for graphic routines of MP5
+
+MP5.ASM      : Starting code for complete MP5
+
+MAKEFILE     : Used with 'nmake' to rebuild EXE programs
+
+MACROS.INC   : Useful macros for moving strings and bytes
+
+README       : This file

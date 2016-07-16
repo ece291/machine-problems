@@ -1,0 +1,578 @@
+<%
+title = "ECE 291 - MP4"
+subtitle = "MP4"
+%>
+
+<!--#include file="headvb.asp"-->
+
+<H1 align=center>Machine Problem 4: Paint 291</H1>
+<DIV align=center>
+<CENTER>
+<TABLE width="60%" border=1>
+  <TBODY>
+  <TR>
+    <TD align=right>Assigned</TD>
+    <TD>Tuesday, October 21</TD></TR>
+  <TR>
+    <TD align=right valign="top">Due Date</TD>
+    <TD>Wednesday, November 5
+    </TD></TR>
+  <TR>
+    <TD align=right>Purpose</TD>
+    <TD>Protected Mode, High Resolution Graphics, Mouse</TD></TR>
+  <TR>
+    <TD align=right>Points</FONT></TD>
+    <TD>80</TD></TR></TBODY></TABLE></CENTER></DIV>
+<H2>Introduction</H2>
+<P>In this MP, you will be developing a paint program using
+high resolution graphics in protected mode.&nbsp; The paint program will not be
+as good as Adobe Photoshop for example, but it's no Windows Paint either.
+ </P>
+<p align=center><img border="0" src="mp4.jpg" width="645" height="504"></p>
+&nbsp;
+<H2>Problem Description</H2>
+<p>You will be implementing Paint 291 by doing the following:</p>
+<ul>
+  <li>Writing code for <a href="pmode.html">protected mode</a></li>
+  <li>Displaying the MP in <a href="hiresgraph.html">high resolution graphics</a></li>
+  <li>Using the <a href="input.html">keyboard and mouse</a> as input</li>
+  <li>
+    <p align="left"><a href="shapes.html">Drawing shapes and text</a>
+    using optimized algorithms</li>
+  <li>Implementing basic <a href="graphics.html">graphics algorithms</a>&nbsp;</li>
+</ul>
+<H2>Functions</H2>
+<P>This assignment has 18 functions. You will receive credit by 
+replacing each of the functions with your own code.&nbsp;All the functions are C-style functions (parameters on stack, return value in
+eax/ax/al, all general purpose registers other than esi and edi may be
+clobbered). A function that does not take any parameters will be denoted as <b>void</b>
+within the parentheses. A parameter name prefixed with an asterisk (*) means it is a
+pointer, otherwise the parameter is an actual value.&nbsp; The size of the parameters will be denoted as
+<b>word</b> or <b>dword</b>.&nbsp; A function that does not return a value will be declared as <b>void</b>,
+otherwise the size of return value will be specified using the previously
+mentioned scheme.
+<a name=point></a>
+<h3><b>dword _PointInBox(word PointX, word PointY, word
+BoxULCornerX, word BoxULCornerY, word BoxLRCornerX, word BoxLRCornerY)</b></h3>
+<ul>
+  <li>Determines if the point (X,Y) is located in the box formed by the points (BoxULCornerX,BoxULCornerY)
+    and (BoxLRCornerX,BoxLRCornerY)&nbsp;</li>
+  <li>Inputs:
+    <ul>
+      <li>X - x coordinate of point in question</li>
+      <li>Y - y coordinate of point in question</li>
+      <li>BoxULCornerX - x coordinate of upper-left hand corner of box</li>
+      <li>BoxULCornerY - y coordinate of upper-left hand corner of box</li>
+      <li>BoxLRCornerX - x coordinate of lower-right hand corner of box</li>
+      <li>BoxLRCornerY - y coordinate of lower-right hand corner of box</li>
+    </ul>
+  </li>
+  <li>Outputs:</li>
+  <li>Calls: None</li>
+  <li>Returns: 1 if BoxULCornerX &lt;= X &lt;= BoxLRCornerX and BoxULCornerY
+    &lt;= Y &lt;= BoxLRCornerY, 0 otherwise</li>
+  <li>Points: 2</li>
+</ul>
+<a name=get></a><a>
+<h3>dword _GetPixel(dword *DestOff, word DestWidth, word DestHeight, word X,
+word Y)</h3>
+<ul>
+  <li>Gets the color of the pixel located at the point (X,Y) in the buffer
+    pointed to by DestOff&nbsp;</li>
+  <li>Inputs:
+    <ul>
+      <li>DestOff - offset of an image buffer in memory</li>
+      <li>DestWidth - width of the buffer</li>
+      <li>DestHeight - height of the buffer</li>
+      <li>X - x coordinate of point</li>
+      <li>Y - y coordinate of point</li>
+    </ul>
+  </li>
+  <li>Outputs: None</li>
+  <li>Calls: _PointInBox</li>
+  <li>Returns: color of the pixel located at (X,Y) in the buffer, otherwise 0 if
+    the point (X,Y) is not within the boundary of the buffer</li>
+  <li>Points: 2</li>
+</ul>
+</a>
+<a name=pixel></a>
+<h3>void _DrawPixel(dword *DestOff, word DestWidth, word DestHeight, word X,
+word Y, dword Color)</h3>
+<ul>
+  <li>Draws a pixel with color Color at point (X,Y) in the buffer pointed to by
+    DestOff&nbsp;</li>
+  <li>Inputs:
+    <ul>
+      <li>DestOff - offset of an image buffer in memory</li>
+      <li>DestWidth - width of the buffer</li>
+      <li>DestHeight - height of the buffer</li>
+      <li>X - x coordinate of point</li>
+      <li>Y - y coordinate of point</li>
+      <li>Color - color of pixel to draw</li>
+    </ul>
+  </li>
+  <li>Outputs: Pixel drawn to buffer</li>
+  <li>Calls: _PointInBox</li>
+  <li>Returns: None</li>
+  <li>Notes:
+    <ul>
+      <li>Do not draw the pixel if it is outside the boundaries of the buffer.</li>
+    </ul>
+  </li>
+  <li>Points: 2</li>
+</ul>
+<a name=line></a>
+<h3>void _DrawLine(dword *DestOff, word DestWidth, word DestHeight, word X1,
+word Y1, word X2, word Y2, dword Color)</h3>
+<ul>
+  <li>Draws a line with color Color from point (X1,Y1) to (X2,Y2) in the buffer
+    pointed to by DestOff&nbsp;</li>
+  <li>Inputs:
+    <ul>
+      <li>DestOff - offset of an image buffer in memory</li>
+      <li>DestWidth - width of the buffer</li>
+      <li>DestHeight - height of the buffer</li>
+      <li>X1 - x coordinate of start point</li>
+      <li>Y1 - y coordinate of start point</li>
+      <li>X2 - x coordinate of end point</li>
+      <li>Y2 - y coordinate of end point</li>
+      <li>Color - color of line to draw</li>
+    </ul>
+  </li>
+  <li>Outputs: Line drawn to buffer</li>
+  <li>Calls: _DrawPixel</li>
+  <li>Returns: None</li>
+  <li>Notes:
+    <ul>
+      <li>Follow the algorithm given in the writeup.</li>
+      <li>Use the declared line algorithm variables when writing this function.</li>
+      <li>Pixels that lie outside the boundaries of the buffer will not be drawn
+        (_DrawPixel takes care of calling _PointInBox so you should not call it
+        also).</li>
+    </ul>
+  </li>
+  <li>Points: 7</li>
+</ul>
+<a name=rect></a>
+<h3>void _DrawRect(dword *DestOff, word DestWidth, word DestHeight, word DestX1,
+word DestY1, word DestX2, word DestY2, dword Color, dword FillRectFlag)</h3>
+<ul>
+  <li>Draws a rectangle with color Color from point (X1,Y1) to (X2,Y2) in the
+    buffer pointed to by DestOff&nbsp;</li>
+  <li>Inputs:
+    <ul>
+      <li>DestOff - offset of an image buffer in memory</li>
+      <li>DestWidth - width of the buffer</li>
+      <li>DestHeight - height of the buffer</li>
+      <li>X1 - x coordinate of start point</li>
+      <li>Y1 - y coordinate of start point</li>
+      <li>X2 - x coordinate of end point</li>
+      <li>Y2 - y coordinate of end point</li>
+      <li>Color - color of rectangle to draw</li>
+      <li>FillRectFlag - flag to determine whether or not to fill the rectangle</li>
+    </ul>
+  </li>
+  <li>Outputs: Rectangle drawn to buffer, filled if necessary</li>
+  <li>Calls: _DrawLine, _FloodFill</li>
+  <li>Returns: None</li>
+  <li>Notes:
+    <ul>
+      <li>Rectangles are made up of 4 lines.</li>
+      <li>As with DrawLine, pixels that lie outside the boundaries of the buffer
+        will not be drawn.</li>
+      <li>If the FillRectFlag is set, also fill the rectangle.<b>For the filled rectangle, you do not want to 
+          do an alpha composition within _FloodFill, so pass in a 0 for this parameter.</b></li>
+    </ul>
+  </li>
+  <li>Points: 4</li>
+</ul>
+<a name=circ></a>
+<h3>void _DrawCircle(dword *DestOff, word DestWidth, word DestHeight, word X,
+word Y, word Radius, dword Color, dword FillCircleFlag)</h3>
+<ul>
+  <li>Draws a circle with center (X,Y), color Color, and radius Radius in the
+    buffer pointed to by DestOff&nbsp;</li>
+  <li>Inputs:
+    <ul>
+      <li>DestOff - offset of an image buffer in memory</li>
+      <li>DestWidth - width of the buffer</li>
+      <li>DestHeight - height of the buffer</li>
+      <li>X - x coordinate of center</li>
+      <li>Y - y coordinate of center</li>
+      <li>Color - color of line to draw</li>
+      <li>FillCircleFlag - flag to determine whether or not to fill the circle</li>
+    </ul>
+  </li>
+  <li>Outputs: Circle drawn to buffer, filled if necessary</li>
+  <li>Calls: _DrawPixel, _FloodFill</li>
+  <li>Returns: None</li>
+  <li>Notes:
+    <ul>
+      <li>Follow the algorithm given in the writeup.</li>
+      <li>Use the declared circle algorithm variables when writing this
+        function.</li>
+      <li>As with DrawLine, pixels that lie outside the boundaries of the buffer
+        will not be drawn.</li>
+      <li>If the FillCircleFlag is set, also fill the circle. <b>For the filled circle, you do not want to 
+          do an alpha composition within _FloodFill, so pass in a 0 for this parameter.</b></li>
+    </ul>
+  </li>
+  <li>Points: 7</li>
+</ul>
+<a name=text></a>
+<h3>void _DrawText(dword *StringOff, dword *DestOff, word DestWidth, word DestHeight,
+word X, word Y, dword Color)</h3>
+<ul>
+  <li>Draws a text string pointed to by StringOff with color Color at point (X,Y)
+    in the buffer pointed to by DestOff
+  <li>Inputs:
+    <ul>
+      <li>StringOff - offset of string to draw
+      <li>DestOff -&nbsp; offset of an image buffer in memory</li>
+      <li>DestWidth - width of the buffer</li>
+      <li>DestHeight - height of the buffer</li>
+      <li>X - x coordinate of start point</li>
+      <li>Y - y coordinate of start point</li>
+      <li>Color - color of the string to draw
+      <li>[_FontOff] - offset of font image data
+    </ul>
+  </li>
+  <li>Outputs: String drawn to buffer
+  <li>Calls: _PointInBox
+  <li>Notes:
+    <ul>
+      <li>Strings are terminated with a '$'.
+      <li>Refer to writeup for description on how to do this function.
+      <li>Do not draw pixels that lie outside the boundaries of the buffer.
+      <li>Remember to give each pixel its color before drawing it to the buffer.</li>
+    </ul>
+  </li>
+  <li>Points: 7</li>
+</ul>
+<a name=clear></a>
+<h3>
+void _ClearBuffer(dword *DestOff, word DestWidth, word DestHeight, dword Color)</h3>
+<ul>
+  <li>Clears a buffer pointed to by DestOff by filling it with color Color
+  <li>Inputs:
+    <ul>
+      <li>DestOff -&nbsp; offset of an image buffer in memory</li>
+      <li>DestWidth - width of the buffer</li>
+      <li>DestHeight - height of the buffer</li>
+      <li>Color - color to make buffer
+    </ul>
+  </li>
+  <li>Outputs: Color copied to buffer
+  <li>Calls: None
+  <li>Notes:
+    <ul>
+      <li>Use string instructions for fast performance.</li>
+    </ul>
+  <li>Points: 3</li>
+</ul>
+<a name=copy></a>
+<h3>
+void _CopyBuffer(dword *SrcOff, word SrcWidth, word SrcHeight, dword *DestOff,
+word DestWidth, word DestHeight,&nbsp;word X, word Y)</h3>
+<ul>
+  <li>Copies a source buffer pointed to by SrcOff to a location (X,Y) in a
+    destination buffer pointed to by DestOff
+  <li>Inputs:
+    <ul>
+      <li>SrcOff - offset of source buffer</li>
+      <li>SrcWidth - width of source buffer</li>
+      <li>SrcHeight - height of source buffer</li>
+      <li>DestOff -&nbsp; offset of destination buffer</li>
+      <li>DestWidth - width of destination buffer</li>
+      <li>DestHeight - height of destination buffer</li>
+      <li>X - x coordinate of start point in destination buffer</li>
+      <li>Y - y coordinate of start point in destination buffer</li>
+    </ul>
+  </li>
+  <li>Outputs: Source buffer copied onto destination buffer
+  <li>Calls: None
+  <li>Notes:
+    <ul>
+      <li>Use string instructions for fast performance.</li>
+      <li>You may assume that SrcWidth + X &lt;= DestWidth and SrcHeight + Y &lt;=
+        DestHeight</li>
+    </ul>
+  <li>Points: 5</li>
+</ul>
+<a name=compose></a>
+<h3>
+void _ComposeBuffers(dword *SrcOff, word SrcWidth, word SrcHeight, dword *DestOff,
+word DestWidth, word DestHeight, word X, word Y)</h3>
+<ul>
+  <li>Alpha composes a source buffer pointed to by SrcOff onto a destination
+    buffer pointed to by DestOff at location (X,Y)
+  <li>Inputs:
+    <ul>
+      <li>SrcOff - offset of source buffer</li>
+      <li>SrcWidth - width of source buffer</li>
+      <li>SrcHeight - height of source buffer</li>
+      <li>DestOff -&nbsp; offset of destination buffer</li>
+      <li>DestWidth - width of destination buffer</li>
+      <li>DestHeight - height of destination buffer</li>
+      <li>X - x coordinate of start point in destination buffer</li>
+      <li>Y - y coordinate of start point in destination buffer</li>
+    </ul>
+  </li>
+  <li>Outputs: Source buffer alpha composed onto destination buffer
+  <li>Calls: None
+  <li>Notes:
+    <ul>
+      <li>Refer to writeup for alpha blending algorithm.
+      <li>You must use MMX instructions in this function.
+      <li>You may assume that SrcWidth + X &lt;= DestWidth and SrcHeight + Y &lt;=
+        DestHeight
+    </ul>
+  </li>
+  <li>Points: 7</li>
+</ul>
+<a name=blur>
+<h3>
+void _BlurBuffer(dword *SrcOff, dword *DestOff, word DestWidth, word DestHeight)</h3>
+<ul>
+  <li>Blurs the buffer pointed to by SrcOff and writes the blurred buffer to the
+    buffer pointed to by DestOff
+  <li>Inputs:
+    <ul>
+      <li>SrcOff - offset of source buffer</li>
+      <li>DestOff -&nbsp; offset of destination buffer</li>
+      <li>DestWidth - width of destination buffer</li>
+      <li>DestHeight - height of destination buffer</li>
+    </ul>
+  </li>
+      <li>Outputs: String drawn to buffer</li>
+  <li>Calls: _PointInBox
+  <li>Notes:
+    <ul>
+      <li>Refer to the writeup for the blur function.
+      <li>Do not include points that are outside the boundaries of the buffer
+      <li>You may assume that the source and destination buffers are exactly the
+        same size.
+    </ul>
+  </li>
+  <li>Points: 7</li>
+</ul>
+</a>
+<a name=fill>
+<h3>void _FloodFill(dword *DestOff, word DestWidth, word DestHeight, word X, word
+Y, dword Color, dword ComposeFlag)</h3>
+<ul>
+  <li>Performs a flood fill operation on a region in the buffer pointed to by
+    DestOff
+  <li>Inputs:
+    <ul>
+      <li>DestOff -&nbsp; offset of an image buffer in memory</li>
+      <li>DestWidth - width of the buffer</li>
+      <li>DestHeight - height of the buffer</li>
+      <li>X - x coordinate of point in the region</li>
+      <li>Y - y coordinate of point in the region</li>
+      <li>Color - new color for region
+      <li>ComposeFlag - flag to determine whether or not to alpha compose the
+        current color of the region with Color
+    </ul>
+  </li>
+  <li>Outputs: Region filled with color Color in buffer
+  <li>Calls: _PointInBox, _GetPixel, _DrawPixel
+  <li>Notes:
+    <ul>
+      <li>Refer to the writeup for the flood fill algorithm.
+      <li>Do not update pixels that lie outside the boundaries of the buffer
+      <li>If ComposeFlag is set, update the value of the new color by alpha
+        composing onto the current color.&nbsp; You can (and should) use the
+        same code from your _ComposeBuffers function, as it does the same thing.
+    </ul>
+  </li>
+  <li>Points: 7</li>
+</ul>
+</a>
+<a name=ikey></a>
+<h3>dword _InstallKeyboard(void)</h3>
+<ul>
+  <li>Installs the keyboard ISR
+  <li>Inputs: None
+  <li>Outputs: None
+  <li>Calls: _LockArea</li>
+  <li>Returns: 1 on error, 0 otherwise</li>
+  <li>Notes:
+    <ul>
+      <li>You may use a <a href="library.html">library</a> function to install
+        this interrupt for you</li>
+      <li>Use LockArea to lock the variables the interrupt will access</li>
+      <li>To get the length of the handler, subtract the start of the handler
+        from the label at the end of the handler (remember, labels are just
+        addresses)</li>
+    </ul>
+  </li>
+  <li>Points: 1</li>
+</ul>
+<a name=rkey></a>
+<h3>
+void _RemoveKeyboard(void)</h3>
+<ul>
+  <li>Uninstalls the keyboard ISR
+  <li>Inputs: None
+  <li>Outputs: None
+  <li>Notes:
+    <ul>
+      <li>You may use a <a href="library.html">library</a> function to remove
+        this interrupt for you</li>
+    </ul>
+  </li>
+  <li>Points: 1</li>
+</ul>
+<a name=kisr></a>
+<h3>
+void _KeyboardISR(void)</h3>
+<ul>
+  <li>Handles keyboard input from the user
+  <li>Inputs: Keypress waiting at port [_kbPort], [_kbIRQ]
+  <li>Outputs: [_key], [_MPFlags]
+  <li>Calls: None
+  <li>Notes:
+    <ul>
+      <li>ESC key will end the program
+      <li>Store the ASCII representation of the received scancode in the [_key]
+        variable</li>
+      <li>Update the respective _MPFlags when the shift keys are
+        pressed/released
+      <li>Update the flag in _MPFlags when a key other than a shift key is
+        pressed</li>
+      <li>Do not chain the original handler</li>
+      <li>You need to save/restore the temporary registers you use as this is an
+        ISR</li>
+      <li>Remember to send an end-of-interrupt signal (write 20h to port 20h) at
+        the end of the ISR.&nbsp; If [_kbIRQ] &gt;= 8, you also need to ACK with
+        the slave PIC (write 20h to port A0h)</li>
+    </ul>
+  </li>
+  <li>Points: 3</li>
+</ul>
+<a name=imouse></a>
+<h3>dword _InstallMouse(void)</h3>
+<ul>
+  <li>Installs the mouse callback
+  <li>Inputs: None
+  <li>Outputs: [_MouseSeg], [_MouseOff]
+  <li>Returns: 1 on error, 0 otherwise
+  <li>Calls: _LockArea, _Get_RMCB, DPMI_Int
+  <li>Notes:
+    <ul>
+      <li>You cannot call <tt>int 33h</tt> directly - you need to simulate a
+        real mode interrupt by calling DPMI_Int with the appropriate values in
+        the DPMI registers
+      <li>Use _Get_RMCB to get a real mode segment and offset that you pass to <tt>int
+        33h</tt>
+      <li>Do not try to pass cs and the offset of MouseCallback directly to <tt>int
+        33h</tt>: selectors are not the same as segments!
+      <li>Use LockArea to lock the variables the callback will access
+      <li>To get the length of the handler, subtract the start of the handler
+        from the label at the end of the handler (remember, labels are just
+        addresses)
+      <li>For reference on <tt>int 33h</tt>, function <tt>000Ch</tt>, visit this
+        page: <a href="http://www.delorie.com/djgpp/doc/rbinter/id/87/59.html">http://www.delorie.com/djgpp/doc/rbinter/id/87/59.html</a>
+        (also look at the linked tables)
+      <li>You want the callback to be called on left mouse button press and
+        release as well as on mouse movement.</li>
+    </ul>
+  </li>
+  <li>Points: 3</li>
+</ul>
+<a name=rmouse></a>
+<h3>void _RemoveMouse(void)</h3>
+<ul>
+  <li>Removes the mouse callback
+  <li>Inputs: [_MouseSeg], [_MouseOff]
+  <li>Outputs: None
+  <li>Calls: _Free_RMCB, DPMI_Int
+  <li>Notes
+    <ul class="innerul">
+      <li>Uninstall the mouse callback using before you free the real mode
+        callback.
+      <li>For reference on <tt>int 33h</tt>, function <tt>000Ch</tt>, visit this
+        page: <a href="http://www.delorie.com/djgpp/doc/rbinter/id/87/59.html">http://www.delorie.com/djgpp/doc/rbinter/id/87/59.html</a>
+        (also look at the linked tables)
+      <li>Use segment:offset 0000:0000 for &quot;no callback&quot;</li>
+    </ul>
+  </li>
+  <li>Points: 1</li>
+</ul>
+<a name=misr></a>
+<h3>void _MouseCallback(dword *DPMIRegsPtr)</h3>
+<ul>
+  <li>Handles mouse input from the user
+  <li>Inputs:
+    <ul>
+      <li>DPMIRegsPtr - pointer to DPMI register structure</li>
+      <li>[_MouseX], [_MouseY], [_MPFlags]</li>
+    </ul>
+  <li>Outputs: [_MouseX], [_MouseY], [_MPFlags]
+  <li>Calls: None
+  <li>Notes:
+    <ul>
+      <li>Use <tt>es </tt>to retrieve mouse data, not <tt>ds</tt>
+    </ul>
+    <ul>
+      <li>Use DPMI_&lt;REGISTERNAME&gt;_off to access DPMI register structure
+        values (ex. DPMI_EAX_off)
+      <li> Fields in button state register (see table 3172 linked from URL in
+        InstallMouse function) that you will need:
+        <ul>
+          <li>Bit 0 - left mouse button (high when button is down)
+        </ul>
+      <li>Update values of [_MouseX] and [_MouseY] when mouse is moved</li>
+      <li>You need to save/restore the temporary registers you use as this is a
+        callback</li>
+    </ul>
+  </li>
+</ul>
+<ul>
+  <li>Points: 6</li>
+</ul>
+<H2>Procedure</H2>
+<ul>
+  <li>Copy the given MP4 files from the network drive to your home directory
+    with the following command:<br>
+    <tt>xcopy /s V:\ece291\mp4 W:\mp4</tt><br>
+    Alternatively, from home you can download the same files as <a href="http://courses.engr.illinois.edu/ece291/mp/mp4/mp4.zip">mp4.zip</a>.
+</ul>
+<ul>
+  <li><b>Unlike previous MPs</b>, MP4 will only run on Windows 2000 or Windows XP
+    machines.
+  <li><b>Also unlike previous MPs</b>, you will need to run 'ex291' to set up the
+    graphics display.&nbsp; You can do this in a command prompt window, and you
+    only need to do this once per DOS session.&nbsp; One issue with 'ex291' is
+    that it seems to disrupt the 'make' command.&nbsp; To get around this, <b>have
+    two windows open - one in which you DO NOT run 'ex291' and use to make your
+    program, and the other you use to run your program.</b><br>
+  <li>As with previous MPs, use a text editor to modify the program. As given,
+    the program uses LIBMP4 routines to implement all functionality. To receive
+    full credit for the assignment, you will need to implement each of the
+    subroutines described above with your own code.<br>
+  <li>By modifying a few comments, you can mix and match usage of your own code
+    and Library routines. You may notice that the LIBMP4 routines contain
+    extraneous and difficult-to-read code. They are not meant to be easily
+    unassembled!</li>
+</ul>
+<H2>Final Steps</H2>
+<p>1. Demonstrate your MP4.EXE to a TA. You may be asked to recompile and demo
+the program.</p>
+<p>2. Be prepared to answer questions about any aspect of the operation of your
+program. The TAs will not accept an MP if you cannot fully explain your code and
+your implementation. Delayed MPs will be subject to late penalties as described
+in the course syllabus (7 pts per day up to 5 days).</p>
+<p>3. The TA will complete the code submission procedure.</p>
+<HR>
+
+<H2>MP4.ASM (program framework)</H2><FONT size=-1></FONT>
+<h1><a href="mp4.asm">mp4.asm</a></h1>
+<h1><a href="mp4main.asm">mp4main.asm</a></h1>
+
+<!--#include file="foot.asp"-->
+
+
+
+

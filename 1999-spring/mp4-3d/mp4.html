@@ -1,0 +1,1393 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="Generator" CONTENT="Microsoft Word 97">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.05 [en] (Win95; I) [Netscape]">
+   <TITLE>MP4: Texture Mapping</TITLE>
+</HEAD>
+<BODY>
+&nbsp;
+<TABLE BORDER=0 CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TD ALIGN=LEFT WIDTH="33%">ECE291</TD>
+
+<TD ALIGN=CENTER WIDTH="34%">Computer Engineering II</TD>
+
+<TD ALIGN=RIGHT WIDTH="33%">Lockwood, Fall 1998</TD>
+</TR>
+</TABLE>
+
+<CENTER>
+<H1>
+Machine Problem 4: Perspective Texture Mapping</H1></CENTER>
+
+<CENTER><TABLE BORDER CELLPADDING=3 WIDTH="60%" >
+<TR>
+<TD ALIGN=RIGHT><B>Purpose</B></TD>
+
+<TD>3D rendering, Floating point math, Data Structures
+</TD>
+</TR>
+
+<TR>
+<TD ALIGN=RIGHT><B>Points</B></TD>
+
+<TD>50</TD>
+</TR>
+
+<TR>
+<TD ALIGN=RIGHT><B>Due Date</B></TD>
+
+<TD>5:00 P.M. Thursday, April 8 1999</TD>
+</TR>
+</TABLE></CENTER>
+
+
+<p>
+<img src="../../icon/construct.gif" align=center> This MP has not yet been
+assigned</a>
+
+<P><B><U><FONT SIZE=+3>Introduction</FONT></U></B>
+
+<p>
+<img scr="screendump.gif">
+
+<p>
+Above you see a screen dump from the running program which shows textured
+polygons being rendered on the screen.  The textures drawn on the polygons
+are in perspective.  Also notice that certain polygons are placed
+intersecting each other.
+..
+..
+..
+
+<P>In this Machine Problem you will be implementing a subset of functions
+that comprise the basics of perspective correct texture mapping.  Your
+program will render polygons defined in 3-D space onto the 2-D screen.  While
+you will be given all the necessary algorithms for drawing perspective correct
+texture maps, you will be expected to understand how perspective corrected
+texture mapping works.
+
+<P><B><U><FONT SIZE=+3>Running the Program</FONT></U></B>
+<p>
+When you first run the program, you can step through a number of test cases
+one at a time by hitting <i>F12</i>....
+..
+..
+
+
+<P><B><U><FONT SIZE=+3>The Graphics World</FONT></U></B>
+
+<P>When creating a graphics engine, we want to be able to draw all of the
+objets in our world.  These objects are made up of a group of polygons.
+Each polygon in an object is defined by a series of coordinates in 3D space.
+These points are connected in order to make a series of edges. The first point
+of the first edge must be the same as the last point of the last edge so that
+the polygon is closed.  Each polygon may have any number of sides, and should
+all lie on the same plane, that is all of our polygons must be flat, but they
+may be oriented in any manner in space.  
+
+<P>We can allow these polygons to look any way we want. They can have a solid
+color, or they can be a wire frame.  We can even place a picture (usually
+referred to as a texture) on a polygon.
+
+<P><B><U><FONT SIZE=+3>Different Ways of Viewing the World</FONT></U></B>
+
+<P>Imagine that the computer screen is a window through which we are going to
+view the world.  On the screen is a grid pixels, each of which is represents a
+sample of what is in front of us.  We need to somehow decide what color each of
+those pixels needs to be.
+
+<P>In order to do this, first consider the way in which you look at things.
+Light comes into your eye from all directions.  These rays of light are all
+different colors.  If you trace any ray of light backwards, the color of that
+ray of light is the same color as the object it most recently hit.
+
+<P>Now there are two ways by which we can cast rays back from objects towards
+the screen.  The first way is called an orthogonal view in which all of the
+rays that are cast back are parallel to one another.  Usually the rays are
+perpendicular to the screen.  While this makes the math and processing much
+easier, an orthogonal view does not look very appealing.  If two objects are
+the same size, then no matter how far away they are, they both look like they
+are the same exact size.
+
+<P><CENTER><IMG SRC="ortho.gif" width="600" height="383"></CENTER>
+
+<P>The other way of casting rays back is by letting all of the rays come
+together at a point.  This more closely mimics how all the rays of light come
+together towards your eye.  With a perspective view of the world, everything
+looks in perspective.  Things that are far away look like they are smaller than
+things that are close.  Also, as you look further out, your field of view
+expands, while in an orthogonal view you can only see what is right in front of
+you.
+
+
+<P><B><U><FONT SIZE=+3>Drawing a Textured Polygon</FONT></U></B>
+
+<P>While it would be nice to be able to cast out rays to the screen and find
+where each ray intersects each object, this is an incredibly slow process.
+This is often done for non-time critical rendering for which we would like to
+get the best, most accurate image, no matter how many days it takes (yes, days)
+to get a few minutes worth of film.  (Think <I>Toy Story</I> or <I>A Bugs Life
+</I> etc...)
+
+<P>Instead of casting rays out until we hit some object, we will instead work
+with each object one at a time. We are going to take advantage of two important
+facts about projecting images. First, all straight lines that are projected
+onto a flat screen always appear straight on the screen.  The second fact is
+that convex polygons always project as convex polygons.
+
+<P>We will first determine where on the screen each vertex appears. Then,
+boundary lines which surround the object will be calculated. Once we now know
+where the boundaries of the object are, we will then be able to effectively
+fill in the rows between the edges of the polygon. This is because we know that
+our polygons will be convex, and row on the screen of our polygons will be
+unbroken by edges.
+
+<P>If we want to add texture mapping, we first need to realize that every
+pixel on the screen represents some 3D coordinates on a plane in space.  Every
+point on each polygon is associated with some point on a texture map.  So, for
+each pixel on the screen we need to determine the coordinates on a texture map
+that is associated with that pixel.  This is the basic motivation behind the
+math that we will derive.
+
+<P><CENTER><IMG SRC="inline.gif" width="600" height="287"></CENTER>
+
+<P>Each pixel's coordinates on the screen will translate into coordinates on a 
+texture map.  However, if we draw outside of the polygon boundaries, we will
+undoubtedly have coordinates that are not on the texture map.  This will result
+in an access to memory off of the texture map and a memory leak.
+
+<P><B><U><FONT SIZE=+3>The Z Buffer</FONT></U></B>
+
+<P>Since we are drawing entire squares at a time, we need some way of making
+sure that if two squares overlap the closer one overlaps the further one.
+The Z buffer, stores the distance each pixel is from you.  If you are about
+to draw in a pixel, you compare it's value to how far away the current pixel is
+from you.  If what you are drawing is closer than what you have already drawn,
+then you replace the old pixel with the newer closer one, and adjust the Z
+buffer appropriately. If you find that the pixel which is in place is closer
+than the one you are about to draw, then you leave the old one there and go on.
+
+<P><B><U><FONT SIZE=+3>A Few Conventions</FONT></U></B>
+
+<P>Why is it called a Z buffer?  This is due to one of a number of conventions
+that are used in graphics.  There are a number of different types of "spaces"
+in graphics which are used to make it easier to manipulate objects in the
+world. We will mostly be concerned with <I>Camera Space</I>, <I>Screen Space
+</I> and <I>Texture Space</I>. The camera is the point from which we are
+looking.  It is the point where all of the rays which we cast intersect.  In
+camera space, the camera is placed at the origin, and all of the objects are
+given coordinates relative to the camera. Additionally, the x-axis points to
+the right, y-axis is pointing downward and the z-axis points directly into the
+screen.  This is why we use a "Z" buffer.  We save the camera space Z
+coordinate of each pixel that is drawn which tells us how far away a point is.
+In addition, we define that the center of the screen intersects the z axis at
+a distance of d.  So the center of the screen is at (0,0,d).  The exact choice
+of d doesn't matter for deriving the necessary equations, and there is a
+discussion about the value of d later on.
+
+<P>Screen space is defined quite differently from camera space.  While camera
+space is used to define 3-D coordinates, screen space is used to define the
+coordinates on the screen.  In screen space, the x-axis points to the right,
+and the y-axis points downward, but the origin is located at the top left
+corner of the screen. This way (0,0) is at offset 0 in video memory.
+Additionally, there is a 1:1 ratio between camera space lengths and screen
+space lengths.  That is, if a line is drawn which is 10 units long with a Z
+distance of d in camera space, it is also 10 units long in screen space.
+Additionally, associated with each screen space point, there is a depth value,
+which is precisely the z coordinate of that point in camera space.  We will
+derive a simple formula for going from camera space to screen space later on.
+
+<P><CENTER><IMG SRC="spaces.gif" width="600" height="300"></CENTER>
+
+<P>Texture space is completely 2-dimensional.  Each vertex on a square is
+assigned one corner of a texture map.  The coordinates each pixel in a texture
+is referred to as a texel.  The coordinate system used in texture space is given
+using a u axis which runs horizontally, and a v axis which runs down, where the
+origin is located at the top left corner of the texture.  There is a linear
+relationship between texture space coordinates and camera space coordinates,
+which means it is possible to linearly interpolate between the camera space
+coordinates of a plane and the texture space coordinates in order to choose the
+correct texel to display on the screen.  This is discused further in later
+sections.
+
+<P><B><U><FONT SIZE=+3>Choosing "d"</FONT></U></B>
+
+<P> As mentioned above, d is the distance between the camera and the screen.
+This directly effects the field of view, depth perception, and distortion which
+will appear at the edges of the screen.
+
+<P>Your field of view is how far out you can see to either side.  This is
+usually measured as an angle from one edge of the screen to the camera, and
+back to the other edge of the screen.  The further back you move your camera
+smaller your field of view, so the less you can see out to the sides.
+
+<P>Your depth perception can be qualitatively measured better than it could be
+quantitatively measured.  If you imagine that you move your camera further and
+further back, you would notice that the rays that you cast out toward the
+screen become closer and closer.  As these rays become closer, they become more
+and more like parallel lines.  As you could imagine, this makes everything look
+more and more like an orthogonal view.  Objects which are of the same size that
+are far away from each other will look like they are still about the same size
+for large values of d.
+
+<P>The big disadvantage of having a small d is that there is a great deal of
+distortion generated near the edges of the screen.  This is because for small
+values of d, the distance from the camera to the edge of the screen is much
+greater than the distance from the camera than it is from the camera to the
+center of the screen.  When objects are projected onto a flat screen,
+corrections are made for the differences in distance. Therefore, since the
+edges of the screen are further away than the center of the screen, objects
+near the edge of the screen will be larger than objects at the center of the
+screen.  The amount that edge objects are magnified is proportional to how much
+further away from the camera the edges are.
+
+<P><CENTER><IMG SRC="compare_d.gif" width="600" height="349"></CENTER>
+
+<P>The problem of edge distortion can be corrected for if we assume that the
+screen is spherical instead of flat.  On a flat screen, when you step from
+pixel to pixel, you move a the distance that you move across the screen is
+constant.  On a spherical screen, when you step from pixel to pixel, the angle
+that you turn is constant.  In this type of screen, it wouldn't matter how far
+away from the screen you are, only what your field of view is.  This however
+introduces a different kind of distortion since the screen is in fact flat and
+not spherical.  Straight lines would no longer appear straight.  This is a
+problem as lines loose their linear relationships. As a result, we would be
+forced to work with trigonometric functions which would be much slower on the
+microprocessor than simple algebra. 
+
+
+<P>By convention d is usually chosen to be equal to the height of the screen.
+This number may be changed however to correct for distortion or to increase the
+field of view if necessary.
+
+<P><B><U><FONT SIZE=+3>The Math</FONT></U></B>
+
+<P>Mathematically, we will be searching for linear relationships between the
+different spaces, so that we can translate screen coordinates to texture
+coordinates given a particular polygon's orientation.  A linear relationship is
+one in which a constant change in one coordinate direction results in a
+constant change in another coordinate direction.  There are two obvious linear
+relationships in texture mapping that are very important.  First, whenever you
+move along any line in 3-D space, there is a linear relationship between the x,
+y, and z coordinates along that line.  Additionally, we know that there must be
+a linear relationship between the camera coordinates of any polygon and the
+texture coordinates of that polygon.
+
+<P><CENTER><IMG SRC="proportion.gif" width="400" height="231"></CENTER>
+
+<P>Now we need some way to relate screen coordinates to the world coordinates.
+In the picture above, we have a point in camera space which we want to project
+onto the screen.  If you notice, by similar triangles, we can get the following
+equations:
+
+<P><IMG SRC="equ1.gif" width="60" height="173">
+
+<P>Recall that screen coordinates are centered on the upper left hand corner of
+the screen.  Assuming that the resolution of the screen is 640x480, the
+following equations can be used to translate camera space coordinates into
+screen coordinates.
+
+<P><IMG SRC="equ2.gif" width="95" height="80">
+
+<P><B><U><FONT SIZE=+3>Linear Relationships Between Screen Space and Camera
+Space</FONT></U></B>
+
+<p>In order to draw efficiently to the screen, it is important to find a linear
+relationship between points in camera space and points on the screen.  Our algorithm
+renders points along straight lines on the screen.  Straight lines in screen
+space correspond to straight lines in camera space.  As it turns out, there is a
+linear relationship between the inverse of the z coordinate in camera
+space and coordinates in screen space as one traces along a straight line.  To find
+this relationship, we will start with the equation of a straight line in camera space:
+
+<P><IMG SRC="equ3.gif" width="76" height="45">
+
+<p>With some substitution, we can determine an eqation relating how the z coordinate
+for this line relates to screen coordinates.
+
+<P><IMG SRC="equ4.gif" width="112" height="285">
+
+<P>This is a non-linear equation relating z to the screen coordinates.  While z is
+non-linear, we will see that 1/z is linear with respect to screen coordinates
+as follows:
+
+<P><IMG SRC="equ5.gif" width="123" height="80">
+
+
+<P>We don't have to know what A, B, C or D are for the lines which we are
+traveling along.  All we need to know is that since 1/z varys linearly with x'
+and y' independently, we can linearly interpolate between the two endpoints of
+the line with respect to 1/z.  From now on, for simplicity, 1/z will be referred
+to as w, which is consistent with conventions used in graphics programming.
+
+<P><B><U><FONT SIZE=+3>Linear Interpolation and Cramer's Rule</FONT></U></B>
+
+<P>Linear interpolation will be used in this MP to calculate the points between
+two endpoints of a line, (x'0, y'0, w0) and (x'1, y'1, w1).  For instance, if you
+specify a w value, linear interpolation allows you to find the x and y
+coordinates of the point that has that w value and lies on the line connecting
+the two specified endpoints.
+
+<P>In order to linearly interpolate, you need to first be sure that you are
+dealing with data that is related in by a linear equation.  We just proved that
+if you move along any line in space x' and w (or 1/z) are linearly related, as
+are y' and w.  It is easy to see that as you move along a straight line on the
+screen x' and y' are also linearly related, so we are all set to start
+interpolating.
+
+<P>Since we will be linearly interpolating along a plane instead of a line, we
+will need to start off with three points instead of two.  We can simply choose
+3 points from our square in space.  Each square is already defined with 4 x, y
+and z coordinates, so getting 3 x, y and w coordinates is easy.  Once you have
+your three points (x'0, y'0, w0), (x'1, y'1, w1) and (x'2, y'2, w2), we note
+that we are trying to find an equation that looks like the following:
+
+<P><IMG SRC="equ7.gif" width="111" height="21">
+
+<P>This is simply a linear equation in two unknowns.  We So we just need to
+calculate two sets of delta's, and plug the equations into Cramers rule as
+follows:
+
+<P><IMG SRC="equ8.gif" width="103" height="168">
+
+<P>Placing the coefficients into matrix form, we get the following:
+
+<p><IMG SRC="equ9.gif" width="147" height="51">
+
+<P>This can then be solved using Cramer's rule as follows:
+
+<p><IMG SRC="equ10.gif" width="112" height="209">
+
+<P>Recall that:
+<p><IMG SRC="equ11.gif" width="125" height="48">
+
+
+<P>The coefficient A can be thought of as a delta(w)/delta(x') term.  That is,
+for each unit change in the screen coordinate, it is the amount w changes.
+Similarly, B can be thought of as delta(w)/delta(y').
+
+<P>With these coefficients, we can now move from pixel to pixel knowing the
+exact z coordinate of each as we go along.  Since we are already given the
+exact x, y and z coordinate of each vertex, we can have a starting point from
+which to work off of. Each time we move a pixel in the x' direction, we just
+add A to w.  If we move in the y' direction, we just add B to w. We can also
+save the values A+B and A-B for moving along the diagonal by 1 pixel to speed
+up the floating point calculations.  If either of the denominators turns out to
+be 0, we don't have to worry about it.  It simply means the line lies along a
+plane which intersects the origin, and we will never be moving off that plane
+to need to worry about the infinite change in w which would result.
+
+<P><B><U><FONT SIZE=+3>Using Interpolation in Texture Space</FONT></U></B>
+
+<P>It was noted before that there is a linear relationship between camera space
+and texture space. There is also a linear relationship between (screen space
+coordinates)/z and camera space.  This implies that there is a linear
+relationship between (texture space)/z and screen space.  You could therefore
+write a set of equations as follows:
+
+<P><IMG SRC="equ12.gif" width="120" height="45">
+
+<P>These two equations expand into 2 pairs of equations, each with 2 unknowns
+after calculating the correct initial conditions.  The results are as follows:
+
+<P><IMG SRC="equ13.gif" width="65" height="160">
+
+<P><FONT SIZE =-1>Recall that w = 1/z.</FONT>
+
+<P>We can then solve for this using Cramer's Rule as above. We can easily
+calculate uw and vw for three of the vertices on a square.  We then
+calculate the screen x' and y' coordinates of each of those points in order
+to get the deltas.  Then, once we have all of the necessary coefficients, we can
+calculate differentials which we need to interpolate the plane. Once we have
+the vw, uw and w coordinate for a pixel, we can divide the uw and vw terms by w
+to get u and v, the coordinates in the texture map of the texel that we want to
+use to draw to the screen.
+
+<P>As you see, when drawing a polygon to the screen, we will never actually
+calculate the z value for any pixel.  Instead, we will be dealing with only w.
+As a result of this, we will not be using a z buffer for this MP since that
+would require an extra calculation.  Instead, we will use a w buffer.  Since w
+is exactly 1/z, objects that are closer to us will always have a smaller z and
+therefore a larger w.  Also, you may note that because of the nature of
+floating point numbers, they can be compared using the integer unit as long as
+at most one of the numbers being compared is negative.  This is fine for us
+since we will never draw a pixel with a negative value of w (or z) for this
+would indicate that the polygon being drawn is behind the camera.
+
+
+<P><B><U><FONT SIZE=+3>Walking on Edge</FONT></U></B>
+
+<P>We need to determine what points are within a polygon.  To do this, we will
+perform the task of edge walking.  From the edges, we will want to determine
+the leftmost and rightmost pixel on each line that is within the polygon that
+we are drawing.  To keep track of this, we will maintain two tables in memory,
+<I>MinTable</I> and <I>MaxTable</I>.  Each table will have one entry per row,
+or y' coordinate on the screen, so we will not need to record this value in the
+table.  We will want to keep track of the texture coordinates of these edge
+points, as well as the w coordinate so that we can fill in the polygon on the
+line. So, each table entry needs to save the x' coordinate of the pixel we are
+referring to, as well as the uw coordinate of the point, the vw coordinate of
+the point and the w coordinate of the point.
+
+<P>Since edges are straight lines between two points, we need to begin with the
+coordinates of the two endpoints of the line.  Since we will also be keeping
+track of the texture coordinates of corresponding to each pixel along the edge,
+we will need the texture coordinates of the endpoints.  Additionally, since we
+are trying to stay inside of the triangle that we are going to draw, we need to
+know which side of the line we need to stay on.  When we walk along an edge, no
+matter what the slope is, we will either use the pixel that is to the right of
+the line, or to the left of the line.  There is a slight ambiguity as to what
+to do with points that lie directly on a line.  By convention, if the line is
+at the top or left side of a polygon, we will fill in pixels that lie directly
+on the line.  So, if we are staying to the right of a line, we will also fill
+in pixels that lie directly on the line.  Also, if an endpoint of a line lies
+exactly on a pixel at the top of the line, we will also fill in that pixel.
+This means that for lines that we are to stay to the left of, we will <B>not
+</B> fill in pixels that lie directly on the line.  Additionally, for pixels
+that lie exactly at the endpoint of the bottom of a line, we will <B>not</B>
+fill in the pixel.
+
+<P>Thee are a number of special cases which should be addressed. For instance,
+if there is a horizontal edge, there is no way to stay either on the left or
+the right side of the line. We can simply ignore any horizontal edges.  The
+endpoints of each edge is connected to the endpoint of another edge.  If two
+adjacent edges are horizontal, then the polygon is being viewed on edge and you
+can't see it (polygons are 2 dimensional).  If the adjacent edges are not
+horizontal, then they will take care of the horizontal endpoints of the line.
+This is all we are interested in getting anyway.
+
+<P>Another special case is when polygons are only one pixel wide.  This can be
+solved by looking at what happens to the min and max tables when you fill in
+values for a polygon that is less than 1 pixel wide.  When we fill in the
+tables, for any given edge, we will only adjust one table.  If it is a right
+edge, we will fill in the <tt>MaxTable,</tt> if it is a left edge, we will fill
+in the <tt>MinTable.</tt>  For thin polygons the right edge points will be on
+the left of the right edge points.  As a result, the values for a given
+scanline will have a smaller Max value than Min value.  This is going to be our
+condition for not drawing anything on a line.  Incidentally, if the Min and Max
+values are equal, then you have to draw exactly one pixel for the scanline.
+
+<P>One other special case to be concerned about about is edges that are less
+than one pixel tall.  This is similar to the case of a horizontal line.  We
+will be filling edges from a point that is at or below the top of the line down
+to a point that is above the bottom of the line. If there is no integer
+coordinate that lies between these two heights, we will do nothing.
+
+<P>A final worry is edge clipping.  What to do with polygons that go off the
+edge? To start with, you can easily determine if a line is entirely above the
+top of the screen or entirely below the bottom of the screen, in which case the
+entire line can be ignored.  If only part of an edge extends beyond the top or
+bottom edge of the screen, we will simply jump to the correct point on that
+edge that is within the screen height.  If a left edge is too far to the left,
+we will fill in the edge table as usually, even though the coordinate is off the
+screen.  Clipping off the sides of the screen will be handled in scan line
+filling.
+
+<P>In preparing to walk an edge, we will parameterize the lines on the
+boundaries in terms of a point slope form.  You are probably used to seeing the
+equation y = mx + b.  Since we will want to be able to walk along the line in
+the y direction, the lines will have to be parameterized in the form
+x' = my' + b.  The slope of the line (m) is simply the change in x' divided by
+the change in y'.  If you then use the coordinates of one of the endpoints, it
+is easy to solve for b using Cramers rule as follows:
+
+<p><IMG SRC="equ14.gif" width="109" height="88">
+
+<P>Once we have found an equation of a line, we can determine if this line is
+on the left or right side of the polygon by determining if any of the other
+vertices in the polygon are on the left or right side of the polygon.  This is
+relatively easy.  If we just put in the y coordinate of another vertex of the
+polygon into our slope-intercept equation, we can compare the resulting x value
+with the x value of the vertex.  If the third vertex has a higher x coordinate,
+the line is on the left edge of the polygon.  If the vertex has a lower x
+coordinate, the line is on the right side of the polygon.  If they happen to be
+equal, then all of the vertices will be along the same line.  This means that
+we can draw nothing for this polygon since the polygon is being viewed on edge,
+and 2 dimensional objects cannot be seen on edge.  When walking along a left
+edge, you only want to fill in the <tt>MinTable</tt> for coordinates that lie
+on the right side of the line, or coordinates that lie directly on the line.
+When walking along a right edge, you only want to fill in the <tt>MaxTable</tt>
+for coordinates on the left side of the edge.  Also remember that you want to
+start with any pixel that is at or below the top of the line (the top of the
+line is the point with the smallest y' coordinate) and you want to stop at the
+pixel that is above the bottom of the line.
+
+<P>In order to stay strictly on one side of the line, you must remember that
+the FPU by default will round numbers before popping them off of the stack.
+This however can be adjusted using the FPUs control register.  If you set the
+FPU to truncate, rather than round, then the number that is returned will
+always be less than or equal to the actual floating point value.  This is
+useful for staying on the left side of the line.  If you add one to this
+value, you will get an x coordinate which is strictly to the right of the line.
+
+<p>Once you have determined the X coordinate that you want to put into the
+table, you need to determine the other values that go into the table entry.
+These values include the <tt>W</tt>, <tt>UW</tt>, and <tt>VW</tt> coordinates.
+From a single global reference point, we can determine these coordinates
+for any point on the screen using the defined differentials.  Remember that not
+only is the initial global reference point a valid point to reference off
+of, but any calculated value in the <tt>MinTable</tt> or <tt>MaxTable</tt> are
+valid reference points.  This fact can be used to optimize the process of
+moving along a line.
+
+<p>When you draw a straight line, you will always move either up or down by
+exactly 1 pixel, and you will always be moving left or right by <i>m</i>
+or <i>m+1</i> pixels where the absolute value of the slope of the line
+(rounded down) is <i>m</i>.  This means that after you have calculated the
+first point along a line, you simply need to determine if you have moved
+over by <i>m</i> or <i>m+1</i> pixels when you have moved up/down by one
+pixel.  This will determine how much you will need to add to the previous
+<tt>TableEntry</tt> values.
+
+<P><B><U><FONT SIZE=+3>Texture Mapping</FONT></U></B>
+
+<p>Now that we know the endpoints of each scanline, we can fill in the polygon
+one line at a time.  For each scanline, we need to look at the values in the
+<tt>MinTable</tt> and the <tt>MaxTable</tt> which we built.  If the value of
+the X position in the <tt>MinTable</tt> is less greater than the value of the
+X position of the <tt>MaxTable</tt>, then we want to draw nothing for this
+particular scanline.  Additionally, if both X values are either to the left
+of the screen (having negative coordinates) or if they both are to the right of
+the screen (having a coordinate greater than or equal to 640) we will also
+draw nothing.
+
+<p>Next, if the left endpoint of the line is to the left of the screen, and/or
+if the right endpoint of the line is to the right of the screen, it is
+necessary to adjust these endpoints so that they are on the edge of the screen.
+Since global constants have been defined telling you how each of the
+<tt>TableEntry</tt>s values need to be adjusted for each pixel that that is
+moved from the end, you can easily multiply these values by the number of
+pixels that you have to adjust the endpoint by, and add/subtract this value
+from the endpoint value to get a value that is on the screen.
+
+<p>Now that the endpoints are on the screen, you need to start off from the
+X position from the <tt>MinTable</tt> and work your way to the X position from
+the <tt>MaxTable</tt>.  For the first pixel, you need to first compare the W
+value against the W buffer.  If the pixel that you are drawing is not closer
+than what is already on the screen, then you will simply move on to the next
+pixel.  Otherwise, you will divide the <tt>UW</tt> and <tt>VW</tt> coordinates
+by <tt>W</tt> to get the <tt>U</tt> and <tt>V</tt> texture coordinates from the
+texture in memory.  By rounding to the nearest texel, you can pick out from the
+texture the correct color for that particular point on the screen.  Once this
+color has been retrieved, you can put this to the color onto the screen where
+it goes, and adjust the W buffer with the value of W at this point.
+
+<p>For each step that is taken, each of the values <tt>W</tt>, <tt>UW</tt>, and
+<tt>VW</tt> needs to be adjusted by a factor of (dw/dx), (duw/dx) and (dvw/dx)
+respectively.  You can then determine if this point should be drawn, and then
+draw it if appropriate, working your way across the scanline until you reach
+the X coordinate that was stored in the <tt>MaxTabe</tt>.
+
+<p>
+---------------------------------------------------------------------------<br>
+For more information, please read over the five articles on texture mapping
+that can be found at the following page:
+<a href="http://www.d6.com/users/checker/misctech.htm">
+http://www.d6.com/users/checker/misctech.htm</a><br>
+<P>You can find in addition to more information on basic texture mapping, a
+great deal of information on optimizing your code for a polygon engine.<br>
+-------------------------------------------------------------------------------
+
+<P><B><U><FONT SIZE=+3>Four Sided Textures</FONT></U></B>
+
+<P>What will be passed to your procedure will be a pointer to a special
+structure which completely describes the square you are going to draw.
+There is a set of 4 <tt>Point</tt>s.  Each point is a set of 3 <tt>Real4</tt>s
+that are the coordinates of each vertex in camera space. This is followed by a
+set of 4 <tt>TexturePoint</tt>s.  Each Texture point is a set of two
+<tt>DWORD</tt>s.  These are the u and v coordinates of each vertex in texture
+space.  Additionally, there is an extra <tt>DWORD</tt> which is a texture index
+used to get information about the texture which is to be mapped onto this
+polygon.  The needed information can be gotten by making calls to several free
+library functions that have been defined for you.
+
+
+<P><B><U><FONT SIZE=+3>A Review of the Rendering Pipeline</FONT></U></B>
+
+<P>After initializing, the first thing that we will do is translate the world
+coordinates of the vertices into screen coordinates.  Additional coordinates
+of uw, vw and w for each vertex needs to be calculated. Since we will not
+need to know the value of z itself, for each vertex we will be generating a set
+of 5 coordinates (x', y', uw, vw, w).  These coordinates can be calculated
+using the equations that have been summarized below using the information that
+has been given to you.
+
+<P>Next we need to do a do some precalulations.  We need to determine all of
+the delta's which were discussed above (d(w)/d(x'), d(w)/d(y'), d(uw)/d(x'),
+d(vw)/d(x'), d(uw)/d(y'), d(vw)/d(x')). With these values, once we calculate
+the exact (uw, vw, w) for a single point on the screen, we can easily calculate
+these values for every point on the screen within a polygon.
+
+<P>Now that we have these floating point coordinates we need to snap the
+endpoints to the grid of integer coordinates on the screen.  This only needs to
+be done for the first vertex of the polygon.  This is needed because we can
+only draw points at the centers of pixels.  So we will create a special point
+to reference from.
+
+<P>Next we need to start walking along the edges of the polygon to create an
+outline.  For each pixel along the each edge we will fill in entries in the
+<tt>MinTable</tt> or <tt>MaxTable</tt>.  These two tables allow us to determine
+the left-most and right most pixel on any scanline. Finally we need to walk
+straight across each scanline, from the leftmost pixel to the rightmost pixel
+filling in the texture.
+
+<P><B><U><FONT SIZE=+3>Protected Mode</FONT></U></B>
+
+<p>This program is being written as a <i>Win32</i> application.  This means
+that we are now working in <tt>Protected Mode</tt> as opposed to
+<tt>Real Mode</tt> as in previous MPs.  There are many important differences
+between these two modes of programming.
+
+<p>In protected mode, the segment registers take on an entirely different
+meaning.  Rather the registers themselves now hold information called
+a <tt>selector</tt>.  The selector is a pointer to information in the
+<tt>descriptor</tt> table.  The descriptor table holds such information
+as where the segment starts that you are accessing, how large it is, if you
+have permission to read/write to that segment, and what type of segment it
+is.  You will not need to concern yourself with the details of how selectors
+and descriptors work, but you should be aware of them, so as to know that you
+may not change the segment registers as you normally could in real mode.
+
+<p>In the Win32 environment, we will be using the flat model.  This means
+that all of the segments will be loaded with what is known as zero selectors.
+In other words, each of the selectors will point to descriptors that start
+at the beginning of memory, and you will be able to access any point in memory
+by simply addressing it's linear address.  Memory is also addressed using 32
+bit registers, rather than 16 bit registers.  This means you should use EBX
+where you used BX previously.
+
+<p>We will also allow you to write code using 586 opcodes.  This means that you
+may use any opcodes that the Intel Pentium can handle, but you may not use
+MMX instructions.  (This would be the .686 model, and the computers in the lab
+cannot execute MMX instructions).  In the 586 instruction set, you may now do
+many things that you couldn't before.  First note that the loop opcode is
+performed with ECX as a counter rather than CX.  You can now shift by a constant
+greater than 1 in a single clock cycle.  Also, with the new memory addressing
+modes, you can now address memory by adding <i>any</i> two general purpose
+registers together, a constant, and you may multiply one of the two registers
+by 1, 2, 4 or 8.  You may also push or pop variables to the stack.  A few
+examples of what you may now do are listed below:
+
+<p>
+<pre>
+shl AX, 4
+mov EAX, [ESI]
+add EAX, [ECX]
+sub ESI, MyVariable.[EAX + EDX * 8 + 01234h]
+</pre>
+
+<P><B><U><FONT SIZE=+3>Structures</FONT></U></B>
+
+<P>Structures will be used extensively in this MP.&nbsp; Structures are
+user-defined type definitions for data more complex the basic data types:
+float, byte, word, etc. Structures are defined in MASM like so:
+
+<pre>
+<P><I>structurename</I> STRUCT
+        <I>substructdata1</I> <B>datatype</B> <I>initializer</I>
+        <I>substructdata2</I> <B>datatype</B> <I>initializer</I>
+<I>structurename</I> ENDS</pre>
+
+<P>where <I>structurename</I> is the name for the structure being defined, and
+<I>substructdata? </I>are the data types from which the structures are
+comprised. Structures can be comprised of the basic data types i.e., REAL4, DW,
+DB, etc, or of other previously defined. See the code for examples.
+
+<P>Structures are accessed by the . operator. So in order to access or refer to
+<I>substructdata1 </I>of our example structure, assuming we have instanceated a
+variable of <I>structurename </I>type, we do :
+
+<P>Data1.<I>substructdata1</I>
+
+<P>Where Data1 is our instance of <I>substructure</I><I></I>
+
+<P>Structures, whether instances of a structure of part of another structure,
+are initialized using &lt;.. , .. , ..>.  The commas within the angle brackets
+separate the initial values for the structure. ? is always an acceptable
+initializer for the basic datatypes (REAL4, dw, db, etc). See the MP4 variable
+definitions for examples.
+
+<P>
+<B><U><FONT SIZE=+3>Pointers</FONT></U></B><B><U><FONT SIZE=+3></FONT></U></B>
+
+<P>In this MP, most of the C-type procedures take pointers to data instead of
+data itself. The parameters are word size values which are the offsets to the
+data passed into the procedures. When accessing data via pointers the assembler
+needs to know what kind of data the pointers point to so the offset into the
+structure can be calculated appropriately. For example, if a procedure takes as
+one of it's parameters, <tt>PTR1</tt> -- which is a dword that points to an
+instance of our example structure -- in order to access <I>substructdata1</I>
+of the pointer (for loading it into the fpu stack if it's a REAL4, for example)
+we would do this:
+
+<P><tt>mov esi, PTR1
+<BR>fld [esi]<i>.structurename</I>.substructdata1</I></tt>
+
+<P>The <I>.structurename</I> part of the code tells
+the assembler that we are accessing a structure of type <I>structurename</I>.
+With this in mind the assembler can determine how far to index into the
+structure to retrieve <I>structurename.</I> In this case, since
+<I>substructdata1</I> is of type REAL4 -- which is 4 bytes long -- the
+assembler generates the appropriate code to access <I>substructdata1.</I>
+
+<P>Accessing data by pointers can introduce a whole category of bugs. BE VERY
+CAREFUL WHEN accessing memory, use the as many temporary Buffer variables as
+possible (we have provided plenty) to store intermediate data. Memory leaks
+(inadvertently writing to data in memory) are a common set back.
+
+
+<H2>
+Implementation</H2>
+
+<H3>
+Structures</H3>
+<p>
+In order to keep all of the data in order, this MP will heavily depend upon various structures.
+
+<p>
+A point in [world/camera/object] space.
+
+<p><pre>
+Point STRUCT
+        X Real4 ?
+        Y Real4 ?
+        Z Real4 ?
+Point ENDS</pre>
+
+<p>
+A point in texture space.
+
+<p><pre>
+TextPoint STRUCT
+        U DWORD ?
+        V DWORD ?
+TextPoint ENDS</pre>
+
+<p>
+The data associated with the endpoint of a line.  This includes the screen
+coordinates of the point, as well as the information needed for texture
+mapping (<tt>UW</tt> and <tt>VW</tt>) as well as the <tt>W</tt> coordinate
+which is needed for W buffering as well as texture mapping.
+
+<p><pre>
+EndPoint STRUCT
+        X  Real4 ?
+        Y  Real4 ?
+        UW Real4 ?
+        VW Real4 ?
+        W  Real4 ?
+EndPoint ENDS</pre>
+
+
+<p>
+A polygon V1 is the vertex which is nailed to a texture whose index is
+TextureIndex, at coordinates T1, V2 is nailed down at T2...
+
+<p><pre>
+Polygon STRUCT
+        V1 Point <?,?,?>
+        V2 Point <?,?,?>
+        V3 Point <?,?,?>
+        V4 Point <?,?,?>
+        T1 TextPoint <?,?>
+        T2 TextPoint <?,?>
+        T3 TextPoint <?,?>
+        T4 TextPoint <?,?>
+        TextureIndex dd ?
+Polygon ENDS</pre>        
+
+<p>
+An entry in either the MinTable or MaxTable.
+
+<p><pre>
+TableEntry STRUCT
+        UW Real4 ?
+        VW Real4 ?
+        W  Real4 ?
+        X  dd    ?
+TableEntry ENDS</pre>
+
+
+<p>
+A two by two matrix to help with Cramer's law calculations.
+
+<p><pre>
+Matrix2_2 STRUCT
+        M00 real4 ?
+        M01 real4 ?
+        M10 real4 ?
+        M11 real4 ?
+Matrix2_2 ENDS</pre>
+        
+
+<H3>
+Variables</H3>
+<P>
+There are a number of variables that have been defined for you.  You may define
+any additional variables as you like, however, in order for the library
+procedures to work properly, these variables must be filled with the
+appropriate data.
+
+<P>
+A pointer to the texture of the polygon that you are currently drawing.<br>
+<TT>CurrTexturePtr dd ?</TT>
+
+
+<p>
+The height of the current texture being drawn.<br>
+<TT>CurrTextureHeight dd ?</TT>
+
+<p>
+The width of the current texture being drawn.<br>
+<TT>CurrTextureWidth dd ?</TT>
+
+<p>
+The endpoints for the current polygon being drawn.<br>
+<tt>CurrEnd1 Endpoint &lt;?,?,?,?,?><br>
+CurrEnd2 Endpoint &lt;?,?,?,?,?><br>
+CurrEnd3 Endpoint &lt;?,?,?,?,?><br>
+CurrEnd4 Endpoint &lt;?,?,?,?,?></tt>
+
+<p>
+These are the differentials which need to be calculated before starting
+to draw a texture.<br>
+<TT>
+dwdx real4 ?<br>
+dwdy real4 ?<br>
+duwdx real4 ?<br>
+duwdy real4 ?<br>
+dvwdx real4 ?<br>
+dvwdy real4 ?</TT>
+
+<p>
+The min and max tables that need to be filled in order to fill a polygon
+on the screen.<br>
+<TT>
+MinTable TableEntry 480 dup(&lt;?,?,?,?>)<br>
+MaxTable TableEntry 480 dup(&lt;?,?,?,?>)</TT>
+
+<p>
+A reference point with integer screen coordinates.<br>
+<tt>
+RefX  dd    ?<br>
+RefY  dd    ?<br>
+RefUW Real4 ?<br>
+RefVW Real4 ?<br>
+RefW  Real4 ?</tt>
+
+<p>
+The W buffer<br>
+<tt>
+WBuffer Real4 640 * 480 dup(?)</tt>
+
+<H2>
+Framework Procedures</H2>
+
+<P>
+The following are procedures that have been written in C++ that you may may use
+to help you program your MP.  You are free to use any of these procedures
+without point deductions.  You may want to use the invoke command from MASM
+which will automatically push function parameters to the stack for you, as well
+as clean up the stack after the function call.  For example, the following two
+bits of code are equivalent.
+
+<pre>
+<p>
+    invoke fooFunction, BX, CX
+<p>
+    push CX
+    push BX
+    call fooFunction
+    add SP, 4</pre>
+
+<p>
+It is important that you do not use AX as an input to a function since MASM may
+generate code which will use AX to push variables to the stack.  Due to this
+fact, AX may not necessarily be preserved across a function call.
+
+<H3>
+dprintf</h3>
+
+<pre><b>dprintf</b> proto C 
+    pszFormat : DWORD, 
+    OtherArgs : VARARG</pre>
+<p>
+<pre><B>Example:</B><TT>
+    TestNumberMsg db 'TestNumber = %i', 0Dh, 0Ah, 0
+    TestNumber    dw TestNumber
+    ...
+    ...
+    invoke dpritnf, offset TestNumberMsg, offset TestNumber</TT></pre>
+<p>
+    The dprintf function works in exactly the same way as C's printf.  The 
+    difference is that dprintf uses Win32's debug output services.  This means
+    that in order to see the output of dprintf, you must either run the program
+    under a debugger or use a program such as DebugView
+    (<a href="http://www.sysinternals.com/dbgview.htm">link</a>). Just as in C,
+    dprintf expects zero-terminated strings.
+</p>
+
+<h3>
+GetTime</h3>
+
+<pre><b>GetTime</b> proto C</pre>
+
+<p>
+    GetTime returns the number of milliseconds elapsed since Windows was
+         started.  The value is returned in EAX as is the C convention.
+</p>
+
+<h3>
+PageFlip</h3>
+
+<pre><b>PageFlip</b> proto C</pre>
+
+<P>
+    If your program is in windowed mode, you will be rendering to a buffer
+    in main memory.  You will need PageFlip to copy the buffer to the screen.
+    If your program is in full screen mode, you will be rendering directly to a
+    page in video memory.  PageFlip will flip pages so that the page you are
+    currently rendering to is displayed on screen.
+<P>
+    The PageFlip function is only useful for debugging in windowed mode.  This 
+    function will draw the contents of the back buffer into the window's region 
+    on the screen.  This way, if you are debugging, you can draw a few things 
+    into the back buffer and then call PageFlip followed by WaitForF12 to see
+    what you've drawn up to that point.  Noted that PageFlip is automatically 
+    called by the framework when you return from RenderFrame.
+</p>
+
+<h3>
+TxGettextureInfo</h3>
+
+<pre><b>TxGetTextureInfo</b> proto C
+    dwIndex     : DWORD, 
+    pdwWidth    : DWORD, 
+    pdwHeight   : DWORD, 
+    ppImageData : DWORD</pre>
+<p>
+    The TxGetTextureInfo function returns all information about a given texture
+    index.  You pass the function a texture index in dwIndex and pointers to 
+    three DWORDs (pdwWidth, pdwHeight, ppImageData) in memory and it will fill 
+    in the requested information.  After calling TxGetTextureInfo, the memory 
+    pointed to by pdwWidth will contain the width of the texture.  The memory 
+    pointed to by pdwHeight will contain the height of the texture, and the
+    memory pointed to by ppImageData will contain a pointer to the upper-left-
+    hand corner of the texture.  The texture data is in the 32 bit format
+</p>
+
+<h3>
+TxGetTextrueDataPtr</h3>
+
+<pre><b>TxGetTextureDataPtr</b> proto C
+    dwIndex     : DWORD, 
+    ppImageData : DWORD</pre>
+
+<p>
+    TxGetTextureDataPtr is identical to TxGetTextureInfo, but only fills in a
+    pointer to the pixel information of the specified texture.
+</p>
+
+<h3>
+TxGetTextureHeight</h3>
+
+<pre><b>TxGetTextureHeight</b> proto C
+    dwIndex   : DWORD, 
+    pdwHeight : DWORD</pre>
+<p>
+    TxGetTextureHeight is identical to TxGetTextureInfo, but only fills in the
+    height of the specified texture.
+</p>
+
+<h3>
+TxGetTextureWidth</h3>
+
+<pre><b>TxGetTextureWidth</b> proto C
+    dwIndex  : DWORD, 
+    pdwWidth : DWORD</pre>
+<p>
+    TxGetTextureWidth is identical to TxGetTextureInfo, but only fills in the
+    width of the specified texture.
+</p>
+
+<h3>
+WaitForF12</h3>
+
+<pre><b>WaitForF12</b> proto C</pre>
+<p>
+    The WaitForF12 function also is only useful for debugging in windowed mode.
+    This function will cause MPBase to pause, waiting for the user to press 
+         F12.
+</p>
+
+<h2>
+Procedures</h2>
+<ul>
+<li>
+This MP has 12 procedures.  You will receive credit by replacing these
+procedures with your own code.  You may choose to replace some of the library
+procedures with inline code within RenderPolygon.  Your code <B>MUST HAVE THE
+SAME FUNCTIONALITY AS THE LIBRARY CODE IN ORDER TO HAND ANYTHING IN</B>.  This
+means if any part of your program doesn't work, you must replace the
+non-working part of your code with library code until your program works. There
+is no partial credit.</li>
+
+<li>
+Your program should be <I>modular</I>.  It should be easily possible to comment
+out sections of your code and replace it with calls to library routines and a
+minimal amount of additional code for matching inputs and outputs correctly.
+</li>
+
+<p>
+<li><b><Font Size=+2>RenderPolygon proc C, pCurrentPolygon, pScreen:DWORD,
+dwPitch:DWORD</Font></b></li>
+ <ul>
+ <li><b>Purpose:</b> Renders a polygon to the buffer and adjusts the ZBuffer.
+ <li><b>Inputs:</b> <ul>
+        <li><tt>pCurrentPolygon</tt> = a pointer to the polygon to be rendered.
+        <li><tt>pScreen</tt> = a pointer to the upper left hand corner of the
+                  screen.
+        <li><tt>dwPitch</tt> = The number of bytes per line.  Note, this may
+                  not necessarily equal the <i>ScreenWidth</i>*4.
+        </ul>
+ <li><b>Notes:</b> 
+ <ul>
+ <li> When working with windows, the "pitch" of the screen is often larger than
+ the screen's width.  The extra bytes are at the right end of the screen, and
+ should not be drawn to in any way.  If you want to access the first pixel of
+ the second row, you should be writing to address  <tt>pScreen[dwPitch]</tt>
+ and not <tt>pScreen[<i>ScreenWidth</i>]</tt>.
+ <li>Your code should start off as almost entirely calls to the library helper
+ functions.  Replace the library calls with your own code one by one.
+ </ul>
+ <li><b>Points:</b> 5
+ </ul>
+
+</ul> 
+
+<ul>
+<p>
+<li><Font Size=+2>ClearTables</font>
+  <ul>
+  <li><b>Purpose:</b> Clears the <tt>MinTable</tt> and <tt>MaxTable</tt> in
+  preparation for a new polygon.
+  <li><b>Inputs:</b> None.
+  <li><b>Outputs:</b> None.
+  <li><b>Description:</b>Sets the X coordinate of each entry of the MinTable
+  to (<tt>2^31 - 1</tt>) and the X coordinate of each entry of the MaxTable to
+  (<tt>-2^31</tt>).
+  <li><b>Points:</b> 2
+  </ul>
+  
+<p>
+<li><Font Size=+2>CalcCurrent</font>
+  <ul>
+  <li><b>Purpose:</b> Calculates and fills in global variables for the current
+  polygon.
+  <li><b>Inputs:</b> EAX = a Pointer to a polygon
+  <li><b>Outputs:</b> <ul>
+        <li>CurrTexturePtr
+        <li>CurrTextureWidth
+        <li>CurrTextureHeight
+        <li>CurrEnd<i>n</i>
+     </ul>
+  <li><b>Hints:</b> You will need to use TxGettextureInfo to fill in some of
+  the information.
+  <li><b>Points:</b> 3
+ </ul> 
+  
+<p>
+<li><Font Size=+2>CalcDiffs</font>
+  <ul>
+  <li><b>Purpose:</b> Calculates the differentials needed to start drawing
+  polygons.
+  <li><b>Inputs:</b> CurrEnd<i>n</i>
+  <li><b>Outputs:</b>
+  <ul>
+  <li>dwdx
+  <li>dwdy
+  <li>duwdx
+  <li>duwdy
+  <li>dvwdx
+  <li>dvwdy
+  </ul>
+  <li><b>Notes:</b> dwdx is the change in w for each pixel change in x'.
+                    duwdy is the change in u*w for each pixel change in y'
+  <li><b>Hints:</b> See the formulas above and use Cramers Rule
+  <li><b>Points:</b> 3
+   </ul>
+   
+<p>
+<li><Font Size=+2>Det2_2</font>
+ <ul>
+ <li><b>Purpose:</b> Calculates the determinant of a 2x2 determinant.
+ <li><b>Inputs:</b> EAX = a pointer to a Matrix2_2
+ <li><b>Outputs:</b> EAX = the determinant of the matrix. <i>This is a
+ real4, not an integer</i>.
+ <li><b>Description:</b> Calculates ([EAX] * [EAX + 12]) - ([EAX +4] *
+ [EAX + 8]).
+ <li><b>Points:</b> 2
+ </ul>
+
+<p>
+<li><Font Size=+2>CalcRef</font>
+  <ul>
+  <li><b>Purpose:</b> Calculates a reference point with integer screen
+  coordinates as opposed to floating point coordinates.
+  <li><b>Inputs:</b>
+    <ul>
+         <li>CurrEnd1
+    <li>dwdx
+    <li>dwdy
+    <li>duwdx
+    <li>duwdy
+    <li>dvwdx
+    <li>dvwdy
+         </ul>
+  <li><b>Outputs:</b>
+     <ul>
+          <li>RefX
+          <li>RefY
+          <li>RefUW
+          <li>RefVW
+          <li>RefW
+          </ul>
+  <li><b>Description:</b> Determines a reference point.  The reference point is
+  the point that is closest to CurrEnd1.  The UW, UV and W coordinates are
+  adjusted from CurrEnd1 dependent upon the differentials that were calculated.
+  <li><b>Points:</b> 3
+  </ul>
+ 
+<p>
+<li><Font Size=+2>CalcLine</font>
+ <ul>
+ <li><b>Purpose:</b> Calculates the slope and intercept in the slope intercept
+ form of a line connecting two points.
+ <li><b>Inputs:</b><ul>
+   <li>EAX = a pointer to a point that is one endpoint of the line.
+   <li>EBX = a pointer to a point that is the other endpoint of the line.
+ </ul>
+ <li><b>Outputs:</b><ul>
+   <li>EAX = the slope of the line (dx/dy) (a Real4 not an int).
+   <li>EBX = the intercept of the line (a Real4 not an int).
+ </ul>
+ <li><b>Description:</b> See the writeup for a description of these values.
+ <li><b>Points:</b> 2
+ </ul>
+
+<p>
+<li><Font size=+2>CalcSide</Font>
+<ul>
+<li><b>Purpose:</b> Determines if a point is right, left, or on a line.
+<li><b>Inputs:</b>
+  <ul>
+  <li>EAX = the slope of the line (dx/dy) (a Real4 not an int).
+  <li>EBX = the intercept of the line (a Real4 not an int).
+  <li>ECX = a pointer to an endpoint.
+  </ul>
+<li><b>Outputs:</b>
+  <ul>
+  <li>ZF = The zero flag is set to 1 if the endpoint pointed to by <tt>ECX</tt>
+  is on the line, otherwise the ZF is cleared.
+  <li>SF = The zero flag is set to 1 if the endpoint pointed to by <tt>ECX</tt>
+  is to the left of the line otherwise SF is cleared.
+  </ul>
+<li><b>Hints:</b> Popping from the stack does not effect the flags.
+<li><b>Points:</b> 2
+</ul>
+
+<p>
+<li><Font size=+2>FillMinTable</font>
+<ul>
+<li><b>Purpose:</b> Fills the <tt>MinTable</tt> for points that lie on or
+to the right of a line.
+<li><b>Inputs:</b>
+  <ul>
+  <li>EAX = the slope of the line (dx/dy) (a Real4 not an int).
+  <li>EBX = the intercept of the line (a Real4 not an int).
+  <li>ECX = A pointer to an endpoint of the line.
+  <li>EDX = A pointer to the other endpoint of the line.
+  </ul>
+<li><b>Outputs:</b> MinTable
+<li><b>Notes:</b> Should only effect MinTable entrys that are at or below the
+higher endpoint and above the lower endpoint.
+<li><b>Points:</b> 5
+</ul>
+
+<p>
+<li><Font size=+2>FillMaxTable</font>
+<ul>
+<li><b>Purpose:</b> Fills the <tt>MaxTable</tt> for points that to the left of
+a line.
+<li><b>Inputs:</b>
+  <ul>
+  <li>EAX = the slope of the line (dx/dy) (a Real4 not an int).
+  <li>EBX = the intercept of the line (a Real4 not an int).
+  <li>ECX = A pointer to an endpoint of the line.
+  <li>EDX = A pointer to the other endpoint of the line.
+  </ul>
+<li><b>Outputs:</b> MaxTable
+<li><b>Notes:</b> Should only effect MaxTable entrys that are at or below the
+higher endpoint and above the lower endpoint.
+<li><b>Points:</b> 5
+</ul>
+
+<p>
+<li><Font size=+2>AdjustEndpoints</font>
+<ul>
+<li><b>Purpose:</b> Adjusts an entry in the Min and Max tables such that
+if the MinTable's X position is not to the left of the screen and the
+MaxTable's x position is not to the right of the screen.
+<li><b>Inputs:</b>
+  <ul>
+  <li>ECX = row that should be adjusted.
+  <li>MinTable
+  <li>MaxTable
+  <li>duwdx
+  <li>dvwdx
+  <li>dwdx
+  </ul>
+<li><b>Outputs:</b>
+  <ul>
+  <li>MinTable
+  <li>MaxTable
+  </ul>
+<li><b>Notes:</b> If a point needs to be moved, the entire TableEntry must be
+updated.
+<li><b>Points:</b> 3
+</ul>
+
+<p>
+<li><Font size=+2>FillScanLine</font>
+<ul>
+<li><b>Purpose:</b> Draws a scanline to the screen and adjusts the WBuffer.
+<li><b>Inputs:</b>
+  <ul>
+  <li>ESI = a pointer to the texture to draw from
+  <li>EDI = a pointer to the screen buffer to draw to
+  <li>ECX = the row to draw
+  <li>EDX = the pitch of the screen
+  <li>MinTable
+  <li>MaxTable
+  <li>duwdx
+  <li>dvwdx
+  <li>dwdx
+  </ul>
+<li><b>Outputs:</b>
+  <ul>
+  <li>The memory pointed to by EBX
+  <li>WBuffer
+  </ul>
+<li><b>Description:</b> Moves one pixel at a time across the screen from the
+minimum X to the maximum X drawing to the screen where appropriate. 
+<li><b>Points:</b> 10
+</ul>
+
+<p>
+<li><Font size=+2>Efficiency</font>
+<ul>
+<li><b>Purpose:</b> Check the efficiency of your code.
+<li><b>Points:</b>
+  <ul>
+  <li>10% or more faster than the library code - 5 points
+  <li>0 - 10% faster than the library code - 4 points
+  <li>0 - 10% slower than the library code - 3 points
+  <li>10 - 20% slower than the library code - 2 points
+  <li>20 - 30% slower than the library code - 1 point
+  <li>30% or more slower than the library code - 0 points.
+  <li>uses any library code (that isn't "free") - 0 points.
+  </ul>
+<li><b>Note:</b>  The library code has a lot of extra opcodes thrown in to make
+it both difficult to disassemble, and much slower to run.  This gives you the
+advantage in making your code faster than the library.
+</ul>
+</ul>
+
+<H2>
+Preliminary Procedure</H2>
+<UL>
+
+<LI>
+This MP is written as a 32-bit Windows application.  In order for it to run,
+you will need DirextX 3 or later and DirectX Media 6.0 for Home Users available
+at this <a href="http://www.microsoft.com/directx/download.asp">link</a>.
+</li>
+
+<LI>
+Copy the given MP4 files from the network drive to your home directory with the
+following command:</LI>
+
+<BR><TT>xcopy /s V:\ece291\mp4 W:\mp4</TT>
+<BR>Alternatively, from home you can download the same files as
+<A HREF="mp4.zip">mp4.zip</A>.
+<LI>
+As with previous MP's, run <TT>nmake</TT> to build an executable program using
+the given ECE291 library functions.</LI>
+
+<LI>
+As with previous MP's, use a text editor to modify the program. As given,
+the program uses LIBMP4 routines to implement all functionality. To receive
+full credit for the assignment, you will need to implement each of the
+subroutines described above with your own code.</LI>
+
+<LI>
+Use Debug View (<TT>DBGVIEW.EXE</TT>) to debug and test your program which is
+available at this <a href="http://www.sysinternals.com/dbgview.htm">link</a>.
+Because you only receive credit for procedures that function <I>completely</I>
+as specified, it is best to debug each section of code individually. This means
+use all library routines, except for the one you are testing.</LI>
+
+<LI>
+By modifying a few comments, you can mix and match usage of your own code and
+Library routines. You may notice that the LIBMP4 routines contain extraneous
+and difficult-to-read code. They are not meant to be easily unassembled!</LI>
+</UL>
+
+<H2>
+Final Steps</H2>
+
+<OL>
+<LI>
+Download and print the MP4 grading sheet from the web site.</LI>
+
+<LI>
+Verify that your program meets all requirements for handin.</LI>
+
+<LI>
+Demonstrate MP4.EXE to a TA or to the instructor. Your program must work with
+all given input. Once approved, you are ready to turn in your program.</LI>
+
+<LI>
+Be prepared to answer questions about any aspect of the operation of your
+program. The TAs will not accept an MP if you cannot fully explain the
+operation of your code.</LI>
+
+<LI>
+Print MP4.ASM using GreenPrint32 and give it to to the same TA which approved
+your demonstration. Be sure that your name is the printout.</LI>
+
+<LI>
+Electrically submit your programs to the TA's handin floppy:</LI>
+
+<BR><TT>A:\HANDIN </TT><I>MyWindowsLogin</I></OL>
+
+<H2>
+Guidelines / Hints</H2>
+
+<UL>
+<LI>
+We have included a number of helper functions which you may use while debugging
+your code. You may choose to replace the given functions with other functions,
+or with inline code, but you should make it clear in your comments which
+sections of your code implement the functionality of each of the library helper
+functions.</LI>
+
+<LI>
+Debug you code in windowed mode.  Don't forget to use <TT>PageFlip</TT> to copy
+the  buffer to the screen so you can see what you have just drawn, and
+<TT>WaitForF12</TT> to pause between steps.
+
+</BODY>
+</HTML>

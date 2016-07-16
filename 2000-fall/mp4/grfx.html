@@ -1,0 +1,118 @@
+<html>
+<head>
+<title>High Resolution Graphics Library</title>
+<style type="text/css"><!--
+body{ background:white; color:black; }
+P{ text-indent: -0.5em; margin-left: 3em; }
+H1{ margin-left: 0em; clear: right; }
+H2{ margin-left: 1em; clear: right; }
+H3{ margin-left: 2em; clear: right; }
+pre{ margin-left: 3em; clear: all }
+ol,ul{ margin-left: 5em; }
+sub{ font-style: italic; }
+.eqn { margin-left: 5em; font-family: times; }
+.decl{ font-weight: bold; }
+.int{ color: maroon; }
+.intv{ color: blue; }
+.func{ color: red; }
+.float{ color: maroon; }
+.floatv{ color: purple; }
+.keyw{ color: green; font-weight: bold; }
+.comment{ color: green; font-style: italic; }
+.innerul{ margin-left: 1em; }
+@media print {
+ //.noprint{ display:none; }
+}
+@media screen {
+ //.print{ display: none;}
+}
+--></style>
+</head>
+<body>
+<!--
+<h1 class="print">Muhahaha...</h1>
+<big class="print" style="font-size:xx-large; font-style: italic;">
+This document has been rendered <strong>unprintable</strong>.</big>
+-->
+
+<h1>High Resolution Graphics Library</h1>
+
+<p>Even text mode video is not enough for the blossoming ECE 291
+student.  We want graphics, and we want them now!</p>
+
+<p>Well, you'll get them now.</p>
+
+<h2>How to Interface</h2>
+<p>The interface to the High Resolution Graphics Library is quite
+simple:</p>
+<ul>
+ <li>SetGraphics(640,480);</li>
+ <li>mov es, [_VideoBlock]</li>
+ <li>Write to 640x480x32bpp buffer through es</li>
+ <li>call RefreshVideoBuffer</li>
+ <li>call UnsetGraphics</li>
+ <li>exit</li>
+</ul>
+
+<p>In fact that's so simple, I'll only mention a few things before I get
+to the known problems with using the library.</p>
+
+<ol>
+ <li>Each pixel is RGBA from low byte to high byte, and takes 4 bytes to describe</li>
+ <li>The buffer is 640*480*4 bytes long.  Remember the *4 on the end.
+ Remember it when you go to the next row, and remember it when you
+ advance a pixel.  It's important.</li>
+ <li>Unlike the Text Video Mode, this is double buffered, and you cannot
+ write directly to the screen.  Call _RefreshVideoBuffer if you want to
+ see any results.  Feel free to put in more calls to this when debugging,
+ but remember to remove it (for speed, etc.) once you're done.</li>
+ <li>The one non-graphics thing you have to be aware of is that we've
+ moved the keyboard.  Currently we're using IRQ 7, port 300 (you don't
+ have to ACK the keyboard, but you do have to ack with the PIC with
+ <tt>mov al, 20h; out 20h, al</tt>).  This lets us use the debugger, and
+ solves some other problems, so it's worth the irregularity.</li>
+</ol>
+
+<h2>How to make use it</h2>
+<p>This library is rather complicated in function to give you an
+interface as similar as possible to what assembly has always used.  Due
+to the way it functions, however, you get some perks that no other
+assembly programmers have had before!</p>
+
+<p>What you have to do to use it is the following:</p>
+
+<p>In any DOS window you wish to run your assembly graphics program,
+run either ex291 or ex291w.  ex291 is fullscreen, and is what we will
+require for handins.  ex291w is windowed, and allows you to debug by
+running cv32 mp4--you'll get both the graphics window and the codeview
+window.</p>
+
+<p>If you want to switch from one to the other, or for any reason wish
+to remove the driver, simply run it again, and it will uninstall.  It
+will tell you if it successfully installed or uninstalled, so you will
+know its status.</p>
+
+<p>If something goes horribly wrong, press CTRL-ALT-DEL and choose the
+task manager.  Tell the ECE 291 Display Driver to exit (forcibly if
+necessary).  You will need to restart the graphics driver (not the
+machine) if this happens.</p>
+
+<h2>Known Problems</h2>
+<p>Unfortunately, as is often the case with the first round of any
+software, there are some problems with the library.  So here are some of
+the things that cause problems, so you can <em>avoid</em> them.  Or at
+least, you can know that we know it crashes when you do them.  Or
+something.
+
+<ol>
+ <li>The keyboard seems to fail on the second run in full screen mode.
+ The mouse still works.  Since we handle them the same internally, we
+ don't know why this happens.  We do hope to fix this soon. For now,
+ just start a new DOS box each time.</li>
+
+ <li>When debugging with cv32 in windowed mode, only switch between the
+ cv32 window and the Graphics window.  Switching to any other window
+ will sometimes completely freeze your program.</li>
+</ol>
+
+</body>

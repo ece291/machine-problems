@@ -1,0 +1,48 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!-- saved from url=(0068)http://courses.engr.illinois.edu/ece291/archive/spr2002/mp/mp4/pmode.html -->
+<HTML><HEAD><TITLE>Protected Mode</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=windows-1252">
+<META content="MSHTML 6.00.2800.1264" name=GENERATOR>
+<META content=FrontPage.Editor.Document name=ProgId></HEAD>
+<BODY>
+<H1>Protected Mode</H1>
+<P>Protected Mode is a powerful way of gaining access to as much memory as the 
+computer has to offer. With this power comes some limitations, and <A 
+href="http://courses.engr.illinois.edu/ece291/books/labmanual/realprot-diff.html">differences</A>. 
+You are encouraged to read through the <A 
+href="http://courses.engr.illinois.edu/ece291/books/labmanual/pmode-intro.html">protected 
+mode tutorial</A>. For more about the development environment (and how to 
+install it at home), see <A 
+href="http://courses.engr.illinois.edu/ece291/books/labmanual/djgpp.html">this 
+page</A> from the tutorial.</P>
+<P>Be sure to read carefully through the preliminary procedure as some things 
+have changed from previous MPs. The most important thing you'll notice is that 
+the debugger has changed; it's now called <B>cv32</B>, and you run it by typing 
+<TT>cv32 mp4</TT>. F8 steps, F7 traces, Tab switches between the windows, and 
+Alt-H brings up a help screen detailing more functions. 
+<P>To help make the transition to protected mode easier, a large library has 
+been provided to you. The <A 
+href="http://courses.engr.illinois.edu/ece291/books/labmanual/pmodelib-ref.html">documentation</A> 
+for all the library functions is online, and even the <EM>entire</EM> source 
+code is available on the <TT>V:</TT> drive at <TT>V:\ece291\pmodelib</TT>! 
+Please notice that all functions the library provides and some of the functions 
+you will be writing for this MP conform to the C calling convention. This means 
+the arguments are passed on the stack in reverse order, you are free to modify 
+(without saving) eax, ebx, ecx, and edx (this also means that you should not 
+expect these registers to be preserved when calling a library function), and the 
+return value is in eax/ax/al (depending on its size). <A 
+href="http://courses.engr.illinois.edu/ece291/books/labmanual/pmodelib-intro-proc-invoke.html">A 
+few macros</A> have been provided to make coding C procedures easier. 
+<P>Also remember that you now have full usage of the <EM>entire</EM> Intel 
+instruction set, including all 32-bit registers and extended addressing modes. 
+This means that you are free to address with any register, and even have an 
+index register multiplied by a power of two, e.g.: mov eax, [edx+ecx*4+5]. You 
+can use this to your definite advantage when you need to multiply by 3, 5, or 9: 
+just look up the LEA instruction and think about the advanced addressing modes. 
+Don't forget that you can't access the high 16 bits of the 32 bit registers 
+directly, you either need to clear, shift, or load out of memory to set those 
+bits. Feel free to look at the library source code for ideas and examples of how 
+to use the extended registers and addressing modes!</P>
+<P>To get a copy of the protected mode library for home use, download and unzip 
+<A 
+href="http://courses.engr.illinois.edu/ece291/resources/pmodelib.zip">pmodelib.zip</A>.</P></BODY></HTML>

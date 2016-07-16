@@ -1,0 +1,752 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>Machine Problem 3</title>
+</head>
+
+<body>
+
+<!--#include file="headvb.asp"-->
+<div class="Section1">
+  <h1 align="center" style="text-align:center">Machine Problem 3: Snake</h1>
+  <div align="center">
+    <table border="1" cellpadding="0" width="513" id="Table2">
+      <tr>
+        <td width="64" class="Normal">
+        <p align="right" style="text-align:right">Assigned</td>
+        <td width="433" class="Normal">Tuesday, March 1, 2005</td>
+      </tr>
+      <tr>
+        <td width="64" class="Normal">
+        <p align="right" style="text-align:right">Due Date</td>
+        <td width="433" class="Normal">Wednesday, March 16, 2005</td>
+      </tr>
+      <tr>
+        <td width="64" class="Normal">
+        <p align="right" style="text-align:right">Purpose</td>
+        <td width="433" class="Normal" roman>Asynchronous I/O, interrupts, text 
+        mode video, fundamental data structures</td>
+      </tr>
+      <tr>
+        <td width="64" class="Normal">
+        <p align="right" style="text-align:right">Points</td>
+        <td width="433" class="Normal">70</td>
+      </tr>
+    </table>
+  </div>
+  <p align="center" style="text-align:center"><br>
+  <img src="snake.png" border="0" align="center" width="652" height="338"></p>
+  <h2>Introduction</h2>
+  <p>In this MP, you will be writing a program that emulates the game Nibbles or 
+  Snake. A cursory search on Google reveals numerous different versions of the 
+  game. You will be implementing a version where the player controls the snake 
+  and avoids the walls on the screen. The layout of the walls will be designed 
+  by the player before the game starts. The game ends when the snake hits the 
+  wall or its own body.</p>
+  <p><i>It might be helpful to peruse Chapters 7, 10 and 11 of the Lab Notes 
+  before starting on the assignment.</i></p>
+  <h2>Problem Description</h2>
+  <h3>Program Variables</h3>
+  <p>Section 1 of the program framework lists <i>all</i> constants used in the 
+  program. You should take advantage of this list of constants and not redefine 
+  them. Moreover, any use of <i>magic numbers</i> in your code will be frowned 
+  upon and may result in lower points. For instance, hard coding the value 01h 
+  for the <i>Escape </i>key in your code is not going to win you favors with any 
+  of the <span class="GramE">TAs.</span> Please read carefully the list of 
+  constants before begin coding.</p>
+  <p>To help you distinguish between subroutines and variable names, an 
+  underscore is added to the name of every variable, e.g., <i>_<span class="SpellE">timerTicks</span></i>. 
+  Again, before you begin coding, please read through the list of variables. For 
+  your convenience, variables of particular importance are briefly discussed 
+  below.</p>
+  <ul type="disc">
+    <li><i>_<span class="SpellE">currentBoard</span> –</i> this is an array that 
+    holds information about the game board. Each cell in the array reflects the 
+    information that the user will see on the screen. <i>_<span class="SpellE">currentBoard</span></i> 
+    is defined to be <i>NUMCOLS * NUMROWS </i>of byte values. The last row of 
+    the screen is not included in the game board (recall that text video mode is 
+    80 columns by 25 rows). A cell with a value 0 would be empty; a cell with 
+    the value 1 would be part of the snake, etc.</li>
+    <li><i>_<span class="SpellE">mouseX</span>, _<span class="SpellE">mouseY</span> 
+    – </i>these two variables give the position on the screen that the user has 
+    clicked on. The point with coordinates <i>(<span class="SpellE">x<span class="GramE">,y</span></span>)=(0,0)</i> 
+    corresponds to the cell at the top left corner of the text video display.
+    </li>
+    <li><i>_<span class="SpellE">mpStatus</span></i> – this is an 8-bit vector 
+    that is used to represent the current status of the game. More comments 
+    about this data structure are given in the source file. Here is how you 
+    should interpret the values: if <i>_<span class="SpellE">mpstatus</span> </i>
+    is set to <i>01000001</i>, it means that the snake is moving up and that the 
+    user has already completed drawing the borders. It is important that while 
+    you modify some of the status bits in a given subroutine, you preserve the 
+    other bits unchanged. The program will behave erratically if you do not 
+    follow this rule.</li>
+    <li><i>_<span class="SpellE">snakeList</span></i> – this is a <b>circular 
+    queue</b> that holds the segments of the snake. The front of the queue 
+    contains the head of the snake and the rear of the queue contains the tail 
+    of the snake. The queue stores <b><u>words</u></b><u>.</u> These words 
+    represent offsets into the <i>_<span class="SpellE">currentBoard</span></i> 
+    array. For instance if the snake's head is at <i>row 2</i> and <i>column 2</i>, 
+    the offset stored in the array would be <i>2*NUMCOLS + 2 – 1</i>. You should 
+    never access the queue directly by using <i>_<span class="SpellE">snakeFront</span></i>. 
+    Instead you should do something like <i>[<span class="SpellE">bx+QFRONT</span>]
+    </i>where <span class="SpellE"><i>bx</i></span> has been initialized to 
+    point to <i>_<span class="SpellE">snakeList</span></i>. Also <i>[<span class="SpellE">bx+QCOUNT</span>]</i> 
+    stores the number of bytes in the queue and, hence, to find out the number 
+    of items, halve this number. In short, ALWAYS remember that the queue holds 
+    words!</li>
+  </ul>
+  <h3>Text Mode Video</h3>
+  <p>Section 11.1 of the lab manual discusses text mode video. In this MP, you 
+  will be writing directly to <i>page 0</i> of video memory, which we will keep 
+  at the standard size of 25 rows and 80 columns. The lab manual has examples on 
+  how to do this. Recall that page 0 of video memory begins at
+  <span class="SpellE"><i>segment<span class="GramE">:offset</span></i></span><i> 
+  = B800:0000h</i>. Also, the colors you will be working with in the MP are 
+  defined for you as constants.</p>
+  <p>To reduce flicker on the screen, you do not redraw everything on the screen 
+  each time the snake moves a step. The only two things that can dynamically 
+  change on the screen would be the <i>apple</i> and the <i>snake</i>. In this 
+  MP you have to come up with a way to only redraw those two objects on the 
+  screen.</p>
+  <h3>Asynchronous Keyboard I/O</h3>
+  <p>In previous MPs, we used the library's <span class="SpellE"><i>kbdin/kbdine</i></span> 
+  functions to get keyboard input. These functions continuously polled the 
+  keyboard until they received input. In many cases, we want our programs to 
+  accept input from other devices and/or execute other functions while waiting 
+  for user input. This is done by writing your own interrupt service routines (<span class="SpellE">ISRs</span>). 
+  For this MP, you will be obtaining user input from the keyboard 
+  asynchronously. You will also be using the system timer to calculate when the 
+  snake should move next. Currently, the snake will always move at a constant 
+  speed. You are encouraged to change the speed of the snake as the game 
+  progresses, i.e., make the snake move faster after the player has eaten more 
+  apples.</p>
+  <h3>String Instructions</h3>
+  <p>For certain parts of the MP, you can use the string instructions to improve 
+  the performance of your code. Like instructions that we have discussed 
+  already, the string instructions combine the functionality of multiple 
+  instructions into a single instruction. The string instructions are used to do 
+  the following:</p>
+  <ul type="disc">
+    <li>Move a string from one location to another (MOVSB, MOVSW, MOVSD)</li>
+    <li>Store a single piece of data to a string (STOSB, STOSW, STOSD)</li>
+    <li>Compare strings (CMPSB, CMPSW, CMPSD)</li>
+    <li>Scan a string for a specific value (SCASB, SCASW, SCASD)</li>
+  </ul>
+  <p>For specific details and usage of these instructions, refer to Appendix B.4 
+  of the lab notes. With each of the above instructions, you can also use the 
+  REP instruction with the CX register, which repeats the execution of the 
+  instruction CX times. You will not need to use all of the instructions above.</p>
+  <h2>MP3 Program Assignment</h2>
+  <p>You will replace these procedures from the LIBMP3 library by commenting out 
+  the statements calling the library procedure and adding your code. Each 
+  procedure that you write should match the output of the library code exactly. 
+  Each of the subroutine calls and their functionality is described below in the
+  <b>Subroutines</b> section. The best way to get a feel for the program is to 
+  run it to see how it is supposed to operate. You can also edit the test file 
+  to see how various changes will affect the program execution. The program can 
+  be run by typing <code><span style="font-size:10.0pt">mp3</span></code> at the 
+  command prompt.</p>
+  <h2>Subroutines</h2>
+  <p>The code you need to implement for this assignment is divided into 17 
+  subroutines. Most of the subroutines are short around 30 lines of code. 
+  Additionally, for your coding sanity, we have been gratuitous and provided 
+  about 500 lines of code for you.</p>
+  <p><i>Note:</i> Because most of the subroutines will access global variables, 
+  we used the word <i>reads</i> to indicate that you will be using the value in 
+  a global variable. Similarly, we used the term <i>modifies</i> to show that 
+  you will be modifying the global variable.</p>
+  <table border="1" cellspacing="0" cellpadding="0" width="100%">
+    <tr>
+      <td width="16%" bgcolor="silver" class="Normal">
+      <p align="center" style="text-align:center">Subroutines</td>
+      <td width="84%" bgcolor="silver" class="Normal">
+      <p align="center" style="text-align:center">Description</td>
+    </tr>
+    <tr>
+      <td width="16%" class="Normal">installKeyboard1 <br>
+      <i>[ 2 points ]</i> </td>
+      <td width="84%" class="Normal">
+      <ul type="disc">
+        <li>Installs the keyboard ISR</li>
+        <li>Reads: -</li>
+        <li>Modifies: [_<span class="SpellE">oldKeyboardV</span>], the interrupt 
+        vector table</li>
+        <li>Calls: None</li>
+        <li>Notes:
+        <ul type="circle">
+          <li>Read the current value of the ISR out of the interrupt vector 
+          table and store to <span class="SpellE"><i>OldKeyboardV</i></span> 
+          before updating the table with your keyboard ISR.</li>
+          <li>Set keyboardISR1 as the interrupt handler.</li>
+          <li>You should read/write the interrupt vector table directly; do not 
+          use <span class="SpellE"><i>int</i></span><i> 21h</i> sub-functions to 
+          do so!</li>
+          <li>Use <span class="SpellE"><code><span style="font-size:10.0pt">cli</span></code></span> 
+          and <span class="SpellE"><code><span style="font-size:10.0pt">sti</span></code></span> 
+          to provide mutual exclusion to the interrupt vector table</li>
+        </ul>
+        </li>
+      </ul>
+      </td>
+    </tr>
+    <tr>
+      <td width="16%" class="Normal"><span class="SpellE">removeKeyboard</span>
+      <br>
+      <i>[ 2 points ]</i></td>
+      <td width="84%" class="Normal">
+      <ul type="disc">
+        <li>Removes the keyboard ISR</li>
+        <li>Reads: [_<span class="SpellE">oldKeyboardV</span> ]</li>
+        <li>Modifies: The interrupt vector table</li>
+        <li>Calls: None</li>
+        <li>Notes:
+        <ul type="circle">
+          <li>Write the original value back to the interrupt vector table.</li>
+          <li>You should write the interrupt vector table directly; do not use
+          <span class="SpellE"><i>int</i></span><i> 21h</i> sub-functions to do 
+          so!</li>
+          <li>Use <span class="SpellE"><code><span style="font-size:10.0pt">cli</span></code></span> 
+          and <span class="SpellE"><code><span style="font-size:10.0pt">sti</span></code></span> 
+          to provide mutual exclusion to the interrupt vector table</li>
+        </ul>
+        </li>
+      </ul>
+      </td>
+    </tr>
+    <tr>
+      <td width="16%" class="Normal">keyBoardISR1 <br>
+      <i>[ 2 points ]</i></td>
+      <td width="84%" class="Normal">
+      <ul type="disc">
+        <li>Obtains and processes keyboard input. This interrupt should only 
+        process the space bar. This is the first <span class="SpellE">
+        keyboardISR</span> that is installed when the game first runs.</li>
+        <li>Input: <span class="SpellE">scancode</span> waiting at port 60h</li>
+        <li>Modifies: [_<span class="SpellE">mpStatus</span>]</li>
+        <li>Calls: None</li>
+        <li>Notes:
+        <ul type="circle">
+          <li>The <span class="SpellE">scancodes</span> for the keys you'll be 
+          using in the MP are defined as constants for you.</li>
+          <li>When the user presses SPACEKEY, set the appropriate bit in the <i>
+          _<span class="SpellE">mpStatus</span></i> bit vector that signifies 
+          that the user has completed designing the layout of the walls.</li>
+          <li>Remember to ACK with the PIC on every <span class="SpellE">
+          keypress</span> – the lab manual contains the necessary code for this.</li>
+        </ul>
+        </li>
+      </ul>
+      </td>
+    </tr>
+    <tr>
+      <td width="16%" class="Normal">installKeyboard2 <br>
+      <i>[ 1 points ]</i></td>
+      <td width="84%" class="Normal">
+      <ul type="disc">
+        <li>Installs the keyboard ISR</li>
+        <li>Reads: -</li>
+        <li>Modifies: [_<span class="SpellE">oldKeyboardV</span>], the interrupt 
+        vector table</li>
+        <li>Calls: None</li>
+        <li>Notes:
+        <ul type="circle">
+          <li>Read the current value of the ISR out of the interrupt vector 
+          table and store to <span class="SpellE"><i>OldKeyboardV</i></span> 
+          before updating the table with your keyboard ISR.</li>
+          <li>Set keyboardISR2 as the interrupt handler.</li>
+          <li>You should read/write the interrupt vector table directly; do not 
+          use <span class="SpellE"><i>int</i></span><i> 21h</i> sub-functions to 
+          do so!</li>
+          <li>Use <span class="SpellE"><code><span style="font-size:10.0pt">cli</span></code></span> 
+          and <span class="SpellE"><code><span style="font-size:10.0pt">sti</span></code></span> 
+          to provide mutual exclusion to the interrupt vector table</li>
+        </ul>
+        </li>
+      </ul>
+      </td>
+    </tr>
+    <tr>
+      <td width="16%" class="Normal">keyBoardISR2 <br>
+      <i>[ 3 points ]</i></td>
+      <td width="84%" class="Normal">
+      <ul type="disc">
+        <li>Obtains and processes keyboard input. This interrupt should only 
+        process the arrow keys and the escape key. This is the second
+        <span class="SpellE">keyboardISR</span> that will be installed just 
+        before the game starts.</li>
+        <li>Input: <span class="SpellE">scancode</span> waiting at port 60h</li>
+        <li>Modifies: [_<span class="SpellE">mpStatus</span>]</li>
+        <li>Calls: None</li>
+        <li>Notes:
+        <ul type="circle">
+          <li>The <span class="SpellE">scancodes</span> for the keys you'll be 
+          using in the MP are defined as constants for you.</li>
+          <li>When the player presses RIGHTKEY, UPKEY, LEFTKEY, DOWNKEY and 
+          ESCKEY, set the appropriate bits in the <i>_<span class="SpellE">mpStatus</span></i> 
+          bit vector to let the main event loop know what to do next. Be careful 
+          not to clobber any values in <i>_<span class="SpellE">mpStatus</span></i>.</li>
+          <li>HINT: You would want to make use of bit masking.</li>
+          <li>Remember to ACK with the PIC on every <span class="SpellE">
+          keypress</span> – the lab manual contains the necessary code for this.</li>
+        </ul>
+        </li>
+      </ul>
+      </td>
+    </tr>
+    <tr>
+      <td width="16%" class="Normal"><span class="SpellE">installTimer</span>
+      <br>
+      <i>[ 2 points ]</i></td>
+      <td width="84%" class="Normal">
+      <ul type="disc">
+        <li>Installs the timer ISR</li>
+        <li>Reads: -</li>
+        <li>Modifies: [_<span class="SpellE">oldTimerV</span>], the interrupt 
+        vector table</li>
+        <li>Calls: None</li>
+        <li>Notes:
+        <ul type="circle">
+          <li>Read the current value of the ISR out of the interrupt vector 
+          table and store to <i>_<span class="SpellE">oldTimerV</span></i> 
+          before updating the table with your timer ISR.</li>
+          <li>Set <span class="SpellE">timerISR</span> as the interrupt handler.</li>
+          <li>You should read/write the interrupt vector table directly; do not 
+          use <span class="SpellE"><i>int</i></span><i> 21h</i> sub-functions to 
+          do so!</li>
+          <li>Use <span class="SpellE"><code><span style="font-size:10.0pt">cli</span></code></span> 
+          and <span class="SpellE"><code><span style="font-size:10.0pt">sti</span></code></span> 
+          to provide mutual exclusion to the interrupt vector table</li>
+        </ul>
+        </li>
+      </ul>
+      </td>
+    </tr>
+    <tr>
+      <td width="16%" class="Normal"><span class="SpellE">timerISR</span> <br>
+      <i>[ 2 points ]</i></td>
+      <td width="84%" class="Normal">
+      <ul type="disc">
+        <li>Processes system timer ticks</li>
+        <li>Reads: [_<span class="SpellE">timerTicks</span>]</li>
+        <li>Modifies: [_<span class="SpellE">timerTicks</span>]</li>
+        <li>Calls: None</li>
+        <li>Notes:
+        <ul type="circle">
+          <li>Increment the value in <i>_<span class="SpellE">timerTicks</span></i>.</li>
+          <li>It is IMPORTANT that you specify the segment <i>_<span class="SpellE">timerTicks</span>
+          </i>is in before incrementing it.</li>
+        </ul>
+        </li>
+      </ul>
+      </td>
+    </tr>
+    <tr>
+      <td width="16%" class="Normal">delay <br>
+      <i>[ 2 points ]</i></td>
+      <td width="84%" class="Normal">
+      <ul type="disc">
+        <li>Stalls the execution of the program loop. This uses busy waiting to 
+        prevent the main loop from executing the next cycle.</li>
+        <li>Reads:[ _<span class="SpellE">timerTicks</span>]</li>
+        <li>Modifies: [_<span class="SpellE">timerTicks</span>]</li>
+        <li>Notes:
+        <ul type="circle">
+          <li>Move 0 into the memory pointed to by <i>_<span class="SpellE">timerTicks</span></i>.</li>
+          <li>Then check if [_<span class="SpellE">timerTicks</span>] is less 
+          than SPEED. If it is, continue looping in a busy wait.</li>
+          <li>If not, then return from the subroutine.</li>
+        </ul>
+        </li>
+      </ul>
+      </td>
+    </tr>
+    <tr>
+      <td width="16%" class="Normal"><span class="SpellE">removeTimer</span> <br>
+      <i>[ 2 points ]</i></td>
+      <td width="84%" class="Normal">
+      <ul type="disc">
+        <li>Removes the timer ISR.</li>
+        <li>Reads: [_<span class="SpellE">oldTimerV</span> ]</li>
+        <li>Modifies: The interrupt vector table</li>
+        <li>Calls: None</li>
+        <li>Notes:
+        <ul type="circle">
+          <li>Write the original value back to the interrupt vector table</li>
+          <li>You should write the interrupt vector table directly; do not use
+          <span class="SpellE"><i>int</i></span><i> 21h </i>sub-functions to do 
+          so!</li>
+          <li>Use <span class="SpellE"><code><span style="font-size:10.0pt">cli</span></code></span> 
+          and <span class="SpellE"><code><span style="font-size:10.0pt">sti</span></code></span> 
+          to provide mutual exclusion to the interrupt vector table</li>
+        </ul>
+        </li>
+      </ul>
+      </td>
+    </tr>
+    <tr>
+      <td width="16%" class="Normal"><span class="SpellE">updateBoard</span> <br>
+      <i>[ 5 points ]</i></td>
+      <td width="84%" class="Normal">
+      <ul type="disc">
+        <li>Draws or <span class="SpellE">undraws</span> a wall whenever the 
+        player clicks on a cell on the screen. If there is no wall there, then 
+        draw one when the user clicks on it. Else, erase the wall that was 
+        already there.</li>
+        <li>Reads : [_<span class="SpellE">mouseX</span>], [_<span class="SpellE">mouseY</span>]</li>
+        <li>Modifies: [_<span class="SpellE">currentBoard</span>]</li>
+        <li>Calls: None</li>
+        <li>Notes:
+        <ul type="circle">
+          <li><i>[_<span class="SpellE">mouseX</span>]</i> and<i> [_<span class="SpellE">mouseY</span>]</i> 
+          already contain the mouse positions for you. These have been handled 
+          by the mouse callback which you do not need to write for this 
+          assignment.</li>
+          <li>Check to see that both mouse positions are within the gray 
+          borders. Do not draw or <span class="SpellE">undraw</span> anything 
+          that is not within the borders.</li>
+          <li>Remember, you are toggling the state of the wall. If there is a 
+          wall, <span class="SpellE">undraw</span> it and vice-versa.</li>
+        </ul>
+        </li>
+      </ul>
+      </td>
+    </tr>
+    <tr>
+      <td width="16%" class="Normal"><span class="SpellE">generateApple</span>
+      <br>
+      <i>[ 5 points ]</i></td>
+      <td width="84%" class="Normal">
+      <ul type="disc">
+        <li>Generates an apple at a valid location on the game board. Draws the 
+        apple to video memory too.</li>
+        <li>Reads: [_<span class="SpellE">currentBoard</span>]</li>
+        <li>Modifies: [_<span class="SpellE">currentBoard</span>], [_<span class="SpellE">mpStatus</span>], 
+        the video memory</li>
+        <li>Calls:
+        <st1:place w:st="on">Rand</li>
+        <li>Notes:
+        <ul type="circle">
+          <li>Call
+          <st1:place w:st="on">Rand to obtain a random location within the 
+          bounds of [_<span class="SpellE">currentBoard</span>].</li>
+          <li>Before inserting a new apple in [_<span class="SpellE">currentBoard</span>], 
+          checks to see if the new location is valid, i.e., it is an empty 
+          location.</li>
+          <li>If it is move, update the location in [_<span class="SpellE">currentBoard</span>] 
+          and draw the apple in the corresponding location in video memory.</li>
+          <li>Finally, set the appropriate bit in [_<span class="SpellE">mpStatus</span>].</li>
+          <li>Requirement: Do not call <span class="SpellE">drawScreen</span></li>
+        </ul>
+        </li>
+      </ul>
+      </st1:place>
+      </st1:place>
+      </td>
+    </tr>
+    <tr>
+      <td width="16%" class="Normal"><span class="SpellE">enqueue</span> <br>
+      <i>[ 6 points ]</i></td>
+      <td width="84%" class="Normal">
+      <ul type="disc">
+        <li><span class="SpellE">Enqueues</span> a word onto the front of the 
+        circular queue.</li>
+        <li>Inputs: <span class="SpellE"><i>bx</i></span><i> = offset </i>of the 
+        queue data structure<br>
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;[<span class="SpellE">bx+QDATA</span>] = word to
+        <span class="SpellE">enqueue</span></li>
+        <li>Modifies: the queue to reflect the addition of the new item</li>
+        <li>Calls: None</li>
+        <li>Notes:
+        <ul type="circle">
+          <li>If the count of the number of items on the queue is less than the 
+          maximum, then this subroutine <span class="SpellE">enqueues</span> the 
+          word at [<span class="SpellE">BX+QData</span>] onto the rear of the 
+          circular queue, updating [<span class="SpellE">BX+QCount</span>] and [<span class="SpellE">BX+QRear</span>].</li>
+          <li>Refer to the chapter 7 of the lab notes for more details on 
+          queues.</li>
+          <li>Requirement: Do not access the queue directly. Use [<span class="SpellE">bx+QFRONT</span>], 
+          [<span class="SpellE">bx+QREAR</span>], etc.</li>
+        </ul>
+        </li>
+      </ul>
+      </td>
+    </tr>
+    <tr>
+      <td width="16%" class="Normal"><span class="SpellE">dequeue</span> <br>
+      <i>[ 6 points ]</i></td>
+      <td width="84%" class="Normal">
+      <ul type="disc">
+        <li><span class="SpellE"><span class="GramE">Dequeues</span></span> a 
+        word from the front of the circular queue.</li>
+        <li>Input: <span class="SpellE"><i>bx</i></span><i> = offset</i> of the 
+        queue data structure</li>
+        <li>Output: [<span class="SpellE">bx+QDATA</span>] = word from the front 
+        of the queue.</li>
+        <li>Modifies: the queue to reflect the removal of the front item</li>
+        <li>Calls: None</li>
+        <li>Notes:
+        <ul type="circle">
+          <li>If the queue is not empty, then this subroutine
+          <span class="SpellE">dequeues</span> the word from the front of the 
+          queue, places the word in [<span class="SpellE">BX+QData</span>], and 
+          updates [<span class="SpellE">BX+QCount</span>] and [<span class="SpellE">BX+QFront</span>].</li>
+          <li>Refer to the chapter 7 of the lab notes for more details on 
+          queues.</li>
+          <li>Requirement: Do not access the queue directly. Use [<span class="SpellE">bx+QFRONT</span>], 
+          [<span class="SpellE">bx+QREAR</span>], etc.</li>
+        </ul>
+        </li>
+      </ul>
+      </td>
+    </tr>
+    <tr>
+      <td width="16%" class="Normal">peek <br>
+      <i>[ 3 points ]</i></td>
+      <td width="84%" class="Normal">
+      <ul type="disc">
+        <li><b>UPDATE</b>:Returns the value at the front of the queue WITHOUT removing it.</li>
+        <li>Input: <span class="SpellE"><i>bx</i></span><i> = offset</i> of the 
+        queue data structure</li>
+        <li>Output:&nbsp; [<span class="SpellE">bx+QDATA</span>] = word from the 
+        front of the queue.</li>
+        <li>Calls: None</li>
+        <li>Notes:
+        <ul type="circle">
+          <li>If the queue is not empty, then this subroutine places the word at 
+          the front of the queue in [<span class="SpellE">BX+QData</span>].</li>
+          <li>Refer to the chapter 7 of the lab notes for more details on 
+          queues.</li>
+          <li>Requirement: Do not access the queue directly. Use [<span class="SpellE">bx+QFRONT</span>], 
+          [<span class="SpellE">bx+QREAR</span>], etc.</li>
+        </ul>
+        </li>
+      </ul>
+      </td>
+    </tr>
+    <tr>
+      <td width="16%" class="Normal"><span class="SpellE">checkMovement</span>
+      <br>
+      <i>[ 5 points ]</i></td>
+      <td width="84%" class="Normal">
+      <ul type="disc">
+        <li>Checks the various possible movements and reports if they are valid 
+        and what bits should be set in [_<span class="SpellE">mpStatus</span>].</li>
+        <li>Reads: [_<span class="SpellE">mpStatus</span>], [_<span class="SpellE">currentBoard</span>], 
+        [_<span class="SpellE">snakeQList</span>]</li>
+        <li>Modifies: [_<span class="SpellE">mpStatus</span>],[_<span class="SpellE">newSnakeHead</span>], 
+        [_score]</li>
+        <li>Calls: peek</li>
+        <li>Notes:
+        <ul type="circle">
+          <li>Obtain the value from the front of the queue.</li>
+          <li>Based on the current position of the head of the snake, and the 
+          current direction from [_<span class="SpellE">mpStatus</span>], you 
+          can determine where the snake will move to next.</li>
+          <li>Check if the snake collides with <i>any object</i> and update the 
+          appropriate bits in [_<span class="SpellE">mpStatus</span>] and 
+          [_score].</li>
+          <li>For instance, if the snake hits a border or itself, then the game 
+          should end.</li>
+          <li>Do not forget to handle all possible types of collisions with 
+          different objects (Think about this! Should you add a segment? 
+          Generate an apple?) </li>
+          <li>For valid moves, modify [_<span class="SpellE">newSnakeHead</span>] 
+          to reflect those changes. The value in <i>_<span class="SpellE">newSnakeHead</span></i> 
+          should be the new position of the snake's head after moving one step 
+          in the appropriate direction.</li>
+        </ul>
+        </li>
+      </ul>
+      </td>
+    </tr>
+    <tr>
+      <td width="16%" class="Normal"><span class="SpellE">drawSnake</span> <br>
+      <i>[ 7 points ]</i></td>
+      <td width="84%" class="Normal">
+      <ul type="disc">
+        <li>Draws the snake at the new position.</li>
+        <li>Reads: [_<span class="SpellE">snakeQList</span>], [_<span class="SpellE">newSnakeHead</span>], 
+        [_<span class="SpellE">mpStatus</span>]</li>
+        <li>Modifies: [_<span class="SpellE">currentBoard</span>], [_<span class="SpellE">mpStatus</span>], 
+        the video memory</li>
+        <li>Calls: <span class="SpellE">enqueue</span>, <span class="SpellE">
+        dequeue</span></li>
+        <li>Notes:
+        <ul type="circle">
+          <li>You have to think of a way to reflect the changes in the snake 
+          segments using information from the queue and [_<span class="SpellE">newSnakeHead</span>].</li>
+          <li>Since information about the snake in present in 3 memory 
+          locations: the video memory, the queue and [_<span class="SpellE">currentBoard</span>], 
+          remember to update all of them!</li>
+          <li>Make sure your algorithm handles the addition of a new snake 
+          segment if the snake has eaten an apple.</li>
+          <li>Make sure that you modify the bits in [_<span class="SpellE">mpStatus</span>] 
+          to reflect any changes that you made to the game.</li>
+          <li>Requirement: Do not call <span class="SpellE">drawScreen</span>.</li>
+        </ul>
+        </li>
+      </ul>
+      </td>
+    </tr>
+    <tr>
+      <td width="16%" class="Normal"><span class="SpellE">initGame</span> <br>
+      <i>[ 5 points ]</i></td>
+      <td width="84%" class="Normal">
+      <ul type="disc">
+        <li>Initializes the queue with appropriate snake segment values</li>
+        <li>Reads: [_<span class="SpellE">snakeQList</span>],</li>
+        <li>Modifies: [_<span class="SpellE">currentBoard</span>]</li>
+        <li>Calls: <span class="SpellE">generateApple</span>,
+        <span class="SpellE">drawScreen</span>, <span class="SpellE">enqueue</span></li>
+        <li>Notes:
+        <ul type="circle">
+          <li>Put in three continuous segments into the snake. You may choose 
+          where the snake begins. Update the queue to reflect those changes.</li>
+          <li>Update [_<span class="SpellE">currentBoard</span>] to reflect 
+          those segments of the snake.</li>
+        </ul>
+        </li>
+      </ul>
+      </td>
+    </tr>
+  </table>
+  <h2>Given Code</h2>
+  <p><i>MAIN</i> (source code given)</p>
+  <ul type="disc">
+    <li>This setups the game and awaits the player to design the walls.</li>
+  </ul>
+  <p><span class="SpellE"><span class="GramE"><i>mainSnakeLoop</i></span></span> 
+  (source code given)</p>
+  <ul type="disc">
+    <li>This is the main event loop that goes on when the game starts.</li>
+  </ul>
+  <p><span class="SpellE"><span class="GramE"><i>drawScreen</i></span></span><i>
+  </i>(source code given)</p>
+  <ul type="disc">
+    <li>Draws the contents of [_<span class="SpellE">currentBoard</span>] to 
+    video memory.</li>
+  </ul>
+  <p><span class="SpellE"><span class="GramE"><i>fillBorders</i></span></span><i>
+  </i>(source code given)</p>
+  <ul type="disc">
+    <li>Fills the borders of the [_<span class="SpellE">currentBoard</span>].</li>
+  </ul>
+  <p>
+  <st1:place w:st="on" /><i>Rand</i></p>
+  <ul type="disc">
+    <li>Generates random number with the given seed.</li>
+  </ul>
+  <p><i>showStatus</i> (source code not given)</p>
+  <ul>
+    <li>Displays the status of the game at the bottom of the screen.</li>
+  </ul>
+  <p><i>displaGameOver</i> (source code not given)</p>
+  <ul>
+  </ul>
+  <li>Displays the game over box.
+  <ul>
+  </ul>
+  <h2>Development Log and Cover Memo</h2>
+  <p>As you work on the MP, you will keep a simple MP development log. The log 
+  will document your design decisions, development plan, and debugging 
+  experiences, including the time you spent on different parts of the machine 
+  problem. The log may be kept in any form. In general, whenever you work on a 
+  machine problem, briefly record the starting time, significant design 
+  decisions, progress in coding and testing, bugs you discovered, and the ending 
+  time. Do <i>not</i> record simple syntax errors detected by NASM at assembly 
+  time; these are not considered to be bugs.</p>
+  <p>Then, you will submit a cover memo of 200 to 400 words (up to one page, 
+  single spaced). The cover memo should answer the following questions, based on 
+  the information that you record in your MP development log.<ul>
+    <li>How much time did you spend on the design, coding, and testing of each 
+    part or subroutine?</li>
+    <li>What kinds of defects (bugs) did you find during the development of the 
+    program? When did you discover these defects (during code review or during 
+    testing)? How did you find them?</li>
+    <li>What you would do differently for the next MP?</li>
+  </ul>
+  <p>Type your cover memo into a plain text file in your MP3 directory.</p>
+  <h2>Hints</h2>
+  <ul>
+    <li>The LIBMP3 file contains executable library functions for each of the 
+    routines that you need to implement. This allows you to run the program and 
+    understand how it works before you implement it. You can test your program 
+    with any combinations of your own code and library functions. You will only 
+    receive credit, however, for the routines that you implement yourself.</li>
+    <li>When debugging your code in TD, you will find it helpful to use the 
+    memory window to show you the memory location of the file and strings. You 
+    can also use the watch window to keep track of variables in your code.</li>
+    <li>Do not assume that the file starts at memory location 0.</li>
+    <li>You may define new variables as needed.</li>
+    <li>Be very careful if you call another procedure not to destroy registers 
+    that the calling procedure uses.</li>
+    <li><b>START EARLY!</b></li>
+    <li>You need to preserve register values in all of the procedures you write. 
+    To do this, push all the registers you use in the procedure at the beginning 
+    of the procedure. Then, pop them all in reverse order at the end of the 
+    procedure (right before you return).</li>
+    <li>You need to create function headers for each of the functions you write.&nbsp; 
+    Function headers should include the name of the function, the list of inputs 
+    to the function, the list of the outputs, and any functions that the 
+    function calls.&nbsp; You will lose points if you do not do this.</li>
+    <li>Monitor the <a href="http://my.ece.uiuc.edu/secure/webboard.asp">
+    <span class="SpellE">webboard</span></a> for clarifications and help.</li>
+  </ul>
+  <h2>Procedure</h2>
+  <ul type="disc">
+    <li>You will begin this MP with the following files:
+    <ul type="circle">
+      <li><code><span style="font-size:10.0pt">MP3.ASM</span></code>: Program 
+      Framework</li>
+      <li><span class="SpellE"><code><span style="font-size:10.0pt">Makefile</span></code></span>: 
+      Specifies how and when programs are assembled and linked.</li>
+      <li><code><span style="font-size:10.0pt">LIBMP3.LIB</span></code>: Library 
+      functions for MP3</li>
+      <li><code><span style="font-size:10.0pt">LIB291.LIB</span></code>: 
+      General-purpose library functions</li>
+    </ul>
+    </li>
+    <li>You may copy these files from the network drive to your home directory 
+    with the following command:<br>
+    <span class="SpellE"><code><span style="font-size:10.0pt">xcopy</span></code></span><code><span style="font-size:10.0pt"> 
+    /s V:\ece390\mp3 W:\mp3</span></code><br>
+    or download the files from this server as
+    <a href="mp3.zip">mp3.zip</a></li>
+    <li>Add your code to <tt><span style="font-size:10.0pt">MP3.ASM</span></tt>.</li>
+    <li>Assemble and link your program by typing <code>
+    <span style="font-size:10.0pt">make.</span></code> This command reads the
+    <span class="SpellE">Makefile</span> then invokes NASM and TLINK to build an 
+    executable program.</li>
+    <li>Use TD debugger to find and correct program <span class="SpellE">errors.<b>Because</b></span><b> 
+    it is hard to determine if you have installed the interrupt service routines 
+    correctly, you might want to read the lecture notes carefully before 
+    beginning.</b></li>
+  </ul>
+  <h2>Final Steps</h2>
+  <ol start="1" type="1">
+    <li>Demonstrate your MP3.EXE to a TA or to the instructor. The TA or 
+    instructor will verify that your program produces the correct output.</li>
+    <li><b>Create an interesting wall layout for the game and show this to the 
+    TA.</b></li>
+    <li>Be prepared to answer questions about any aspect of the operation of 
+    your program. The TAs will not accept an MP if you cannot fully explain the 
+    operation of your code and details of your implementation. Delayed MPs will 
+    be subject to late penalties as described in the course syllabus (10%/day).</li>
+    <li>The TA will <span class="SpellE"><span class="GramE">handin</span></span> 
+    your MP online.</li>
+  </ol>
+  <div align="center" style="text-align:center">
+    <hr size="2" width="100%" align="center">
+  </div>
+  <h1><a href="mp3.asm">mp3.asm</a> (program framework)</h1>
+  <!--#include file="foot.asp"--></li>
+</div>
+
+</body>
+
+</html>

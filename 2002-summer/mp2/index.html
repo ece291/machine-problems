@@ -1,0 +1,302 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<%
+title = "ECE291 Machine Problem 2"
+subtitle = "Machine Problem 2"
+%>
+<!--#include file="headvb.asp"-->
+<BODY>
+
+<h1 align="center">Machine Problem 2: Rational RPN Calculator</h1>
+
+<div align="center"><center>
+<table border=0 cellpadding=2 cellspacing=2 width="60%">
+  <tr><td align=right bgcolor="#efefef"><b>Assigned</b></td>
+    <td bgcolor="#efefef">Thursday, 6/20/2002</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Due Date</b></td>
+    <td bgcolor="#efefef">Thursday, 6/27/2002</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Purpose</b></td>
+    <td bgcolor="#efefef">Input handling, Mathematical operations, Stack implementation, and Recursion.</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Points</b></td>
+    <td bgcolor="#efefef">75</td></tr>
+</table>
+</center></div>
+
+<h2>Introduction</h2>
+
+<p>Calculators were one of the greatest gifts to the engineer last century.
+They eliminated the tedious work of calculating numeric results.
+Hewlett-Packard (HP) innovated a method of calculation called Reverse Polish
+Notation (RPN).</p>
+
+<p>RPN employs a stack to hold numbers and intermediate results.  When a
+number is entered, it is PUSHed to the stack.  When an operation is entered,
+it POPs its operand(s) from the stack, performs the calculation, and PUSHes
+the result back to the stack.  With RPN there is no need for parentheses or
+equal buttons.</p>
+
+<p>Using RPN, the equation <em>X+(Y*Z)</em> can be computed by entering the
+following keystrokes:</p>
+
+<div style="border: #AAA 3px ridge; text-align:center;"><tt>X [enter] Y [enter] Z [enter] * [enter] + [enter]</tt></div>
+
+<p>For this example, X, Y, and Z were pushed to the stack.  When the
+multiplication command was entered (*), the values Y and Z were POPped from
+the stack.  Y*Z was computed, and this product (YZ) was PUSHed back to the
+stack.  When the addition command was entered (+), X and YZ were POPped from
+the stack, X+YZ was computed, and this sum was pushed back to the stack.
+The final result is stored at the top of the stack.</p>
+
+<h2>Problem Description</h2>
+
+<p>For this machine problem, you will implement the core functionality of a
+RPN calculator.  Your calculator will compute results on 32-bit rational
+numbers composed of a 16-bit integer numerator and 16-bit integer
+denominator.  It will print results in split fractional form (3 + 4/5) or
+improper fractional form (19/5).  It will support all standard logical and
+mathematical operations.  Fractions will always be reported in lowest
+terms.</p>
+
+<ul>
+  <li><strong>Internal Storage</strong></li>
+  <p>All numbers are internally stored as a pair of 16-bit signed integers
+using 2's complement notation.  16-bit words are PUSHed and POPped to and
+from a custom stack (<tt>OperandStack</tt>) at its top (<tt>StackTop</tt>).
+For this machine problem, you may choose whether you wish to detect stack
+overflows and underflows, or you may assume they do not occur (our tests
+will never POP more numbers than were already PUSHed).</p>
+
+  <p>Note that our <tt>OperandStack</tt> closely mimics the real stack, and
+that <tt>word [[StackTop]]</tt> refers to the numerator of the top value, and
+<tt>word [[StackTop]+2]</tt> refers to the denominator of the top value.  But
+in a fit of genious, <tt>OperandStack</tt> is designed to confuse your
+understanding of the real stack, by growing forward in memory.  The second
+top-most item is at <tt>word [[StackTop]-4]</tt> and <tt>word
+[[StackTop]-2]</tt>.  When you PUSH an operand, the operand you add should go
+to <tt>word [[StackTop]+4]</tt> and <tt>word [[StackTop]+6]</tt>.</p>
+
+  <li><strong>DispImproper</strong></li>
+  <p>The variable <tt>DispImproper</tt> determines how you numbers should be
+displayed.  If it stores the value 0, a fraction should be seperated into
+an integer component, and a fraction less than 1.  The fraction
+<tt>11/3</tt> should be displayed as <tt>3 2/3</tt> in this mode.
+
+  <p>If <tt>DispImproper</tt> is non-zero, fractions should be displayed in
+their simplest, improper, form.  The fraction <tt>11/3</tt> should be
+displayed as <tt>11/3</tt> in this mode.</p>
+
+  <p>The display mode can be changed by entering the commands MI or MS (mode
+improper, or mode split).  By default, the calculator should operate in
+split mode.</p>
+
+  <p>Note that unnecessary components should be left out.  If the fraction
+is 32/1, only <tt>32</tt> should be displayed.  If it's 1/3, only
+<tt>1/3</tt> should be displayed regardless of <tt>DispImproper</tt> (<tt>0
+1/3</tt> won't ever be displayed.)</p>
+
+  <li><strong>Operations</strong></li>
+  <p>Operations may take either one or two operands from the stack, perform
+an operation, and push the result back to the stack.  Let S0 refer to the
+element at the top of the stack, and S1 refer to the next element.</p>
+
+  <p>Single-operand instructions (such as negation) POP the first element
+from the stack (S0), perform the operation, then PUSH the result back to the
+stack to become the new S0.  Two-operand instructions (such as addition) POP
+the first two elements (S0 and S1), perform the operation, then PUSH teh
+result back to the stack to become the new S0.</p>
+
+  <table border><caption>Supported Operations</caption>
+  <!--<caption>Math Operations</caption>-->
+  <tr><th>Command</th><th>Description</th></tr>
+  <tr><td>+</td><td>Addition: S0 = S1 + S0</td></tr>
+  <tr><td>-</td><td>Subtraction: S0 = S1 - S0</td></tr>
+  <tr><td>*</td><td>Multiplication: S0 = S1 * S0</td></tr>
+  <tr><td>/</td><td>Division: S0 = S1 / S0</td></tr>
+  <!--<tr><td>N</td><td>Negation: S0 = -S0</td></tr>-->
+  </table>
+
+  <!--<table border><caption>Logical Operations</caption>
+  <tr><th>Command</th><th>Description</th></tr>
+  <tr><td>&amp;</td><td>Bitwise AND: S0 = S1 &amp; S0</td></tr>
+  <tr><td>|</td><td>Bitwise OR: S0 = S1 | S0</td></tr>
+  <tr><td>^</td><td>Bitwise Exlclusive OR (XOR): S0 = S1 ^ S0</td></tr>
+  <tr><td>~</td><td>Bitwise NOT (Inversion): S0 = ~S0</td></tr>
+  </table>-->
+
+</ul>
+
+<h2>Implementation</h2>
+
+<p>For this program you will write five modular procedures:</p>
+
+<table border>
+<tr><th>GetInput</th><td>
+<ul>
+  <li>Reads a line of input from the user, handles backspace, ignores LF, and
+  exits on ESC or Enter.</li>
+  <li>Inputs:</li>
+  <ul> <li>constant <tt>MAXBUFLEN</tt></li> </ul>
+  <li>Outputs:</li>
+  <ul>
+    <li><tt>al</tt> = last entered key</li>
+    <li>variable <tt>InputBuffer</tt> = string input by user</li>
+    <li>variable <tt>BufLength</tt> = number of characters put into <tt>InputBuffer</tt></li>
+  </ul>
+</ul>
+</td></tr>
+
+<tr><th>ProcessInput</th><td>
+<ul>
+<li>Decides what to do based on user entry.  PUSHes (number)/1 if a number is
+entered, or returns the Command.  Optionally disallows PUSHing if
+<tt>OperandStack</tt> is full</li>
+<li>Inputs:</li>
+<ul>
+ <li>variable <tt>InputBuffer</tt> = string input by user</li>
+ <li>variable <tt>BufLength</tt> = number of valid characters in <tt>InputBuffer</tt></li>
+ <li>constant <tt>STACKDEPTH</tt> = number of bytes in <tt>OperandStack</tt></li>
+</ul>
+<li>Outputs: </li>
+<ul>
+  <li><tt>bh</tt> = 1 if a number, 0 if empty, or command character ('+', 'N', etc)</li>
+  <li>variable <tt>StackTop</tt> updated if a number is PUSHed</li>
+</ul>
+</ul>
+</td></tr>
+
+<tr><th>Calculate</th><td>
+<ul>
+ <li>Do nothing if command code is 0 or 1, or execute the command</li>
+<li>Inputs:</li>
+<ul><li><tt>bh</tt> = command character or code</li></ul>
+<li>Outputs:</li>
+<ul><li>variable <tt>StackTop</tt> = updated if a 2 operand command executes</li></ul>
+<li>Notes:</li>
+<ul>
+<li>You will not be tested on operations that result in negative numbers.</li>
+<li>Storing your rational number in lowest terms is suggested.</li>
+</ul>
+ </ul>
+</td></tr>
+
+<tr><th>int GCD(m, n)</th><td>
+<ul>
+    <li>Return the Greatest Common Divisor (GCD) of its two
+    arguments</li>
+<li>Inputs:</li>
+<ul><li>two 16-bit numbers passed C-style on the stack</li></ul>
+<li>Outputs:</li>
+<ul><li>16-bit value GCD of inputs</li></ul>
+<li>Notes:</li>
+<ul><li>Use Dijkstra's algorithm to find the GCD recursively:</li>
+    <table>
+	<tr><th rowspan="3">GCD(m,n) =</th><td rowspan="3"><span style="font-size:300%;">{</span></td><td>m</td><td>if m=n</td></tr>
+    <tr><td>GCD(m-n,n)</td><td>if m > n</td></tr>
+    <tr><td>GCD(m,n-m)</td><td>if m < n</td></tr></table>
+<li>Watch out for the case 0/1; the above GCD won't terminate</li>
+</ul>
+</ul>
+</td></tr>
+
+<tr><th>PrintRational</th><td>
+<ul>
+<li>Print out the rational number at the top of the OperandStack</li>
+<li>Inputs:</li>
+<ul><li>variable <tt>DispImproper</tt> = zero to display simplified,
+    nonzero for improper fraction</li>
+    <li>variable <tt>StackTop</tt> = address of rational number</li>
+</ul>
+<li>Outputs:</li>
+<ul><li>None</li></ul>
+</ul>
+</td></tr>
+</table>
+
+<H2>Hints</H2>
+<ul>
+
+  <li>Consider carefully when you want to use GCD.  The library primarily uses
+  it to simplify a rational number as much as possible BEFORE storing it to
+  the stack.  If you choose to do this elsewhere, and mix functions with the
+  Library, don't be surprised if some fractions display in other than
+  lowest-terms.</li>
+
+  <li>The libmp2 file contains executable library functions 
+  for each of the routines that you need to implement. This allows you to run 
+  the program and understand how it works before you implement it. You can test 
+  your program by stepping through&nbsp;it and making sure the display and 
+  comparison functions work correctly. You will only receive credit, however, 
+  for the routines that you implement yourself. </li>
+
+  <li>When debugging your code in Turbo Debugger, you will 
+  find it helpful to use the memory window to show you the memory location of 
+  the file and strings. You can also use the watch window to keep track of 
+  variables in your code. </li>
+
+  <li>Run the program many times to get a good feel of 
+  it.&nbsp; Your final program with your code should resemble our version.&nbsp; 
+  Formatting aesthetics aren't as important as correctly operating code. </li>
+
+  <li>Do not forget to push and pop to avoid clobbering 
+  registers! </li>
+
+  <li>Push and Pop can also be used on memory, as long as 
+  you specify the size and it's word-sized or larger. You don't have to move it 
+  into a register first. (Yes, this does appear to break the two-memory access 
+  rule. Don't worry!) </li>
+
+  <li>Remember to include function headers for&nbsp;and 
+  write comments in each of your functions!&nbsp; Headers should give a general 
+  idea of what the function does and have a list of inputs, outputs, and called 
+  functions.&nbsp; Commenting should be specific enough to allow a function to 
+  be understood by just reading the comments.&nbsp; Commenting every line, 
+  however, is excessive and may cost you some points. </li>
+
+  <li>START EARLY! </li>
+
+  <li>Monitor the <A href="news:uiuc.class.ece291">newsgroup</a> for
+clarifications and help.</li>
+
+</ul>
+
+<h2>Procedure</h2>
+<ul>
+  <li>You will begin this MP with the following files:
+  <ul>
+    <li><tt>MP2.ASM</tt>: Program Framework
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled and
+    linked.
+    <li><tt>libmp2.lib</tt>: Library functions for MP2
+    <li><tt>lib291.lib</tt>: General-purpose library functions </li></ul>
+  <li>You may copy these files from the network drive to your home directory
+  with the following command: <br><tt>xcopy /s V:\ece291\mp2 W:\mp2</tt><br>or
+  download the files from this server as <A href="mp2.zip">mp2.zip</A>
+  <li>Add your code to <tt>MP2.ASM</tt>.
+  <li>Assemble and link your program by typing<br><tt>make</tt><br>This command
+  reads <em>Makefile</em> then invokes NASM and LINK to build an executable
+  program.
+  <li>Use Turbo Debugger (TD) to find and correct program errors.</li>
+</ul>
+
+<h2>Final Steps</h2>
+<ol>
+
+  <li>Demonstrate your MP2.EXE to a TA. You may be asked to 
+  recompile and demo the program. Your program must work with all given input.</li>
+
+  <li>Be prepared to answer questions about any aspect of the operation
+  of your program. The TAs will not accept an MP if you cannot fully
+  explain the operation of your code and the details of your
+  implementation. Delayed MPs will be subject to late penalties as
+  described in the course syllabus (15pts/day).</li>
+
+  <li>The TA will handin your MP online.</li>
+
+</ol>
+
+<hr>
+
+<h2>MP2.ASM (program framework)</h2>
+
+<small><pre>
+</pre></small></BODY></HTML>

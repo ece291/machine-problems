@@ -1,0 +1,327 @@
+<HTML xmlns="http://www.w3.org/1999/xhtml"><HEAD><TITLE>ECE 390 Machine Problem 1</TITLE>
+<META content="text/html; charset=windows-1252" http-equiv=Content-Type><LINK
+href="MP1_files/ece291.css" rel=stylesheet type=text/css>
+<META content="MSHTML 5.00.2919.6307" name=GENERATOR></HEAD>
+<BODY>
+<TABLE class=header cellSpacing=0 cellPadding=0 width="100%">
+  <TBODY>
+  <TR>
+    <TD class=half vAlign=top align=left>
+      <P><A href="http://courses.engr.illinois.edu/ece390"><IMG height=100 alt="" 
+      src="http://courses.engr.illinois.edu/ece390/ece390.jpg" width=310></A><BR><B>&nbsp;&nbsp;Computer 
+      Engineering II</B><BR><B>&nbsp;&nbsp;<SPAN class=red>Machine Problem 
+      1</SPAN></B></P></TD>
+    <TD class=half vAlign=center align=right>
+      <TABLE class=maxheight cellSpacing=1 cellPadding=0 width="100%" 
+        border=0><TBODY>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/schedule.html">Schedule</A>&nbsp;&nbsp;</TD>
+          <TD class=dark>&nbsp;&nbsp;<A 
+            href="http://courses.engr.illinois.edu/ece390/labsched.html">Lab 
+            schedule</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/hw.asp">Homework</A>&nbsp;&nbsp;</TD>
+          <TD>&nbsp;&nbsp;<A 
+            href="http://courses.engr.illinois.edu/ece390/books/labmanual/">Lab 
+            Manual</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/mp.asp">Machine 
+            Problems</A>&nbsp;&nbsp;</TD>
+          <TD class=dark>&nbsp;&nbsp;<A 
+            href="http://courses.engr.illinois.edu/ece390/resources">Resources</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/mp/mp0/fp">Final 
+            Project</A>&nbsp;&nbsp;</TD>
+          <TD>&nbsp;&nbsp;<A 
+            href="http://courses.engr.illinois.edu/ece390/user/photos">Photos</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/grades">Gradebook</A>&nbsp;&nbsp;</TD>
+          <TD class=dark>&nbsp;&nbsp;<A 
+            href="http://courses.engr.illinois.edu/ece390/feedback.asp">Feedback</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/syllabus.html">Syllabus</A>&nbsp;&nbsp;</TD>
+          <TD>&nbsp;&nbsp;<A 
+            href="http://courses.engr.illinois.edu/ece390/archive">Archives</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/lecture">Lectures</A>&nbsp;&nbsp;</TD>
+          <TD class=dark>&nbsp;&nbsp;<A 
+            href="http://courses.engr.illinois.edu/ece390/resources/turbo.zip">Download 
+            NASM</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390">Home</A>&nbsp;&nbsp;</TD>
+          <TD>&nbsp;&nbsp;<A 
+            href="https://courses.engr.illinois.edu/ece390/admin">Restricted 
+            access</A></TD></TR></TBODY></TABLE></TD></TR>
+  <TR>
+    <TD class=spacer colSpan=2><IMG height=8 alt="" src="" 
+  width=100></TD></TR></TBODY></TABLE>
+  <TABLE border=0 cellPadding=7 cellSpacing=1 width="100%">
+  <TBODY>
+  <TR>
+    <TD vAlign=top>
+      <H1 align=center>ECE 390: COMPUTER ENGINEERING II <br>
+      Machine Problem 1: Telephone Directory</H1>
+      <DIV align=center>
+      <CENTER>
+      <TABLE border=1 width=513>
+        <TBODY>
+        <TR>
+          <TD align=right width=64>Assigned</TD>
+          <TD width=433>Thursday, 2 September 2004</TD></TR>
+        <TR>
+          <TD align=right width=64>Due Date</TD>
+          <TD width=433>Wednesday, 15 September 2004, 5:00 p.m.</TD></TR>
+        <TR>
+          <TD align=right width=64>Purpose</TD>
+          <TD width=433 Roman?>To construct a program with decisions and loops.
+          To master the use of the debugging tool.</TD></TR>
+        <TR>
+          <TD align=right width=64>Points</FONT></TD>
+          <TD width=433>25</TD></TR></TBODY></TABLE></CENTER></DIV>
+
+
+<BLOCKQUOTE>
+Perlis: Some principles: every interesting program has at least
+one variable, one branch, one loop ...<BR>
+Strachey:  And at least one bug!<BR>
+<I>-- NATO Software Engineering Conference, 1970</I>
+</BLOCKQUOTE>
+
+<P>You will write a program that receives a pattern from the user and
+retrieves telephone directory records whose family names match the pattern.
+When you demonstrate your program, you will use Turbo Debugger (TD).</P>
+
+<P>Files for MP1 are on the <tt>V:</tt> drive in the directory <tt>V:\ece390\mp1</tt>.
+In this directory are the program framework <tt>mp1.asm</tt> and a
+running version of the program <tt>mp1lab.exe</tt>. There are no
+subroutines for this program other than those in LIB291. You should start by
+copying these files to your home directory with the following command: <BR>
+<TT>xcopy /s V:\ece390\mp1 W:\mp1</TT><BR>
+You may download the files from the server as
+<A href="http://courses.engr.illinois.edu/ece390/mp/mp1/mp1.zip">mp1.zip</A>  </p>
+
+<P>Reading: Lab Notes Section 4.2 (Variations on Loops),
+Chapter 6 (Debugging Tools)</P>
+
+<H2>Program Specification</H2>
+
+<P>Your program will have the telephone directory with the records shown below
+(the telephone numbers are fictitious):</P>
+<PRE>
+reclst  DB      'ALI, HAIDER            390-0000','$'
+        DB      'BUSH, GEORGE           911-2001','$'
+        DB      'CHEN, NICHOLAS         390-1111','$'
+        DB      'CHMIEL, RYAN           291-0000','$'
+        DB      'DYKSTRA, MARK          390-2222','$'
+        DB      'KALBARCZYK, ZBIGNIEW   291-1111','$'
+        DB      'KERRY, JOHN            228-1969','$'
+        DB      'KEYES, ALAN            301-2004','$'
+        DB      'KING, JOHN             291-2222','$'
+        DB      'LIAO, I-JU             390-3333','$'
+        DB      'LIPPMANN, MARK         390-4444','$'
+        DB      'LO, AGNES              291-3333','$'
+        DB      'LOUI, MICHAEL          390-5555','$'
+        DB      'MCCARTHY, BRENDAN      390-6666','$'
+        DB      'OBAMA, BARACK          312-2004','$'
+        DB      0                       ; Zero value marks end of list
+</PRE>
+
+<P>Each record comprises 32 bytes, including the byte for "<tt>$</tt>".</P>
+
+<P>The program types a prompt "<tt>Type a pattern: </tt>" on the display screen.
+Then it reads in and echoes a string of characters from the keyboard, until
+the user presses the Enter key, which inputs the carriage return character.
+The program stores this pattern string in successive bytes starting at the byte
+labeled <tt>pattrn</tt>.  The carriage return character marks the end of the
+pattern string</p>
+
+<p>Using a loop, the program inspects each record. With calls to subroutine
+<tt>dspmsg</tt>, the program displays every record whose family name (before the
+comma) matches the pattern.  If the pattern contains only letters, then the
+program displays only records whose family name matches the pattern exactly.
+For example, the pattern "<tt>LO</tt>" matches only the "<tt>LO, AGNES</tt>"
+record.  In the pattern, the question mark "<tt>?</tt>" matches any
+single letter, and the asterisk "<tt>*</tt>" matches the rest of
+the name.  For example, the pattern "<tt>K*</tt>" matches all records
+that begin with "<tt>K</tt>".  The pattern "<tt>LO*</tt>" matches "<tt>LO, AGNES</tt>"
+and "<tt>LOUI, MICHAEL</tt>".  The pattern "<tt>?I*</tt>" matches all
+records whose second character is the letter "<tt>I</tt>".</P>
+
+<P>If no records match the input pattern, then the program displays the message
+"<tt>No records found</tt>" with subroutine <tt>dspmsg</tt>.  For example, if the input
+is "<tt>MC?</tt>", then the program types out "<tt>No records found</tt>".</P>
+
+<P>The program should use carriage returns and line feeds between
+records to make the output readable.</P>
+
+<P>After it produces the appropriate output, the program returns to
+the beginning and prompts the user for another pattern.</P>
+
+<P>When the user presses the Enter key without entering a pattern, the program exits
+by calling <tt>dosxit</tt>.</P>
+
+<P>In the real world, when programs are used or modified by others,
+clear documentation is essential.  Documentation standards are discussed
+in the Lab Notes in Section 1.1 (Machine Problems).</P>
+
+<P>You may use the subroutines in LIB291 without penalty.</P>
+
+<H2>Friendly Advice</H2>
+<ul>
+<li>After your program obtains the pattern from the user, it should have two nested
+loops.  The outer loop cycles through the records, one at a time.  The inner loop
+cycles through consecutive characters in the pattern and in the current record.
+<li>In the inner loop, if the current pattern character is the carriage return and
+the current record character is the comma "<tt>,</tt>", then the inner loop has reached
+the end of the pattern and the end of the name simultaneously.  In this case, the pattern
+matches the record exactly, and the record should be displayed.
+<li>If the inner loop reaches the end of the pattern before the end of the name,
+or vice versa, then the pattern and record do not match.
+</ul>
+
+<H2>Development Log and Cover Memo</H2>
+
+<P>As you work on each machine problem, you will keep a simple MP
+development log. The log will document your design decisions, development plan,
+and debugging experiences, including the time you spent on different parts
+of the machine problem. The log may be kept in any form. In general, whenever
+you work on a machine problem, briefly record the starting time,
+significant design decisions, progress in coding and
+testing, bugs you discovered, and the ending time. Do <I>not</I> record
+simple syntax errors detected by NASM at assembly time; these
+are not considered to be bugs.</P>
+
+<P>For each machine problem, beginning with MP1, you will submit a cover memo of
+200 to 400 words (up to one page, single spaced). The cover memo
+should answer the following questions, based on the information that you
+record in your MP development log.
+<UL>
+<LI>How much time did you spend on the design, coding, and testing of
+each part or subroutine? (MP1 has no assigned subroutines; simply report your
+total time.)</LI>
+<LI>What kinds of defects (bugs) did you find during the development
+of the program? When did you discover these defects (during
+code review or during testing)? How did you find them?</LI>
+<LI>What you would do differently for the next MP?</LI>
+</UL>
+Type your cover memo into a plain text file in your W:\mp1 directory
+</P>
+
+<H2>Photograph</H2>
+
+<P> To receive full credit for MP1, you must have your photo taken. Photos will be posted on
+the ECE 291 Web site but will be accessible only by students enrolled in the course.</P>
+
+<H2>Demonstration</H2>
+
+<P>Demonstrate your program to a TA or to the instructor.  You will
+be asked to use Turbo Debugger to</P>
+<OL>
+<LI>display the contents of several bytes in memory</LI>
+<LI>start your program with a breakpoint at the beginning of your
+search loop </LI>
+<LI>single step through a few instructions,</LI>
+<LI>change the contents of a memory byte, and</LI>
+<LI>change the contents of a register.</LI></OL>
+<P>After a successful demonstration, you will submit your source program and
+cover memo via the MP1 Gradesheet.</P>
+
+<p>Items for Gradesheet:
+Functionality: Handles letters, Handles question mark and asterisk, Correctly prints "No records found" 15 pts <br>
+Style: Good control structures, Documentation 5 pts <br>
+Cover memo: 4 pts<br>
+Photo: 1 pt</p>
+
+ <HR>
+
+      <H2>mp1.asm (program framework)</H2><FONT size=-1><PRE>
+; MP1 - Telephone directory
+; Your name
+; Date
+;
+; This program illustrates the use of a simple loop for data retrieval,
+; logic tests with multiple comparisons, and addressing modes.
+
+        BITS    16
+
+;====== SECTION 1: Define constants =======================================
+
+        CR      EQU     0Dh
+        LF      EQU     0Ah
+        MaxPat  EQU     30              ; Maximum length of pattern string
+
+; You may define additional constants here
+
+;====== SECTION 2: Declare external procedures ============================
+
+EXTERN  kbdine, dspout, dspmsg, dosxit
+
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        RESB      64*8
+stacktop:
+        RESB    0                       ; NASM bug workaround
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+
+prompt  DB      CR,LF,LF,'Type a pattern: ','$'
+nonemsg DB      CR,LF,'No records found','$'
+xitmsg  DB      CR,LF,'MP1: Exit to DOS','$'
+pattrn  RESB    MaxPat
+reclst  DB      'ALI, HAIDER            390-0000','$'
+        DB      'BUSH, GEORGE           911-2001','$'
+        DB      'CHEN, NICHOLAS         390-1111','$'
+        DB      'CHMIEL, RYAN           291-0000','$'
+        DB      'DYKSTRA, MARK          390-2222','$'
+        DB      'KALBARCZYK, ZBIGNIEW   291-1111','$'
+        DB      'KERRY, JOHN            228-1969','$'
+        DB      'KEYES, ALAN            301-2004','$'
+        DB      'KING, JOHN             291-2222','$'
+        DB      'LIAO, I-JU             390-3333','$'
+        DB      'LIPPMANN, MARK         390-4444','$'
+        DB      'LO, AGNES              291-3333','$'
+        DB      'LOUI, MICHAEL          390-5555','$'
+        DB      'MCCARTHY, BRENDAN      390-6666','$'
+        DB      'OBAMA, BARACK          312-2004','$'
+        DB      0                       ; Zero value marks end of list
+
+;You may declare additional variables here
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        MOV     AX, CS                  ; Initialize Default Segment register
+        MOV     DS, AX
+        MOV     AX, stkseg              ; Initialize Stack Segment register
+        MOV     SS, AX
+        MOV     SP, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+main:
+
+; Your program goes here
+
+        CALL    dosxit
+
+
+      </PRE></FONT></TD></TR></TBODY></TABLE>
+<TABLE cellPadding=0 cellSpacing=0 class=dark width="100%">
+  <TBODY>
+  <TR>
+    <TD><A href="http://courses.engr.illinois.edu/ece390/"><IMG alt="" height=17
+      src="MP1_files/go-back.gif" width=16> Return to ECE390 Home Page</A></TD>
+    <TD align=right>Fall 2004</TD></TR></TBODY></TABLE></BODY></HTML>

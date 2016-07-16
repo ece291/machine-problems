@@ -1,0 +1,23 @@
+
+----------------------- MP2 Menu ---------------------
+ enter:    (T)ext message   (C)oded hex message
+ display:  (A)SCII message  (H)ex encoding
+ generate: (K)eys           (P)ublic key
+ coding:   (E)ncrypt        (D)ecrypt
+--------- [ESC] = (Q)uit -- redisplay (M)enu ---------
+
+>Generating new public keys...
+Plese enter a prime number (p): p <= 127: 7
+Plese enter a prime number (q): 18 < q <= 36: 19
+Please enter a key (e) that is less than and relatively prime to 108: 5
+The public key (e, n) is (5, 133).
+The private key (d, n) is (65, 133).
+
+>
+
+LIBMP2 Ver 1.1 Calls: 
+ -ReadBuffer      
+ -CheckPrime      
+ -ReadKeys        
+ -GetD            
+

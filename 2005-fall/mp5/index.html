@@ -1,0 +1,783 @@
+<HTML xmlns="http://www.w3.org/1999/xhtml"><HEAD><TITLE>ECE 390 Machine Problem 5</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=windows-1252"><LINK 
+href="/ece390/ece390.css" type=text/css rel=stylesheet></HEAD>
+<BODY>
+<TABLE class=header cellSpacing=0 cellPadding=0 width="100%">
+  <TBODY>
+  <TR>
+    <TD class=half vAlign=top align=left>
+      <P><A href="http://courses.engr.illinois.edu/ece390"><IMG 
+      src="/ece390/icon/ece390.jpg"></A><BR><B>  Computer 
+      Engineering II</B><BR><B>  <SPAN class=red>Machine Problem 
+      5</SPAN></B></P></TD>
+    <TD class=half vAlign=center align=right>
+      <TABLE class=maxheight cellSpacing=1 cellPadding=0 width="100%" 
+        border=0><TBODY>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/schedule.html">Schedule</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/labsched.html">Lab 
+            schedule</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/hw.asp">Homework</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/books/labmanual/">Lab 
+            Manual</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/mp.asp">Machine 
+            Problems</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/resources">Resources</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/mp/mp0/fp">Final 
+            Project</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/user/photos">Photos</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/grades">Gradebook</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/feedback.asp">Feedback</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/syllabus.html">Syllabus</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/archive">Archives</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/lecture">Lectures</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/resources/turbo.zip">Download 
+            NASM</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390">Home</A>  </TD>
+          <TD>  <A 
+            href="https://courses.engr.illinois.edu/ece390/admin">Restricted 
+            access</A></TD></TR></TBODY></TABLE></TD></TR>
+  <TR>
+    <TD class=spacer colSpan=2><IMG height=8 alt="" src="" 
+  width=100></TD></TR></TBODY></TABLE>
+
+<TABLE border=0 cellPadding=7 cellSpacing=1 width="100%">
+  <TBODY>
+  <TR>
+    <TD vAlign=top>
+      <H1 align=center>Machine Problem 5: Connect Four via Serial Port</H1>
+      <DIV align=center>
+      <CENTER>
+      <TABLE border=1 width=513>
+        <TBODY>
+        <TR>
+          <TD align=right width=64>Assigned</TD>
+          <TD width=433>Tuesday, 25 October 2005</TD></TR>
+        <TR>
+          <TD align=right width=64>Due Date</TD>
+          <TD width=433>Thursday, 10 November 2005, 5:00 p.m.</TD></TR>
+        <TR>
+          <TD align=right width=64>Purpose</TD>
+          <TD width=433 Roman?>To understand graphics and asynchronous
+          serial communication. To work in teams.</TD></TR>
+        <TR>
+          <TD align=right width=64>Points</FONT></TD>
+          <TD width=433>60</TD></TR></TBODY></TABLE></CENTER></DIV>
+          
+<BLOCKQUOTE>
+Now all of the communications plugs the physical link, the
+RS232 connector, is the simplest. I think it was discovered in 
+the ruins at Pompeii -- the Romans probably used it to interface
+with their data runners. It specifies voltages (plus and minus)
+which are prehistoric. It even predates TTL. But it is all there
+is. When forced back to bare copper and elemental, ASCII 
+transmission, RS232 is always there, and we should be thankful,
+because in the intricacies of the higher layers of communications
+protocol lies a tower of Babel -- virtual plugs misted in 
+indescribable complexity. 
+-- Robert W. Lucky, <i>Lucky Strikes Again</i>, 1993.<p><b>Corrected November 2 2005: 
+Remove EnableTI from the list of functions called by Task3</b></p>
+</BLOCKQUOTE>
+
+<P>Working in a team, you will write a single program MP5 that implements a 
+version of the classic game Connect Four
+over the serial port.</p>
+
+<P>Files for MP5 are on the <tt>V:</tt> drive in the directory <tt>V:\ece390\mp5</tt>.
+In this directory are the program framework <tt>mp5.asm</tt> and a 
+running version of the program <tt>mp5lab.exe</tt>. Lab versions of subroutines
+are in <tt>libmp5.lib</tt>, which contains all subroutines of LIB291 plus 
+libInit, libReceiveSrv, libTransmitSrv, libTask1, libTask2, libTask3,
+libTask4, and libCircle. You will use mp5xit instead of dosxit.
+You should start by copying these files to your home directory with the following command: <BR>
+<TT>xcopy /s V:\ece390\mp5 W:\mp5</TT><BR>
+You may download the files from the server as 
+<A href="http://courses.engr.illinois.edu/ece390/mp/mp5/mp5.zip">mp5.zip</A>  </p>
+
+<p> Reading: Lab Notes, Chapter 12</p>
+
+<H2>Program Specification</H2>
+<p>Two copies of the program run on separate computers connected by a null modem cable.
+One player sits at each computer. When the program starts, it first asks whether the
+initial state is testing (0), choosing a move (1), or waiting for the other player (2).
+The player at one computer should enter 1, and the player at the other computer should enter 2.
+The first player is assigned red checkers, the second player black checkers.
+</p>
+<p>The program then prompts the player for a radius, in pixels, for circles that will be displayed.
+</p>
+<p>Next, the program displays a 6x8 yellow grid on a blue background. Players take turns
+choosing columns of the grid; to choose one of the eight columns, the player clicks with
+the mouse anywhere in that column. When a player chooses a column, a checker (represented
+as a filled circle) of the player's color drops smoothly to the lowest unoccupied cell of the six
+cells in that column.  The checker appears to move behind the horizontal grid lines.
+The winner of the game is first player to place four checkers of the 
+same color in adjacent cells vertically, horizontally, or diagonally.
+</p>
+<p>
+In testing mode, there is only one player, and the colors of the falling
+checkers alternate between red and black, starting with red.
+</p>
+<p>
+At any time, a player may send a text message to the other player.
+The typed message appears one one line at the top of the display,
+and the player may use the backspace key to correct errors. 
+When the player presses the Enter key, the message is transmitted to the other player,
+and it appears at the bottom of the other player's display.
+</p>
+<p>
+When a player presses the ESC key, the program exits.
+</p> 
+
+<h2>Program Organization</h2>
+
+<P>In this machine problem, the main procedure is provided for you.
+You must write the code to replace the library subroutines 
+libInit, libReceiveSrv, libTransmitSrv, libTask1, libTask2, libTask3,
+libTask4, and libCircle.
+You will replace these subroutines from the libmp5 library by deleting the 
+statements that call the libmp5 subroutine and by adding your own code. 
+Each subroutine that you write should match the output of the library 
+subroutine exactly.</P>
+<p>
+You may use parts of your team members' subroutines for MP4, such as
+Enq and Deq.
+</p>
+<p>
+The program uses the following global variables:
+<pre>SavCOff RESW    1                       ; Serial communication port vector
+SavCSeg RESW    1
+State   DB      0                       ; 0 = testing, 1 = your turn,
+                                        ; 2 = waiting for other player
+PColor  DB      1                       ; this player's color, 1 = red, 2 = black 
+Radius  DW      8                       ; Radius of circles, 2 to 9
+Board   RESB    48                      ; 6x8 array with game state
+</pre>
+There are also parameter lists for the 
+Transmit Queue (<tt>TQList</tt>) and the Receive Queue (<tt>RQList</tt>).
+</p>
+<p><IMG SRC="mp5fig.jpg" width="694" height="405"></p>
+<p>
+The program operates in 320x200 graphics mode, with 200 pixel rows and 320 pixel columns.
+The yellow grid has horizontal lines on rows 40, 60, 80, ..., 160 and vertical lines on
+columns 80, 100, 120, ..., 240.  Each line is one pixel wide.
+The interior of each of the 48 cells in the grid is blue and measures 19x19 pixels.
+</p>
+<p>
+Each cell on the grid has a grid row numbered from 0 to 5 and a grid column
+from 0 to 7.  The top left cell of each grid is at grid row 0 and grid
+column 0.  The (r,c) entry of the <tt>Board</tt> array is -1 if the cell
+at grid row r and grid column c of is unoccupied, or the color code of the
+checker in that cell if it is occupied: 12 for red, 0 for black.  (See the
+<tt>EQU</tt> declarations at the top of the <tt>mp5.asm</tt> program framework.)
+</p>
+<p>
+The program uses <tt>INT 33h</tt> with <tt>AX</tt> = 3 to determine whether 
+the player has pressed a mouse button.
+The <tt>INT 33h</tt> instruction retrieves the position of the tip of the mouse cursor arrow.  
+The position is given in pixels for the row (in <tt>DX</tt>) and column (in <tt>CX</tt>).
+The row value is 0 to 199, but column value is in 0 to 639; divide the column value
+by 2 to get number of pixels in 320x200 mode.
+After the program determines that the player has pressed a mouse button,
+the program should wait for the mouse button to be released before
+proceeding.
+</p>
+<p>For text, the screen behaves as if there are 25 text rows and 40 text columns.
+To display text on the screen, use <tt>INT 10h</tt> to move the cursor to the appropriate column of
+row 0 (outgoing text) or row 23 (incoming text).
+Then call dspout or dspmsg to display a character or an entire message.</p>
+<p>
+Packets are transmitted over the serial port between computers in two formats.
+In each format, the last character is <tt>EOT</tt>, which in this program is 0FFh.
+(Some standard packet formats use 04h, but we cannot do so here. Why not?)
+<ul>
+<li>Format 1: This format is used for text messages exchanged between players.
+The first byte is 01h, the subsequent bytes are ASCII characters (up to 40
+characters), and the last byte is the EOT character.</li>
+<li>Format 2: This format is used to report the column chosen by a player.
+The first byte is 02h, the second byte is the grid column number (0 to 7), and
+the third byte is the <tt>EOT</tt> character.</li>
+</ul>
+</p>
+<p>You may use without penalty the following subroutines, which are provided
+in the <tt>mp5.asm</tt> program framework.
+<ul>
+<li>EnableTI -- Enable ready-to-transmit interrupts from the 8250 ACE</li>
+<li>DisableTI -- Disable ready-to-transmit interrupts from the 8250 ACE</li>
+<li>SerialInit -- Initialize the 8250 ACE with the baud rate and frame format</li>
+<li>SerialReset -- Reset the 8250 ACE, disabling its interrupts</li>
+<li>ComInt -- Part of interrupt service routine for serial communication port</li>
+</ul>
+</p>
+<P>Your team will replace each of the subroutines listed below with your own code.
+Document each subroutine with a header.
+</P>
+      <TABLE border=1>
+        <TBODY>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Init</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Initializes interrupt vectors and the display screen
+              <LI>Inputs: None</LI>
+              <LI>Outputs: <tt>SavCOff, SavCSeg, Board</tt></LI>
+              <LI>Calls: SerialInit</li> 
+              <LI> 
+Init saves the old serial communication port interrupt vector and changes
+it to point to the interrupt service routine ComInt. Init uses
+<tt>INT 10h</tt> to select 320x200 graphics mode and draws the grid.
+Init uses <tt>INT 33h</tt> to initialize the mouse driver and to display
+the mouse cursor; the mouse cursor should be displayed only if <tt>State</tt>
+is 0 or 1. (Why?)  Init initializes the <tt>Board</tt> array.
+              </LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>ReceiveSrv</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Receives one byte through serial port 
+              <LI>Inputs: None</LI>
+              <LI>Outputs: None </li>
+              <LI>Calls: Enq</li>
+              <LI>
+ComInt, the interrupt service routine for the serial communication port,
+calls ReceiveSrv, which receives one byte from the serial port and enqueues it 
+onto the Receive Queue.
+              </LI></UL></TD></tr>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>TransmitSrv</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Transmits one byte through serial port 
+              <LI>Inputs: None</LI>
+              <LI>Outputs:  None </li>
+              <LI>Calls: Deq, DisableTI</li>
+              <LI>
+ComInt, the interrupt service routine for the serial communication port,
+calls TransmitSrv.
+If the Transmit Queue is not empty, then TransmitSrv dequeues
+dequeues a byte from this queue and uses the <tt>OUT</tt>
+instruction to send it to the <tt>THR</tt> register in the 8250 ACE.
+If the Transmit Queue is empty, then TransmitSrv calls DisableTI.
+(Why should TransmitSrv call DisableTI?)
+              </LI></UL></TD></tr>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Task1</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Processes keyboard character
+              <LI>Inputs: None</LI>
+              <LI>Outputs: <tt>TQ</tt> </li>
+              <LI>Calls: kbdin, dspout, Enq, EnableTI, SerialReset, mp5xit</li>
+              <LI>
+Task1 first uses <tt>INT 16h</tt> to determine whether the player has pressed a key.
+If so, then Task1 calls kbdin to obtain the ASCII code for the keyboard character.</li>
+<li>Unless the character is special,
+if the current unsent message is fewer than 40 characters long, then Task1 saves
+the new character and displays it on the screen.</li>
+<li>If the character is a backspace and there is a character to erase, then Task1 erases
+the last character of the current unsent message.</li>
+<li>If the character is a carriage return (from the Enter key), then Task1 sends a Format 1
+packet via TQ with the current message.
+Finally, Task1 calls EnableTI to enable serial port transmit interrupts.</li>
+<li>If the character is ESC (from the Esc key), then Task1 restores the serial port interrupt vector,
+calls SerialReset to reset the serial port, and calls mp5xit.</li>
+              </UL></TD></tr>           
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Task2</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Handles mouse inputs
+              <LI>Inputs: <tt>State, PColor</tt> </LI>
+              <LI>Outputs: <tt>TQ, Board, State, PColor</tt> </li>
+              <LI>Calls:  Enq, EnableTI, Circle </LI>
+              <li> 
+Task2 exits if <tt>State</tt> is 2 or if the mouse has not been clicked.</li>
+<li>If <tt>State</tt> is 0 or 1 and the player has clicked the mouse,
+then Task2 checks that the mouse cursor position is within the yellow grid.
+If the mouse column is valid and there is an unoccupied grid cell in that
+column, then Task2 shows a checker of color specified by <tt>PColor</tt> drop smoothly into
+that cell, starting from above the grid.  Task2 records the color of the checker
+in this cell in <tt>Board</tt>.</li>
+<li>If <tt>State</tt> is 0, then Task2 changes <tt>PColor</tt> from 1 to 2 or from 2 to 1.</li>
+<li>If <tt>State</tt> is 1, then Task2 sends a Format 2 packet via <tt>TQ</tt> 
+with the column information and calls EnableTI to enable serial port transmit interrupts.
+Finally, Task2 sets <tt>State</tt> to 2 and hides the mouse cursor.</li>
+         </li></UL></TD></TR>
+         <TR vAlign=top>
+          <TD><B><FONT size=+1>Task3</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Handles received bytes from the serial port
+              <LI>Inputs: <tt>State, RQ</tt>
+                </LI>
+              </li>
+              <LI>Outputs: <tt>Board, State</tt> </li>
+              <LI>Calls: dspmsg, Deq</LI>
+              <li> 
+Task3 checks the <tt>RQ</tt> to determine whether the program has received bytes from the serial port.
+Once an <tt>EOT</tt> has arrived, Task3 processes the entire packet.</li>
+<li>For a Format 1 packet, Task3 erases the previous message from the other player
+and displays the new message.</li>
+<li>For a Format 2 packet, Task3 gets the grid column number from the packet and finds 
+the grid row of the lowest unoccupied cell in that column.  Task3 shows a checker of the
+other player's color drop smoothly into that cell, starting from above the grid.  Task3
+records the color of this checker in this cell in <tt>Board</tt>.
+Finally, Task3 sets <tt>State</tt> to 1 and shows the mouse cursor.</li>
+</UL></TD></tr>
+       <TR vAlign=top>
+          <TD><B><FONT size=+1>Task4</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Determines whether there are four checkers of the same color in
+              adjacent cells vertically, horizontally, or diagonally
+              <LI>Inputs: <tt>Board</tt> </li>
+              <LI>Outputs:  none</li>
+              <li>Calls: dspmsg</li>
+              <li> 
+Task4 scans the entire <tt>Board</tt> array to determine whether there
+are four consecutive entries with the same color value (not -1) for four
+adjacent cells vertically, horizontally, or diagonally.  If so, then
+Task4 displays an appropriate message at the top of the screen.
+ </LI></UL></TD></tr>
+       <TR vAlign=top>
+          <TD><B><FONT size=+1>Circle</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Draws a filled circle using Bresenham's algorithm
+              <LI>Inputs: 
+              <ul>
+                    <li><tt>SI</tt> -- column of center of circle</li>
+                   <li><tt>DI</tt> -- row of center of circle</li>
+                   <li><tt>Radius</tt> -- radius of circle</li>
+                   <li><tt>DL</tt> -- Color</li>
+                </ul>
+              </li>
+              <LI>Outputs: None</li>
+              <li> 
+Circle draws a circle of radius Radius centered at column SI,
+row DI, on the screen with the color specified by DL. The entire
+interior of the circle should be filled with this color.
+ </LI></UL></TD></tr>
+
+ </TBODY></TABLE>
+
+<h2>Optional Features</h2>
+<ul>
+<li>You may implement additional features. Be creative!</li>
+</ul>
+
+<h2>Working in Teams</h2>
+<ul>
+<li>Find an equitable division of labor among team members, but do not
+assign sole responsibility for a subroutine to only one student.
+For each subroutine, one student could be the primary developer and 
+another student could be the primary tester.
+All students should inspect code written by other team members</li>
+<li>For each team meeting, one student should serve as the manager, and 
+another as the recorder; these roles should rotate so that every student has a
+chance to fill each role. 
+<ul>
+<li>The manager is responsible for finding a time and place
+for the meeting. Starting October 27, substantial time will be allocated in
+every lecture period for team meetings. Grainger Library has rooms
+specifically designated for group meetings. 
+At the meeting, the manager should encourage everyone to 
+participate, ensure that all alternatives are adequately considered,
+and keep discussions on task and on time.</li>
+<li>The recorder is responsible for 
+taking notes, summarizing the decisions in an e-mail to all team members, and
+(for the Final Project) drafting the short document due that week.</li></ul>
+<li>Team members should strive to be professional and civil to each other.
+Disagreements should be based on facts and technical arguments, not on personal
+prejudices.</li>
+<li>At the first meeting, on October 27, all teams will formulate a team charter.
+Guidelines for the team charter will be distributed in class on October 27.
+</li>
+</ul>
+
+<H2>Friendly Advice</H2>
+<UL>
+<LI>The libmp5.lib file contains executable library subroutines for each of 
+the routines that you need to implement. The library subroutines allow
+you to run the program and understand how it works before you implement it. 
+You can test your program with any combinations of your own code and library 
+subroutines. You will receive credit only for the subroutines that 
+you implement yourselves. </li>
+<LI>You may define new memory variables as needed. Task1 can use an internal
+buffer for the unsent message, and Task3 can use an internal buffer for
+part of a packet.</li>
+<LI>You may design and implement additional subroutines. For example, 
+you could write a subroutine that shows a falling checker behind the grid
+lines.  Be sure to modify the Calls lines in 
+the headers of the subroutines that call these additional subroutines. 
+<li>When drawing a falling checker on the screen, first hide the mouse
+cursor, draw the shape, and then display the mouse cursor again. This maneuver
+will prevent the mouse cursor from blocking the display of the falling checker.</li>
+<li>To slow down the falling checker, you may insert a timing loop that
+simply iterates without doing anything.</li>
+<li>Each subroutine should save and restore any registers that it uses,
+except for registers that deliver subroutine outputs.  The caller 
+may use registers without outputs and expect them to remain unchanged. </li>
+<li>Each interrupt service routine must save and restore registers that it uses,
+possibly including <tt>DS</tt>.</li>
+<li>Think carefully about which parts of the program should be critical sections.</li>
+<li>To simulate the serial port on one computer, during development of MP5,
+you may write a subroutine Port
+that dequeues a byte from the Transmit Queue <tt>TQ</tt> (provided that this queue is nonempty)
+and enqueues this byte onto the Receive Queue <tt>RQ</tt>.
+</li>
+<li>After MP5 terminates, if the DOS window fills the whole screen, use Alt-Enter
+to return to a normal size window.
+</li>
+<LI>Monitor the Web Board for clarifications and help.</li>
+<LI>START EARLY!</LI>
+</UL>
+
+<h2>Demonstration, Documentation, and Grading</h2>
+<p>Demonstrate your program to an ECE 390 staff member, who may use mp5lab.exe
+on one of the two connected computers.</p>
+<p>Although each team will develop one program, each submission will be
+individual, as in previous MPs. You will also submit confidential peer evaluations.</p>
+<p>As before, keep an MP development log and write an individual cover memo,
+which you should submit with the program after the demonstration.
+The cover memo should address the following questions (not the same as for previous
+MPs):
+<UL>
+<LI>How much time did you spend on this MP, including team meetings, 
+planning and design, and debugging? </LI>
+<LI>What went well in your work on this MP?  What did not?</LI>
+<LI>What did you learn about working in teams?</LI>
+<li>How did you benefit from other team members?</li>
+<li>How did other team members benefit from you?</li>
+<li>What changes will your team make in its work practices for the Final Project?
+(Your team will be asked to consider whether its team charter should be
+revised.)</LI>
+</UL>
+<p>Your program will be graded according to the clarity of your design
+and the quality of your documentation.</p>
+
+<p>Gradesheet:<br>
+Functionality: 25 points <br>
+Team charter: 5 points <br>
+Style and documentation: 6 points<br>
+Cover memo: 4 points<br>
+Peer evaluations: 20 points<br>
+</p>
+Peer evaluations: 
+Each student will submit a confidential evaluation of each other
+member of the team. The evaluation will give 3, 2, 1, or 0 points
+for Excellent, Good, Fair, or Poor performance on each of the four
+primary criteria: quality, quantity, timeliness, and cooperation. 
+Although an evaluation has a total of 12 possible points, the maximum
+evaluation score will be 10; thus a student who is Excellent on two criteria 
+and Good on two criteria will receive a score of 10. In a team of four, for each
+student, the lowest peer evaluation score will be dropped, and the remaining
+two scores will be summed for a maximum of 20 possible points.
+In a team of three, for each student, the two peer evaluation scores
+will be added, for a maximum of 20 possible points.
+<hr>
+
+      <H2>mp5.asm (program framework)</H2><FONT size=-1>
+      <PRE>; MP5 - Connect Four
+
+; Your name
+; Date
+
+; This program implements the classic Connect Four game across the
+; serial port in 320 x 200 graphics mode
+
+        BITS    16
+
+;====== SECTION 1: Define constants =======================================
+
+        ESCKEY  EQU     1Bh             ; ESC key
+        CR      EQU     0Dh             ; Carriage return
+        LF      EQU     0Ah             ; Line feed
+        BS      EQU     08h             ; Backspace
+        EOT     EQU     0FFh            ; End of packet (can't use 04h)
+        TVEC    EQU     0070h           ; Location of User Timer Vector
+        
+        COMVEC  EQU     0030h           ; Location of Com1 Vector
+        BASE_8259 EQU   0020h           ; Base IO address of the 8259
+        EOI4    EQU       64h           ; End-of-Interrupt 4 command
+        BASE_8250 EQU   03F8h           ; Base IO address of the 8250
+        
+        BLACK   EQU     0               ; 320x200 color codes
+        GRAY    EQU     7
+        BLUE    EQU     9         
+        GREEN   EQU     10
+        RED     EQU     12
+        YELLOW  EQU     14
+        WHITE   EQU     15
+        
+        OUTROW  EQU     0               ; Row for outgoing message
+        INROW   EQU     23              ; Row for incoming message
+        
+;====== SECTION 2: Declare external procedures ============================
+
+EXTERN  libInit, libReceiveSrv, libTransmitSrv, libTask1, libTask2
+EXTERN  libTask3, libTask4, libCircle, mp5xit
+EXTERN  kbdin, kbdine, dspmsg, dosxit, binasc, dspout
+
+GLOBAL  SavCOff, SavCSeg, State, PColor, Radius, Board
+GLOBAL  TQList, TQBeg, TQCap, TQFront, TQRear, TQData, TQArea  
+GLOBAL  RQList, RQBeg, RQCap, RQFront, RQRear, RQData, RQArea  
+GLOBAL  StateMsg, RadiusMsg
+
+GLOBAL	ComInt, SerialReset, SerialInit, DisableTI, EnableTI
+
+
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        RESB      64*8
+stacktop:
+        RESB    0                       ; NASM bug workaround (?)
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+
+SavCOff RESW    1                       ; Serial communication port vector
+SavCSeg RESW    1
+State   DB      0                       ; 0 = testing, 1 = your turn,
+                                        ; 2 = waiting for other player
+PColor  DB      1                       ; 1 = red, 2 = black 
+Radius  DW      8                       ; Radius of circles, 2 to 9
+Board   RESB    48                      ; 6 x 8 array
+
+QBeg    EQU     0                       ; Beginning offset of queue area
+QCap    EQU     2                       ; Capacity of of queue
+QFront  EQU     4                       ; Index of front item
+QRear   EQU     6                       ; Index of next place to put rear item
+QData   EQU     8                       ; Byte to input or output
+
+TQList  RESB    0                       ; Parameter list for Transmit Queue
+TQBeg   DW      TQArea                  ; Offset of Transmit Queue area
+TQCap   DW      80
+TQFront DW      0
+TQRear  DW      0
+TQData  RESB    1
+TQArea  RESB    80
+
+RQList  RESB    0                       ; Parameter list for Receive Queue
+RQBeg   DW      RQArea                  ; Offset of Receive Queue area
+RQCap   DW      80
+RQFront DW      0
+RQRear  DW      0
+RQData  RESB    1
+RQArea  RESB    80
+
+StateMsg DB     CR,LF,'Enter 0 for testing, 1 for first player, 2 for second player: ','$'
+RadiusMsg DB    CR,LF,'Enter radius of checker, 2 through 9: ','$'
+
+;You may declare additional variables here
+ 
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        MOV     AX, CS                  ; Initialize Data Segment register
+        MOV     DS, AX  
+        MOV     AX, stkseg              ; Initialize Stack Segment register
+        MOV     SS, AX
+        MOV     SP, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+main:   
+.stateloop:                             ; Initialize State variable
+        MOV     DX, StateMsg
+        CALL    dspmsg
+        CALL    kbdine
+        CMP     AL, '0'
+        JB      .stateloop
+        CMP     AL, '2'
+        JA      .stateloop
+        SUB     AL, '0'                 ; AL was '0' or '1' or '2'
+        MOV     [State], AL             ; Now AL is 0 or 1 or 2
+        CMP     AL, 0                   ; If initial State is 1 or 2
+        JE      .radiusloop       
+        MOV     [PColor], AL            ;   then PColor equals State
+.radiusloop:                            ; Initialize Radius variable
+        MOV     DX, RadiusMsg
+        CALL    dspmsg
+        CALL    kbdine
+        CMP     AL, '2'
+        JB      .radiusloop
+        CMP     AL, '9'
+        JA      .radiusloop
+        SUB     AL, '0'                 ; AL is '2' ... '9'
+        CBW
+        MOV     [Radius], AX   
+        CALL    Init
+.mainloop:        
+        CALL    Task1
+        CALL    Task2
+        CALL    Task3
+        CALL    Task4 
+        JMP     .mainloop
+        
+%macro RIS 0
+        PUSH    DX
+        MOV     DX, BASE_8250+2     ; Point to Int ID Reg of 8250
+        IN      AL, DX              ; Read Interrupt Status
+        POP     DX
+%endmacro
+
+%macro EOI 0
+        PUSH    AX
+        MOV     AL, EOI4            ; Specify the end of interrupt
+        OUT     BASE_8259, AL       ;   service routine to 8259
+        POP     AX
+%endmacro
+
+; Subroutine EnableTI
+; Enable 8250 ACE to generate ready-to-transmit interrupt requests
+; via 8259 PIC.
+EnableTI:
+        PUSHA
+        MOV     DX, BASE_8250+1         ; Point to Int Enable Reg of 8250
+        MOV     AL, 00000011b           ; Enable receive and transmit
+        OUT     DX, AL                  ;   interrupts from the 8250
+        POPA
+        RET
+
+; Subroutine DisableTI
+; Disable 8250 ACE from generating ready-to-transmit interrupt requests
+; interrupts.
+DisableTI:
+        PUSHA
+        MOV     DX, BASE_8250+1         ; Point to Int Enable Reg of 8250
+        MOV     AL, 00000001b           ; Disable transmit interrupts
+        OUT     DX, AL
+        POPA
+        RET
+
+; Subroutine SerialInit
+; Initialize 8250 ACE to communicate at 1200 baud with
+; 8 data bits and one stop bit.
+SerialInit:
+        PUSHA
+        CLI                     ; Begin critical section
+        IN      AL, BASE_8259+1     ; Enable IRQ4 at 8259 PIC
+        AND     AL, 0EFh
+        OUT     BASE_8259+1, AL
+
+        MOV     DX, BASE_8250+3     ; Line Control Reg of 8250
+        MOV     AL, 80h             ; Set DLAB bit
+        OUT     DX, AL
+        MOV     DX, BASE_8250       ; Low Divisor Register
+        MOV     AX, 96              ; Set baud rate--1200 bud
+        OUT     DX, AL              ; Write low divisor byte
+        INC     DX                  ; High Divisor Register
+        MOV     AL, AH
+        OUT     DX, AL              ; Write high divisor byte
+        MOV     DX, BASE_8250+3     ; Line Control Register
+        MOV     AL, 00000011b       ; No parity, 8 data bit, 1 stop bit
+        OUT     DX, AL
+        MOV     DX, BASE_8250+1     ; Interrupt Enable Register
+        MOV     AL, 00000001b       ; Enable receive interrupts
+        OUT     DX, AL
+        MOV     DX, BASE_8250+4     ; Modem Control Register
+        MOV     AL, 00001011b       ; Enable interrupts
+        OUT     DX, AL
+        STI                         ; End critical section
+        POPA
+        RET
+
+; Subroutine SerialReset
+; Reset 8250 ACE, disabling its interrupt requests.
+SerialReset:
+        PUSHA
+        CLI                         ; Begin critical section
+        MOV     DX, BASE_8250+1     ; Interrupt Enable Register
+        MOV     AL, 00000000b       ; Disable interrupts
+        OUT     DX, AL
+        MOV     DX, BASE_8250+4     ; Modem Control Register
+        MOV     AL, 00000000b       ; Disable interrupts
+        OUT     DX, AL
+        IN      AL, BASE_8259+1     ; Disable IRQ4 at 8259 PIC
+        OR      AL, 10h
+        OUT     BASE_8259+1, AL
+        STI                             ; End critical section
+        POPA
+        RET
+
+; Interrupt service routine for serial port Com1
+;   Calls   ReceiveSrv, TransmitSrv
+ComInt:
+        PUSH    AX
+        RIS                         ; Get interrupt status of 8250
+        TEST    AL, 00000010b       ; If bit 0 of AL is 1
+        JNZ     .DoTrans            ;    then it's ready-to-transmit
+        CALL    ReceiveSrv
+        JMP     .Exit
+.DoTrans: 
+        CALL    TransmitSrv
+.Exit: 
+        EOI
+        POP     AX
+        IRET
+
+Init:
+        CALL    libInit
+        RET
+
+ReceiveSrv:
+        CALL    libReceiveSrv
+        RET
+        
+TransmitSrv:
+        CALL    libTransmitSrv
+        RET
+        
+Task1:
+        CALL    libTask1
+        RET
+        
+Task2:
+        CALL    libTask2
+        RET
+        
+Task3:
+        CALL    libTask3
+        RET
+        
+Task4:
+        CALL    libTask4
+        RET
+        
+Circle:
+        CALL    libCircle
+        RET
+
+
+</PRE></FONT></TD></TR></TBODY></TABLE>
+<TABLE class=dark cellSpacing=0 cellPadding=0 width="100%">
+  <TBODY>
+  <TR>
+    <TD><A href="http://courses.engr.illinois.edu/ece390/"><IMG src="/ece390/icon/go-back.gif"> Return to ECE390 Home Page</A></TD>
+    <TD align=right>Fall 2005</TD></TR></TBODY></TABLE></BODY></HTML>

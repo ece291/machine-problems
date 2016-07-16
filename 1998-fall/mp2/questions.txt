@@ -1,0 +1,18 @@
+What are the base cases for the recursion in GetD?
+
+How did you impliment CheckPrime?
+
+How did ReadBuffer read in HEX values?
+
+How does PrintBuffer display in HEX?
+
+How does ReadBuffer read in Decimal values?
+
+What restictions are there about the size of the modulus compared to the
+size of the text you encode?
+
+How would you impliment RSA encryption if the modulus could be any size?
+
+Why does the library code always call library code, even if you have removed
+the extrn statement from mp2.asm?
+

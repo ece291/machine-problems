@@ -1,0 +1,597 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv=Content-Type content="text/html; charset=unicode"><% title = "ECE291 Machine Problem 1"
+subtitle = "Machine Problem 1"
+%>
+<!--#include file="headvb.asp"-->
+<META content="MSHTML 5.50.4616.200" name=GENERATOR></HEAD>
+<BODY>
+
+
+<h1 align="center">Machine Problem 1: Illini Union Bank</h1>
+
+<div align="center"><center>
+<table border=0 cellpadding=2 cellspacing=2 width="60%">
+  <tr><td align=right bgcolor="#efefef"><b>Assigned</b></td>  
+    <td bgcolor="#efefef">Some time ago.</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Due Date</b></td>  
+    <td bgcolor="#efefef">It's too late now.</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Purpose</b> </td>  
+    <td bgcolor="#efefef">Deal with high levels of branching.  Use input strings.  Manipulate arrays.</td></tr>
+  <TR>
+    <TD align=right bgColor=#efefef><STRONG>Points</STRONG> </TD>
+    <TD bgColor=#efefef>75</TD></TR> 
+  <tr><td align=right bgcolor="#efefef"><b>Solution</b>  </td>  
+    <td bgcolor="#efefef"><a href="mp1soln.zip">Is here</a></td></tr>
+</table>
+</center></div>
+<H2>Introduction</H2>
+<P>The University has decided that its students don't owe enough money.&nbsp; In 
+order to rectify this problem, a new financial institution by the name of Illini 
+Union Bank has been founded.&nbsp; In order to cut development 
+costs,&nbsp;administrators have decided to use unwitting engineering students to 
+write the bank's code.&nbsp;</P>
+<CENTER><IMG src="mp1.jpg" align=center></CENTER>
+<H2> &nbsp;</H2>
+<H2>Problem Description</H2>
+<P> The bank ledger allows ten entries to be recorded.&nbsp; 
+Each entry records three fields of information: whether the transaction is a 
+deposit or withdrawal, the amount of the transaction, and a memo tag that 
+indicates the nature of the transaction.&nbsp; All of this information is stored 
+in three bytes -- the first contains the deposit/withdrawal flag and memo tag, 
+and the other two hold the transaction amount as a 16-bit&nbsp;<U>positive</U>            
+            
+             
+            
+            integer.&nbsp; 
+(That is, withdrawal amounts are still stored as a positive value!)</P>
+<P>The bits of the first byte correspond to the 
+following.&nbsp; For a valid entry, only one of bits 1 through 7 is a 1.</P>
+<UL>
+  <LI>
+  <DIV>Bit 0: 0 if deposit, 1 if withdrawal</DIV>
+  <LI>
+  <DIV>Bit 1: Books</DIV>
+  <LI>
+  <DIV>Bit 2: School Supplies</DIV>
+  <LI>
+  <DIV>Bit 3: Other Academic</DIV>
+  <LI>
+  <DIV>Bit 4: Rent</DIV>
+  <LI>
+  <DIV>Bit 5: Food</DIV>
+  <LI>
+  <DIV>Bit 6: Entertainment</DIV>
+  <LI>
+  <DIV>Bit 7: Other</DIV></LI></UL>
+<P>The functions you will be writing will display 
+information to the screen, interpret&nbsp;keyboard input, and&nbsp;manipulate 
+the&nbsp;entry array.&nbsp; The program's main loop (which is provided and you 
+need not write) repeatedly shows the main menu and calls appropriate functions 
+as necessary.&nbsp; When the user chooses to quit or the entry array becomes 
+full, the program will display the account summary one last time and then output a message 
+depending upon the account's balance.</P>
+<H2>   &nbsp;</H2>
+<H2>MP 1 Program Assignment</H2>
+<P>Your job in this assignment will be to provide rewrites of certain 
+precompiled library routines described below. A working MP will be provided for 
+you to get a feel for the program, as well as an .ASM file with calls to the 
+pre-written library routines. You should go through the routines one by one, 
+replacing these calls with your own code.</P>
+<P>The program can be run by typing <TT>mp1</TT> at the command prompt. </P>
+<P>&nbsp;</P>
+<H2>Brief Intro to PUSH and POP</H2>
+<UL>
+  <LI>Pushing and poping are stack operations and will be 
+  covered later in lecture. 
+  <P></P>
+  <LI>Pushing a register will record onto the stack&nbsp;a copy of the register's data, while poping to 
+  a register removes the <U>last</U> 
+  added data to the register. 
+  <P></P>
+  <LI>        Since 
+  returning from a function uses the stack, every push must be matched with a pop, 
+  and the order of the registers for pushing will be the reverse of 
+  that used for popping. 
+  <P></P>
+  <LI>Pushing and popping is, among other things,&nbsp;used to ensure that a called 
+  function doesn't scramble registers that&nbsp;the calling function uses.
+  <P></P>
+  <LI>You should <U>not</U> push and pop a register that will contain information 
+  that's supposed to be returned to the calling function.&nbsp; Doing so will 
+  prevent the data from being transferred.
+  <P></P>
+  <LI>See the provided function _DisplayMainMenu as an 
+  example.
+  <P></P>
+  <LI>Precocious students will examine <a href="http://courses.ece.uiuc.edu/ece291/lecture/lecture5.htm"> Lecture 5</a> or <a href="http://courses.ece.uiuc.edu/ece291/lecture/lockwood/l7.html">Lockwood's lecture</a> for 
+  thorough details.</LI></UL>
+<H2>&nbsp;</H2>
+<H2>Hints</H2>
+<UL>
+  <LI>  The LIBMP1 file contains executable library functions for each 
+  of the routines that you need to implement. This allows you to run the 
+  program and understand how it works before you implement it. You can test your 
+  program by stepping through&nbsp;it and making sure the display and comparison functions 
+  work correctly. You will only receive credit, however, for the routines that 
+  you implement yourself. 
+  <P></P>
+  <LI>When debugging your code in Turbo Debugger, you will find it helpful to 
+  use the memory window to show you the memory location of the file and strings. 
+  You can also use the watch window to keep track of variables in your code.
+  <P></P>
+  <LI>Run the program many times to get a good feel of it.&nbsp; Your final program with your 
+  code should resemble our version.&nbsp; Formatting aesthetics aren't as important as correctly operating code.
+  <P> </P>
+  <LI>Do not forget to push and pop to avoid clobbering 
+  registers!
+  <P></P>
+  <LI>Remember to include function headers for&nbsp;and write 
+  comments in each of your functions!&nbsp; Headers should give a general idea 
+  of what the function does and have a list of inputs, outputs, and called 
+  functions.&nbsp; Commenting should be specific enough to allow a function to 
+  be understood by just reading the comments.&nbsp; Commenting every line, however, is 
+  excessive and may cost you some points. 
+  <P></P>
+  <LI>START EARLY!
+  <P></P>
+  <LI>Monitor the <A href="news:uiuc.class.ece291">newsgroup</A> for 
+  clarifications and help.
+  <P></P></LI></UL>
+<H2>&nbsp;</H2>
+<H2>Subroutines</H2>
+<P>  This assignment has&nbsp;eight procedures. You will receive credit by replacing 
+each of these&nbsp;eight procedures listed below with your own code. Assume these function 
+call library routines such as dspmsg as needed.</P>
+<TABLE border=1 id=TABLE1>
+  
+  <TR>
+    <TD><STRONG><FONT size=4>InterpretAmount</FONT></STRONG></TD>
+    <TD>
+      <UL>
+        <LI>Interprets an input from keyboard into the appropriate binary number
+        <LI>Inputs: al&nbsp;= ASCII code of key pressed from AmountMenu
+        <LI>Outputs: dx = binary representation of corresponding amount, or -1 
+        on error
+        <LI>Calls: dspmsg
+        <P></P>
+        <LI>This function should first check that the input 
+        is in the proper range (a - g)
+        <LI>If not, then it should display msg_Invalid and return dx = -1
+        <LI>Otherwise, it should set dx to the appropriate value.
+        <LI>Notice the unusual increments -- You can use shifting instructions&nbsp;instead of a 
+        large branch statement.</LI></UL></TD></TR>
+  <TR>
+    <TD><STRONG><FONT size=4>InterpretTag</FONT></STRONG></TD>
+    <TD>
+      <UL>
+        <LI> Interprets an input from keyboard into the appropriate 
+        flag
+        <LI>Inputs: al&nbsp;= ASCII code of key pressed from TagMenu 
+        <LI>Outputs:&nbsp;cl = tag with only one 1 
+        corresponding to entered type, or all 1s on error  
+        <LI>Calls: dspmsg 
+        <P></P>
+        <LI>This function should first check that the input is in the proper 
+        range (a - g) 
+        <LI>If not, then it should display msg_Invalid and 
+        return cl =     -1 (all 1s)
+        <LI>Otherwise, it should set&nbsp;cl to the appropriate value. 
+        <LI> Using branch statements is fine, but like with 
+        InterpretAmount, the particularly bored students will use shifts.</LI></UL></TD></TR>
+  
+  <TR>
+    <TD><STRONG><FONT size=4>AddDeposit</FONT></STRONG></TD>
+    <TD><UL>
+      <LI>Called when the user chooses 'a' from the Main 
+      Menu 
+      <LI>Inputs: [NumEntries] 
+      <LI>Outputs: [NumEntries], [EntryArray] 
+      <LI> Calls: DisplayAmountMenu, 
+      InterpretAmount, DisplayTagMenu, InterpretTag 
+      <P></P>
+      <LI>This function should display the appropriate 
+      menus and interpret those results.
+      <LI>If either menu results in an error, the function should exit without 
+      affecting [NumEntries] or the array.
+      <LI>Otherwise, add the entry to the array and increment 
+    [NumEntries]</LI></UL></TD></TR>
+  <UL></UL>
+  <TR>
+    <TD><STRONG><FONT size=4>AddWithdraw</FONT></STRONG></TD>
+    <TD>
+    <UL>
+      <LI>Called when the user chooses 'b' from the Main Menu 
+      <LI>Inputs: [NumEntries] 
+      <LI>Outputs: [NumEntries], [EntryArray] 
+      <LI> Calls: DisplayAmountMenu, InterpretAmount, 
+      DisplayTagMenu, InterpretTag 
+      <P></P>
+      <LI>This function is <U>very</U> similar to AddDeposit.
+      <LI>You should need to add just one line to set the proper flag to 
+      indicate a withdrawal.</LI></UL></TD></TR>
+  <UL></UL>
+  <TR>
+    <TD><STRONG><FONT size=4>DisplayEntry</FONT></STRONG></TD>
+    <TD>
+    <UL>
+      <LI>Displays the information about an entry to screen
+      <LI>Inputs:&nbsp;bx = offset to entry&nbsp;
+      <LI>Outputs: displays to screen
+      <LI>Calls: dspmsg, dspout, binasc
+      <P></P>
+      <LI>This function should display a withdrawal or deposit message, dollar 
+      amount, and description tag.
+      <LI>Use the provided msg_something strings.
+      <LI>Notice you can't use dspmsg to display a dollar sign.&nbsp; You'll have to use 
+      dspout.</LI></UL></TD></TR>
+  <UL></UL>
+  <TR>
+    <TD><STRONG><FONT size=4>DisplayAllEntries</FONT></STRONG></TD>
+    <TD>
+      <UL>
+      <LI>  Runs through the entire array, 
+      displaying each entry
+      <LI>Inputs: [NumEntries], [EntryArray]
+      <LI>Outputs: displays to screen 
+        <LI>Calls: DisplayEntry, dspmsg
+        <P></P>
+        <LI>Simply call DisplayEntry on every element in the array.
+        <LI>If there are no entries, display msg_NoEntries 
+instead.</LI></UL></TD></TR>
+  <UL></UL>
+  <TR>
+    <TD><STRONG><FONT size=4>DisplayAcademicEntries</FONT></STRONG></TD>
+    <TD>
+      <UL>
+      <LI>Displays only entries with academic-related 
+tags.
+        <LI>Inputs: [NumEntries], [EntryArray]
+        <LI>Outputs: displays to screen 
+        <LI>Calls: DisplayEntry, dspmsg 
+        <P></P>
+        <LI>You should be able to reuse (i.e. copy and 
+        paste) much of the code from DisplayEntries.
+        <LI>The only entry types you need to print are Books, School Supplies, 
+        and Other Academic.
+        <LI>If there are no entries or no academic entries,&nbsp;display 
+        msg_NoEntries.</LI></UL></TD></TR>
+  <UL></UL>
+  <TR>
+    <TD><STRONG><FONT size=4>DisplayTotal</FONT></STRONG></TD>
+    <TD>
+      <UL>
+      <LI>Called by main on exit, displays the final 
+        account balance and some other silly messages.
+        <LI>Inputs: [NumEntries], [EntryArray]
+        <LI>Outputs: displays to screen
+        <LI>Calls: dspmsg, dspout, binasc 
+        <P></P>
+        <LI>This function first displays msg_Total and a 
+        dollar sign. 
+        <LI>Then it totals up the account and calls binasc 
+        on that amount. 
+        <LI>Finally, it displays msg_Cookie and one of the 
+        following, depending on the final total. 
+        <P></P>
+        <LI>
+        <DIV>msg_BigDebt if total &lt; -1000</DIV>
+        <LI>
+        <DIV>msg_LittleDebt if -1000 &lt;= total &lt; 0</DIV>
+        <LI>
+        <DIV>msg_LittlePlus if 0 &lt;= total &lt; 1000</DIV>
+        <LI>
+        <DIV>msg_BigPlus if 1000 &lt;=                         total</DIV></LI></UL></TD></TR>
+  <UL></UL></TABLE>
+<UL></UL>
+<H2>Procedure</H2>
+<UL>
+  <LI>You will begin this MP with the following files: 
+  <UL>
+    <LI><TT>MP1.ASM</TT>: Program Framework 
+    <LI><TT>Makefile</TT>: Specifies how and when programs are assembled and 
+    linked. 
+    <LI><TT>LIBMP1.LIB</TT>: Library functions for MP1 
+    <LI><TT>LIB291.LIB</TT>: General-purpose library functions </LI></UL>
+  <LI>You may copy these files from the network drive to your home directory 
+  with the following command: <BR><TT>xcopy /s V:\ece291\mp1 W:\mp1</TT><BR>or 
+  download the files from this server as <A href="mp1.zip">mp1.zip</A> 
+  <LI>Add your code to <TT>MP1.ASM</TT>. 
+  <LI>Assemble and link your program by typing<BR><TT>make</TT><BR>This command 
+  reads <I>Makefile</I> then invokes NASM and LINK to build an executable 
+  program. 
+  <LI>Use Turbo Debugger (TB) to find and correct program 
+  errors.</LI></UL>
+<H2>Final Steps</H2>
+<P>1. Demonstrate your MP1.EXE to a TA. You may be asked to recompile and demo 
+the program. Your program must work with all given input.</P>
+<P>2. Be prepared to answer questions about any aspect of the operation of your program. 
+The TAs will not accept an MP if you cannot fully explain your code and your 
+implementation. Delayed MPs will be subject to late penalties as described in 
+the course syllabus (10% pts per day).</P>
+<P>3. The TA will complete the code submission procedure.</P>
+<HR>
+
+<H2>MP1.ASM (program framework)</H2><FONT size=-1><PRE>
+; MP1 - Your Name - Today's Date
+;
+;
+; Josh Potts, Fall 2001
+; Guest Author: George Lu
+; University of Illinois, Urbana-Champaign
+; Dept. of Electrical and Computer Engineering
+;
+; Version 1.0
+
+	BITS	16
+
+;====== SECTION 1: Define constants =======================================
+
+        CR          EQU 0Dh
+        LF          EQU 0Ah
+        BEL         EQU 07h
+        MAX_ENTRIES EQU 10
+
+;====== SECTION 2: Declare external procedures ============================
+
+; These are functions from lib291
+EXTERN  kbdine, dspout, dspmsg, dosxit,ascbin,binasc
+
+; You will be writing your own versions of these functions
+EXTERN _libDisplayEntry, _libDisplayAllEntries, _libDisplayAcademicEntries
+EXTERN _libInterpretAmount, _libInterpretTag, _libAddDeposit
+EXTERN _libAddWithdraw, _libDisplayTotal, mp1xit
+
+; The _lib functions need these to work properly
+GLOBAL MainHeader, MainMenu, AmountMenu, TagMenu, msg_Total, msg_NoEntries
+GLOBAL msg_Invalid, msg_Deposit, msg_Withdraw, msg_Books, msg_Supply
+GLOBAL msg_Academic, msg_Rent, msg_Food, msg_Entertain, msg_Other
+GLOBAL msg_CRLF, msg_Cookie, msg_BigDebt, msg_SmallDebt, msg_SmallPlus
+GLOBAL msg_BigPlus
+GLOBAL _DisplayMainMenu, _DisplayAmountMenu, _DisplayTagMenu
+GLOBAL EntryArray, NumEntries, Buffer
+GLOBAL _DisplayEntry, _InterpretAmount, _InterpretTag
+
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        resb      64*8
+stacktop:
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+
+EntryArray      resb (3*MAX_ENTRIES)
+NumEntries      db 0
+Buffer          resb 7
+
+MainHeader      db CR, LF, CR, LF, 'Blah.  Witty Menu Title Here.'
+                db CR, LF, '  Current Number of Entries: $'
+MainMenu        db CR, LF, '------------------------------------'
+                db CR, LF, ' a) Make a deposit'
+                db CR, LF, ' b) Make a withdrawal'
+                db CR, LF, ' c) Display all entries'
+                db CR, LF, ' d) Display academic-related entries'
+                db CR, LF, ' e) Exit'
+                db CR, LF, CR, LF, 'Selection: $'
+
+AmountMenu      db CR, LF
+                db CR, LF, 'Select Amount of Transaction:'
+                db CR, LF, '-----------------------------'
+                db CR, LF, ' a) 1         b) 4'
+                db CR, LF, ' c) 16        d) 64'
+                db CR, LF, ' e) 256       f) 1024'
+                db CR, LF, ' g) 4096'
+                db CR, LF, CR, LF, 'Selection: $'
+
+TagMenu         db CR, LF
+                db CR, LF, 'Select Transaction Memo:'
+                db CR, LF, '------------------------'
+                db CR, LF, ' a) Books'
+                db CR, LF, ' b) School Supplies'
+                db CR, LF, ' c) Other Academic'
+                db CR, LF, ' d) Rent'
+                db CR, LF, ' e) Food'
+                db CR, LF, ' f) Entertainment'
+                db CR, LF, ' g) Other'
+                db CR, LF, CR, LF, 'Selection: $'
+
+msg_Total       db CR, LF, CR, LF, '     Account Balance: $'
+msg_NoEntries   db CR, LF, 'There are no entries!$'
+msg_Invalid     db CR, LF, '*** Invalid Selection!  Operation aborted! ***$'
+msg_Deposit     db CR, LF, 'Deposit    $'
+msg_Withdraw    db CR, LF, 'Withdraw   $'
+msg_Books       db '   Books$'
+msg_Supply      db '   School Supplies$'
+msg_Academic    db '   Other Academic$'
+msg_Rent        db '   Rent$'
+msg_Food        db '   Food$'
+msg_Entertain   db '   Entertainment$'
+msg_Other       db '   Other$'
+msg_CRLF        db CR, LF, '$'
+msg_Cookie      db CR, LF, CR, LF
+                db 'Leaving the bank, you stop by a Chinese restaurant', CR, LF
+                db 'for food.  While waiting for your order, you are', CR, LF
+                db 'presented with a fortune cookie.  You break it open', CR, LF
+                db 'and the message inside reads...', CR, LF, CR, LF, '$'
+msg_BigDebt     db 'A fortuitious fortune may fix your financial flaws.'
+                db CR, LF, '  Lucky numbers: 1, 2, 8, 9, 23, 43, 45'
+                db CR, LF, '$'
+msg_SmallDebt   db 'You are in debt.  You are in ECE291.  Get used to both.'
+                db CR, LF, '$'
+msg_SmallPlus   db 'You have survived the horrors of IUB.  Enjoy your rest...'
+                db CR, LF, '  Until next semester.', CR, LF, '$'
+msg_BigPlus     db 'You have too much money for a college student.  The'
+                db CR, LF, '  IRS and FBI have been contacted.', CR, LF, '$'
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        mov     ax, cs                  ; Initialize Default Segment register
+        mov     ds, ax  
+        mov     ax, stkseg              ; Initialize Stack Segment register
+        mov     ss, ax
+        mov     sp, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+MAIN:
+
+.MainLoop
+  cmp byte [NumEntries], MAX_ENTRIES
+  jae .End
+
+  call _DisplayMainMenu
+  cmp al, 'a'
+  je .AddDeposit
+  cmp al, 'b'
+  je .AddWithdraw
+  cmp al, 'c'
+  je .DisplayAll
+  cmp al, 'd'
+  je .DisplayAcad
+  cmp al, 'e'
+  je .End
+
+  mov dx, msg_Invalid
+  call dspmsg
+  jmp .MainLoop
+
+.AddDeposit
+  call _AddDeposit
+  jmp .MainLoop
+
+.AddWithdraw
+  call _AddWithdraw
+  jmp .MainLoop
+
+.DisplayAll
+  call _DisplayAllEntries
+  jmp .MainLoop
+
+.DisplayAcad
+  call _DisplayAcademicEntries
+  jmp .MainLoop
+
+.End
+  call _DisplayAllEntries
+  call _DisplayTotal
+  call mp1xit
+
+
+;--------------------------------------------------------------------------
+; DisplayMainMenu
+;   Inputs: none
+;   Outputs: al = selection from keyboard
+;   Calls: dspmsg, binasc, kbdine
+;--------------------------------------------------------------------------
+_DisplayMainMenu
+  push bx               ; All used registers except ax are pushed because
+  push cx               ;   only ax returns information.  (Notice: You can't
+  push dx               ;   push or pop an 8-bit register.)
+
+  mov dx, MainHeader
+  call dspmsg           ; Display menu header
+  xor ax, ax
+  mov al, [NumEntries]
+  mov bx, Buffer
+  call binasc           ; Call binasc to convert a binary number into ASCII
+  mov dx, bx
+  call dspmsg           ; Display the converted number
+  mov dx, MainMenu
+  call dspmsg           ; Display the rest of the menu
+  call kbdine           ; Wait for keyboard input
+
+  pop dx                ; Pop all pushed registers -- notice the order
+  pop cx
+  pop bx
+  ret
+
+;--------------------------------------------------------------------------
+; DisplayAmountMenu
+;   Inputs: none
+;   Outputs: al = selection from keyboard
+;   Calls: dspmsg, binasc, kbdine
+;--------------------------------------------------------------------------
+_DisplayAmountMenu
+  push dx
+  mov dx, AmountMenu
+  call dspmsg
+  call kbdine
+  pop dx
+  ret
+
+;--------------------------------------------------------------------------
+; DisplayTagMenu
+;   Inputs: none
+;   Outputs: al = selection from keyboard
+;   Calls: dspmsg, binasc, kbdine
+;--------------------------------------------------------------------------
+_DisplayTagMenu
+  push dx
+  mov dx, TagMenu
+  call dspmsg
+  call kbdine
+  pop dx
+  ret
+
+;-------------------------------------------------------------------------
+; DisplayEntry
+;-------------------------------------------------------------------------
+_DisplayEntry
+  call _libDisplayEntry
+  ret
+
+;-------------------------------------------------------------------------
+; DisplayAllEntries
+;-------------------------------------------------------------------------
+_DisplayAllEntries
+  call _libDisplayAllEntries
+  ret
+
+
+;-------------------------------------------------------------------------
+; DisplayAcademicEntries
+;-------------------------------------------------------------------------
+_DisplayAcademicEntries
+  call _libDisplayAcademicEntries
+  ret
+
+;-------------------------------------------------------------------------
+; InterpretAmount
+;-------------------------------------------------------------------------
+_InterpretAmount
+  call _libInterpretAmount
+  ret
+
+;-------------------------------------------------------------------------
+; InterpretTag
+;-------------------------------------------------------------------------
+_InterpretTag
+  call _libInterpretTag
+  ret
+
+;-------------------------------------------------------------------------
+; AddDeposit
+;-------------------------------------------------------------------------
+_AddDeposit
+  call _libAddDeposit
+  ret
+
+;-------------------------------------------------------------------------
+; AddWithdraw
+;-------------------------------------------------------------------------
+_AddWithdraw
+  call _libAddWithdraw
+  ret
+
+;-------------------------------------------------------------------------
+; DisplayTotal
+;-------------------------------------------------------------------------
+_DisplayTotal
+  call _libDisplayTotal
+  ret
+</PRE></FONT><!--#include file="foot.asp"--></BODY></HTML>

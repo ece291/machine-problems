@@ -1,0 +1,67 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>I</title>
+</head>
+
+<body>
+
+<h2>I/O Handling</h2>
+
+<h3>ReadLine</h3>
+
+<p>Before we can retrieve any values from the string which the user
+inputs, we must read the string into a buffer.  There are several
+important details to this function, so read carefully!</p>
+
+<ul>
+
+ <li>Limit characters to lower case letters<p>Only echo valid characters, and
+  only add valid characters to your buffer [testword].</p>
+
+ <li>Handle Backspace (<tt>BS</tt>) 
+ 
+
+ <p>When the users make a mistake in typing, chances are they will hit
+ the Backspace key.  In general we want to make this delete the previous
+ character, perhaps in memory just decreasing our length counter.  To
+ actually delete the character on the screen, however, we must display a
+ backspace to move back, a space to remove the displayed character, and
+ a second backspace to move back once again.</p>
+
+ <p>Note that the backspace should work normally when pressed at the
+ end of the buffer.</p>
+
+ <li>End input upon Enter (<tt>CR</tt>)<p>When the user presses Enter, <tt>ReadWord</tt> must place a
+ <tt>'$'</tt> at the spot where the <tt>CR</tt> would otherwise go and store the
+  length of the input in [wordlen].  Enter should be accepted at any
+ point along the line, including an empty or a full buffer.</p>
+
+ <li>Don't overflow the buffer<p>One of your constants is the length of your buffer.  Don't write to
+ more memory than this value indicates, as it can corrupt essential
+ data.  Chances are you won't trigger this problem in normal use, but
+ expect the TA to check it.  When the user presses a normal key (other
+ than one of the above) and the buffer is full, <tt>ReadWord</tt> must not change the buffer's contents.</p>
+
+</ul>
+
+<h3>DisplayMatrix</h3>
+
+<p>Depending on the value of <i>bx</i>, DisplayMatrix can be used to display either <i>matrix</i>
+or <i>matrixCopy</i>.&nbsp; Use NUM_ROWS and NUM_COLS to help you display the
+word grid, and remember not to display the '$' symbols.</p>
+
+<h3>UpdateCopy</h3>
+
+<p>While not a I/O function, its very related.&nbsp; The idea is that whenever a
+string matching algorithm finds a match it tells UpdateCopy to copy that match
+from the word grid to the empty word grid.&nbsp; What makes this function tricky
+is that the word may go in any of the eight directions in the word
+grid.&nbsp;&nbsp;</p>
+
+</body>
+
+</html>

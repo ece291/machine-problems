@@ -1,0 +1,624 @@
+<html>
+
+<head>
+<title>ECE 291</title>
+</head>
+
+<body bgcolor="#FFFFFF">
+<div align="center"><center>
+
+<table border="0" width="100%" cellspacing="0" cellpadding="0">
+  <tr>
+    <td width="33%" align="left">ECE 291</td>
+    <td width="33%" align="center">Computer Engineering II</td>
+    <td width="33%" align="right">Lockwood, Fall 1998</td>
+  </tr>
+</table>
+</center></div>
+
+<h1 align="center">Machine Problem 1: Deep 291 </h1>
+<div align="center"><center>
+
+<table border=1 width=60%>
+  <tr>
+    <td align=right>Assigned</td>
+    <td>Tuesday 9/8/98</td>
+  </tr>
+  <tr>
+    <td align="right">Due Date</td>
+    <td>Wednesday 9/17/98</td>
+  </tr>
+  <tr>
+    <td align="right">Purpose</td>
+    <td Roman">Loops, Array manipulation</td>
+  </tr>
+  <tr>
+    <td align="right">Points</font></td>
+    <td>50</td>
+  </tr>
+</table>
+</center></div>
+
+<!-- 
+<center>
+<p><font size=5 color="FFFFFF"><img src="../../icon/construct.gif"> <b>Under Construction</b></font></p>
+</center> 
+-->
+
+<h2>Introduction</h2>
+
+Human game players are quickly falling prey to their faster and smarter
+computerized counterparts.  In the game of Chess, for example, 
+IBM's Deep Blue has already beaten the word champion Gary Kasparov.
+Soon, no human game will be sacred.
+<p>
+For this machine problem, you will write the algorithm to 
+automate the game of 'Word Find'.  This type of game, typically found in 
+newspaper or a TV guide, requires locating words in a matrix of letters.
+Words may appear in any direction, and (for this game) may even wrap
+around the edges.
+<p>
+Your code, if written properly, should be able to locate a word
+in such a game in a sub-millisecond, and thus easily beat any human
+player.  As an optimized assembly-language program, the fastests
+program written for this class will become known as 'Deep 291'.
+
+
+
+
+<h2>Algorithm Description</h2>
+In the main procedure of the code, the program scans the original
+matrix of letters <CODE>(OrigMatrix)</CODE> for the first letter
+of the word that you specify.  Once a matching first letter is
+found, calls are made to check the entire word in all four directions
+(right, down, left, and up).  When an entire word is found that matches,
+the <code>replace</code> routine is called to copy that word from
+<code>OrigMatrix</code> to <code>EndMatrix</code>.  The 
+<code>PrintMatrix</code> routine is called to print the resulting
+<code>EndMatrix</code> after all searches have completed.
+
+<h2>Program Operation</h2>
+<p>The word to search for is entered on the command line.  
+If you want to search for ECE291, for example, type <code>MP1 ECE291</code>.  
+A sample run from the program is shown below:
+</p> 
+
+<table border=1><tr><Td>
+<pre>W:\MP1>MP1 ECE291
+
+------------- Original matrix ------------
+EHUBBELQMI
+TI9ABCPUSS
+ADUSLEAAAT
+LDPSE2TKME
+LECE291EER
+LNHMK1UKTA
+ADDBINARYM
+CAILLIX3BU
+COLYLDOOWK
+OOEDIVHEXR
+MOODNIBBLE
+MENTIMESEG
+
+-------------- Final matrix --------------
+.....E....
+.....C....
+.....E....
+.....2....
+.ECE291...
+.....1....
+..........
+..........
+..........
+..........
+..........
+..........
+
+
+LIBMP1 Ver 1.0 Calls: 
+ -PrintMatrix 
+ -CheckLetter 
+ -CheckUp 
+ -CheckDown 
+ -ReplaceDown 
+ -CheckLeft 
+ -CheckRight 
+ -ReplaceRight </pre>
+</td></tr></table>
+<p>
+Run the program a few times to learn how it operates.
+Try searching for other words like:
+'BINARY', 'NIBBLE', 'SEGMENT', 'VIDEO', 'REGISTER', and
+the number '9'   (case matters).
+Note that words my wrap around the matrix.  Also note that
+multiple words are found if they appear more than once.
+<p>
+Next, look through the given source code and rebuild
+the executable from source code by typing 
+<code>NMAKE CLEAN</code> then <code>NMAKE</code>.
+Now run 
+the program under CodeView.  Choose your search word 
+by a click to open the (R)un menu then (S)et Runtime Arguments.
+Step through the code
+as you did in MP1.  Use the function keys to trace (F8) through
+your code, step (F10) over library calls, and go (F5) between breakpoints.
+Review MP0 if you need help with CodeView.
+
+<h2>Variables</h2>
+
+Several variables and constants have already
+been defined for this program.  Your code should use these
+variables, as well as any others that you decide to create.<p>
+
+<ul>
+<li><b>OrigMatrix</b><br>
+The matrix to search through.  This array of bytes is defined in the 
+<i>WORDFILE.ASM</i> file.
+Note that the data is stored sequentially in memory, starting 
+with the first row of bytes.
+<p>
+
+<li><b>NumRows</b><br>
+A constant defined in the <i>WORDFILE.ASM</i> file that specifies the number of rows in the matrices.<p>
+
+<li><b>NumCols</b><br>
+A constant defined in the <i>WORDFILE.ASM</i> file that specifies the number of columns in the matrices.<p>
+
+<li><b>EndMatrix</b><br>
+The final result of the program.  
+This is another array of bytes equal in size to <b>OrigMatrix</b>.
+<b>EndMatrix</b> is initialized to dots ('.') 
+and is overwritten with letters when words are found.<p>
+
+<li><b>offsetPos</b><br>
+The current offset of the letter we are checking in the matrix.  This variable is used by
+<b>CheckLetter</b> each time it compares the first letter of the 
+word to a letter in <b>OrigMatrix</b>.  Note that the initial value of
+offsetPos is zero, which is not necessarily
+the memory location of the variable itself.<p>
+
+<li><b>RowPos</b><br>
+The current row of the letter we are checking in the matrix.  Use this variable for bounds
+checking.<p>
+
+<li><b>ColPos</b><br>
+The current column of the letter we are checking in the matrix.  Use this variable for bounds
+checking.<p>
+</ul>
+
+<h2>Procedures</h2>
+
+<p>This assignment has eighteen procedures. 
+You will receive credit by replacing each of these
+eighteen procedures listed below with your own code. 
+
+<ul>
+
+
+  <li><strong><big>CheckLetter</big></strong><ul>
+      <li><strong>Purpose: </strong>Compare the current letter against the first letter in the word to search for.</li>
+      <li><strong>Inputs:</strong> <ul>
+          <li><tt>origMatrix</tt> = Variable holding all letters </li>
+          <li><tt>offsetPos</tt> = current position to be checked within 
+              <code>origMatrix</code> (an offset from the beginning)</li>
+          <li>The first letter of the command line argument 
+              (which is located at <tt>ES:[82h]</tt>) </li>
+        </ul>
+      </li>
+      <li><strong>Output: </strong>Set the zero flag if letter matches, clear the zero flag otherwise.</li>
+      <li><strong>Hints: </strong>: 
+         <ul>
+         <li>Use <tt>offsetPos</tt> to calculate
+             an address relative to <tt>origMatrix</tt>.
+         <li>This should be a very short routine
+         </ul>
+      <li><strong>Points: </strong>8</li>
+    </ul>
+  </li>
+<p>
+
+  <li><big><strong>PrintMatrix</strong></big><ul>
+      <li><strong>Purpose: </strong>Prints the matrix onto the screen.</li>
+      <li><strong>Inputs:</strong><ul>
+          <li><tt>NumRows, NumCols</tt> = width and height </li>
+          <li><tt>SI</tt> = offset in memory of beginning of array<br>
+              (SI will set to either <code>offset origMatrix</code> 
+               or to <code> offset EndMatrix</code> before the routine 
+               is called).
+        </ul>
+      </li>
+      <li><strong>Output:</strong> Screen</li>
+      <li><strong>Hints:</strong><ul>
+          <li>Avoid repetitive code by using loops to iterate through the rows.</li>
+          <li>There are free library functions you can use... such as DSPMSG, DSPOUT (see lab manual).</li>
+          <li>Every screen line MUST end with a carriage return and line feed.</li>
+        </ul>
+      </li>
+      <li><strong>Points: </strong>10</li>
+    </ul>
+  </li>
+<p>
+  <li><big><strong>Check{Right,Down,Left,Up}</strong></big><ul>
+      <li><strong>Purpose: </strong> Once a match is found for the first letter, this function scans <code>origMatrix</code> 
+	from that position to see if the entire word is a match
+      in the direction given.</li>
+      <li><strong>Inputs:</strong> <ul>
+          <li><tt>WordLength</tt> = number of characters in the command line (including space at beginning)  </li>
+          <li><tt>offsetPos</tt> = position of the letter that was matched up  </li>
+          <li><tt>RowPos</tt> = row position of the letter that was matched up  </li>
+          <li><tt>ColPos</tt> = column position of the letter that was matched up  </li>
+        </ul>
+      </li>
+      <li><strong>Output: </strong>Set the zero flag if word matches, clear the zero flag otherwise.</li>
+      <li><strong>Hints:</strong> 
+        <ul>
+        <li>Don't forget to account for 1 letter words and wraparound!</li>
+        <li>Write your code in a modular manner to avoid repetition
+        </ul>
+      <li><strong>Points: </strong>4 points for each of the four functions
+              (16 points total)
+    </ul>
+  </li>
+<p>
+  <li><big><strong>Replace{Up,Down,Left,Right}</strong></big><ul>
+      <li><strong>Purpose: </strong> Once a match is found for word, this function moves the word into the <b>EndMatrix</b> in the direction given.</li>
+      <li><strong>Inputs:</strong> <ul>
+          <li><tt>WordLength</tt> = number of characters in the command line (including space at beginning)  </li>
+          <li><tt>offsetPos</tt> = position of the letter that was matched up  </li>
+          <li><tt>RowPos</tt> = row position of the letter that was matched up  </li>
+          <li><tt>ColPos</tt> = column position of the letter that was matched up  </li>
+        </ul>
+      </li>
+      <li><strong>Output: </strong>Moves data into <b>EndMatrix</b>.</li>
+      <li><strong>Hints:</strong> 
+        <ul>
+        <li>Don't forget to account for 1 letter words and wraparound!</li>
+        <li>Write your code in a modular manner to avoid repetition
+        </ul>
+      <li><strong>Points: </strong>4 points for each of the four functions
+              (16 points total)
+    </ul>
+  </li>
+</ul>
+
+
+<h2>Preliminary Procedure</h2>
+
+<ul>
+  <li>Copy the empty MP1 program (<tt>MP1.ASM)</tt>), 
+      the data file (<tt>WORDFILE.ASM</tt>),
+      libraries (<tt>libmp1.lib</tt> and <tt>lib291.lib</tt>), 
+      and the <tt>Makefile</tt> from the network drive to your home 
+      directory with the following command: <br>
+     <tt>xcopy /S V:\ece291\mp1 W:\mp1</tt><br>
+    <i>(Note that the '/S' must be in CAPS, not lower case)</i><br>
+    Alternatively, from home you can download the same 
+    files as <a href="mp1.zip">mp1.zip</a>.
+  </li>
+  <li>As with MP0, run <tt>NMake</tt> to build an 
+   executable program using the given ECE291 library functions. </li>
+  <li>As with MP0, use a text editor to modify the program. 
+    As given, the program uses LIBMP1 routines to implement all functionality. 
+    To receive credit for the assignment, you must replace 
+    all of the subroutines described above with your own code. </li>
+
+  <li>As with MP0, use CodeView (<tt>CV</tt>) to 
+     debug and test your program. Because you only receive 
+     credit for procedures that functions entirely as specified
+    (and with all possible types of input), 
+     it is best to debug each routine individually.  
+    You not earn <i>any</i> points by coding only part of a subroutine.
+</ul>
+
+<h2>Hints</h2>
+<ul>
+<li>The LIBMP1 file contains executable library functions for 
+    each of the routines that you need to implement.  
+    This allows you to run the program and understand how it works before you 
+    implment it.  You can test your program with any combinations 
+    of your own code and library functions.  You will only receive credit, 
+    however, for the routines that you implement yourself. 
+
+<li>Be sure to use CodeView to help debug the operation of your
+    program.  Review MP0 if needed.
+
+<li>When referring to memory locations, use
+    symbolic names rather than a numeric address values.
+
+<li>If you feel that you are repeating code, then STOP.
+    Using modular procedures, you should be able to elimate 
+    most of the redundant code in your program.  
+    This is most important for the routines
+    Check{Right,Down,Left,Up} and Replace{Right,Down,Left,Up}.
+    The shorter your code, the better!
+
+<li>START EARLY!  This is the first MP that requires you 
+    to write your own program.  Composition is much mork difficult 
+    than comprehension.  
+
+<li>Monitor the <a href="news:uiuc.class.ece291">newsgroup</a> 
+    for clarifications and help.
+</ul>
+
+<h2>Final Steps</h2>
+
+<ol>
+  <li>Print a copy of the MP1 grading report (MP1GR).
+      Double-check that your program is ready for demonstration
+      <i>before</i> you ask a TA to grade it.
+  <li>Demonstrate your MP1.EXE to a TA or to the instructor. 
+     You will then be asked to recompile and demonstrate MP1 
+     with different word files and search terms. 
+    Your program must work with all given
+    input. </li>
+  <li>Be prepared to answer questions about any aspect of the 
+    operation of your program. The
+    TAs will not accept an MP if you cannot fully explain 
+    the operation of your code
+    and details of your implementation. 
+    Delayed MPs will be subject to late penalties.</li>
+  <li>Print MP1.ASM 
+  <li>Take your printout and disk with MP1 to the same TA which approved your demonstration.
+    Staple the grading sheet to the front of the MP1.ASM prinout.  Be sure that your name is appears
+    in your code and on the grading sheet.
+</ol>
+
+<hr>
+
+<h2>Wordfile.ASM (program framework)</h2>
+
+<font size=-1><pre>
+
+; Word Search Data File
+;  (Feel free to invent your own test cases as well)
+;  Your program must work for arbitrary data.
+
+NumRows EQU 12
+NumCols EQU 10
+
+OrigMatrix db 'EHUBBELQMI',
+              'TI9ABCPUSS',
+              'ADUSLEAAAT',
+              'LDPSE2TKME',
+              'LECE291EER',
+              'LNHMK1UKTA',
+              'ADDBINARYM',
+              'CAILLIX3BU',
+              'COLYLDOOWK',
+              'OOEDIVHEXR',
+              'MOODNIBBLE',
+              'MENTIMESEG'
+</pre><font>
+
+<hr>
+
+<h2>MP1.ASM (program framework)</h2>
+
+<font size=-1><pre>
+        PAGE 75, 132
+        TITLE Deep291 - Your Name - Current Date
+
+COMMENT %
+        WordFind
+        --------------------
+        ECE291: MP1 - Deep 291
+        Prof. John W. Lockwood
+        Unversity of Illinois, Dept. of Electrical & Computer Engineering
+        Assistant Guest Authors: Pat Spizzo, Neil Kumar
+        Fall 1998
+        Revision 1.0
+        %
+
+;====== Constants =========================================================
+
+CR      EQU 13
+LF      EQU 10
+
+;====== Externals =========================================================
+
+; -- LIB291 Routines (free) --
+
+  extrn dspout:near  ; See your lab manual for a full description
+  extrn dspmsg:near  ; of the ECE291 lib291 functions
+  extrn dosxit:near  ; Quit to DOS
+
+; -- LIB291 Routines (free) --
+  extrn mp1xit:near  ; Terminate MP1
+
+;====== Stack Segment =====================================================
+stkseg  segment stack
+        db 64 dup ('STACK   ')
+stkseg  ends
+
+;====== Code/Data segment =================================================
+cseg    segment public 'CODE' 
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== Variables =========================================================
+
+INCLUDE wordfile.asm   ; Define NumRows & NumCols; Create OrigMatrix
+
+EndMatrix db NumRows*NumCols dup ('.')
+RowSize   dw NumRows
+ColSize   dw NumCols
+
+CommandErrorMessage db 'Usage: mp1 WordToFind',CR,LF,'$' 
+StartMessage db '------------- Original matrix ------------',CR,LF,'$'
+EndMessage   db '-------------- Final matrix --------------',CR,LF,'$'
+crlf db CR,LF,'$'  ; Carriage Return / Line Feed String
+
+WordLength dw ?        ; Length of search word
+RowPos dw ?
+ColPos dw ?
+offsetPos dw ?
+
+PUBLIC OrigMatrix,RowSize,ColSize,EndMatrix ; Variables visible to LIBMP1
+PUBLIC WordLength,RowPos,ColPos,offsetPos   ;
+
+; ======== Your Code ======================================================
+
+; -- Write the code for your subroutines below --
+; To use your own code,
+; comment out the 'extrn' routine from above and
+; uncomment your procedure declaration
+
+extrn PrintMatrix:near
+; Inputs:
+;    si = index to matrix to print
+
+; PrintMatrix proc NEAR
+;  For all letters in origMatrix {
+;      ..
+;    MOV DL,[si]
+;      ..
+;    Print character to screen 
+;      ..
+;  }
+; PrintMatrix ENDP
+
+extrn CheckLetter:near
+; Inputs:
+;    offsetPos = position of letter in OrigMatrix to check
+; Outputs:
+;    zf = zero if letter matches
+;    zf = one  if letter does not match 
+
+extrn CheckRight:near
+; Inputs:
+;    offsetPos = RowPos*NumCols + ColPos
+;    RowPos = current row position
+;    ColPos = current column position
+;    WordLength = length of word to find
+; Outputs
+;    zf = zero if word matches
+;    zf = one  if any letter mismatches 
+
+extrn ReplaceRight:near
+; Inputs:
+;    offsetPos = RowPos*NumCols + ColPos
+;    RowPos = current row position
+;    ColPos = current column position
+;    WordLength = length of word to find
+; Output
+;    EndMatrix 
+
+extrn CheckDown:near
+; Inputs/Ouputs: Same as CheckRight
+
+extrn ReplaceDown:near
+; Inputs/Ouputs: Same as ReplaceRight
+
+; Remaining Directions..
+extrn CheckLeft:near
+extrn ReplaceLeft:near
+extrn CheckUp:near
+extrn ReplaceUp:near
+
+
+;====== Main procedure ====================================================
+
+main    proc    far
+
+        ; The Main body of the program parses the command
+        ; line and invokes each subroutine.  You are given this code.
+
+        ; Command line arguments can be set in Codeview
+        ; by selecting the (R)un menu, then (S)et args.
+
+        mov  ax, ds  ; DOS reads command line arguments from the PSP
+        mov  es, ax  ; (See: Hyde, Section 13.3.11 for details)
+
+        mov  ax, cseg
+        mov  ds, ax  ; set DS=CS 
+
+        mov  cl, byte ptr es:[80h]     ; Read Length of Command Line
+        cmp  cl, 1                    
+        jbe  CommandLineError          ; Terminate program for no input
+
+        mov  ch,0
+        dec  CX
+        mov  SI,0
+
+CheckNextArgumentLetter:
+        CMP BYTE PTR ES:[82h+SI],' '
+        JE  CommandLineDone            ; Determine length of first argument
+        INC SI                         ; by scanning for a space
+        LOOP CheckNextArgumentLetter
+
+CommandLineDone:                       ; Start MP0
+        mov  WordLength,SI
+
+        mov  dx, offset StartMessage   
+        call dspmsg        
+        mov  si, offset OrigMatrix
+        call PrintMatrix        
+        
+        mov  offsetPos, 0              ; Start scanning at top-left 
+        mov  RowPos, 0                 ; corner of OrigMatrix.
+        mov  ColPos, 0
+
+LetterScanLoop:
+        call CheckLetter               
+        jne  ProcessNextLetter
+        
+; First Letter matches, now check for word match in all four directions
+
+        call CheckRight   ; Scan for words going right
+        jne  RightChecked    
+        call ReplaceRight ; Copy word to EndMatrix if it matches
+RightChecked:
+
+        call CheckDown    ; Scan for words going down
+        jne  DownChecked  
+        call ReplaceDown  
+DownChecked:
+
+        call CheckLeft    ; Scan for words going right
+        jne  LeftChecked     
+        call ReplaceLeft  
+LeftChecked:
+
+        call CheckUp
+        jne  UpChecked    ; Scan for words going up
+        call ReplaceUp
+UpChecked:
+
+ProcessNextLetter:
+        inc  offsetPos          ; advance to next position
+        
+        inc  ColPos             ; advance to next column
+        cmp  ColPos, NumCols
+        jb   LetterScanLoop
+
+ProcessNextRow:
+        mov  ColPos,0
+        inc  RowPos             ; advance to next row 
+        cmp  RowPos, NumRows   
+        jb   LetterScanLoop 
+
+; Search has completed
+        mov  dx, offset CRLF
+        call dspmsg
+        mov  dx, offset EndMessage
+        call dspmsg        
+
+        mov  si, offset EndMatrix        
+        call PrintMatrix
+        
+        call mp1xit
+
+commandLineError:
+        mov   dx, offset CommandErrorMessage
+        call  dspmsg                   
+          ; Print Error message and quit if program isn't
+          ; called with command line argument
+        call dosxit
+
+main    endp
+
+cseg    ends
+        end     main
+</pre></font>
+<hr>
+</body>
+</html>

@@ -1,0 +1,445 @@
+<% title = "ECE291 Machine Problem 0"
+subtitle = "Machine Problem 0"
+
+ %>
+<!--#include file="headvb.asp"-->
+
+
+
+<center><table border=0 cellpadding=2 cellspacing=2 width=60%>
+  <tr><td align=right bgcolor="#EFEFEF"><b>Assigned</b></td>  
+    <td bgcolor="#EFEFEF">Monday, 6/11/2001</td></tr>
+  <tr><td align=right bgcolor="#EFEFEF"><b>Due Date</b></td>  
+    <td bgcolor="#EFEFEF">Thursday, 6/14/2001</td></tr>
+  <tr><td align=right bgcolor="#EFEFEF"><b>Purpose</b> </td>  
+    <td bgcolor="#EFEFEF">Introduction</td></tr> 
+  <tr><td align=right bgcolor="#EFEFEF"><b>Points</b>  </td>  
+    <td bgcolor="#EFEFEF">25</td></tr>
+</table>
+</center>
+
+<h2>Introduction</h2>
+  This machine problem will introduce you to the computers, 
+  network, and software in the ECE291 laboratory.
+  For this machine problem, you will learn how to edit, assemble, 
+  debug, and execute an existing, simple assembly  language  program.
+  A full listing of the program and a Makefile 
+  are given at the end of this assignment.  Electronic copies of the
+  program are available in the lab or on-line as 
+  <a href="mp0.zip">mp0.zip</a>.
+
+<h2>Preliminary Procedure</h2>
+<ol>
+<li>Visit the ECE291 laboratory in room 238 Everitt Lab.  You
+    will need an activated key card to open the door.
+<p>
+<li>Have a seat at any available computer in the laboratory. 
+    The machine should boot into Windows 2000 (if not already on).
+<p>
+<li>Enter your login and password.  Change your NT login password at
+    <a href="http://accounts.ad.uiuc.edu/">http://accounts.ad.uiuc.edu/</a>.
+<p>
+<li>Start a DOS shell.  This can be done by double clicking on the
+    <i>Command Prompt</i> icon on the desktop.
+<p>
+<li>For the machines in the
+    ECE291 lab, you will be using the following drive letters: <p> 
+    <table cellpadding=2 border=0 cellspacing=2 width=80%>
+    <tr><th bgcolor="#EFEFEF">Drive</th><th bgcolor="#EFEFEF">Description</th>
+      <th bgcolor="#EFEFEF">Purpose</th></tr>
+    <tr><td bgcolor="#EFEFEF">C:</td>
+        <td bgcolor="#EFEFEF">Hard Drive (local)</td>
+        <td bgcolor="#EFEFEF">Holds Windows 2000, NASM, and other applications<br>
+        <i>Do not store files here!</i></td></tr>
+    <tr><td bgcolor="#EFEFEF">V:\ece291\</td>
+        <td bgcolor="#EFEFEF">Class Drive (network)</td>
+        <td bgcolor="#EFEFEF">Class material, libraries, example code<br>(Read Only)</td></tr>
+    <tr><td bgcolor="#EFEFEF">W:</td>
+        <td bgcolor="#EFEFEF">Your personal home directory (network)</td>
+        <td bgcolor="#EFEFEF">This drive will be mounted each time you log in,<br>
+            and is accessible from any machine in the lab.<br>
+           (Store your MPs here!)<br>
+           </td></tr>
+  </table>
+<p>
+<li>Copy the MP0 directory on the class drive to your private directory
+    by typing:<br> 
+    <tt>xcopy /s V:\ece291\mp0 W:\mp0</tt><br>
+    When prompted, respond with <tt>D</tt> to copy the entire directory.
+<p>
+
+<li>Go into your private directory
+  <ul>
+  <li>Switch to your drive by typing<br>
+      <tt>W:</tt>
+  <li>Switch to the mp0 directory by typing <br>
+      <tt>cd \mp0</tt>
+  </ul>
+<p>
+
+<li>From the desktop, run <i>Windows Explorer</i>.  Navigate to your
+    <tt>W:</tt> drive, open the <tt>mp0</tt> folder
+<p>
+
+<li>Double-click on the <tt>MP0</tt> ASM file to edit the program.
+    <i>(If you are working at home, you'll need to install your own
+    text editor.  Avoid Notepad and QuickEdit like the Plague)</i>.
+    Scroll through the program, but don't make any changes yet. <p>
+
+   The code is
+   broken into several sections to illustrate the various components
+   in  an  assembly program.  This is certainly not the only way  to
+   organize an assembly program, but it gives a good starting point.
+   Again,  you  do  not  need  to  understand  precisely  what   the
+   statements  are  doing  at this point,  but  notice  the  overall
+   structure  of  the  program.  This will be a good  reference  for
+   future machine problems.<p>
+ 
+   <ul><li>Section 1 defines several constants to be used throughout
+   the program.  Each constant has a value that is associated with a
+   particular name using the <tt>EQU</tt> statement.</li>
+
+   <li>Section  2 declares external procedures (meaning code  that
+   has already been written but is in a different file) that will be
+   used in this program.  External procedures are declared with  the
+   <tt>EXTERN</tt> statement.</li>
+
+  <li>Section  3  defines a special required structure  called  a
+  stack segment.  You will discover why a stack is necessary in the
+  future.   The  stack segment is declared using the <tt>SEGMENT stkseg
+  STACK</tt> statement.</li>
+
+  <li>Section 4 declares the beginning of the code segment - that
+  part  of  the file which contains the program instructions.   The
+  code  segment  is  declared using the <tt>SEGMENT code</tt>
+  statement.</li>
+
+  <li>Section  5 initializes several variables to be  used.   For
+  this  program,  these variables are just sequences of  characters
+  called strings.  Variables can be defined using the <tt>DB</tt>
+  statement.  It is important that variables are not defined in a
+  part of your program that is executed.</li>
+
+  <li>Section 6 contains the code for the program initialization:
+  setting up segment registers for the default and stack segments.
+  Program execution begins at the <tt>..start:</tt> label.  The program
+  execution goes immediately into the MAIN procedure (next section)
+  after completing this section.</li>
+
+  <li>Section  7  contains  the  code  for  the  main  procedure.
+ </ul><p>
+
+
+<li>From the DOS window, 
+    Assemble and link MP0 by typing <tt>make</tt>.  This command 
+    will read <tt>Makefile</tt> and invoke the following commands:  <br>
+      <tt>nasm -g -f obj -o mp0.obj mp0.asm -l mp0.lst</tt><br>
+      <tt>tlink /c /v mp0.obj, mp0.exe, mp0.map, lib291.lib</tt><br>
+    At this point, you should have just created the executable program
+    called MP0.EXE.
+<p>
+ 
+<li>Run the program by just typing its name, <tt>MP0</tt><br>
+  Try giving the program different input.  
+  <i>Remember: this program is looking for upper-case letters!</i>
+    <p>
+
+<li>Now examine your program by running the debugging tool Turbo Debugger (TD).<br>
+  <tt>TD MP0</tt><br>
+    Turbo Debugger will read your MP0.EXE program and allow you to step 
+    and trace through the program as it executes.
+  <p>
+
+  <ul>
+  <li>If the <tt>Regs</tt> window is not already open, open it.
+      From TD's <i>View</i> pulldown menu, select the options
+      to view <tt>Registers</tt>. Resize
+      and adjust the locations of the windows on the screen as necessary. <p>
+
+  <li>Click on the function key <tt>F8</tt> to execute
+      the first instruction of your program.
+      Notice that register AX has changed value.  
+      The first instruction
+      of  the  program (MOV AX, CS) puts the value of CS into AX.
+      Also  notice  that  register  IP, the  instruction  pointer,  has
+      changed  value.   It  always specifies the  offset  of  the  next
+      instruction  to  be executed.  The instruction displayed  is  the
+      next  one  to  be  executed.   <p>
+
+  <li>Click <tt>F8</tt> again to execute the second line of code.
+      Notice that the DS register changes.<p>
+  
+  <li>If the <tt>Dump</tt> window is not already open, open it.
+      From TD's <i>View</i> pulldown menu, select the options
+      to view <tt>Dump</tt>.  
+      Memory addresses are shown on the left in segment:offset format.
+      Check that the memory segment is DS.
+      If not, you can right click in the Dump window and click on
+      <tt>Goto...</tt>.  Type <tt>ds:0</tt> and press Enter to display
+      the start of the data segment. 
+      Each data byte  appears in hexadecimal.  On the far right side  
+      of the screen are  the characters  whose ASCII codes are given 
+      by the bytes.
+      The ASCII contents of the memory should look familiar.  <p>
+
+  <li>Click on <tt>F8</tt> a few more times to <i>step</i> through your code.
+      Stop <i>stepping</i> when you reach the input prompt.    <p>
+      
+  <li>From the program's grade prompt, select a letter grade.  Use <tt>F8</tt>
+      to <i>step</i> through the rest of the program.  You toggle between
+      the debugger screen and program output by pressing <tt>Alt-F5</tt>.<p>
+
+  <li>Once the program has terminated; Select <tt>Program reset</tt> from
+      TD's <tt>Run</tt> menu.  Run the program again a few times with
+      different input until you understand how the program is executing. <p>
+
+  <li>Navigate to the <i>View</i> menu, and select <i>CPU</i>.  Resize and
+      adjust the locations of the windows on the screen as necessary.<p>
+
+  <li>Again select <tt>Program reset</tt> from TD's <tt>Run</tt> menu. 
+      Right click in the code area of the <i>CPU</i> window, and click on
+      the <i>Mixed</i> option until it reads <tt>No</tt>.  Click outside the
+      popup menu to make it disappear.
+      Now, In TD's <i>CPU</i> window, you will see the machine code
+      for the same program.  In first column, you will
+      see where each line of code is located in memory 
+      (in segment:offset format).  In the second column, you 
+      will see the program bytes in hex.  In the third column,
+      you will see the human-readable opcodes of the program.
+      Notice that text labels have been replaced
+      with numeric values (pointers and constants) by the assembler
+      and linker.<p>
+
+  <li>Again select <tt>program reset</tt> from TD's <tt>Run</tt> menu.  
+      Run the program again a few more times with different input. <p>
+
+  <li>To speed up the debugging process, TD allows the programmer to
+      execute large sections of code between <i>break-points</i>.
+      Click on the line at offset=00FB and press <tt>F2</tt> to set a
+      breakpoint in your program at the first compare statement.<p>
+
+  <li>Restart your program, then hit F9 to 
+      <tt>run</tt> through your code until the breakpoint.<p>
+
+  <li>When prompted for a grade, enter <tt>B</tt> then hit return. 
+      You should continue execution of the program.<p>
+
+  <li>Record the value in register AL.   <br>
+       <table border=0 bgcolor="#efefef"><tr><td>AL = ____</td></tr></table><p>
+
+  <li>In the <tt>Dump</tt> window, change the value of the byte at offset=0 to
+         44 (hex).  Continue running the program until it terminates.
+          Notice that the output message is grossly incorrect.   <p>
+
+  <li>In the space below, explain what the program is doing.<br>
+           <table border=0 BGCOLOR="#efefef" width=75%><tr><td><xmp>  
+           
+           
+           </xmp></td></tr></table>           <p>
+
+   <li>Quit TD and return to the DOS prompt. <p>
+  </ul>
+
+   <li>Now return to your text editor to modify mp0.asm.  
+       You need to make the following changes: <p>
+
+     <ol>
+     <li>Put your name and the current date at the 
+         beginning of the program 
+     <li>Add a feature to the program
+         that prints a message of <i>your choice</i>
+         when the grade <tt>C</tt> is selected.  <br>
+     <li>Assemble and test your program with all possible inputs.  
+         Debug with TD  
+         as necessary until the program works as expected. 
+     </ol>   <p>
+     
+   <li>Now return to your text editor and add a line to mp0.asm. 
+         <p>
+       
+       <ol>
+       <li>Add a new variable to your program called <i>mystery</i> that  
+           is initialized with the hex values of 0FEh,0C0h.  
+           <i>(This is NASM's method of entering hex values)</i>.
+       
+           Declare this variable at the location in your code
+           immediately after the input is read using the lib291 
+           <i>kbdine</i> function.
+       <li>Re-Assemble your code and run TD.
+       <li>Run your program a few more times and observe what happens.
+           Try Switching between the <i>Module</i> (source) window and
+           <i>CPU</i> (disassembly) windows.
+       <li>Browse the CPU window 
+           record what addresses the <i>mystery</i> bytes 
+           were stored in.     <br>
+           <table border=0 bgcolor="#efefef"><tr><td>Address= ______ : ______ </td></tr></table>
+       <li>In the space below, explain how the program behaves differently and why.    <br>
+           <table border=0 bgcolor="#efefef" width=75%><tr><td><xmp>
+           
+           
+           
+           </xmp></td></tr></table>
+       <li>Finally, Move this variable declaration to where it belongs in the code.
+      </ol>  <p>
+ 
+                                                               
+ </ol>
+ </ol>
+
+
+
+
+<h2>Final Steps</h2>
+<ol>
+<li>Demonstrate your updated MP0.EXE to a TA or to the instructor.
+  Review your solutions to the question with the TA.
+  Be prepared to be quizzed by the TA with additional questions 
+  about your TD debugging experiences.    The TA will not allow you
+  to submit your MP until he or she is satisified that you have mastered 
+  TD.<p>
+
+  <p>
+
+<li>Have the TA handin your MP online.
+  <p>
+
+<li>Log off by clicking on the <i>start</i> button and 
+    navigating to <i>Shutdown</i> and selecting <i>Log off</i>.
+  </ul>   
+  <p>
+
+<li>You are now finished!
+</ol>
+
+<hr>
+
+
+<h2>mp0.asm</h2>
+<font size=-1><xmp>
+; MP0 - Your Name - Today's Date
+;
+;       This program illustrates a (very) basic assembly program and
+;       the use of LIB291 input and output routines.
+;       By working on this code, you will have the opportunity to 
+;       exercise the tools for this class, namely the editor, 
+;       the Assembler (NASM), and the debugger (TD).
+;       Be sure to put your name in the places where it says 'Your Name' 
+;       and also  change the date where it says 'Today's Date'.  
+;       The changes that you need to make to this program are 
+;       described in the MP0 assignment page.
+
+	BITS	16
+
+;====== SECTION 1: Define constants =======================================
+
+        CR      EQU     0Dh
+        LF      EQU     0Ah
+        BEL     EQU     07h
+
+;====== SECTION 2: Declare external procedures ============================
+
+EXTERN  kbdine, dspout, dspmsg, dosxit
+
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        resb      64*8
+stacktop:
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+mygrade  db      0 
+question db      'What grade would you like in ECE291? ','$'
+Exitmsg  db      CR,LF,'Good Luck!',CR,LF,'$'
+invalid  db      CR,LF,'Not a valid choice! ',CR,LF,'$' 
+Amsg     db      CR,LF,'Learn all material and Submit MPs early.',CR,LF,'$'
+Bmsg     db      CR,LF,'Keep up in class and submit MPs on time.',CR,LF,'$'
+Dmsg     db      CR,LF,'Skip a few machine problems.',CR,LF,'$'
+Fmsg     db      CR,LF,'Sleep through exams.',CR,LF,'$'
+
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+     mov     ax, cs                  ; Initialize Default Segment register
+     mov     ds, ax  
+     mov     ax, stkseg              ; Initialize Stack Segment register
+     mov     ss, ax
+     mov     sp, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+MAIN:
+     mov     dx, question            ; Prompt user with the grade question
+     call    dspmsg                   
+     call    kbdine   
+     mov     [mygrade],AL            ; Save result
+            
+.CheckGrade:
+     cmp     byte [mygrade], 'A'     ; Check if A student
+     jne     .NotGradeA
+     mov     dx, Amsg                ; Print message for A students
+     call    dspmsg
+     jmp     .mpExit
+
+.NotGradeA:
+     cmp     byte [mygrade], 'B'     ; Check if B student
+     jne     .NotGradeB
+     mov     dx, Bmsg                ; Print message for B students
+     call    dspmsg
+     jmp     .mpExit
+
+.NotGradeB:
+     cmp     byte [mygrade], 'D'     ; Check if D student
+     jne     .NotGradeD
+     mov     dx, Dmsg                ; Print message for D students
+     call    dspmsg
+     jmp     .mpExit
+
+.NotGradeD:
+     cmp     byte [mygrade], 'F'     ; Check if F student
+     jne     .NotGradeF
+     mov     dx, Fmsg                ; Print message for F students
+     call    dspmsg
+     jmp     .mpExit
+
+.NotGradeF:
+     mov     dl, BEL                 ; Ring the bell if other character
+     call    dspout
+     mov     dx, invalid             ; Print invalid message
+     call    dspmsg
+     jmp     .FinalExit
+
+.mpExit:
+     mov     dx, Exitmsg             ; Type out exit message
+     call    dspmsg
+
+.FinalExit:
+     call    dosxit                  ; Exit to DOS
+</xmp>
+</font>
+
+<hr>
+
+<h2>Makefile</h2>
+<font size=-1><xmp>
+MPNAME=mp0
+
+all: $(MPNAME).exe
+
+clean:
+	rm -f $(MPNAME).obj $(MPNAME).exe $(MPNAME).lst $(MPNAME).map
+
+%.exe: %.obj
+	tlink /c /v $<, $*.exe, $*.map, lib291.lib
+
+%.obj: %.asm
+	nasm -g -f obj -o $*.obj $< -l $*.lst
+</xmp>
+</font>
+
+
+<!--#include file="foot.asp"-->

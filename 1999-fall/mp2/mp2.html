@@ -1,0 +1,1416 @@
+<HTML>
+<HEAD>
+<TITLE>MP2</TITLE>
+</HEAD>
+<BODY bgColor=#ffffff> 
+<TABLE border=0 cellPadding=3 width="100%">
+  <TBODY>
+  <TR>
+    <TD align=left width="33%">ECE291</TD>
+    <TD align=middle width="34%">Computer Engineering II</TD>
+    <TD align=right width="33%">Kalbarczyk, Fall 1999</TD></TR></TBODY></TABLE>
+<CENTER>
+<H1>Machine Problem 2: Infix Calculator</H1></CENTER>
+<CENTER>
+<TABLE border=1 cellPadding=3 width="60%">
+  <TBODY>
+  <TR>
+    <TD align=right><B>Purpose</B></TD>
+    <TD>User I/O, Parsing algorithms</TD>
+  </TR>
+  <TR>
+    <TD align=right><B>Points</B></TD>
+    <TD>50</TD>
+  </TR>
+  <TR>
+    <TD align=right><B>Due Date</B></TD>
+    <TD>Tuesday 10/5/99 5:00 </TD>
+  </TR>
+  </TBODY>
+</TABLE>
+</CENTER>
+
+<!--<Center><IMG SRC="../../icon/construct.gif" >This MP is under construction</Center>-->
+
+
+<H2>Introduction</H2>
+<p>Calculators have been one of the greatest gifts to the engineer this century.
+They eliminated the tedious work of calculating numerical results.  The implimentations
+of various calculators have varied in order to solve the problem of correctly
+making calculations with a minimal effort to both the user and designer of
+the calculator.
+
+<p>In order to make the calculator more intuitive to use, the infix notation
+is used.  This is the "normal" way that we are all used to seeing algebraic
+equations.  The infix notation of a mathematical expression is a notation
+in which operators are placed between the operands that they operate on.
+This is in contrast to prefix or postfix notation in which all operators
+appear before or after the operands respectively.
+
+<p>Below is an example of how the equation 1 + 1 would look in prefix, infix,
+and postfix notations.
+
+<p>
+<center>
+<TABLE border=1 cellPadding=3 width="60%">
+  <TBODY>
+  <TR>
+    <TD align=center><B>Prefix</B></TD>
+    <TD align=center><B>Infix</B></TD>
+    <TD align=center><B>Postfix</B></TD>
+  </TR>
+  <TR>
+    <TD align=center>+ 1 1</TD>
+    <TD align=center>1 + 1</TD>
+    <TD align=center>1 1 +</TD>
+  </TR>
+  </TBODY>
+</TABLE>
+</center>
+
+<p>The infix notation is what most people are taught in grammar school, however
+it is difficult to impliment this on a computer since you must know what each
+of the operands are before you can perform an operation.  In addition, the order
+of precidence of the operations makes it difficult to determine which operations
+should be performed first.
+
+<p>In this MP, you will write an infix calculator that must to conquer these
+problems.
+
+<p>The solution code for this MP is capable of performing a great many functions.
+Your program will only be required to impliment a subset of these operations.
+There are a few basic required functions of your program.  In addition, you will
+have to choose from a number of extra functions to give your calculator.  These
+more advaced functions appear in <i>italics</i> throughout this writeup.
+
+<H2>Order of Precidence</H2>
+<p>When calculations are performed it is important to obser the order of
+precidence.  For a example, operations in the innermost set of parenthesis have
+the highest precidence, follwed by multiplication and division calculated from
+left to right, which is then followed by addiditon and subtraction which is
+also calculated from left to right.
+
+<p>
+<center>
+<TABLE border=1 cellpadding=2 width="80%">
+  <TBODY>
+  <TR>
+    <TD align=center><B>Operator</B>
+    <TD><B>Type</B></TD>
+  </TR>
+  <TR>
+    <TD align=center>-<BR>~</TD>
+    <TD><i>unary minus (negation)</i><BR><i>unary bitwise NOT</i></TD>
+  </TD>
+  <TR>
+     <TD align=center>!</TD>
+          <TD><i>unary factorial</i></TD
+  </TR>
+  <TR>
+    <TD align=center>*<BR>/<BR>%</TD>
+    <TD>multiplication<BR>division<BR>modulus</TD>
+  </TR>
+  <TR>
+    <TD align=center>+<BR>-</TD>
+    <TD>addition<BR>subtraction</TD>
+  </TR>
+  <TR>
+    <TD align=center>&lt;<BR>></TD>
+    <TD><i>bitwise shift left</i><BR><i>bitwise shift right</i></TD>
+  </TR>
+  <TR>
+    <TD align=center>&amp;</TD>
+    <TD><i>bitwise AND</i></TD>
+  </TR>
+  <TR>
+    <TD align=center>^</TD>
+    <TD><i>bitwise XOR</i>
+  </TR>
+  <TR>
+    <TD align=center>|</TD>
+    <TD><i>bitwise OR</i></TD>
+  </TR>
+  <TR>
+    <TD align=center>()<BR>[]<BR>{}</TD>
+    <TD>parentheses<BR><i>brackets</i><BR><i>braces</i></TD>
+  </TD>
+  </TBODY>
+</TABLE>
+</CENTER>
+<p>The operations that are listed first on the table have the highest precidence.
+All operations that are in the same table row have equal precidence and depend upon the order
+in which they appear.  For the unary minus, and unary bitwise NOT operations, operations
+are performed from right to left.  For all other operators, operations are performed
+left to right.
+ 
+<p>Note that even though you sould normally consider parentheses to have
+the highest precidence, they will be calculated last.  This is to ensure that all
+operations within parentheses are calculated before the parentheses itself is
+evaluated. 
+
+<H2>Our Implementation</H2>
+<p>The task of solving an equation is a difficult one.  The following algorithm
+will allow your program to solve any algebraic equation.
+
+<p>
+<ol>
+  <li>Take input (if no input is read in, then stop)
+  <li>Determine if all the parentheses match correctly
+  <li>Parse the string
+  <ul>
+    <li>Convert the inputed string of ASCII characters into a string
+         of control characters that can more easily be manipulated.
+         <li>Verify that the string is a solveable equation.
+  </ul>
+  <li>Determine if the equation is in it's simplest form.  If it is, then
+  go to step #1
+  <li>Find the innermost set of parentheses
+  <li>Find the highest precidence operator within the innermost set of parentheses
+  <li>Perform some operation indicated by the operator found in step 6, making
+  the equation simpler.
+  <li>Go to step #4
+</ol>
+
+<p>A careful discussion of each of these steps is written below.
+
+<H3>Taking Input</H3>
+<p>Often we take for granted how input is entered into programs.  This can be
+a difficult process to program in assembly.  Your program must only accept
+those characters found the the <tt><b>accept</b></tt> string.  Upon any other
+entry, the computer should beep.  While your program should accept line feeds,
+it must ignore them to allow input from a file.  In addition, you must allow
+backspacing, but you must make sure that the buffer is never overflowed, or
+underflowed.  After a carriage return is entered, a '$' should be added to the
+end of the string to identify it.
+
+<p>The program should exit if the input string was left empty, or if the
+escape key was pressed.  The input procedure will not however exit the program
+by itself.  Instead, the input procedure will set the carry flag, which will
+be used as a signal for main to exit.  To prevent the program from quitting in
+other cases, the carry flag should be cleared.
+
+<p><b>If your implimentation is unable to handle any of the inputs that are within the
+<tt>accept</tt> string, you should remove those characters from the
+string, and decrease the constant <tt>NUMACCEPT</tt> accordingly.</b>
+
+<H3>Checking Parentheses</H3>
+<p>It is important that all of the parentheses match correctly.  This means
+that each open parentheses must have a matching closed parenteses.  The following
+are several examples of input.
+<pre>
+1 + 1       OK
+(1 + 1)     OK
+(1) + (1)   OK
+((((1))))   OK
+1 + (1 + 1  No matching closed parentheses
+)1 + 1(     No mathcin open parenteses and no matching closed parentheses
+(1 + 1      No matching closed parentheses
+1 + 1)      No matching open parentheses
+</pre>
+
+<H3>Parsing the String</H3>
+<p>Since it is difficult for the computer to perform mathematical operations on
+ASCII numbers, it is necessary to parse the string, or convert it into a more
+useable form.  When parsing the string, each byte is individually examined and
+manipulated.
+
+<p>If it is determined that the byte being examined is an operator, then that
+operator is stored directly into the control string.  
+
+<p>If it is a number, then the constant <tt><i>STARTNUM</i></TT> should be placed
+into the control string, followed by the word sized binary equivalent for the number,
+followed by the constant <TT><i>ENDNUM</i></TT>.
+
+<p>If the byte being examined is a space, it should be ignored.
+
+<p>  Parsing should end when a '$' has been found in the input string, and a
+<tt><i>ENDSTR</i></tt> character should be placed at the end of the control string.
+
+<p>Several examples of how input is parsed are shown below.  For these examples,
+<TT><i>STARTNUM</i></tt> is displayed as a <tt>'N'</tt>, <tt><i>ENDNUM</i></tt>
+is displayed as <tt>'n'</tt> and <tt><i>ENDSTR</i></tt> is shown as <tt>'$'</tt>.
+You should however use the defined constants in your code.  Also note that numbers have
+been written in hex in the little endian format of the x86.
+
+<p>An example of how number and operators are parsed, the equation <tt>1*1</tt> would
+be parsed as the following string of bytes in the control string:
+<TABLE border=1 cellpadding=3>
+<TR><TD>'N'<TD>01h<TD>00h<TD>'n'<TD>'*'<TD>'N'<TD>01h<TD>00h<TD>'n'<TD>'$'</TR>
+</TABLE>
+
+<p>The equation <tt>(1 + 1)</tt> would be parsed as the following string of bytes in
+the control string:
+<TABLE border=1 cellpadding=3>
+<TR><TD>'('<TD>'N'<TD>01h<TD>00h<TD>'n'<TD>'+'<TD>'N'<TD>01h<TD>00h<TD>'n'<TD>')'<TD>'$'</TR>
+</TABLE>
+
+<p>A minus sign can be difficult to handle.  In general, your program may assume
+that whenever a '-' is immediately followed by a digit, there is a negative number,
+and whenever a '-' is immediately followed by anything other than a digit, it
+is a binary subtraction.
+
+<p>As an example the equation <tt>2 - -1</tt> should be parsed into the following
+string of bytes:
+<TABLE border=1 cellpadding=3>
+<TR><TD>'N'<TD>02h<TD>00h<TD>'n'<TD>'-'<TD>'N'<TD>FFh<TD>FFh<TD>'n'<TD>'$'</TR>
+</TABLE>
+
+<p>As you can see, since the first minus sign was immediately followed by a space, it
+was treated as the subtraction operation.  The second minus sign however was immediately
+followed by an ASCII digit, so it was trated as a negation.  The only time your code
+should interpret a number as being negative is if it is followed by an ASCII digit.
+
+
+<H3>String Verification</H3>
+<p>As the input string is parsed, it is also checked that it follows certain rules.
+In general, numbers are followed by operators and operators are followed by numbers.
+Also, the equation should start and end with a number.
+
+<p>Parentheses are special operators which must be delt with seperately.  In general,
+since everything inside of a pair of parentheses will be evaluated to a single number,
+an open parentheses may be treated externally as the start of a number, and a closed
+parentheses may be treated externally as the end of a number.
+
+<p>The following is a list of rules that the input string must follow. 
+<UL>
+  <LI>The string must begin with a number (positive or negative) or an open parentheses.
+  <LI>All numbers must be followed by operators, but not an open parentheses.
+  <LI>All operators must be followed by a number or an open parentheses.
+  <LI>The string must end with a number or a closed parentheses
+</ul>
+
+<p>The rules above work only for the basic operations that your program may perform.
+Depending upon the extra functions that your program performs other special cases
+may arise, the following table describes all possible exceptions.
+
+<p>
+<center>
+<TABLE border=1 cellPadding=3 width="80%">
+  <TBODY>
+  <TR>
+    <TD align=center><B>Tolken</B></TD>
+    <TD align=center><B>Preceded By</B></TD>
+    <TD align=center><B>Followed By</B></TD>
+  </TR>
+  <TR>
+    <TD align=center>the start of the string</TD>
+    <TD align=center>--</TD>
+    <TD align=center>a number<BR>an open parentheses<BR><i>bitwise NOT '~' or
+         unary negation '-'</i></TD>
+  </TR>
+  <TR>
+    <TD align=center>a number</TD>
+    <TD align=center>the start of the string<br>open parentheses<br>
+                          a binary operator<br><i>bitwise NOT '~' or unary negation</i><BR>
+                     <i>closed parentheses with implicit multiply</i></TD>
+    <TD align=center>a binary operator<BR>closed parentheses<BR>the end of the string<BR>
+                          <i>factorial '!'</i><BR><i>open parentheses with implicit multiply</i></TD>
+  </TR>
+  <TR>
+    <TD align=center>binary operators</TD>
+    <TD align=center>a number<br>closed parentheses<br><i>factorial '!'</i></TD>
+    <TD align=center>a number<BR>open parentheses.<BR><i>bitwise NOT '~' or
+                          unary negation '-'</i></TD>
+   </TR>
+   <TR>
+    <TD align=center>open parentheses</TD>
+    <TD align=center>the start of the string<br>open parentheses<br>
+                          a binary operation<BR><i>bitwise NOT '~' or unary negation '-'</i><BR>
+                                                        <i>factorial '!' with implicit multiply</i><BR>
+                     <i>a number with implicit multiply</i><br>
+                     <i>closed parentheses with implicit multiply</i><br></TD>
+    <TD align=center>a number<BR>open parentheses.<BR><i>bitwise NOT '~'
+                          or unary negation</i></td>
+   </TR>
+        <TR>
+    <TD align=center>close parentheses</TD>
+    <TD align=center>a number<br>close parentheses<br><i>factorial '!'</i></TD>
+    <TD align=center>a binary operator<BR>close parentheses<br>the end of the string<br>
+                          <i>factorial '!'</i><br>
+                          <i>a number with implicit multiply</i><BR>
+                                                        <i>open parentheses with implicit multiply<BR></td>
+   </TR>
+        <TR>
+    <TD align=center>the end of the string</TD>
+    <TD align=center>a number<br>close parentheses<br><i>factorial '!'</i></TD>
+    <TD align=center>--</td>
+   </TR>
+        <TR>
+    <TD align=center><i>bitwise NOT '~' or unary negation '-'</i></TD>
+    <TD align=center>the start of the string<br>open parentheses<br>
+                          a binary operator<br>bitwise NOT '~' or unary negation '-'<BR>
+                                                        <i>close parentheses with implicit multiplication</i><br></TD>
+    <TD align=center>a number<br>bitwise NOT '~' or unary negation<br>open parentheses</td>
+   </TR>
+        <TR>
+    <TD align=center><i>factorial '!'</i></TD>
+    <TD align=center>a number<br>close parentheses<br>factorial '!'</TD>
+    <TD align=center>a binary operator<br>the end of the string<br>
+                          factorial '!'<br><i>open parentheses with implicit multiply</i></td>
+   </TR>
+  </TBODY>
+</TABLE>
+</center>
+
+<p>In order to impliment the complex set of rules above, a simple algorithm is needed
+which will successfully allow the rules to be implimented.
+
+<p>In general, the computer will always be expecting to see something.  It will either
+expect to see a number, or an operation, or in some cases it doesn't care which appears
+next in the input string.  By making this general assumption, and adding a few special
+cases, we can develop a simple algorithm which will perform the necessary checks, easily
+and painlessly.
+
+<p>
+<OL>
+  <LI>Begin by expecting a number.
+  <li>After a number, expect an operator.
+  <LI>After an operator, expect a number.
+  <LI>Verify that the program was not expecting a number when the input string ends.
+</OL>
+
+<p>This greatly simplifies the algorithm, but there are a number of exceptional cases
+that must be examined.  Most noteably, parentheses have special rules that differ
+from other types of operations.
+
+<p>
+<ol>
+  <li>Open parentheses should only be accepted when expecting a number.
+  <li>After an open parentheses, expect a number.
+  <li>Closed parentheses should be accepted when expecting an operator.
+  <li>After a closed parentheses, expect an operator.
+</ol>
+
+<p>By carefully following these rules and exceptions, your code should be capable of verifying
+that a valid string has been entered.  There may be other exceptions to these rules
+depending upon which functions your calculator handles.  These exceptions are listed
+later in this writeup.
+
+<H3>Determining When Done</h3>
+<p>It can easily be determined if the string is fully simplified.  If the string contains nothing
+except a single number, then it is fully simplified.  If it contains no numbers, then there is
+an error that there are no operands to work with.  If the string contains more than one number
+and no operators, then there is an error since the string is not fully simplified, and there are
+no operations to perform.
+
+<H3>Finding an Innermost Set of Parentheses</H3>
+<p>An innermost set of parenthese is a matching pair of parenthese that contain no other
+parentheses.  If you scan an equation from left to right, you will notice that the first closed
+parentheses is part of an innermost pair.  This simple observation should make it easy for you
+to find an innermost pair of parentheses.
+
+<p>The procedure <tt>FindInner</tt>, returns two values.  The first output value is returned in
+register BX, and indicates where the open parentheses is, and the second output value is SI and
+when added to BX, indicates where the closed parentheses is.
+
+<p>One case that you may consider is when there are no parentheses left in the equation.  In this
+case, we would like to look at the entire equation as a whole.  Therefore, the program should
+act as if there are parentheses in the equation that start at the first position in the string, 
+and end in the last position.  For example, if you were to enter the equation <tt>1 * 1</tt> as
+shown in an above example, the findInner procedure should report that the innermost set of parenthases
+begins at offset 0, and ends at offset 8 .
+
+<H3>Finding the Highest Precidented Operator</H3>
+<p>Each operator is given a specific priority level.  The operator with the highest priority
+has the highest precidence, and therefore should be evaluated first.  There is howver the
+difficulty associated with operators that have equal priority.  In this case, most of the operators
+are evaluated from left to right as they appear in the equation. <i>Only the unary minus and
+bitwise NOT operators are evaluated from right to left.</i>
+
+<p>Defined in the MP is a table for your program to look up the precidence of each of the operators.
+Each of the operators that are evaluated from left to right are given an even priority, while
+each of the operators that are evaluated from right to left are given an odd priority.
+
+<p>To find the highest priority operator, your program should scan the substring from left to right.
+When an operator is found, it's priority should be looked up in the priority table.  This priority
+level and the address of theis operator should then be recorded. <i>For operators that are evaluated
+from right to left, the priority of the operator should be decremented at this point so that
+any operators of the same type that lie to the right appear to have a higher priority.</i> For each
+following operator, the operator's priority should be again looked up in the table.  Only if the
+looked up value of the priority is greater than the previously recoded priority, should the new
+information is stored.  This process should continue until the end of the substring is reached.
+
+<p>In the case that there are no operators between a set of parentheses, then the parenthses themselves
+must be evaluated.  Therefore, the open parentheses will should be returned as the operator to be
+evaluated.
+
+<H3>Solving the Highest Precidented Operator</h3>
+<p>When solving a particular operator, the goal is to simplify the cotnrol string.  The operands of the
+operator must be found by scanning forward and backwards in the control string.  If there are two
+operands, then one of them must be replaced with nulls, while the other one is replaced with the
+results of the operation.  If there is only one operand, then that operand is replaced with the
+results of the operation.  In either case, the operator itself is replaced with <tt>NULL</tt>s.
+In the special case of parentheses, each of the parentheses should simply be replaced with
+<tt>NULL</tt>s.  No operands need be evaluated.
+
+<p>The <tt>NULL</tt>s that are inserted into the string are placed there to indicate white space in
+the control string.  These characters should simply be ignored or skiped over whenever they are
+found in the control string through the solving process.
+
+<H3>Scanning the String</H3>
+<p>For some of the procedures, it is necesary to scan the control string.  It is important to note
+that the control string contains numbers, which may take on any value, as well as operators which
+have very specific values.  It is possible that a number will contain a byte that takes on a value
+of an operator.  For this reason, it is important that your program does skips over numbers when
+it is scanning the string.
+
+<p>In addition, <tt>NULL</tt>s may have been inserted into the string durring the solving process
+to indicate that a part of the equation has been simplified. To handle this, your code should always
+ignore <tt>NULL</tt>s when scanning the string.
+
+<H3>Free Help</H3>
+<p>You have been given for free the procedure <tt>LibDspCtrlStr</tt>.  This library procedure
+will convert the control string to ASCII characters and display it to the screen.  You may wish
+to insert calls to this procedure in your code to help with the debugging process.  This
+procedure is called before each simplification of the control string.
+
+<H2>Extra Funcitonality</H3>
+<p>Your program must only perform addition, subtraction, multiplication, the modulus operation
+and accept parentheses, as well as accept positive and negative numbers.  In the above sections,
+meathods have been described as to how to implement these simple functions.  However, you will also
+have to give your code your choice of the following extra functions.  These functions may cause
+a number of exceptional cases that you will have to deal with.  Some of the extra functions and
+their associated exceptions are described below:
+
+<H3>Brackets [], and Braces {}</H3>
+By accepting other Brackets and Braces, it becomes more difficult to determine if parentheses
+match correctly.  For instance, the types of parentheses must match correctly.
+
+<pre>
+(1 + 1]     Parentheses type mismatch
+([1 + 1)]   Parentheses type mismatch
+</pre>
+<p>As you can see from the above examples, you may not simply be able to count
+the number of open and closed parentheses, as the last example would pass this
+test.
+
+<p>Instead, you will make use of the stack.  Each time an open parentheses is
+found, you should push that value onto the stack.  When a closed parentheses is
+found, you should pop the last value off the stack and verify that the closed
+parentheses that was found matches with the open parentheses that was pushed onto
+the stack.  Since there may be errors in the input string, you must make sure
+that the stack is left in the same condition as when the procedure began.  It is very
+important that you do not try to return from the procedure before poping off everything
+that you pushed onto the stack, and you should not pop anything off of the stack
+before pushing something on first.
+
+<p>Also, to reduce added work in the rest of the code, when checking the parentheses
+in the string, all open braces and open brackets should be replaced with open parentheses.
+Similarly, close braces and close brackets should be replaced with close parentheses. This
+replacement occurs in the input string when the <tt>checkParens</tt> function is called.
+
+<p>As an example, the equation <tt>({[1 + 1]})</tt> would be converted in the input string into
+<tt>(((1 + 1)))</tt> in the <tt>checkParens</tt> procedure.  This string should then be
+stored into the control string as the following string of bytes:
+<TABLE border=1 cellpadding=3>
+<TR><TD>'('<TD>'('<TD>'('<TD>'N'<TD>01h<TD>00h<TD>'n'<TD>'+'<TD>'N'<TD>01h<TD>00h<TD>'n'<TD>')'
+    <TD>')'<TD>')'<TD>'$'</TR>
+</TABLE>
+
+<H3>Implicit Multiplication</h3>
+<p>Implicit multiplication is assuming that you intend to multiply the value inside of a
+pair of parentheses with a value adjacent to a pair of parentheses, without explicitly
+writing the multiplication symbol.  An example of implicit multiplication is interpreting
+the equation <tt>2(2)</tt> to mean <tt>2 * 2</tt>.
+
+<p>Allowing for implicit parentheses changes the rules for verifying parentheses, as now
+the parentheses themselves may or may not be interpreted as a binary operator.  the following
+is a list verification rules for parentheses if implicit multiplication is allowed:
+
+<ol>
+  <li>Open parentheses should always be accepted.
+  <li>After an open parentheses, the program should expect a number.
+  <li>Close parntheses should be accepted when expecting an operator.
+  <li>After a close parentheses, the program should allow anything to follow.
+</ol>
+
+<p>When evaluating parentheses, it is necessary to search the string to determine if an implicit
+multiplication should be performed.  If a backwards search reveals that the preceding tolken is a
+number then the first parentheses should be replaced by a multiply ('*'), otherwise, it should be
+replaced with a NULL as usual. If a forward search reveals that the following tolken is a number
+then the second parentheses should be replaced by a multiply ('*'), otherwise, it should be
+replaced by a NULL as before.
+
+<H3>Factorial</H3>
+<p>Since the factorial is a unary post-operator, it has it's own set of special rules when verifying
+the string.
+<ol>
+        <li>A factorial should be accepted when expecting an operator, but not when expecting a number.
+        <li>After a factorial, the program should expect an operator (or the end of the string.)
+</ol>
+
+<p>You will also have to add the functionality of evaluating the factorial in the <tt>SolveOne</tt>
+procedure.
+
+<p>Adding the factorial also adds complexity if your program performs implicit multiplication.
+When evaluating an open parentheses with implicit multiplication, your program must replace the 
+open parentheses with a multiply ('*') when it is preceded either by a number, or by a factorial.
+Otherwise, it should be replaced with a <tt>NULL</tt> as usual.
+
+<H3>Bitwise NOT '~' and Unary Negation '-'</H3>
+<p>To impliment unary negation, additional cases must be handled when parsing the input string
+since a minus sign ('-') could indicate subtraction, a negative number, or unary negation.  The
+following rules decide how a minus sign should be handled.
+
+<ol>
+  <li>If immediately followed by an ASCII digit, interpret it as a negative number.
+  <li>If immediately followed by another minus sign, a bitwise NOT or an open parentheses,
+  interpret it as a negation.
+  <li>In all other cases, interpret the minus sign as subtraction.
+</ol>
+
+<p>The fact that unary negation and the bitwise not are unary pre-operators, these operators
+have their own set of sepcial rules when verifying the string.
+<ol>
+  <li>They should only be accepted when expecting a number, but not when expecting an operator.
+  <li>After one of these operators, the program should expect a number.
+</ol>
+
+<p>You will also have to add the functionality of evaluating these operands into the <tt>SolveOne</tt>
+procedure.
+
+<p>In addition, these two operators must be evaluated from right to left.  For this reason, in the
+priority table, each of the operators that are evaluated from right to left have an odd priority,
+while each of the operators that are evaluated from left to right have an even priority.  This can
+be used to easily lower the priority of only those operators that have an odd priority, so that the
+next operator with the same priority may replace it as the operator with the highest precidence.
+
+<p>If your program also impliments implicit multiplication, agian there is added complexity.
+When evaluating the closed parentheses with implicit multiplication, your program must replace
+the close parentheses with a multiply ('*') when it is followed by a number, or a bitwise NOT, 
+or a unary negation. Otherwise, it should be replaced with a <tt>NULL</tt> as usual.
+
+<p>You may notice that the unary negation appears as a differnt symbol when using
+<tt>LibDspCtrlStr</tt> this is to allow us to distinguish between a unary negation of a
+positive number, and a negative number.
+
+
+<H3>AND '&', OR '|', and XOR '^'</H3>
+<p>All that is needed to impliment these operations is to add the fucntions to the <tt>SolveOne</tt>
+procedure.
+
+<H3>Shift left '&lt;' and Shift right '>'</H3>
+<p>While for these functions it is only needed to add the functions to the <tt>SolveOne</tt> procedure,
+it is necessary to take special care when shifting by a negative number, or when shifting by large
+numbers whose low eight bits are zeroed out.
+
+<H3>Intelligent handeling of '-' sign</H3>
+<p>The intelligent handleing of the minus sign simply refers to an attempt to not cause an error.
+While by default, your program should always asume that if a minus sign is followed by an ASCII
+character that it is a negative number, a more intelligent way of dealing with this is to treat the
+negative number as actually subtracting a positive number.  In this way the equation <tt>1-1</tt>
+where no white space was entered could be interpreted as <tt>1 - 1</tt> rather than <tt>1 -1</tt>
+which cannot be evaluated.
+
+<p>However, if a minus sign is followed by anything other than a decimal digit, your program should
+not try to parse this as being a negative number.  For instace the equation <tt>1*- 1</tt> should
+still cause an error, as there is white space between teh minus sign and the number 1.
+
+<H2>A Sample Run of the Algorithm</H2>
+<p>The follwoing shows how a sample equation in the control string would be simplified one step at
+a time.  At each step, a single operation is performed, simplifing the equation.
+
+<p>After the equation <tt>(2 * ( 4 + 6 / 2))</tt> is parsed, the following would be displayed to
+the screen after each step.
+<p><pre>
+(2 * (4 + 6 / 2))
+(2 * (4 + 3))
+(2 * (7))
+(2 * 7)
+(14)
+14
+</pre>
+<p>The following table shows what each byte of the control string would contain after each step
+is performed.
+<p>
+<TABLE border=1>
+<TR>
+  <TD>'('<TD>'N'<TD>02h<TD>00h<TD>'n'<TD>'*'<TD>'('<TD>'N'<TD>04h<TD>00h<TD>'n'<TD>'+'<TD>'N'<TD>06h<TD>00h<TD>'n'
+  <TD>'/'<TD>'N'<TD>02h<TD>00h<TD>'n'<TD>')'<TD>')'<TD>'$'
+<TR>
+  <TD>'('<TD>'N'<TD>02h<TD>00h<TD>'n'<TD>'*'<TD>'('<TD>'N'<TD>04h<TD>00h<TD>'n'<TD>'+'<TD>'N'<TD>03h<TD>00h<TD>'n'
+  <TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>')'<TD>')'<TD>'$'
+<TR>
+  <TD>'('<TD>'N'<TD>02h<TD>00h<TD>'n'<TD>'*'<TD>'('<TD>'N'<TD>07h<TD>00h<TD>'n'<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL
+  <TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>')'<TD>')'<TD>'$'
+<TR>
+  <TD>'('<TD>'N'<TD>02h<TD>00h<TD>'n'<TD>'*'<TD>NULL<TD>'N'<TD>07h<TD>00h<TD>'n'<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL
+  <TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>')'<TD>'$'
+<TR>
+  <TD>'('<TD>'N'<TD>0Dh<TD>00h<TD>'n'<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL
+  <TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>')'<TD>'$'
+<TR>
+  <TD>NULL<TD>'N'<TD>0Dh<TD>00h<TD>'n'<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL
+  <TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>NULL<TD>'$'
+</table>
+
+<p>You can see how after each operation, an operator and an operand are replaced with <tt>NULL</tt>s and
+an operand is replaced with the results of an operation.  After the last step, the equation is found
+to only contain the number 14 (000Dh), which is the correct answer to the equation.
+
+<H2>Sample Input and Output</H2>
+<UL>
+  <LI>Results from sample runs of the program are shown below.  This sample was run with the
+  library code displaying all of the funtions that the library can perform.
+  <BR>(<B>Boldface</B> characters were provided as input). 
+  <P>
+    <TABLE bgColor=cyan border=1>
+      <TBODY>
+      <TR>
+      <TD>
+<tt>Please enter an equation.<br>
+Hit &lt;ESC>, or enter an empty equation to exit.<br>
+<b>-(-7*3!  +4-6)~[1 | (2) &lt; 1 & 15] % 53/{1 > -2}</b><br>
+Verifying and parsing the string...<br>
+-(-7 * 3! + 4 - 6)~(1 | (2) &lt; 1 & 15) % 53 / (1 > -2)<br>
+-(-7 * 6 + 4 - 6)~(1 | (2) &lt; 1 & 15) % 53 / (1 > -2)<br>
+-(-42 + 4 - 6)~(1 | (2) &lt; 1 & 15) % 53 / (1 > -2)<br>
+-(-38 - 6)~(1 | (2) &lt; 1 & 15) % 53 / (1 > -2)<br>
+-(-44)~(1 | (2) &lt; 1 & 15) % 53 / (1 > -2)<br>
+--44 * ~(1 | (2) &lt; 1 & 15) % 53 / (1 > -2)<br>
+--44 * ~(1 | 2 &lt; 1 & 15) % 53 / (1 > -2)<br>
+--44 * ~(1 | 4 & 15) % 53 / (1 > -2)<br>
+--44 * ~(1 | 4) % 53 / (1 > -2)<br>
+--44 * ~(5) % 53 / (1 > -2)<br>
+--44 * ~5 % 53 / (1 > -2)<br>
+--44 * ~5 % 53 / (4)<br>
+--44 * ~5 % 53 / 4<br>
+--44 * -6 % 53 / 4<br>
+44 * -6 % 53 / 4<br>
+-264 % 53 / 4<br>
+-52 / 4<br>
+-13<br>
+<br>
+<br>
+Please enter an equation.<br>
+Hit &lt;ESC>, or enter an empty equation to exit.<br>
+<br>
+<br>
+LIBMP2 Ver 1.0 Calls<br>
+-LibInput<br>
+-LibCheckParens<br>
+-LibParse<br>
+-LibCheckDone<br>
+-LibFindInner<br>
+-LibFindOne<br>
+-LibSolveOne<br>
+-LibGetOp1<br>
+-LibGetOp2<br></tt>
+</TD></TR></TBODY></TABLE>
+    <P></P>
+
+  <LI>The sample input files (<TT>*.in</TT>) as well as their 
+  corresponding output data files (<TT>*.out)</TT> are included 
+  with this MP. You may try these files by typing <tt>MP2 &lt; <i>????</i>.in</tt>.
+  <BR>Your results should match the test cases. 
+  <P></P>
+  <LI>Experiment with the interactive, library-based MP2 to fully understand how 
+  the program operates. Try new keys and experiment with your own data buffers 
+  by simply running <TT>mp2</TT> without arguments. 
+  <P></P>
+  <LI>In addition to these test cases, your program should work for all types of 
+  data. <BR>TAs will provide you with different test data when you demo your MP. 
+  </LI></UL>
+</UL>
+<H2>Variables</H2>
+<UL>
+  <LI>A few variables have already been defined for you in the program 
+  framework. 
+  <UL>
+    <LI><B>inputBuff</B>: An array of bytes that contains the input string. 
+    <LI><B>controlStr</B>: An array of bytes that holds the parsed string. This
+         string is altered as the equaiton is solved.
+    <LI><B>accept</B>: An array holding the acceptable characters.  You should edit
+         this string to reflect the functions that your program accepts.<BR> 
+    <LI><B>priority</B>: A lookup table containing the priorities of each of the
+         functions of the calculator.  Even priority operators are evaluated left to right,
+         odd priority operators are evaluated right to left.
+    <LI>In addition, a numbe of messages have been defined.
+  </UL>
+  <LI>A few constants have also been defined: 
+  <UL>
+    <LI><B>MAX_BUFF_LEN</B> == 80 <I>bytes. The maximum lenght of the input buffer</I>
+         <LI><B>NUM_ACCEPT</B> == 33  <i>The number of characters in the accept array. 
+         This value should be modified with any changes made to accept.</i>
+    <LI><B>NULL</B> == 00  <i>This value is used to replace cleared data from the
+         control string.</i>
+    <LI><B>STARTNUM</B> == 78  <i>This value appears immedieately before each
+         number in the control string.</i>
+    <LI><B>ENDNUM</B> == 110  <i>This value appears immediately after each number
+         in the control string</i>
+    <LI><B>ENDSTR</B> == 36  <i>This value appears to signify the end of the control
+         string</i>
+         <LI><B>NEGATE</B> == 0C4h <i>This value appears to signify the unary minus operator
+         in the control string to distinguish it from subtraction.</i>
+  </UL>
+</UL>
+<H2>Procedures</H2>
+<UL>
+  <LI>This assignment has nine procedures. You will receive credit for this 
+  assignment by replacing each of the nine procedures listed below with your 
+  own code. 
+  <LI>In addition to a set of required functions that your code must handle, you
+  must choose extra functionality to impliment in order to recieve full credit.
+  <B>What extra functionality your program contains will effect almost every
+  procedrue.  Choose what extra functionality you wish to give to your code before
+  you start.</B>
+  <LI>Experiment with the working code to gain a full understanding of how the 
+  program works. 
+  <LI>All subroutines should be <I>modular</I>. They should use the stack to 
+  <I>preserve</I> the value of any registers they may modify. 
+  <LI>Use defined constants where appropriate. </LI></UL>
+<UL>
+  <LI><B><FONT size=+1>Input</FONT></B> 
+  <UL>
+    <LI><B>Purpose:</B> Takes user input into <TT>inputBuff</TT>. 
+    <UL>
+      <li>Impliments what was discussed in the "Taking Input" section above.
+      <LI>Accepts only those characters that appear in the accept array
+      <LI>Ignores line feeds.
+      <LI>Beeps on invalid input.
+                <LI>Correctly handles back spacing. Your code must both back up in the input
+                string and clear the most recently entered character from the screen.
+                <LI>Terminates on CR or ESC.
+                <LI>Does not underflow or overflow inputBuff. (Does not write past the beginning
+                or end of inputBuff)
+         </ul>
+    <LI><B>Inputs:</B>User input from the keyboard
+    <LI><B>Outputs:</B>
+           <ul><li>Stores an ASCII string into <tt>inputBuff</tt> 
+               <li>CF - (1 if ESC key was pressed, or if the buffer was completely blank
+                   when enter was pressed,      0 otherwise)
+      <LI><B>Note: </B>The buffer should be appended with a '$'. 
+      <LI><B>Hint:</B>To display a back space, disply a BS, followed by a space,
+                            followed by a BS.
+                <LI><B>Calls:</B>KBDIN, DSPOUT
+      <LI><B>Points:</B> 6
+    </UL>
+  </UL>
+  <p>
+  <LI><B><FONT size=+1>CheckParens</FONT></B> 
+  <UL>
+    <LI><B>Purpose:</B> Verifys parentheses match correctly. 
+    <UL>
+           <li>Impliments what was discussed in the "Checking Parentheses" section above.
+      <LI>Uses the stack to verify the parentheses.
+           <LI>Does not overflow or underflow the stack.
+                <LI>Displays an error message if parentheses don't match.
+    </UL>
+    <LI><B>Inputs:</B> inputBuff
+    <LI><B>Outputs:</B> CF - (1 if error, 0 if otherwise)
+         <LI><B>Notes:</B>You may have to manually set and/or clear the carry flag
+                          as desired.
+         <LI><B>Calls:</B>DSPMSG
+    <LI><B>Points:</B> 2
+  </UL>
+  <p>
+  <LI><B><FONT size=+1>Parse</FONT></B> 
+  <UL>
+    <LI><B>Purpose:</B>
+         <ul>
+           <li>Impliments what was discussed in the "Parsing the String" and "String Verification"
+                sections above.
+           <li>Converts the input into a more useable form.
+                <li>Verifys the string based upon expectation rules listed above.
+                <li>Displays error message if unexpected input occurs.
+         </ul>
+    <LI><B>Input:</B>inputBuff 
+    <LI><B>Outputs:</B>
+         <ul>
+           <li>controlStr
+                <li>CF - ( 1 if error, 0 otherwise)
+         </ul>
+    <LI><B>Hints:</B>The verification rules are complex, and depend upon what
+         functions you wish to impliment.  Make sure you understand what you want to
+         check for before starting to write this procedrue.
+         <li><B>Calls:</B>ASCBIN, DSPMSG
+    <LI><B>Points:</B> 8
+  </UL>
+  <P>
+  <LI><B><FONT size=+1>CheckDone</FONT></B> 
+  <UL>
+    <LI><B>Purpose:</B>
+         <ul>
+            <li>Impliments what was discussed in the "Determining When Done" section above.
+            <li>Checks if the parsed controlStr has been fully simplified.
+                 <li>Displays an error message if there are no operands in the control string.
+                 <li>Displays an error message if there are multiple operands, but no operators
+                 in the control string.
+         </ul>
+    <LI><B>Inputs:</B>controlStr
+    <LI><B>Output:</B>
+         <ul>
+           <li>CF (1 - if error, 0 otherwise)
+                <li>ZF (1 - if the controlStr has been simplified, 0 otherwise)
+         </ul>
+    <LI><B>Notes:</B>You will have to set both the CF and the ZF appropriately.
+         <li><b>Calls:</b>DSPMSG
+    <LI><B>Points:</B> 3
+  </UL>
+  <P>
+  <LI><B><FONT size=+1>FindInner</FONT></B> 
+  <UL>
+    <LI><B>Purpose:</B>  Finds a set of the innermost set of parentheses - 
+         a substing in controlStr which contains no internal parentheses as described in the
+         "Finding the innermost set of parentheses" section above.
+    <LI><B>Input:</B>controlStr
+    <LI><B>Outputs:</B>
+         <ul>
+             <li>BX - the index in controlStr of the start of the substring
+                  <li>SI - the number of character in the substring minus 1.
+         </ul>
+    <LI><B>Notes:</B>
+         <ul>
+             <li>If there are parentheses in controlStr:
+             <ul>
+                         <li>BX will be the index of of an open parentheses.
+                         <li>BX + SI will be the index of the matching closed parentheses.
+                         <li>There will be no parentheses between index BX, and index BX + SI.
+                  </ul>
+                  <li>If there are no parentheses in controlStr:
+                  <ul>
+                    <li>BX will be 0
+                         <li>SI will be the index of the last byte in the string (one byte
+                         before the ENDSTR character).
+                  </ul>
+         </ul>
+    <LI><B>Hints:</B>
+         <ul>
+           <li>Don't search inside of numbers (between the STARTNUM and ENDNUM characters).
+                <li>Stop when you reach the ENDSTR.
+         </ul>
+         <li><b>Calls:</b>None
+    <LI><B>Points:</B> 3
+  </UL>
+  <P>
+  <LI><B><FONT size=+1>FindOne</FONT></B> 
+  <UL>
+    <LI><B>Purpose:</B>
+         <ul>
+            <li>Impliments what was discussed in the "Finding the Highest Precidented Operator"
+                 section above.
+            <li>Finds a single operation to perform within a substring of controlStr.
+                 <li>Displays an error message if no operation could be found.
+         </ul>
+    <LI><B>Inputs:</B> 
+    <UL>
+            <li>BX - an index in the controlStr of the start of the substring to search.
+                 <li>SI - the number of characters in the controlStr to search minus 1
+    </UL>
+    <LI><B>Output:</B>
+         <ul>
+            <li>DI - an index in the controlStr of the highest precidence operator in
+                 the substring.
+                 <li>CF - (1 if error, 0 otherwise)
+         </ul>
+    <LI><B>Notes:</B>
+         <ul>
+            <li>BX + SI is an index of the last character in the substring to check
+                 <li>You should check both the byte pointed to by BX, and the byte pointed
+                 to by BX + SI.
+                 <li>If error checking was done properly, and FindInner works correctly, this
+                 procedure should never give an error code.
+         </ul>
+    <LI><B>Hints:</B>
+         <ul>
+            <li>Don't look inside of numbers for operations (between the STARTNUM and
+                 ENDNUM bytes)
+                 <li>Use the priority lookup table.
+         </ul>
+         <li><b>Calls:</B>DSPMSG
+    <LI><B>Points:</B> 3
+  </UL>
+  <p>
+  <LI><B><FONT size=+1>SolveOne</FONT></B> 
+  <UL>
+    <LI><B>Purpose:</B>
+         <ul>
+            <li>Impliments what was discussed in the "Solving the Highest Precidented Operator" section above.
+            <li>Solves a single operation in controlStr, simplifing the expression.
+                 <ul>
+                   <li>Nullifies the operator (except for parentheses)
+                        <li>Replaces one operand with the result of the operation (execpt for parentheses)
+                        <li>Nullifies the other operand (if there is one)
+                 </ul>
+                 <li>Displays an error message if tyring to perform an unknown operation.
+                 <li>Displays an error message if there is a calculation results in an overflow.
+                 <li>Displays an error message if tyring to divide by zero.
+         </ul>
+    <LI><B>Inputs:</B> 
+    <UL>
+           <li>DI - An index in controlStr pointing to the operation to perform.
+           <li>BX - An index in controlStr pointing to the start of the substring containing
+                the operator.
+                <li>SI - The number of bytes of the substring containing the operator minus 1.
+                <li>controlStr
+    </UL>
+    <LI><B>Outputs:</B>
+         <ul>
+           <li>controlStr
+                <li>CF - (1 if error, 0 otherwise.
+         </ul>
+    <LI><B>Notes:</B>
+         <ul>
+            <li>Any operands for the operation to be performed should be found between
+                 controlStr[BX] and controlStr[BX + SI] inclusive.
+            <li>If error checking was done properly, and FindOne works correctly, 
+                 this procedure should never try to perform an unknown operation.
+         </ul>
+    <LI><B>Hints:</B>
+         <ul>
+            <li>Use a jump table where appropriate.
+                 <li>To nullify a byte, replace it with the constant <tt>NULL</tt>
+                 <li>To nullify a number, the <tt>STARTNUM</tt> and <tt>ENDNUM</tt> bytes
+                 must also be nullified.
+                 <li>Look at the macro <tt>GETOPERANDS</TT>
+         </ul>
+         <li><b>Calls:</B>GetOp1, GetOp2, DSPMSG
+    <LI><B>Points:</B> 7
+  </UL>
+  <P>
+  <LI><B><FONT size=+1>GetOp1</FONT></B> 
+  <UL>
+    <LI><B>Purpose:</B>
+         <ul>
+            <li>Find the operand nearest to the left of an operator.
+                 <li>Display an error message if no operand is found, or if an operation
+                 is found directly to the left of the operator, rather than an operand.
+         </ul>
+    <LI><B>Inputs:</B> 
+    <UL>
+            <li>DI - an index in controlStr pointing to the operator
+                 <li>BX - an index in controlStr pointing to the leftmost index where the the
+                 operand may start.
+    </UL>
+    <LI><B>Outputs:</B>
+         <ul>
+            <li>BP - an index in controlStr pointing to the start of the number.
+                 <li>CF - (1 if error, 0 otherwise)
+         </ul>
+    <LI><B>Notes:</B>
+         <ul>
+            <li>If error checking was done properly, and FindOne works correctly, 
+                 this procedure should never give an error code.
+                 <li>BP should point to a STARTNUM character, but should not be less
+                 than BX.
+                 <li>Indexing off of BP will by default use the stack segment <tt>SS</tt>. 
+                 You can override this by explicitly writing the segment you wish to use.
+            For example, if you want to use the data segment <tt>DS</tt>, you may write
+                 <tt>DS:[BP]</tt>.
+         </ul>
+    <LI><B>Hint:</B>There may be <tt>NULL</tt>s in the string between the operand and
+         the operator.
+         <li><b>Calls:</B>DSPMSG
+    <LI><B>Points:</B> 3
+  </UL>
+  <P>
+  <LI><B><FONT size=+1>GetOp2</FONT></B> 
+  <UL>
+    <LI><B>Purpose:</B>
+         <ul>
+            <li>Find the operand nearest to the right of an operator.
+                 <li>Display an error message if no operand is found, or if an operation
+                 is found directly to the left of the operator, rather than an operand.
+         </ul>
+    <LI><B>Inputs:</B> 
+    <UL>
+            <li>DI - an index in controlStr pointing to the operator
+                 <li>BX + SI - an index in controlStr pointing to the rightmost index where the the
+                 operand may end.
+    </UL>
+    <LI><B>Outputs:</B>
+         <ul>
+            <li>BP - an index in controlStr pointing to the start of the number.
+                 <li>CF - (1 if error, 0 otherwise)
+         </ul>
+    <LI><B>Notes:</B>
+         <ul>
+            <li>If error checking was done properly, and FindOne works correctly, 
+                 this procedure should never give an error code.
+                 <li>BP should point to a STARTNUM character, but should not be greater
+                 than BX + SI - 3.
+                 <li>Indexing off of BP will by default use the stack segment <tt>SS</tt>. 
+                 You can override this by explicitly writing the segment you wish to use.
+            For example, if you want to use the data segment <tt>DS</tt>, you may write
+                 <tt>DS:[BP]</tt>.
+         </ul>
+    <LI><B>Hint:</B>There may be <tt>NULL</tt>s in the string between the operand and
+         the operator.
+         <li><b>Calls:</B>DSPMSG
+    <LI><B>Points:</B> 3
+  </UL>
+  <P>
+  <LI><B><FONT size=+1>Extra Functionality</FONT></B> 
+  <UL>
+    Your code must contain at least some basic functionality.  Only if you impliment
+         all of the basic functions functions will you be able to recieve any extra
+         functionality points.  Test files will be given for you to verify that each of
+         your extra funcitonalities work properly.
+    <LI><B>Basic Requirements:</b>
+         <ul>
+           <li>Handles positive and negative numbers.
+                <li>Adds, Subtracts, Multiplies, Divides, and performs the Modulus operation.
+                <li>Handles parentheses ().
+         </ul>
+         <LI><B>Extra Functions:</B>
+         <ul>
+            <li>4 points:Handles brackets [], and braces {}.
+                 <li>5 points:Performs implicit multiplication with parentheses.
+                 <li>3 points:Handles factorials.
+                 <li>+1 point:Handles both implicit multiplication and factorials.
+                 <li>4 points:Handles bitwise NOT '~' and unary negation '-'.
+                 <li>+1 point:Handles both implicit multiplication and bitwise NOT '~' and unary negation '-'.
+                 <li>2 points:Handles AND '&', OR '|', and XOR '^'
+                 <li>3 points:Handles Shift left '&lt;' and Shift right '>'.
+            <li>3 points:Performs intelligent handeling of '-' sign.
+                 <li>3 points:Does not require numbers to be followed by white space.
+                 <i>This was intentionally not explained above.  Test files have been
+                 provided which contain input that may cause inexplicable errors.  You
+                 should find and solve these errors.</i>
+                 <li>2 points:Can accept -32768 as input. <i>This too was intentionally not
+                 explained above. </i><tt>ASCBIN</tt><i> gives undocumented results when
+                 converting the ASCII string </i><tt>'-32768'</tt><i> into binary</i>.
+                 <li>12 points and a Gold Star:Uses double words instead of words in the control
+                 string and when performing calculations.  <i>Note that in order to do this you
+                 will have to write your own versions of <tt>BINASC</tt>, <tt>ASCBIN</tt> and
+                 <tt>DspControlStr</tt>. Also, most of the libray procedures are not compatable
+                 with a double word format, so you will not be able to mix the library code with
+                 your own.</i>
+         </ul>
+    <LI><B>Points:</B> 12 <B>MAX</B>
+  </UL>
+  <P>
+
+</UL>
+<H2>Preliminary Procedure</H2>
+<UL>
+  <LI>Decide which of the "extra functionalities" you wish to impliment.
+  Many of these functions will effect how you write several of the procedures.
+  <LI>Copy the empty MP2 program (<TT>MP2.ASM</TT>), sample input file 
+  (<TT>test1.in</TT>), corresponding output files (<TT>test1.out</TT>), 
+  libraries (<TT>libmp2.lib</TT>, <TT>lib291.lib</TT>), and <TT>Makefile</TT> 
+  from the network drive to your home directory with the following command: 
+  <BR><TT>xcopy /S V:\ece291\mp2 W:\mp2</TT> <BR>Alternatively, from home, you 
+  can download the same files as <A 
+  href="mp2.zip">mp2.zip</A>. 
+  <LI>As with MP0 and MP1, run <TT>NMake</TT> to build an executable program 
+  using the given ECE291 library functions. 
+  <LI>As with MP0 and MP1, use a text editor to modify the program. As given, 
+  the program uses LIBMP2 routines to implement all functionality. To receive 
+  full credit for the assignment, you will need to implement each of the 
+  subroutines described above with your own code. 
+  <LI>As with MP0 and MP1, use CodeView (<TT>CV</TT>) to debug and test your 
+  program. Because you only receive credit for procedures that function 
+  completely as specified, it is best to debug each routine individually. 
+  <LI>By modifying a few comments, you can mix and match usage of your own code 
+  and Library routines. You may notice that the LIBMP2 routines contain 
+  extraneous and difficult-to-read code. They are not meant to be unassembled! 
+  </LI></UL>
+
+  <P><I>Monitor the newsgroup and this on-line section for revisions to the MP 
+  or to the writeup</I> </P></LI></UL>
+<P>
+<H2>Final Steps</H2>
+<OL>
+  <li>Verify that your program is working properly using the various test files
+  available on the network drive.
+  <LI>Print a copy of the <A 
+  href="mp2grade.html">MP2 grading sheet</A>. 
+  <LI>Demonstrate MP2.EXE to a TA or to the instructor. 
+  <UL>
+    <LI>Be prepared to answer questions about any aspect of the operation of 
+    your program. The TAs will not accept an MP if you cannot fully explain all 
+    operations of your code. 
+    <LI>Your program must work for all possible data patterns. Additional test 
+    patterns will be listed on the grade sheet. 
+    <LI>The TA will determine performance points using sample input files and
+         by entering random input.
+  </UL>
+  <LI>Handin in your program by running: 
+  <UL>
+    <LI><TT>A:\Handin </TT><I>YourWindowsLogin</I> 
+    <LI>Print <FONT color=#ff0000>MP2.ASM</FONT>.  Make sure that you print out
+         your code 4 pages per page and double sided.  If you don't know how to do this
+         ask a TA for assistance.</LI></UL>
+  <LI>Staple the MP2 grading sheet to the front of your 
+  MP2.ASM file and give both to the same TA that approved your demonstration. 
+  </LI></OL>
+<HR>
+
+<H2>MP2.ASM</H2>
+<PRE><Font size=1>
+TITLE MP2:Infix-Calculator     Your_Name     Todays_Date
+.MODEL SMALL
+.386
+COMMENT *
+        In this MP, you will write a program which will take input
+        from the keyboard which will be parsed and solved as an 
+        arithmatic equation
+        
+        ECE291: Machine Problem 2
+        Prof. Zbigniew Kalbarczyk
+        Guest Author: Brandon Tipp
+        Univeristy of Illinois
+        Dept. of Electrical & Computer Engineering
+        Fall 1999
+        
+        Ver 1.0
+        *
+
+;====== SECTION 1: Define constants =======================================
+;misc ASCII codes
+BEL     EQU     007h
+BS      EQU     008h
+CR      EQU     00Dh
+LF      EQU     00Ah
+SPACE   EQU     020h
+ESCKEY  EQU     01Bh
+
+MAX_BUFF_LEN EQU 80  ; Bytes; limit input to one line
+NUM_ACCEPT   EQU 33  ; The number of acceptable characters
+
+; Definitions for the control string
+NULL       EQU  00
+STARTNUM   EQU  78
+ENDNUM     EQU  110
+ENDSTR     EQU  36
+NEGATE     EQU  0C4h ; ascii for a hyphen
+
+PUBLIC BEL, BS, CR, LF, SPACE, ESCKEY
+PUBLIC MAX_BUFF_LEN, NUM_ACCEPT
+PUBLIC NULL, STARTNUM, ENDNUM, ENDSTR, NEGATE
+
+
+; GetOperands MACRO
+; This macro may be used and edited freely.  Edit this comment
+; block to reflect changes
+; Purpose: Get the left and right operands to an operation.
+;          Nullifies the right operand
+; Inputs: X, the place to store the left operand  (must be a register, not bp, di, si, or bx)
+;         Y, the place to store the right operand (must be a register, not bp, di, si, or bx)
+; Ouputs: X, holds the number that was indicated by GetOp1
+;         Y, holds the number that was indicated by GetOp2
+;         The number indicated by GetOp2 is nullified from the string
+;         BP , the return value from GetOp1, indicating where the number is
+; Notes:  Performs no error checking.
+GetOperands MACRO x, y 
+        call GetOp2
+        mov y, word ptr controlStr[bp + 1]
+        mov word ptr controlStr[bp],  NULL
+        mov word ptr controlStr[bp + 2], NULL
+        call GetOp1
+        mov x, word ptr controlStr[bp + 1]
+endm
+
+
+;====== SECTION 2: Declare external procedures ============================
+
+EXTRN   kbdine:near, dspout:near, dspmsg:near, binasc:near, ascbin: near
+EXTRN   mp2xit:near, kbdin:near 
+
+;====== Library procedures ================================================
+;Free Library procedure
+EXTRN  LibDspCtrlStr:near
+
+;The follwing library procedures must be replaced with your own code.
+EXTRN   LibInput:near
+EXTRN   LibCheckParens:near
+EXTRN   LibParse:near
+EXTRN   LibCheckDone:near
+EXTRN   LibFindInner:near
+EXTRN   LibFindOne:near
+EXTRN   LibSolveOne:near
+EXTRN   LibGetOp1:near
+EXTRN   LibGetOp2:near
+
+;These procedures need to be public so the library may call them
+PUBLIC  GetOp1, GetOp2
+
+;====== SECTION 3: Define stack segment ===================================
+
+STKSEG SEGMENT STACK                    ; *** STACK SEGMENT ***
+        db      64 dup ('STACK   ')
+STKSEG ENDS
+
+;====== SECTION 4: Define code segment ====================================
+
+CSEG SEGMENT PUBLIC 'code'              ; *** CODE SEGMENT ***
+ASSUME  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== SECTION 5: Declare variables for main procedure ===================
+inputBuff      db MAX_BUFF_LEN dup (?), '$'
+controlStr     db MAX_BUFF_LEN * 3 dup (?), ENDSTR
+
+buff     db 7 dup(?)
+
+accept   db '0123456789!*/%+-(){}[] <>&|^~',BS,CR,LF,ESCKEY ; all acceptable input chars
+
+inputMsg db CR,LF,'Please enter an equation.',CR,LF
+         db 'Hit <ESC>, or enter an empty equation to exit.',CR,LF,'$'
+
+parseMsg db 'Verifying and parsing the string...',CR,LF,'$'
+
+; A lookup table of the priority of each of the operations
+priority db 33 dup (0) ; control characters
+         db 16         ; !
+         db 0, 0, 0    ; ", #, $
+         db 14         ; %
+         db 8          ; &
+         db 0          ; '
+         db 2          ; (
+         db 0          ; )
+         db 14         ; *
+         db 12         ; +
+         db 0          ; ,
+         db 12         ; -
+         db 0          ; .
+         db 14         ; /
+         db 12 dup (0) ; numerals, :, ;
+         db 10         ; <
+         db 0          ; =
+         db 10         ; >
+         db 31 dup (0) ; ?, @, caps, [, \, ]
+         db 6          ; ^
+         db 29 dup (0) ; _, ', lower case letters, {
+         db 4          ; |
+         db 0          ; }
+         db 17         ; ~
+         db 69 dup (0) ; DELete, the extended charaters
+         db 17         ; Long dash for negate
+         db 59 dup (0) ; the rest of the extended characters
+
+errMsg   db BEL,'The equation was not fully simplified due to an error.',CR,LF,'$'
+errMsg0  db BEL,'Type 0 error: Divide by zero.',CR,LF,'$'
+errMsg1  db BEL,'Type 1 error: Parenthesis mismatch.',CR,LF,'$'
+errMsg2  db BEL,'Type 2 error: Input overflow.',CR,LF,'$'
+errMsg3  db BEL,'Type 3 error: Calculation overflow.',CR,LF,'$'
+errMsg4  db BEL,'Type 4 error: Missing operand',CR,LF,'$'
+errMsg5  db BEL,'Type 5 error: Encountered a unary operator while expecting a binary operator.',CR,LF,'$'
+errMsg6  db BEL,'Type 6 error: Encountered a number while expecting a binary operator.',CR,LF,'$'
+errMsg7  db BEL,'Type 7 error: Encountered a binary operator while expecting a number.',CR,LF,'$'
+errMsg8  db BEL,'Type 8 error: Encountered end of string while expecting a number.',CR,LF,'$'
+errMsg9  db BEL,'Type 9 error: No numbers found in control string.',CR,LF,'$'
+errMsg10 db BEL,'Type 10 error: Unknown operation encountered.',CR,LF,'$'
+errMsg11 db BEL,'Type 11 error: Attempting to resolve parenthesis containing too many operands.',CR,LF,'$'
+errMsg12 db BEL,'Type 12 error: Cannot take the factorial of a negative number.',CR,LF,'$'
+
+public inputBuff, controlStr
+public inputMsg, parseMsg, priority, buff, accept
+public inputMsg, errMsg0, errMsg1, errMsg2, errMsg3, errMsg4, errMsg5
+public errMsg6, errMsg7, errMsg8, errMsg9, errMsg10, errMsg11, errMsg12
+
+;====== SECTION 6: Procedures ============================================
+
+
+;Comment your funcitons!!!
+Input proc near
+        call LibInput  ; comment this call out and replace it with your own code
+        ret
+Input endp
+
+;Comment your code!!!
+CheckParens proc near
+        call LibCheckParens ; comment this call out and replace it with your own code
+        ret
+CheckParens endp
+
+;Comment loops in your code!!!
+Parse proc near
+        call LibParse
+        ret
+parse endp
+
+ 
+;Comment the registers that are used as variables!!!
+CheckDone proc near
+        call LibCheckDone
+        ret
+CheckDone endp
+
+
+;Comment code that is confusing!!! 
+FindInner proc near
+        call LibFindInner
+        ret
+FindInner endp
+
+;Don't write a comment for every line!!!
+FindOne proc near
+        call LibFindOne
+        ret
+FindOne endp
+
+;Don't write paragraphs of comments!!!
+SolveOne proc near
+        call LibSolveOne
+        ret
+SolveOne endp
+
+;Write your comments well!!!
+GetOp1 proc near
+        call LibGetOp1
+        ret
+GetOp1 endp
+
+ 
+;When you duplicate code, don't duplicate commentes!!! 
+GetOp2 proc near
+        call LibGetOp2
+        ret
+GetOp2 endp 
+
+
+MAIN PROC NEAR
+     mov     ax, cseg                ; Initialize Default Segment register
+     mov     ds, ax  
+  
+  begin:
+     call    Input
+     jc      FinalExit  ; if done, exit
+     
+     mov     dx, offset parseMsg
+     call    dspmsg
+
+     call    checkParens
+     jc      Error 
+
+     call    Parse
+     jc      Error      ; on err, start over
+  solve:
+     call    LibDspCtrlStr ; show the current state of calculation
+     
+     call    CheckDone
+     jc      Error
+     jz      begin
+     
+   continue: 
+     call    kbdin       ; pause before continueing
+     cmp     al, ESCKEY
+     jz      FinalExit
+     cmp     al, LF
+     jz      continue
+
+     ;find and solve the operator of highest precidence
+     call    FindInner
+     call    FindOne
+     jc      Error
+     call    SolveOne
+     jc      Error
+     
+     jmp solve
+     
+  Error:
+     mov     dx, offset errMsg
+     call    dspmsg
+     jmp     begin     
+     
+FinalExit:
+     call    mp2xit                  ; Exit to DOS
+
+MAIN ENDP
+
+CSEG ENDS
+        END MAIN                 
+
+</font>
+</PRE></BODY></HTML>

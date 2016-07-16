@@ -1,0 +1,757 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!-- saved from url=(0042)http://courses.engr.illinois.edu/ece390/mp/mp1/ -->
+<HTML xmlns="http://www.w3.org/1999/xhtml"><HEAD><TITLE>ECE 390 - MP4</TITLE>
+<META content="text/html; charset=windows-1252" http-equiv=Content-Type><LINK 
+href="/ece390/ece390.css" rel=stylesheet type=text/css>
+<META content="MSHTML 5.00.3909.6307" name=GENERATOR></HEAD>
+<BODY>
+<TABLE cellPadding=0 cellSpacing=0 class=header width="100%">
+  <TBODY>
+  <TR>
+    <TD align=left class=half vAlign=top>
+      <P><A href="http://courses.engr.illinois.edu/ece390"><IMG alt="" height=100 
+      src="/ece390/icon/ece390.jpg" width=310></A><BR><B>  Computer 
+      Engineering II</B><BR><B>  <SPAN class=red>Machine Problem 4</SPAN></B></P></TD>
+    <TD align=right class=half vAlign=center>
+      <TABLE border=0 cellPadding=0 cellSpacing=1 class=maxheight 
+        width="100%"><TBODY>
+        <TR>
+          <TD align=right class=dark><A 
+            href="http://courses.engr.illinois.edu/ece390/schedule.html">Schedule</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/labsched.html">Lab 
+            schedule</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/hw.asp">Homework</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/books/labmanual/">Lab 
+            Manual</A></TD></TR>
+        <TR>
+          <TD align=right class=dark><A 
+            href="http://courses.engr.illinois.edu/ece390/mp.asp">Machine 
+            Problems</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/resources">Resources</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/mp/mp1/fp">Final 
+            Project</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/photos">Photos</A></TD></TR>
+        <TR>
+          <TD align=right class=dark><A 
+            href="http://courses.engr.illinois.edu/ece390/grades">Gradebook</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/feedback.asp">Feedback</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/syllabus.html">Syllabus</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/archive">Archives</A></TD></TR>
+        <TR>
+          <TD align=right class=dark><A 
+            href="http://courses.engr.illinois.edu/ece390/lecture">Lectures</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/resources/turbo.zip">Download 
+            NASM</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390">Home</A>  </TD>
+          <TD>  <A 
+            href="https://courses.engr.illinois.edu/ece390/admin">Restricted 
+            access</A></TD></TR></TBODY></TABLE></TD></TR>
+  <TR>
+    <TD class=spacer colSpan=2><IMG alt="" height=8 src="" 
+  width=100></TD></TR></TBODY></TABLE>
+<TABLE border=0 cellPadding=7 cellSpacing=1 width="100%">
+  <TBODY>
+  <TR>
+    <TD vAlign=top>
+      <H1 align=center>Machine Problem 4: Tetris</H1>
+      <DIV align=center>
+      <CENTER>
+      <TABLE border=1 width=513>
+        <TBODY>
+        <TR>
+          <TD align=right width=64>Assigned</TD>
+          <TD width=433>Tuesday, 12 October 2004</TD></TR>
+        <TR>
+          <TD align=right width=64>Due Date</TD>
+          <TD width=433>Wednesday, 27 October 2004, 5:00 p.m.</TD></TR>
+        <TR>
+          <TD align=right width=64>Purpose</TD>
+          <TD width=433 Roman?>To understand interrupt-driven I/O, control
+          of the video display, arrays, and queues.</TD></TR>
+        <TR>
+          <TD align=right width=64>Points</FONT></TD>
+          <TD width=433>60</TD></TR></TBODY></TABLE></CENTER></DIV>
+          
+<BLOCKQUOTE>
+Computers are to computing as instruments are to music.  Software
+is the score, whose interpretation amplifies our reach and lifts
+our spirit.... As in the case of music, the invisibility of
+software is no more mysterious than where your lap goes when you
+stand up.  The true mystery ... is how so much can be accomplished
+with the simplest of materials, given the right architecture. 
+--Alan Kay, <i>Scientific American</i>, September 1984
+</BLOCKQUOTE>
+
+<P>You will write a program MP4 that implements the popular Tetris video game.</p>
+
+<P>Files for MP4 are on the <tt>V:</tt> drive in the directory <tt>V:\ece390\mp4</tt>.
+In this directory are the program framework <tt>mp4.asm</tt> and a 
+running version of the program <tt>mp4lab.exe</tt>. Lab versions of subroutines
+are in <tt>libmp4.lib</tt>, which contains all subroutines of LIB291 plus 
+libInit, libKbdInt, libTask1, libTask2, libTask3, libMovePiece, 
+libGenPiece, libDrawBorder, libEnq, and libDeq. You will use mp4xit instead of dosxit.
+You should start by copying these files to your home directory with the following command: <BR>
+<TT>xcopy /s V:\ece390\mp4 W:\mp4</TT><BR>
+You may download the files from the server as 
+<A href="http://courses.engr.illinois.edu/ece390/mp/mp4/mp4.zip">mp4.zip</A>  </p>
+
+<p> Reading: Lab Notes, Sections 10.1 (Keyboard), 11.1 (Text Mode) <br>
+Reference: Lab Notes, Section 11.3 (Interrupt 10h)</p>
+
+<H2>Program Specification</H2>
+<img src="mp4fig.jpg">
+<p>
+A four-square piece falls into a container. The piece responds to the following key presses:<p>
+<ul>
+<li>Left arrow: move piece one cell to left</li>
+<li>Right arrow: move piece one cell to right</li>
+<li>Up arrow: rotate piece clockwise</li>
+<li>Down arrow: drop piece directly downward until it meets an occupied cell or the bottom border</li>
+<li>Space bar: toggle between running and stopped</li>
+<li>Esc key: exit program immediately </li>
+</ul>
+The program prevents the user from moving or rotating the piece outside the left
+and right borders of the container, or into a currently occupied cell.
+As soon as a falling piece stops at the bottom, a new piece appears at the top
+of the screen, above the container.
+If all cells on a row are occupied, then the program increments
+the score, clears that row, and shifts all rows above the cleared row down by one cell. 
+The game ends when a piece stops at the top of the container.
+</p> 
+<p>The display looks best in 20 or 24 point Lucinda Console font.</p> 
+
+<h2>Program Organization</h2>
+
+<P>In this machine problem, a large amount of data and the main procedure are provided for you; 
+however, you must write the code to replace the library subroutines 
+libInit, libKbdInt, libTask1, libTask2, libTask3, libMovePiece, 
+libGenPiece, libDrawBorder, libEnq, and libDeq. 
+You will replace these subroutines from the libmp4 library by deleting the 
+statements that call the libmp4 subroutine and by adding your own code. 
+Each subroutine that you write should match the output of the library 
+subroutine exactly.</P>
+
+<p>
+The program uses the following global variables:
+<pre>
+SavKOff RESW    1                       ; Keyboard interrupt vector
+SavKSeg RESW    1
+SavTOff RESW    1                       ; User timer interrupt vector
+SavTSeg RESW    1
+Ticks   DW      0                       ; Number of timer ticks
+PLoc    RESB    8                       ; Location of falling piece: row,column for each square
+PType   RESW    1                       ; Piece type, 0 to 18
+Color   DB      09h                     ; Current color of piece, 09 to 0Fh
+State   DB      1                       ; 1=moving, 0=stopped
+Score   DW      0                       ; Score: number of rows cleared
+Occup   RESB    ROWS*(MAXCOL+1)         ; Master state of the container
+</pre>
+<p>
+<ul>
+<li>
+<tt>SavKOff</tt> and <tt>SavKSeg</tt> are the offset and segment
+words in the original keyboard interrupt vector (type 9). 
+Similarly <tt>SavTOff</tt>
+and <tt>SavTSeg</tt> are the offset and segment words in the original user
+timer interrupt vector (type 1Ch).</li>
+<li><tt>PLoc</tt> is a 4x2 array that specifies the current location of the piece:
+the row and column of each square in the piece. The squares are ordered 
+from top to bottom, and from left to right within rows (row-major order).</li>
+<li><tt>Occup</tt> is a 25x13 array that specifies the fixed, occupied cells in the container
+(not the cells of the falling piece).  The (r,c) entry of <tt>Occup</tt> holds the
+color displayed in row r, column c on the screen. <b>CORRECTION 18 OCTOBER: <tt>Occup</tt> is actually
+a 25x14 array; column 0 corresponds to the left wall of the container.</b></li>
+</ul>
+</p>
+<p>The following data are provided for you.
+<ul>
+<li><tt>InitLoc</tt> is a 19x4x2 array. For each of 19 piece types, and each of
+4 squares in the piece, <tt>InitLoc</tt> specifies the row and column of the initial
+location of that square.</li>
+<li><tt>Rotats</tt> is a 19x4x2 array. For each of 19 piece types, and each of
+4 squares in the piece, <tt>Rotats</tt> specifies the <i>change</i> between
+the present row and column and the new row and column for that square. 
+For example, to rotate a piece of Type 2, add (0,0) to the (row,column) of 
+the first square, (0,1) to the (row,column) of the second square, (0,1) to
+the (row,column) of the third square, and (1,-1) to the (row,column) of the
+fourth square.</li>
+<li><tt>NewType</tt> is an array of 19 words. For <i>t</i> = 0 to 18, entry <i>t</i> of <tt>NewType</tt>
+is the new piece type after a rotation.</li>
+</ul>
+</p>
+<img src="mp4rotations.jpg">
+<p>
+The program uses a circular queues to store keyboard scan codes.
+<pre>
+QBeg    EQU     0                       ; Beginning offset of queue area
+QCap    EQU     2                       ; Capacity of of queue
+QFront  EQU     4                       ; Index of front item
+QRear   EQU     6                       ; Index of rear item
+QCount  EQU     8                       ; How many items currently in queue
+QData   EQU     10                      ; Byte to input or output
+
+KQList  RESB    0                       ; Parameter list for Keyboard Queue
+KQBeg   DW      KQArea                  ; Offset of Keyboard Queue area
+KQCap   DW      10
+KQFront DW      0
+KQRear  DW      -1
+KQCount DW      0
+KQData  RESB    1
+KQArea  RESB    10
+</pre>
+The queue is specified by a parameter list.  The first word of the list
+specifies the offset of the first byte of the queue area, where data are stored.
+The second word is the capacity of the queue.
+The third word of the parameter list is the <i>index</i> of the byte at the front 
+of the queue, and the fourth word is the <i>index</i> of the byte at the rear
+of the queue.  These indices run from 0 to the capacity minus 1.  The byte at
+the front of the queue is the first to be dequeued.  The byte at the rear of the
+queue was the last to be enqueued.  The fifth word of the parameter list is
+a count of the number of items currently stored in the queue.  Enq uses the
+Data byte on the parameter list for the item to be enqueued, and Deq delivers
+the dequeued item into this byte.
+</p>
+<p>This queue structure will be used with multiple queues in MP5.</p>
+
+<p>The mp4.asm program framework has the user timer interrupt service routine
+TimInt and a random number generator subroutine Rand.
+</p>
+
+<P>You will replace each of the subroutines listed below with your own code.
+Document each subroutine with a header. 
+</P>
+      <TABLE border=1>
+        <TBODY>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Init</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Initializes interrupt vectors and the video display
+              <LI>Inputs: None </li>
+              <LI>Outputs: 
+              <UL>
+                <LI><tt>SavTOff, SavTSeg, SavKOff, SavKSeg, Occup, Ticks</tt></LI></UL>
+              <LI>Calls: DrawBorder, DispScore, GenPiece</li> 
+              <LI> 
+Init saves the old user timer and Keyboard interrupt vectors and changes
+them to point to the interrupt service routines TimerInt and KbdInt. Init uses
+<tt>INT 10h</tt> to select 80x25 text video mode and to clear the display area.
+Init calls DrawBorder to draw the border of the container, calls DispScore to 
+display the initial score, and calls GenPiece to generate the first falling piece. 
+Init sets every byte in the <tt>Occup</tt> array to zero and sets <tt>Ticks</tt> to zero.
+              </LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>KbdInt</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Interrupt service routine for keyboard
+              <LI>Inputs: None </li>
+              <LI>Outputs: None </li>
+              <LI>Calls: Enq</li> 
+              <LI> 
+KbdInt enqueues the scan code from the keyboard onto the Keyboard Queue
+with a call to Enq.
+Most of this routine is specified on page 93 of the ECE 390 Lab Notes.
+              </LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Task1</FONT></B></TD>
+          <TD>
+            <ul>
+              <LI>Processes one scan code byte </li>
+              <LI>Inputs: None </li>
+              <LI>Outputs: None </li>
+              <LI>Calls: Deq, MovePiece, mp4xit</li>
+              </ul>
+Task1 first checks that the Keyboard Queue is nonempty.  If so, then 
+Task1 dequeues the byte at the front of the Keyboard Queue. If it is 
+the scan code for the ESC key, then Task1 restores the old interrupt
+vectors and exits to DOS. If the byte is the scan code for the space bar,
+then Task1 toggles the value of <tt>State</tt> between 1 and 0
+and resets <tt>Ticks</tt> to zero (why?).
+If the byte is the scan code for an arrow
+key, then Task1 calls MovePiece with the appropriate value of BX.
+For the up-arrow (rotate), the correct information from the <tt>Rotats</tt>
+array should be copied to the <tt>VRot</tt> vector before the call to MovePiece;
+if the rotation is successful, then Task1 updates <tt>PType</tt>.
+For down-arrow, Task1 repeatedly calls MovePiece to move the piece
+downward until the piece can no longer move.
+              </LI></UL></TD></tr>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Task2</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Updates the display of the falling piece 
+              <LI>Inputs: None </li>
+              <LI>Outputs: 
+              <UL>
+                <LI> <tt>Occup</tt> </li></UL>
+              <LI>Calls: MovePiece, GenPiece </LI>
+              <li> 
+Task2 exits if either fewer than 6 ticks have elapsed or the 
+State is 0. Otherwise, Task2 subtracts 6 from Ticks and calls MovePiece
+to try to move the falling piece one cell downward.  If the piece could
+not move farther down, then Task2 enters the colors of the
+piece's squares into the appropriate places in the <tt>Occup</tt> array,
+and Task2 calls GenPiece to generate a new piece. If the stopped piece
+has a square on row 5, then Task2 sets <tt>State</tt> to 0 to stop the game.
+         </li></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Task3</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Clears a completely occupied row and updates the score 
+              <LI>Inputs: 
+              <ul>
+                <li><tt>Score</tt> </LI></ul>
+              </li>
+              <LI>Outputs: 
+              <UL>
+                <LI> <tt>Score</tt> </li></UL>
+              <LI>Calls: dspmsg, DispScore</LI>
+              <li> 
+Task3 checks whether a row of the container is completely occupied.
+If row <i>r</i> is completely occupied, then for each <i>j</i>=<i>r</i>, <i>r</i>-1, ..., 5, Task3
+replaces row <i>j</i> with row <i>j</i>-1 both in <tt>Occup</tt> and in the container.
+Also, Task3 increments <tt>Score</tt> and updates its displayed value.
+         </li></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>MovePiece</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Moves the falling piece
+              <LI>Inputs: 
+              <UL>
+                <LI> (BX) = offset of <tt>VRight</tt> or <tt>VLeft</tt> or
+                                <tt>VDown</tt> or <tt>VRot</tt></li>
+                <li> <tt>PLoc</tt> = 4x2 array of locations of 4 the squares of the
+                                falling piece</li>
+                <li> <tt>Occup</tt> = array of occupied cells
+              </UL>
+              <LI>Output: 
+              <UL>
+                <LI> (CL) = 1 if piece could move, 0 if not</LI></UL>
+              <LI>Calls: None </li>
+              <li>
+MovePiece adds the entries in the array to which BX points and <tt>PLoc</tt>.
+It determines whether the new locations would put part of the piece at or outside the
+borders of the container, or whether part of the piece would collide with an
+already occupied cell (according to <tt>Occup</tt>).  If so, then MovePiece
+does not change <tt>PLoc</tt> and exits with CL = 0.  Otherwise, if the new
+locations are legal, then MovePiece erases the current displayed falling piece,
+updates <tt>PLoc</tt>, and draws the new falling piece.
+</LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>GenPiece</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Generates a random piece type and color
+              <LI>Input: 
+              <ul>
+                <li><tt>InitLoc</tt>
+                </LI></ul>
+              </li>
+              <LI>Outputs: 
+              <UL>
+                <LI> <tt>Color</tt>, <tt>PType</tt>, <tt>PLoc</tt> </li></UL>
+              <LI>Calls: Rand </LI>
+              <li> 
+GenPiece calls Rand to choose a random value for <tt>Color</tt> in
+09h, ..., 0Fh.  GenPiece calls Rand to choose a random value for
+<tt>PType</tt> in 0, ..., 18.  It copies the appropriate data from
+<tt>InitLoc</tt> to <tt>PLoc</tt> and displays the new piece at this location.
+ </LI></UL></TD></tr>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>DispScore</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Displays the current value of <tt>Score</tt>
+              <LI>Input: 
+              <ul>
+                <li><tt>Score</tt>
+                </LI></ul>
+              </li>
+              <LI>Outputs: None </li>
+              <LI>Calls: binasc, dspmsg </LI>
+              <li> 
+DispScore calls binasc to convert the value at <tt>Score</tt> from binary
+to ASCII and displays the score on line 0 of the display, to the right
+of the container.
+ </LI></UL></TD></tr> <TR vAlign=top>
+          <TD><B><FONT size=+1>DrawBorder</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Draws the borders around the container
+              <LI>Input: None
+              </li>
+              <LI>Output: None</li>
+              <LI>Calls: None </LI>
+              <li> 
+DrawBorder draws the borders around the container.  The walls extend from row 5 to row 23
+of columns 0 and 14 of the 25x80 screen.  The bottom of the container appears on row 24,
+the bottom row of the screen.  Special characters 
+<tt>Wall, Lcorner, Rcorner, Bottom</tt> from the Extended ASCII character set
+are defined with <tt>EQU</tt> statements at the top of the <tt>mp4.asm</tt> program 
+framework.
+ </LI></UL></TD></tr>
+         <TR vAlign=top>
+          <TD><B><FONT size=+1>Enq</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Enqueues a byte on a circular queue
+              <LI>Inputs: 
+              <ul>
+                <li>(BX) = offset of queue list structure</li>
+                <li>[BX+QData] = byte to enqueue
+                </LI></ul>
+              </li>
+              <LI>Outputs: None </li>
+              <LI>Calls: None</LI>
+              <li> 
+If the count of the number of bytes on the queue is less than the maximum,
+then Enq enqueues the byte at [BX+QData] onto the rear of the circular queue,
+updating [BX+QCount] and [BX+QRear].
+ </LI></UL></TD></tr>
+         <TR vAlign=top>
+          <TD><B><FONT size=+1>Deq</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Dequeue a byte from a circular queue
+              <LI>Input: 
+              <ul>
+                <li>(BX) = offset of queue list structure</li>
+                </ul>
+              </li>
+              <LI>Output: 
+              <UL>
+                <li>[BX+QData] = byte dequeued
+                </LI></UL>
+              <LI>Calls: None</LI>
+              <li> 
+If the queue is not empty, then Deq dequeues the byte from the
+front of the queue, places the byte in [BX+QData], and updates
+[BX+QCount] and [BX+QFront].
+ </LI></UL></TD></tr>
+ </TBODY></TABLE>
+
+<h2>Optional Features</h2>
+<ul>
+<li>You may increase the speed as the score increases.</li>
+<li>You may change the symbols used for the borders and for squares that 
+constitute each piece</li>
+<li>You may alter the appearance of the score.</li>
+</ul>
+
+<H2>Friendly Advice</H2>
+<UL>
+<LI>The libmp4.lib file contains executable library subroutines for each of 
+the routines that you need to implement. The library subroutines allow
+you to run the program and understand how it works before you implement it. 
+You can test your program with any combinations of your own code and library 
+subroutines. You will receive credit only for the subroutines that 
+you implement yourself. </li>
+<LI>You may define new memory variables as needed. Variables associated with a 
+subroutine should be declared between the header comments and name label of the
+subroutine.</li>
+<li>You may design and implement additional subroutines.  For example,
+you could write a subroutine that places a character on the screen by
+writing to the video memory directly (see page 110 in the Lab Notes).
+You could write a subroutine to draw a piece, based on information in
+<tt>PLoc</tt> and <tt>Color</tt>.  Be sure to modify the Calls lines in the
+headers of the subroutines that call these additional subroutines.</li>
+<li>To erase the falling piece from the display, draw it with a color attribute
+byte of 0.</li>
+<li>You should hide the cursor when it is not being used.
+<li>Each subroutine should save and restore any registers that it uses,
+except for registers that deliver subroutine outputs.  The caller 
+may use registers without outputs and expect them to remain unchanged. </li>
+<li>To change the font used by the display, right-click on the title bar of the
+Command Prompt window.</li>
+<li>You might develop the timer-based features in Task2 last because they
+are difficult to test.</li>
+<li><tt>PType</tt> and each entry of the <tt>NewType</tt> array are WORDS.
+<LI>Monitor the Web Board for clarifications and help.</li>
+<LI>START EARLY!</LI>
+</UL>
+
+<h2>Demonstration, Documentation, and Grading</h2>
+<p>Demonstrate your program to an ECE 390 staff member. At the demo, you
+will be asked to alter your program to generate only Type 0 and Type 1
+pieces, so that the features of Task3 can be tested easily.  You will also 
+be asked why Task1 sets Ticks to zero after the user presses the space bar.</p>
+<p>As before, keep an MP development log and write a cover memo, which should
+be submitted with the program after the demonstration.
+The cover memo should address the following questions:
+<UL>
+<LI>How much time did you spend on each subroutine, from
+planning and design through final debugging? </LI>
+<LI>What kinds of defects (bugs) did you find during the development 
+of the program? When did you discover these defects (during
+code review or during testing)? How did you find them?</LI>
+<LI>What did you learn about design, coding, testing, and debugging
+in this MP?</LI>
+<LI>What went well in your work on this MP?  What did not?</LI>
+<LI>What you would do differently for the next MP?</LI>
+</UL>
+<p>Your program will be graded according to the clarity of your design
+and the quality of your documentation.</p>
+
+<p>Gradesheet:<br>
+Init 6 points, KbdInt 3 points, Task1 6 points, Task2 6 points, Task3 9 points,
+MovePiece 9 points, GenPiece 3 points, DispScore 3 points, DrawBorder 3 points,
+Enq/Deq 3 points <br>
+Style and documentation 5 points, Cover memo 4 points</p>
+       <HR>
+
+      <H2>mp4.asm (program framework)</H2><FONT size=-1>
+      <PRE>
+; MP4 - Tetris program
+
+; Michael Loui
+; 25 September 2004
+
+; This program implements a version of the Tetris video game
+
+        BITS    16
+
+;====== SECTION 1: Define constants =======================================
+
+        CR      EQU     0Dh             ; Carriage return
+        LF      EQU     0Ah             ; Line feed
+        BS      EQU     08h             ; Backspace
+        SPACE   EQU     20h             ; Space
+        KVEC    EQU     0024h           ; Location of Keyboard Vector
+        TVEC    EQU     0070h           ; Location of User Timer Vector
+        ESCSCAN EQU     1               ; Scan code for ESC key
+        SPSCAN  EQU     57              ; Scan code for spacebar
+        UP      EQU     72              ; Scan code for up arrow
+        LEFT    EQU     75              ; Scan code for left arrow
+        RIGHT   EQU     77              ; Scan code for right arrow
+        DOWN    EQU     80              ; Scan code for down arrow
+        ROWS    EQU     25              ; Number of rows in entire display
+        COLS    EQU     80              ; Number of columns in entire display
+        MINROW  EQU     5               ; Topmost row of the container
+        MAXROW  EQU     23              ; Bottom row of the container
+        MINCOL  EQU     1               ; Leftmost column for the container
+        MAXCOL  EQU     13              ; Rightmost column for the container 
+        TYPES   EQU     19              ; 19 types of pieces
+
+; You may redefine the constants below
+        Square  EQU     0FEh            ; Square in Tetris piece
+        Speed   EQU     6               ; Number of clock ticks before move
+        Wall    EQU     0BAh            ; Left and right walls
+        Lcorner EQU     0C8h            ; Bottom left corner
+        Rcorner EQU     0BCh            ; Bottom right corner
+        Bottom  EQU     0CDh            ; Bottom wall
+        
+;====== SECTION 2: Declare external procedures ============================
+
+EXTERN  ascbin, binasc, kbdin, dspout, dspmsg, dosxit
+
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        RESB    64*8
+stacktop:
+        RESB    0                       ; NASM bug workaround 
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+SavKOff RESW    1                       ; Keyboard interrupt vector
+SavKSeg RESW    1
+SavTOff RESW    1                       ; Timer interrupt vector
+SavTSeg RESW    1
+Ticks   DW      0                       ; Number of timer ticks
+
+PLoc    RESB    8                       ; Location of falling piece: row,column for each square
+PType   RESW    1                       ; Piece type, 0 to 18
+Color   DB      09h                     ; Current color of piece, 09 to 0Fh
+State   DB      1                       ; 1=moving, 0=stopped
+Score   DW      0                       ; Score: number of rows cleared
+
+Occup   RESB    ROWS*(MAXCOL+1)         ; Master state of the container
+m       EQU     7                       ; Midpoint column
+InitLoc DB      0,m,1,m,2,m,3,m         ; Type 0: vertical bar
+        DB      0,m-2,0,m-1,0,m,0,m+1   ; Type 1: horzontal bar
+        DB      0,m,1,m-1,1,m,1,m+1     ; Type 2: T up
+        DB      0,m,1,m,1,m+1,2,m       ; Type 3: T right
+        DB      0,m-1,0,m,0,m+1,1,m     ; Type 4: T down
+        DB      0,m,1,m-1,1,m,2,m       ; Type 5: T left
+        DB      0,m,0,m+1,1,m,1,m+1     ; Type 6: Big square
+        DB      0,m+1,1,m-1,1,m,1,m+1   ; Type 7: L, quadrant 1
+        DB      0,m,1,m,2,m,2,m+1       ; Type 8: L, quadrant 4
+        DB      0,m-1,0,m,0,m+1,1,m-1   ; Type 9: L, quadrant 3
+        DB      0,m-1,0,m,1,m,2,m       ; Type 10: L, quandrant 2
+        DB      0,m-1,0,m,0,m+1,1,m+1   ; Type 11: backward L, quadrant 4
+        DB      0,m,1,m,2,m-1,2,m       ; Type 12: backward L, quadrant 3
+        DB      0,m-1,1,m-1,1,m,1,m+1   ; Type 13: backward L, quadrant 2
+        DB      0,m,0,m+1,1,m,2,m       ; Type 14: backward L, quadrant 1
+        DB      0,m-1,0,m,1,m,1,m+1     ; Type 15: Z
+        DB      0,m+1,1,m,1,m+1,2,m     ; Type 16: rotated Z
+        DB      0,m,0,m+1,1,m-1,1,m     ; Type 17: backward Z
+        DB      0,m,1,m,1,m+1,2,m+1     ; Type 18: rotated backward Z
+Rotats  DB      1,-1,0,0,-1,1,-2,2      ; Rotate Type 0 to Type 1
+        DB      -1,1,0,0,1,-1,2,-2      ; Rotate Type 1 to Type 0
+        DB      0,0,0,1,0,1,1,-1        ; Rotate Type 2 to Type 3
+        DB      1,-1,0,0,0,0,0,0        ; Rotate Type 3 to Type 4
+        DB      -1,1,0,-1,0,-1,0,0      ; Rotate Type 4 to Type 5
+        DB      0,0,0,0,0,0,-1,1        ; Rotate Type 5 to Type 2
+        DB      0,0,0,0,0,0,0,0         ; Rotate Type 6 to Type 6
+        DB      0,-1,0,1,1,0,1,0        ; Rotate Type 7 to Type 8
+        DB      1,-1,0,0,-1,1,0,-2      ; Rotate Type 8 to Type 9
+        DB      -1,0,-1,0,0,-1,0,1      ; Rotate Type 9 to Type 10
+        DB      0,2,1,-1,0,0,-1,1       ; Rotate Type 10 to Type 7
+        DB      -1,1,0,0,1,-2,0,-1      ; Rotate Type 11 to Type 12
+        DB      0,-1,0,-1,-1,1,-1,1     ; Rotate Type 12 to Type 13
+        DB      0,1,-1,2,0,0,1,-1       ; Rotate Type 13 to Type 14
+        DB      1,-1,1,-1,0,1,0,1       ; Rotate Type 14 to Type 11
+        DB      0,2,1,0,0,1,1,-1        ; Rotate Type 15 to Type 16
+        DB      0,-2,-1,0,0,-1,-1,1     ; Rotate Type 16 to Type 15
+        DB      0,0,1,-1,0,2,1,1        ; Rotate Type 17 to Type 18      
+        DB      0,0,-1,1,0,-2,-1,-1     ; Rotate Type 18 to Type 17
+NewType DW      1,0,3,4,5,2,6           ; New piece type after rotation
+        DW      8,9,10,7,12,13,14,11
+        DW      16,15,18,17
+VRight  DB      0,1,0,1,0,1,0,1         ; Vector to move right: add 1 to cols
+VLeft   DB      0,-1,0,-1,0,-1,0,-1     ; Vector to move left: subtract 1 from cols
+VDown   DB      1,0,1,0,1,0,1,0         ; Vector to move down: add 1 to rows
+VRot    RESB    8                       ; Vector for rotation
+        
+QBeg    EQU     0                       ; Beginning offset of queue area
+QCap    EQU     2                       ; Capacity of of queue
+QFront  EQU     4                       ; Index of front item
+QRear   EQU     6                       ; Index of rear item
+QCount  EQU     8                       ; How many items currently in queue
+QData   EQU     10                      ; Byte to input or output
+
+KQList  RESB    0                       ; Parameter list for Keyboard Queue
+KQBeg   DW      KQArea                  ; Offset of Keyboard Queue area
+KQCap   DW      10
+KQFront DW      0
+KQRear  DW      -1
+KQCount DW      0
+KQData  RESB    1
+KQArea  RESB    10
+
+Rnum    DW      1                       ; Current stored random number
+
+; You may declare additional variables here
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        MOV     AX, CS                  ; Initialize Default Segment register
+        MOV     DS, AX  
+        MOV     AX, stkseg              ; Initialize Stack Segment register
+        MOV     SS, AX
+        MOV     SP, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+main:
+        MOV     AH, 2Ch                 ; Get current time of day
+        INT     21h                     ;   (DH) = secs, (DL) = hundredths of secs
+        MOV     WORD [Rnum], DX         ; Initialize stored random number
+
+        CALL    Init                    ; Initialization
+.mainLoop:
+        CALL    Task1     
+        CALL    Task2
+        CALL    Task3
+        JMP     .mainLoop
+
+; Interrupt service routine for timer        
+TimerInt:
+        ADD     WORD [CS:Ticks], 1
+        IRET        
+        
+; Subroutine Rand 
+; Generates random number
+;       Inputs  (CX) -- range of random number
+;               Rnum -- current stored random number
+;       Ouputs  (AX) -- random number in range 0 .. (CX)-1
+;               Rnum -- new value of stored random number
+C2053   DW      2053
+C13849  DW      13849
+C216M1  DW      0FFFFh                  ; 2^16 - 1
+RandOut RESW    1
+
+Rand:
+        PUSHA
+        MOV     AX, WORD [Rnum]         ; Current random number
+        MUL     WORD [C2053]
+        ADD     AX, WORD [C13849]
+        ADC     DX, 0                   ; Propagate carry to DX
+        DIV     WORD [C216M1]           ; Remainder is in DX
+        MOV     WORD [Rnum], DX         ; New random number
+        MOV     AX, DX 
+        MOV     DX, 0                   ; Prepare for division
+        DIV     CX
+        MOV     [RandOut], DX           ; In range 0, ..., (CX) - 1
+        POPA
+        MOV     AX, [RandOut]
+        RET            
+
+Init:
+        CALL    libInit
+        RET
+        
+KbdInt:
+        CALL    libKbdInt
+        IRET
+        
+Task1:
+        CALL    libTask1
+        RET
+        
+Task2:
+        CALL    libTask2
+        RET
+        
+Task3:
+        CALL    libTask3
+        RET
+
+MovePiece:
+        CALL    libMovePiece
+        RET
+
+GenPiece:
+        CALL    libGenPiece
+        RET
+        
+DrawBorder:
+        CALL    libDrawBorder
+        RET
+        
+Enq:
+        CALL    libEnq
+        RET
+        
+Deq:
+        CALL    libDeq
+        RET
+</PRE></FONT></TD></TR></TBODY></TABLE>
+<TABLE cellPadding=0 cellSpacing=0 class=dark width="100%">
+  <TBODY>
+  <TR>
+    <TD><A href="http://courses.engr.illinois.edu/ece390/"><IMG alt="" height=17 
+      src="MP1_files/go-back.gif" width=16> Return to ECE390 Home Page</A></TD>
+    <TD align=right>Fall 2004</TD></TR></TBODY></TABLE></BODY></HTML> 

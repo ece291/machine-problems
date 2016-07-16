@@ -1,0 +1,706 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD><STYLE><!--
+strike { background-color: #aaa; }
+	    --></STYLE>
+<%
+title = "ECE291 Machine Problem 3"
+subtitle = "Machine Problem 3"
+%>
+<!--#include file="headvb.asp"-->
+<BODY>
+
+<h1 align="center">Machine Problem 3: 291Hack </h1>
+
+<div align="center"><center>
+<table border=0 cellpadding=2 cellspacing=2 width="60%">
+  <tr><td align=right bgcolor="#efefef"><b>Assigned</b></td>
+    <td bgcolor="#efefef">Tuesday, 7/2/2002</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Due Date</b></td>
+    <td bgcolor="#efefef">Thursday, 7/11/2002</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Purpose</b></td>
+      <td bgcolor="#efefef">Interrupts, Text Mode Video, Exploring.</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Points</b></td>
+    <td bgcolor="#efefef">75</td></tr>
+</table>
+</center></div>
+
+<h2>Introduction</h2>
+
+<p>Despite being designed primarily to make tedious calculations faster
+to perform, computers have long been used for entertainment.  Computers
+have often taken the place of dice in role-playing games, and even used
+random routines to create a world.</p>
+
+<p>A well known game by the name of nethack (<a
+    href="http://www.arcfan.demon.co.uk/acorn/hack.htm">screenshots</a>)
+allows the player to explore a dungeon, collect and use items, and fight
+evil creatures.  Our 291hack will be lightly modeled after this classic.</p>
+
+<h2>Problem Description</h2>
+
+<img align=center class=noprint src=mp3.png width=645 height=606>
+
+<p>291hack will avoid many tedious-to-code features of nethack, instead
+focusing on exploration and item collection.  Exploration in turn
+requires a world, visibility modeling, character motion, and user input.
+Item collection requires a list of items, as well as user input.</p>
+
+<h3>A World</h3>
+
+<p>Our world is a collection of tiles, each to be displayed as a single
+character in text mode video.  Each tile has several attributes
+associated with it: it can be a wall, a hallway, a door, etc.
+Furthermore it can be solid (blocks travel and sight).  But also we will
+need to track visibility.</p>
+
+<p>The world is then stored as an array of this information
+(<tt>Map</tt>), allowing us to iterate over all locations and draw them
+as required.  We will use one level of indirection here to allow easy
+customization of the game: rather than store the appearance of each tile
+in the map, we will store an index into an array <tt>MapTiles</tt>.
+<tt>MapTiles</tt> is a lookup table 16 word-sized entries long with
+screen character in the low byte and (background) attribute in the high
+byte.</p>
+
+<h3>Visibility</h3>
+
+<p>To efficiently track visibility, each tile will have two more
+attributes: <em>visible</em> (can the character see this tile now?) and
+<em>seen</em> (has the character ever seen this tile?).  Updating these
+values is conceptually simple, but algorithmically more difficult.
+Conceptually, we wish to add the <em>seen</em> attribute whenever we add
+the <em>visible</em> attribute, and never remove it.  We only want
+to add the <em>visible</em> attribute when a tile is both close enough
+to be seen, and our sight is not blocked by a closer tile.  We want to
+delete the <em>visible</em> attribute whenever a tile is no longer in
+range, or becomes blocked due to our motion.</p>
+
+<table border>
+    <tr>
+	<td width="12%"><em>visible</em></td>
+	<td width="12%"><em>seen</em></td>
+	<td width="12%"><em>solid</em></td>
+	<td width="12%">(unused)</td>
+	<td width="12%">bit 3</td>
+	<td width="12%">bit 2</td>
+	<td width="12%">bit 1</td>
+	<td width="12%">bit 0</td>
+    </tr>
+    <caption>Information for each tile (byte) in <tt>Map</tt></caption>
+</table>
+
+<p>The method we will use to determine visibility is shadow casting.  If you
+examine <tt>shadow.asm</tt>, you will find a series of lookup tables.  These
+correspond to the 6x6 quadrant with your character in the upper-left corner,
+and objects in single locations for the upper-left 5x5 locations.</p>
+
+<p>Always use the first shadow map, as this blocks off the edge of the
+roughly-circular radius.  Then subsequently logically or in the shadow maps
+for any locations that have a blocking tile.  A final 6x6 square has been
+allocated by the name <tt>ShadowWork</tt>, where it is suggested you combine
+these shadows.</p>
+
+<p>Once you have combined all the relevant shadow masks, you can test each
+tile in <tt>ShadowWork</tt> for visibility blocking.  Tiles with a value of
+<tt>1Fh</tt> are the only ones that should be considered blocked; all others
+are either <tt>00h</tt> (clear sight) or somewhere inbetween (partial
+coverage, modeled as unblocked).  Set the corresponding tiles in Map to
+<em>visible</em>.</p>
+
+<p>Note that this the shadow maps are only for the +x, +y quadrant, and must
+be flipped or rotated to allow you to determine the other quadrants.  It's
+suggested that you do this by changing your loop increments, not the actual
+shadow data.</p>
+
+<h3>Character Motion</h3>
+
+<p>Our character can move in any of 8 directions, corresponding to the
+keys on the number-pad.  Each key specifies one of the directions, and
+the character will move one tile for each time it is pressed.  After the
+character moves, visibility needs to be updated, and the screen
+redrawn.</p>
+
+<table border>
+    <tr><td width="33%">Home (Up-Left)</td><td width="33%">Up</td><td width="33%">Page Up (Up-Right)</td></tr>
+    <tr><td>Left</td><td></td><td>Right</td></tr>
+    <tr><td>End (Down-Left)</td><td>Down</td><td>Page Down (Down-Right)</td></tr>
+    <caption>Direction Keys</caption>
+</table>
+
+<p>Note that the character's current location is stored with the same
+(x, y) information as items are: the low byte holds an x coordinate, and
+the high byte holds a y coordinate.</p>
+
+<h3>Item Lists</h3>
+
+<p>We need to track the location of several items.  Each item will
+either be located on the map tile at some (x, y), or the character has
+picked it up and is carrying the item in his pocket.  This will be
+represented by an <tt>Items</tt> array with (x,y), itemtype, and
+<em>pocketed</em>.  Once an item is in the character's pocket, it must
+be selectable by a letter ('a' through 'z').</p>
+
+<p>The character is lazy, and wants to use the lowest letters possible
+at all times, but is too lazy to resort his items to pack them better.
+We represent this with a <tt>Pocket</tt> array, with intially all empty
+spots.  To pick up an item, find the first <em>empty</em>
+<tt>Pocket</tt>.  Set this <tt>Pocket</tt> to point to the
+<tt>Item</tt>, by storing the index of the <tt>Item</tt> there.<p>
+
+<p>As an example, the <tt>Pocket</tt> array would look like this after
+picking up <tt>Item</tt> indices: 3, 4, 5, 1, 2; dropping
+<tt>Pocket</tt> indices: 1, 3; and picking up item 9:</p>
+
+<table border>
+    <caption><tt>Pocket</tt></caption>
+    <tr><td><strike>E</strike> 3</td></tr>
+    <tr><td><strike>E</strike> <strike>4</strike> <strike>E</strike> 9</td></tr>
+    <tr><td><strike>E</strike> 5</td></tr>
+    <tr><td><strike>E</strike> <strike>1</strike> E</td></tr>
+    <tr><td><strike>E</strike> 2</td></tr>
+    <tr><td>E</td></tr>
+    <tr><td>...</td></tr>
+</table>
+
+<h3>User Input</h3>
+
+<p>We will be gathering input from an interrupt handler.  While the only
+benefit this gives us now is an easier way to handle the arrow keys,
+if we were to extend this into a multiplayer game it would allow us to
+easily handle updates when the local player is not moving.</p>
+
+<p>The interrupt handler <tt>KeyboardISR</tt> should set <tt>Input</tt>
+to a scancode which <tt>MP3Main</tt> maps to one of five types of
+things.  Check the <a href="../../books/labmanual/">lab manual</a> for
+more information on scancodes, as well as a skeleton ISR.</p>
+
+<ul>
+    <li><tt>ESC</tt> if the escape key is pressed, to quit</li>
+    <li><tt>'a' through 'z'</tt> if a letter is pressed, to drop an item</li>
+    <li><tt>' '</tt> if the spacebar is pressed, to pick up an item</li>
+    <li><tt>INPUT_*</tt>, a directional constant, to indicate motion</li>
+    <li>Everything else, which is ignored</li>
+</ul>
+
+<h2>Implementation</h2>
+
+<p>For this program you will write nine modular procedures:</p>
+
+<table border>
+<tr><th>MP3Main</th><td>
+<ul>
+    <li>Waits for and handles user input</li>
+  <li>Inputs:
+  <ul><li>None</li></ul></li>
+  <li>Outputs:
+  <ul><li>None</li></ul></li>
+  <li>Pseudocode Loop Iteration:
+  <ul>
+      <li>Clear Input to zero</li>
+      <li>Wait for nonzero Input</li>
+      <li>Clear status display</li>
+      <li>if Input maps to <tt>'a'</tt> through <tt>'z'</tt>
+      <ul><li>DropItem(Input - 'a')</li></ul></li>
+      <li>else if Input maps to <tt>' '</tt>
+      <ul><li>PickUp()</li></ul></li>
+      <li>else if Input maps to <tt>ESC</tt>
+      <ul><li>Exit Main</li></ul></li>
+      <li>else if Input maps to <tt>INPUT_*</tt>
+      <ul><li>translate Input motion constant to dx, dy</li>
+	  <li>MoveChar(dx, dy)</li>
+	  <li>DrawMap()</li></ul></li>
+      </li>
+  </ul>
+  </li>
+  <li>Notes:
+  <ul>
+      <li>Call MoveChar() and DrawMap() to set up and draw the
+      screen the first time</li>
+      <li>Remember that Input holds a scancode, not an ascii
+      character</li>
+  </ul></li>
+</ul>
+</td></tr>
+
+<tr><th>DrawMap</th><td>
+<ul>
+    <li>Draws the Map to the screen.</li>
+<li>Inputs:
+<ul>
+    <li>variables <tt>Map</tt>, <tt>MapTiles</tt>, <tt>Items</tt>,
+    <tt>ItemTiles</tt></li>
+</ul></li>
+<li>Outputs: 
+<ul> <li>Screen Representation</li> </ul>
+</li>
+<li>Notes:
+<ul>
+    <li>Draw all <em>seen</em> tiles with bg_attr | <tt>ATTR_SEEN</tt></li>
+    <li>Draw all <em>visible</em> tiles with bg_attr | <tt>ATTR_VIS</tt></li>
+    <li>Draw all Items on <em>visible</em> tiles and not in your pocket</li>
+    <li>Draw the Character</li>
+</ul></li>
+</ul>
+</td></tr>
+
+<tr><th>MoveChar</th><td>
+<ul>
+    <li>Move the character, is possible, and update visibility</li>
+<li>Inputs:
+<ul>
+    <li>dl = x translation (-1, 0 or 1)</li>
+    <li>dh = y translation (-1, 0 or 1)</li>
+</ul></li>
+<li>Outputs:
+<ul>
+    <li>Character position (<tt>Player</tt>)</li>
+    <li>Tile visibility (<tt>Map</tt>)</li>
+</ul></li>
+<li>Notes:
+<ul>
+    <li>Motion of (0, 0) is legal.</li>
+    <li>Don't recalculate visibility unless necessary.</li>
+    <li>Update visibility by clearing <em>visible</em> from all tiles,
+    moving the character, and recalculating <em>visible</em> (and
+    <em>seen</em>) with the LOS algorithm.</li>
+    <li>Display "Can't go that way" if the desired tile is solid</li>
+    <li>Watch out for the 5x5 vs 6x6 difference in our possible visibility
+    and shadow maps.</li>
+    <li>It may be beneficial to split out the code to handle a single
+    quadrant into a separate procedure, called four times.</li>
+</ul></li>
+ </ul>
+</td></tr>
+
+<tr><th>PickUp</th><td>
+<ul>
+    <li>Take an item from the current location, and place it in you Pocket</li>
+    <li>Inputs:
+    <ul>
+	<li>Player's Location (<tt>Player</tt>)</li>
+	<li>Array of items (<tt>Items</tt>)</li>
+	<li>Pocket of items (<tt>Pocket</tt>)</li>
+    </ul></li>
+    <li>Outputs:
+    <ul>
+	<li>Updates item in <tt>Items</tt></li>
+	<li>Updates index in <tt>Pocket</tt></li>
+    </ul></li>
+    <li>Notes:
+    <ul>
+	<li>Just grab the first item if there's more than one.</li>
+	<li>Set <em>inpocket</em> for <tt>Items[first found]</tt>
+	<li>Find the first pocket for the item</li>
+	<li>set <tt>Pocket[first available]</tt> to <tt>first found</tt> (Item index)</li>
+	<li>Display "Picked up <em>[desc]</em> (<em>[key]</em>)"
+	where <em>[desc]</em> is the description from <tt>ItemDesc</tt>
+	and <em>[key]</em> is the <tt>Pocket</tt> index + 'a' (the key
+	to drop this item)</li>
+	<li>Display "Nothing to pick up" if no item is available</li>
+    </ul></li>
+</ul>
+</td></tr>
+
+<tr><th>DropItem</th><td>
+<ul>
+    <li>Drops an item back onto the map</li>
+    <li>Inputs:
+    <ul>
+	<li><tt>bx</tt> = index of item in <tt>Pocket</tt></li>
+	<li>Player's Location (<tt>Player</tt>)</li>
+	<li>Array of items (<tt>Items</tt>)</li>
+	<li>Pocket of items (<tt>Pocket</tt>)</li>
+    </ul></li>
+    <li>Outputs:
+    <ul>
+	<li>Updates item in <tt>Items</tt></li>
+	<li>Updates index in <tt>Pocket</tt></li>
+    </ul></li>
+    <li>Notes:
+    <ul>
+	<li>Get <tt>Items</tt> index from <tt>Pocket[pocketindex]</tt></li>
+	<li>Set <tt>Pocket[pocketindex]</tt> to <em>empty</em></li>
+	<li>Set (x, y) for <tt>Items[index]</tt> to <tt>Player</tt>'s (x, y)</li>
+	<li>Clear <em>inpocket</em> for <tt>Items[index]</tt></li>
+	<li>Display "Dropped <em>[desc]</em>" where <em>[desc]</em> is
+	the description from <tt>ItemDesc</tt> </li>
+	<li>Display "Can't drop that" if that pocket was already empty</li>
+    </ul></li>
+</ul>
+</td></tr>
+
+<tr><th>DrawString</th><td>
+<ul>
+    <li>Draws a string on to the screen</li>
+    <li>Inputs:
+    <ul>
+	<li><tt>bx</tt> = offset of a <tt>0</tt> terminated string</li>
+	<li><tt>dl, dh</tt> = (x, y) location to start string</li>
+    </ul></li>
+    <li>Outputs:
+    <ul>
+	<li><tt>dl, dh</tt> = (x, y) location of last character of the string</li>
+    </ul></li>
+    <li>Notes:
+    <ul>
+	<li>Use any attribute you like; 07h is suggested.</li>
+    </ul></li>
+</ul>
+</td></tr>
+
+<tr><th>InstallKeyboard<br>RemoveKeyboard<br>KeyboardISR</th><td>
+<ul>
+    <li>Install, Remove, Handle keyboard interrupts</li>
+    <li>Inputs:
+    <ul>
+	<li><tt>KeyboardV</tt> read by RemoveKeyboard</li>
+    </ul></li>
+    <li>Outputs:
+    <ul>
+	<li><tt>KeyboardV</tt> written by <tt>InstallKeyboard</tt></li>
+	<li><tt>Input</tt> written by <tt>KeyboardISR</tt></li>
+    </ul></li>
+    <li>Notes:
+    <ul>
+	<li><tt>KeyboardISR</tt> should set <tt>Input</tt> to the
+	scancode received, if and only if it is a keypress (no
+	releases!).</li>
+    </ul></li>
+</ul>
+</td></tr>
+</table>
+
+<H2>Hints</H2>
+<ul>
+
+  <li>The libmp3 file contains executable library functions 
+  for each of the routines that you need to implement. This allows you to run 
+  the program and understand how it works before you implement it. You can test 
+  your program by stepping through&nbsp;it and making sure the display and 
+  comparison functions work correctly. You will only receive credit, however, 
+  for the routines that you implement yourself. </li>
+
+  <li>When debugging your code in Turbo Debugger, you will 
+  find it helpful to use the memory window to show you the memory location of 
+  the file and strings. You can also use the watch window to keep track of 
+  variables in your code. </li>
+
+  <li>Run the program many times to get a good feel of 
+  it.&nbsp; Your final program with your code should resemble our version.&nbsp; 
+  Formatting aesthetics aren't as important as correctly operating code. </li>
+
+  <li>Do not forget to push and pop to avoid clobbering 
+  registers! </li>
+
+  <li>Push and Pop can also be used on memory, as long as 
+  you specify the size and it's word-sized or larger. You don't have to move it 
+  into a register first. (Yes, this does appear to break the two-memory access 
+  rule. Don't worry!) </li>
+
+  <li>Remember to include function headers for&nbsp;and 
+  write comments in each of your functions!&nbsp; Headers should give a general 
+  idea of what the function does and have a list of inputs, outputs, and called 
+  functions.&nbsp; Commenting should be specific enough to allow a function to 
+  be understood by just reading the comments.&nbsp; Commenting every line, 
+  however, is excessive and may cost you some points. </li>
+
+  <li>START EARLY! </li>
+
+  <li>Monitor the <A href="news:uiuc.class.ece291">newsgroup</a> for
+clarifications and help.</li>
+
+</ul>
+
+<h2>Procedure</h2>
+<ul>
+  <li>You will begin this MP with the following files:
+  <ul>
+    <li><tt>MP3.ASM</tt>: Program Framework
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled and
+    linked.
+    <li><tt>libmp3.lib</tt>: Library functions for MP3
+    <li><tt>lib291.lib</tt>: General-purpose library functions </li></ul>
+  <li>You may copy these files from the network drive to your home directory
+  with the following command: <br><tt>xcopy /s V:\ece291\mp3 W:\mp3</tt><br>or
+  download the files from this server as <A href="mp3.zip">mp3.zip</A>
+  <li>Add your code to <tt>MP3.ASM</tt>.
+  <li>Assemble and link your program by typing<br><tt>make</tt><br>This command
+  reads <em>Makefile</em> then invokes NASM and LINK to build an executable
+  program.
+  <li>Use Turbo Debugger (TD) to find and correct program errors.</li>
+</ul>
+
+<h2>Final Steps</h2>
+<ol>
+
+  <li>Demonstrate your MP3.EXE to a TA. You may be asked to 
+  recompile and demo the program. Your program must work with all given input.</li>
+
+  <li>Be prepared to answer questions about any aspect of the operation
+  of your program. The TAs will not accept an MP if you cannot fully
+  explain the operation of your code and the details of your
+  implementation. Delayed MPs will be subject to late penalties as
+  described in the course syllabus (15pts/day).</li>
+
+  <li>The TA will handin your MP online.</li>
+
+</ol>
+
+<hr>
+
+<h2>MP3.ASM (program framework)</h2>
+
+<small><pre>
+; MP3 - 291hack
+;  Your Name
+;  Today's Date
+;
+; Ryan Chmiel, Summer 2002
+; Author: Peter Johnson, Michael Urman
+; University of Illinois, Urbana-Champaign
+; Dept. of Electrical and Computer Engineering
+;
+; Version 1.0
+
+	BITS	16
+
+;====== SECTION 1: Define constants =======================================
+
+	ESC		EQU 01h	; scancode, not ascii
+
+	TILE_VISIBLE	EQU 80h
+	TILE_SEEN	EQU 40h
+	TILE_SOLID	EQU 20h	; sight AND walking
+
+	ATTR_SEEN	EQU 00h
+	ATTR_VISIBLE	EQU 80h
+
+	MAX_POCKET	EQU 26
+	MAX_TYPES	EQU 32
+
+	MAP_WIDTH	EQU 80
+	MAP_HEIGHT	EQU 40
+
+	ITEM_INPOCKET	EQU 80h
+	POCKET_EMPTY	EQU -1
+
+	PLAYER_CHAR	EQU 02h
+	PLAYER_ATTR	EQU 0Fh
+
+	; directional scancodes
+	INPUT_UPLEFT	EQU 47h ; home
+	INPUT_UP	EQU 48h	; up arrow
+	INPUT_UPRIGHT	EQU 49h ; pgup
+	INPUT_DOWNLEFT	EQU 4Fh	; end
+	INPUT_LEFT	EQU 4Bh	; left arrow
+	INPUT_RIGHT	EQU 4Dh	; right arrow
+	INPUT_DOWN	EQU 50h	; down arrow
+	INPUT_DOWNRIGHT	EQU 51h	; pgdn
+
+;====== SECTION 2: Declare external routines ==============================
+
+; Declare external library routines
+EXTERN mp3xit
+EXTERN libMP3Main, libDrawMap, libMoveChar, libPickUp, libDropItem
+EXTERN libDrawString, libInstallKeyboard, libRemoveKeyboard, libKeyboardISR
+
+; Declare local routines global (so library routines can use them)
+GLOBAL MP3Main, DrawMap, MoveChar, PickUp, DropItem, DrawString
+GLOBAL InstallKeyboard, RemoveKeyboard, KeyboardISR
+
+; Make program variables global (so library routines can use them)
+GLOBAL MapTiles, ItemTiles, ItemDesc, Items, Items.end, Pockets, Input, Player,
+GLOBAL KeyboardV, CantPickUp, PickedUp, Dropped, CantDrop, PocketsFull, KeyMsg,
+GLOBAL CantGo, ShadowWork
+
+; External program variables
+EXTERN Map		; The game map (see map.asm)
+EXTERN ShadowMaps	; Precalculated shadow maps for vis check (shadows.asm)
+
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK class=STACK        ; *** STACK SEGMENT ***
+        resb      64*8
+stacktop:
+        resb      0                     ; work around NASM bug
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+MapTiles
+	db ' ', 000h	; empty space (x)
+	db 0B0h, 010h	; room floor (r)
+	db 0B1h, 030h	; path (o)
+	db 0BAh, 070h	; vertical wall (l)
+	db 0CDh, 070h	; horizontal wall (m)
+	db 0C9h, 070h	; UL corner wall (p)
+	db 0BBh, 070h	; UR corner wall (q)
+	db 0C8h, 070h	; BL corner wall (b)
+	db 0BCh, 070h	; BR corner wall (d)
+	db 0CCh, 070h	; Right T wall (a)
+	db 0B9h, 070h   ; Left T wall (k)
+	db 0CAh, 070h	; Up T wall (j)
+	db 0FEh, 060h	; Door (e)
+	db 006h, 012h	; Tree (t)
+	times 2 db ' ', 070h ; filler to 16
+
+ItemTiles
+	db 0E5h, 0Ch	; red apple
+	db  ')', 0Eh	; yellow banana
+	db 00Dh, 0Ah	; musical note
+	db  '*', 07h	; grey lint
+	db 003h, 04h	; red valentine
+	db  '$', 02h	; Money
+	db 016h, 0Fh	; Chalk
+	times 19 db ' ', 07h ; filler to 26
+
+ItemDesc
+	dw .0, .1, .2, .3, .4, .5, .6
+	times 19 dw .x
+    .0	db 'A Delicious Apple',0
+    .1	db 'A Scrumptious Banana',0
+    .2	db 'An MP3 File',0
+    .3  db 'Pocket Lint',0
+    .4  db 'A Message from your Sweetheart',0
+    .5  db 'Cold Hard Cash',0
+    .6  db "Ryan's leftover chalk",0
+    .x	db 'Nothing',0
+
+; Item structure (describes the byte organization of the Items array)
+STRUC Item
+.Type		resb	1	; MSB (bit 7) is 1 if in pocket
+				;  (the constant ITEM_INPOCKET is or'ed in)
+				; Bits 6-0 are index into ItemTiles and
+				;  ItemDesc arrays.
+.MapOff		resw	1	; Offset into the map array (Y*MAP_WIDTH+X)
+ENDSTRUC
+
+Items
+    db 2
+    dw 6*MAP_WIDTH+25
+    db 3
+    dw 5*MAP_WIDTH+28
+    db 1
+    dw 6*MAP_WIDTH+25
+    db 0
+    dw 9*MAP_WIDTH+55
+    db 2
+    dw 18*MAP_WIDTH+60
+    db 4
+    dw 24*MAP_WIDTH+15
+    db 5
+    dw 32*MAP_WIDTH+72
+    db 6
+    dw 36*MAP_WIDTH+20
+.end
+
+NUM_ITEMS	EQU	(Items.end-Items)/3
+
+Pockets	times MAX_POCKET db POCKET_EMPTY
+
+Input	db 0
+Player	dw 14*MAP_WIDTH+35
+
+KeyboardV   resw 2	; stores old keyboard vector
+
+CantPickUp  db 'Nothing to pick up',0
+PickedUp    db 'Picked Up ',0
+Dropped	    db 'Dropped ',0
+CantDrop    db "Can't drop that",0
+PocketsFull db 'Pockets full',0
+KeyMsg      db ' ( )',0
+CantGo      db "Can't go that way",0
+
+; Temporary calculation space for shadow map
+ShadowWork  resb 6*6
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        mov     ax, cs                  ; Initialize Default Segment register
+        mov     ds, ax  
+        mov     ax, stkseg              ; Initialize Stack Segment register
+        mov     ss, ax
+        mov     sp, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+MAIN:
+        ; Put display into 80x50 text mode
+        mov     ax, 3                   ; Enter text mode
+        int     10h
+        mov     ax, 1112h               ; Set to 8x8 font
+        xor     bx, bx
+        int     10h
+
+	; Turn on background intensity (rather than blink)
+	mov	ax, 1003h
+	int	10h
+
+	; Remember old cursor shape
+	mov	ah, 3
+	int	10h
+	push	cx
+	
+        mov     ah, 1			; hide text cursor
+	xor	bx, bx
+        mov     cx, 2000h
+        int     10h
+
+	call	InstallKeyboard
+	call	MP3Main
+	call	RemoveKeyboard
+
+	; Restore text cursor
+	pop	cx
+	mov	ah, 1
+	int	10h
+
+	; Put display back into 80x25 text mode
+        mov     ax, 1114h               ; Set to 8x16 font
+        xor     bx, bx
+        int     10h
+        mov     ax, 3                   ; Enter text mode (to clear screen)
+        int     10h
+
+	jmp	mp3xit			; Exit MP3
+
+;====== SECTION 8: Your subroutines =======================================
+
+MP3Main:
+	call libMP3Main
+	ret
+
+DrawMap:
+	call libDrawMap
+	ret
+
+MoveChar:
+	call libMoveChar
+	ret
+
+PickUp:
+	call libPickUp
+	ret
+
+DropItem:
+	call libDropItem
+	ret
+
+DrawString:
+	call libDrawString
+	ret
+
+InstallKeyboard:
+	call libInstallKeyboard
+	ret
+
+RemoveKeyboard:
+	call libRemoveKeyboard
+	ret
+
+KeyboardISR:
+	jmp libKeyboardISR
+</pre></small></BODY></HTML>

@@ -1,0 +1,1317 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>ECE 390 Machine Problem 4</title>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252"><link href="index_files/ece390.css" type="text/css" rel="stylesheet"></head>
+
+<!--#include file="headvb.asp" -->
+
+<tr>
+    <td valign="top">
+	<center>
+  <h1 align="center">Machine Problem 4: Fractals</h1>
+  <table border="1" width="513">
+  <tbody>
+    <tr>
+		<td align="right" width="64">Assigned</td>
+		<td width="433">Thursday, 16 March 2006</td></tr>
+			<tr>
+				<td align="right" width="64">Due Date</td>
+				<td width="433">Wednesday, 5 April 2006</td>
+			</tr>
+			<tr>
+				<td align="right" width="64">Purpose</td>
+				<td width="433">Learn 32-bit protected mode programming including
+						high resolution graphics, floating point and MMX operations, and 
+						DPMI mouse interupts.</td>
+			</tr>
+			<tr>
+				<td align="right" width="64">Points</td>
+				<td width="433">70</td>
+			</tr>
+		</tbody>
+	</table>
+	</center>
+
+<p>In this MP, you will write a program that generates the Mandelbrot set
+			fractal.  The user will be able to click on a point in the display area and
+		 	get a more detailed view of that portion of the fractal.  Once the new view
+			has been computed the program will use MMX instructions to fade from the old
+			image to the new.	 The color scheme used in painting the fractal will be 
+			computed at runtime by linearly interpolating between color values specified
+		 	in a global table.</p>
+			
+			<p>Reading: <br>
+			<blockquote>
+			Differences Between Real Mode and Protected Mode (Lab Notes, Chapter 17),<br>
+			Introduction to PModeLib (Lab Notes, Chapter 18), <br>
+			PModeLib Reference (Lab Notes, Appendix A), <br>
+			MMX: 
+			<a href="http://www.udayton.edu/~cps/cps560/notes/hardware/mmx/overview/overview.html">
+			MMX Technology Overview</a> (Introduction and section on alpha blending),<br>			
+			8087 Floating Point:
+		 	<a href="http://webster.cs.ucr.edu/AoA/DOS/ch14/CH14-3.html">
+			Art of Assembly</a> (Section 14.4 recommended)<br>
+			Mandelbrot set: 
+			<a href="http://mathworld.wolfram.com/MandelbrotSet.html">
+			MathWorld</a> and <a href="http://www.ddewey.net/mandelbrot/">
+			a more intuitive explanation</a>
+			</blockquote></p>
+			
+			<h2>Screen Dump</h2>
+			<p>Here are a couple of possible outputs for the program.  Your program 
+			should support a wide variety of size and color configurations as suggested 
+			by these:</p>
+			<center>
+				<table>
+					<tr>
+						<td><img src="mp4-1.png" width="325" height="266"></td>
+						<td><img src="mp4-2.png" width="325" height="266"></td>
+					</tr>
+					<tr>
+						<td><img src="mp4-3.png" width="325" height="266"></td>
+						<td><img src="mp4-4.png" width="325" height="266"></td>
+					</tr>
+					<tr>
+						<td colspan=2><center>
+                        <img src="mp4-5.png" width="645" height="506"></center></td>
+					</tr>
+				</table>
+			</center>
+
+      <h2>Program Specification</h2>
+			<p>This program has several major components that work together to produce 
+			the	beautiful images above.  Trying to explain them all at once in great 
+			detail would invite unnecessary confusion, so instead each component will be 
+			presented on its own first and the relationships between the components 
+			described later. <p>
+			
+			This bottom-up approach to explaining the MP is a bit different than the way 
+			previous MPs have been specified.  As a result, variables and subroutines will
+			be explained as they come up rather than all clumped together. <p>
+			
+			Before we begin however, it should be pointed out that there is	a significant 
+			amount of information needed to successfully complete this MP.  This write-up 
+			cannot cover every detail, so things like the semantics of MMX and floating point
+			instructions will be left to you and your group members to figure out.  While,
+			it is a lot of information, you have several team members to help in this process
+			and there are a great number of resources availiable to you including lectures, 
+			the reading list at the top of this document, your professor and TAs, and above 
+			all else, Google.<br><p>
+
+			<h3>Protected Mode</h3>
+			The first hurdle will be to acclimate yourself to protected mode.  There are a 
+			few things to keep in mind:
+			<ul>
+				<li> Protected mode is a 32-bit mode.  All the registers you're used to have a
+					a 32 bit version with the same name but prefixed by an 'E' (AX -> EAX) etc.
+					While these registers are 32-bit now, they can still be accessed as 16 or 
+					8-bit registers as was the case in real mode (e.g., AL, AH, AX, and EAX are
+					all accessible registers).
+				<li> The exceptions to this rule are the segment registers (CS, DS, ES) which
+					keep their old names and gain a few new friends (FS and GS).  They behave
+					rather differently in protected mode but outside the mouse handling routines
+					you should not need them.
+				<li> Addresses are also 32-bit, so you'll need to use the 32-bit versions of
+					registers to access memory locations.  
+				<li> The good news is that addressing modes are more flexible in protected
+					mode.  For example, there are no restrictions on which of the 32-bit registers
+					may be used for indexing.  Furthermore, you can do handy things like multiple
+					a register by four inside of braces to do something like mov eax, [myvar + ecx + 4 *
+					esi] that would make a RISC designer cry.
+				<li> The call instruction still works and is good for subroutines, but for
+					functions you'll be better served by the proc, endproc, and invoke macros.
+					Together these macros work to enforce the C-style calling conventions 
+					implemented manually in previous MPs.  As a quick summary, the syntax is
+					something like this: <p>
+				<code><pre>invoke _AddNums, dword 2, ebx   <font color="blue">; returns 2 + ebx in eax</font>
+...<br>
+                                <font color="blue">; AddNums(firstNumber, secondNumber) returns the sum of two numbers</font>
+proc _AddNums
+.firstNumber arg 4              <font color="blue">; the first argument is 4 bytes</font>
+.secondNumber arg 4             <font color="blue">; the second argument is also 4 bytes</font>
+.sum local 4                    <font color="blue">; define a 4 byte local variable on the stack</font><br>
+mov eax, [ebp + .firstNumber],  <font color="blue">; eax gets the first argument</font>
+mov [ebp + .sum], eax           <font color="blue">; store the first argument in the local variable sum</font>
+mov eax, [ebp + .secondNumber], <font color="blue">; eax gets the second argument</font>
+add eax, [ebp + .sum]           <font color="blue">; eax = first argument + second argument</font><br>
+ret                             <font color="blue">; still need a return - endproc does not do this for you</font>
+endproc
+_AddNums_arglen equ 8           <font color="blue">; define this value to be the total size of all the arguments</font><p>
+				</pre></code>
+				<li> As you can see, local variables can be declared and used almost exactly like 
+					arguments.  Furthermore, to access either of these, the	pointer ebp is needed. 
+					Most of what the proc macro does is push ebp and copy	esp into ebp so don't change 
+					ebp if you need to access stack data.  
+				<li> A local variable in the code above is used not just to illustrate the use of the
+					'local'	macro, but also to avoid modifying registers.  One thing 'proc' does not 
+					do for you is preserve any registers except for ebp.
+				<li> The protected mode debugger, cv32, that is availiable may initially seem limited
+					but it will be of tremendous benefit, especially for debugging your floating point
+					and MMX routines.
+					
+			</ul>
+
+			<h3>Fractal Generation</h3>
+			Next we'll focus on the computation of the the Mandelbrot set.  The
+			Mandelbrot set is just that, a set.  It contains certain numbers in the 
+			complex plane and not others.<p>
+			 
+			The rule for a point at complex coordinate C being in the set is that the
+			iterative equation Z = Z^2 + C does not diverge when the initial value of
+			Z is taken to be zero.  Note that Z is a complex value so computing Z^2
+			is more involved than just squaring a real-valued number. A straight binary
+			representation of the set looks	something like this:<p>
+
+			<center><img src="mp4-6.png" width="461" height="399"></center>
+
+			As can be seen from this image, the set is bounded spatially; there is some
+			radius, r, such that no coordinate, C, whose magnitude is greater than r 
+			(|C| > r) is contained by the set.  This radius happens to be two. <p>
+			
+			So, in its simplest form, all a program to generate the Mandelbrot set needs 
+			to do is to go through all the pixels in the current view, figure out what 
+			complex coordinates they correspond to, and see whether or not iterating on 
+			the equation above for that pixel's value of C ever gives a Z with magnitude 
+			greater than 2.  If so, draw the pixel white, otherwise draw it black and 
+			you've got yourself the image above. <p>
+			
+			The obvious flaw with this plan is that all the black points were by
+			definition the ones that never stopped iterating.  So if you want your
+			program to run in finite time (always a good goal), you eventually
+			have to give up on iterating and assume that since it's taken X number of
+			cycles and we haven't seen it diverge that it will never diverge.  This 
+			means we can't really compute the true Mandelbrot set. <p>
+			
+			An approximation can look pretty good though if we choose X to be high
+			enough that not many points from our current view require more than X 
+			iterations to diverge.  Generally speaking, the more you zoom in on the
+			set, the more iterations are required.  So the first MP4 function we 
+			specifically describe is one that adjusts the maximum number of iterations
+			(which we've been referring to as X), depending on the size of the current
+			view. <p>
+
+			<a name="SetLimit"></a><b>_SetLimit</b> just implements the equation
+			<blockquote><code>
+				_iterationLimit = 15 * (_timesZoomed + 1) * (_maxX - _minX + 1)
+			</blockquote></code>
+			There is nothing magical about this equation, it's simply a heuristic that
+			gives okay results.  As you can see, it combines information about 
+			the number of times the user has zoomed in with the width of the current
+			view.  As you go deeper and deeper, _timesZoomed increases while 
+			(_maxX - _minX + 1) goes to 1.  Overall, it just increases the number of
+			iterations linearly as you go deeper.  The variables used to express the 
+			equation are all actual variables from the given mp4.asm file.  They
+			are:
+
+			<ul>
+				<a name="minX"></a><li><b>_minX, _maxX, _minY, _maxY</b>:  Quadwords 
+				(64-bit locations	containing double precision floats in this case) that 
+				contain the coordinates of the bounds of the current view.
+				<a name="timesZoomed"></a><li><b>_timesZoomed</b>:  Byte initialized to 
+				zero and incremented everytime the user zooms in.
+				<a name="iterationLimit"></a><li><b>_iterationLimit</b>: Word containing 
+				the maximum number of times to apply the Z = Z^2 + C equation to a point 
+				before giving up and calling the point	a member of the Mandelbrot set.
+			</ul>
+
+			Note that since _minX and _maxX are floating point values, at least part
+			of the computation for this routine will need to be done using floating
+			point instructions.  A few points of advice:
+
+			<ul>
+				<li> Remember that the floating point registers (<b>st0</b>-<b>st7</b>) are 
+				organized	as a stack.  That means that if you write the expressions you want to
+				compute in Reverse Polish Notation (RPN), then you can directly translate
+				from expression to a sequence of floating point instructions that operate
+				on the top elements of the stack (look at the "f_operation_p" instructions
+				in particular if you want to do things this way).
+				<li> The floating point instruction reference in the manual is great for
+				figuring out what instructions are availiable and generally what they do
+				but there are so many variants with subtly different semantics that are 
+				only vaguely described that you *will* need to use the debugger to
+				understand exactly what each instruction does to the stack.  Press F1 in
+				cv32 to get a list of the availiable panes (<b>floating point pane</b> is the 
+				one you	want, not numeric / SSE).
+				<li> The floating point registers overlap with the MMX registers so the
+				meaning of any one of these registers is dependent entirely on context.  
+				What that means for you is that you must be careful when switching back 
+				and forth between floating point and MMX.  Something you put into an MMX
+				register can trigger a floating point exception that terminates your
+				program when you start doing floating point calculations again.  The 
+				way to avoid this is to place the <b>emms</b> instruction at the end of all 
+				of your	MMX routines.  This empties the MMX state so that subsequent floating 
+				point instructions won't read the bad data.  It may also help to insert
+				<b>finit</b> instructions in your floating point routines before using the 
+				floating point unit, but this is far less critical than <b>emms</b>.
+			</ul>	
+
+			Now that we have an iteration limit, we could write an algorithm for 
+			generating the binary fractal shown above, but it wouldn't be all that
+			interesting.  
+			
+			Instead, some clever person noted that if we paint each of the areas
+			between successive 
+			<a href="http://mathworld.wolfram.com/MandelbrotSetLemniscate.html">
+			lemniscates</a> of the Mandelbrot set a different color the image becomes
+			much prettier. The nth lemniscate simply refers to the curve	that 
+			contains the set of points in	the graph	that require more than n 
+			iterations of the (in this case) Mandelbrot set equation to diverge 
+			(defined as exceeding radius 2). Because we are already keeping track of 
+			the number of iterations at every point (to check if it goes above 
+			_iterationLimit), all we have	to do is choose a color based on this 
+			number.
+
+			<h3>Colors, Images, and Video Memory</h3>
+			The next question then is how we represent, store, and display 
+			colors.<p>
+
+			We'll be using <b>24-bit</b>
+		 	<a href="http://www.webstyleguide.com/graphics/displays.html">
+			color</a> in this MP which means that the color of every pixel on 
+			the screen requires 24 bits of space to specify.  These	24 bits are 
+			broken up into three 8-bit numbers, representing the intensities of 
+			red, green, and blue light used to color that pixel.  A value of 0 
+			corresponds to no light, while 255 is full intensity.  Hence	{R,G,B} = 
+			{0,0,0} gives the color black, {0,0,255} gives pure blue, and 
+			{255,255,255} gives the color white.<p>
+
+			It's worth taking a moment to contrast 24-bit mode with 32-bit mode.
+			We are not using 32-bit mode graphics in this MP.  Nor will we ever, 
+			because <b>our new machines do not support 32-bit images</b> the
+			way PModeLib uses them.  That said, they also do not list 24-bit 
+			graphics as an option in the 'Display Properties' control panel.  Things 
+			will work okay if you try to draw a 24-bit image using PModeLib with 
+			Windows set to 32-bit mode but not if Windows is in 16-bit mode so 
+			<b>please check that your computer is not set to 16-bit mode in the 
+			Control Panel's Display Properties</b>.  I think most of the machines are
+			configured correctly but there are a couple that seem to like to reset 
+			themselves.<p>
+
+			Another hardware/OS quirk worth mentioning is that Windows expects 
+			24-bit color data to be stored <b>in BGR format</b>, that is, blue at 
+			the lower addressed location, even though people always say "RGB".<p>
+
+			Moving beyond individual pixels, images are stored as arrays of these
+			24-bit values.  The first of these values corresponds to the color of
+			the pixel in the top left corner of the image.  Images are almost always
+			(and for this MP, are always) stored in row major order as with other 
+			2D arrays we've used in this class.  So the second value in the array 
+			defines the color of the pixel just to the right of the first pi<F5>xel.<p>
+
+			All in all, an image is just an array like any other.  The most notable 
+			difference is that it is a very big array.  Because of this, it's preferable 
+			to allocate space for them at runtime using the
+			<a href="http://courses.engr.illinois.edu/ece390/books/labmanual/pmodelib-intro-memory.html">
+			<b>_AllocMem</b></a> function provided by PModeLib. _AllocMem and all
+			the other PModeLib functions require that you call <b>_LibInit</b> first
+			and <b>_LibExit</b> before exiting your program.<p>
+			
+			There's a somewhat elaborate initialization ritual needed to set up a display 
+			window for your images.  The lab manual	has 
+			<a href="http://courses.engr.illinois.edu/ece390/books/labmanual/pmodelib-intro-graphics.html">
+			details (that assume the 32-bit mode we can't use)</a> but to summarize, you 
+			must call PModeLib's <b>_InitGraphics</b>, <b>_FindGraphicsMode</b>, and 
+			<b>_SetGraphicsMode</b> in that order with appropriate arguments.  To clean 
+			up after yourself when the program is done there is a shutdown sequence: 
+			<b>_UnsetGraphicsMode</b> and then <b>_ExitGraphics</b>.<p>
+
+			Once you've made space for your image and written some data into it,
+			displaying it to your window is rather trivial.  All that is needed 
+			is a call to <b>_CopyToScreen</b>.
+
+			<h3>Colormaps</h3>
+			We've talked about (or at least made reference to) all the technical 
+			details of putting a given pattern of colors onto the screen now but 
+			one issue remains and that is how we decide what color to use for a 
+			given number of iterations.<p>
+			
+			More broadly, we'd like to define a general scheme that makes it easy
+			for us to completely change what colors are used without having to 
+			change assembly instructions all the time.  To this end, the design
+			we will use is a cyclic colormap generated at runtime by linearly 
+			interpolating between a list of colors.<p>
+
+			<a name="colorMap"></a>Breaking that statement down, the design will 
+			center around a colormap,	which is nothing more than an array of colors.
+			In the code this array is named <b>_colorMap</b>. It will map the number
+			of iterations executed on a pixel onto the color that should be used	
+			for that pixel on the screen. So if a pixel took two iterations, you 
+			would read the third row from _colorMap to determine what color to use 
+			(third because the first row corresponds to zero iterations).<p>
+
+			The colormap is <b>cyclic</b> because indices wrap around at the end. 
+			If there end up being 100 entries in _colorMap, we need a rule to decide
+			what to do when more than 100 iterations are used.  A simple but
+			flexible solution is to wrap around so that in the above example case
+			we would be	reading the row corresponding to _colormap[i % 100].<p>
+
+			_colorMap is populated with data by calling <b>_FillColorMap</b>, one
+			of the functions you are responsible for writing.  _FillColorMap has a
+			number of implicit and explicit inputs:
+
+			<ul>
+				<li><b>NUM_COLORS</b> (global define):  The number of distinct color
+				entries in the _colors array described below.  Must be < 256.
+				<li><b>COLOR_STEPS</b> (global define):  The number of levels to
+				interpolate between neighboring colors in the _colors array. Must be 
+				< 256.
+				<li><b>_colors</b> (address passed as argument):  An array of colors 
+				given in BGR format.  There are actually NUM_COLORS + 1 entries in the
+				array but the last is a repeat of the	first for convenience in coding 
+				_FillColorMap.  
+				<li><b>_colorMap</b> (address passed as argument):  The array that
+				holds the output colormap as mentioned before.  It has NUM_COLORS *
+				COLOR_STEPS rows.				
+			</ul>
+
+			<a name="Interpolation"></a> The job of _FillColorMap is to take the 
+			colors defined in the _colors array and blend successive neighbors 
+			together with COLOR_STEPS different weightings.  For example, if 
+			COLOR_STEPS was 4 and the two colors were red and blue, the first four 
+			entries output to _colorMap would be 100% red, 75% red + 25% blue, 50% 
+			red + 50% blue, and 25% red + 75% blue.<p>
+
+			Numerically that would be:
+			<center><pre>            -Color 1-    Weight 1    -Color 2-    Weight 2  -Output Color-
+{B,G,R} = { 0 , 0 ,255}  * 100% +  {255, 0 , 0 }  *   0% =  { 0 , 0 ,255}
+          { 0 , 0 ,255}  *  75% +  {255, 0 , 0 }  *  25% =  { 64, 0 ,192}
+          { 0 , 0 ,255}  *  50% +  {255, 0 , 0 }  *  50% =  {128, 0 ,128}
+          { 0 , 0 ,255}  *  25% +  {255, 0 , 0 }  *  75% =  {192, 0 , 64}
+</pre></center><p>
+		 
+			A	couple of visual examples may help.  In the images below, the colors
+			in the upper row of each image represent the colors defined in the 
+			_colors array. The colors in the lower row are colors output to the
+			_colorMap array with the exception of the part marked "No Entries"; 
+			because the last color this section corresponds to the extra row of _colors (which we 
+			defined as having NUM_COLORS + 1 rows) and there are no corresponding 
+			repeated entries in _colorMap.<p><br>
+
+			<center>
+				<img src="mp4-7.png" width="400" height="40"><br>
+				NUM_COLORS = 3, COLOR_STEPS = 2, _colors = {red, green, blue, red}<p><br>
+			</center>
+
+			Looking at this first example, there are three (NUM_COLORS) colors in the 
+			_colors array but we repeat the first one giving a total of four 
+			(NUM_COLORS + 1) entries in _colors. _FillColorMap should loop from 0 to 
+			NUM_COLORS-1, thereby looping through	all the entries of _colors except 
+			for the repeated one at the end.<p>
+			
+			For	each of these color entries, it performs mixing similar to the 
+			<a href="#Interpolation">example above</a>.  Since COLOR_STEPS is 2 for 
+			this first image, this first iteration of the loop we will write 2
+			output colors to _colorMap.  The first will correspond to 100% of the 
+			current color (red) and 0% of the next (green), giving red.  The second
+			entry will be 50% of the current color (still red) and 50% of the next 
+			(still green) giving that nasty olive color you see.  Then, in the 
+			second iteration it will apply the same ratios (100% and 0%, 50% and 50%)
+			but to the second color in _colors (green) and the third color (blue).
+			For the third and final iteration it combines the third color, blue, 
+			with the fourth color so that the color map cycles back to red where
+			it started.<p>
+
+			The second and third examples, shown below, increase the number of
+			COLOR_STEPS for a more smooth appearance, and also vary the input colors
+			stored in the _colors array.<p><br>
+			
+			<center>
+				<img src="mp4-8.png" width="400" height="40"><br>
+				NUM_COLORS = 6, COLOR_STEPS = 4, _colors = {red, yellow, green, cyan, blue, magenta, red}<p><br>
+
+				<img src="mp4-9.png" width="400" height="40"><br>
+				NUM_COLORS = 2, COLOR_STEPS = 200, _colors = {black, white, black}<p><br>	
+			</center>
+
+			_FillColorMap is probably most easily implemented with three nested loops.
+			The outermost	one goes from 0 to NUM_COLORS and is indexed by 'i' let's
+			say.  The middle one goes from 0 to COLOR_STEPS with index 'j'.  The 
+			innermost loop goes from 0 to 2 (for the three separate components of 
+			each color) with index 'k'.  The innermost loop implements the following 
+			expression which stores the linearly interpolated colors into the
+			colormap:<p>
+			
+			<center><font size="-1">
+				_colorMap[(i * COLOR_STEPS + j) * 3][k] = (colors[i*3][k] * (COLOR_STEPS - j) + colors[(i+1)*3][k] * j) / COLOR_STEPS
+			</font></center>
+
+			<p>It's a bit ugly all written out together like that but if you notice, the
+			left hand side of the equation just writes successive bytes in _colorMap.
+			Meanwhile, the right side of the equation is multiplying the first color by 1 - 
+			(j / COLOR_STEPS), the second color by (j / COLOR_STEPS), and then taking the 
+			sum of those two products.  Since those two fractions always sum to one we know
+			that this	expression generates evenly weighted colors (numerically, visually
+			is a completely different story).  Furthermore the expression is linear in 
+			terms of variable j so the transition from color to color is linear (again, 
+			numerically).<p>
+
+			This routine is to be implemented in integer arithmetic so be careful to avoid
+			<b>overflow</b> and <b>underflow</b>.  Consider carefully the effects of the 
+			order in which you execute arithmetic operations.<p>
+
+			<a name="LIMIT_COLORS"></a>With this colormap, we've now specified how to 
+			draw all of the points that prove not to be in the Mandelbrot set but we 
+			haven't said anything about points that are in the set.  These we will 
+			simply assign a color.  This color is specified by three defines: 
+			<b>LIMIT_BLUE</b>, <b>LIMIT_GREEN</b>, and <b>LIMIT_RED</b>. 
+
+			<h3>Fractal Generation, revisited</h3>
+			Pulling all of this together, we're finally able to generate a fractal in
+			color to draw to the screen with a call to _CopyToScreen.	In the code this 
+			task is split between two functions.<p>
+		
+			<a name="IteratePixel"></a>First there's <b>_IteratePixel</b>, which takes
+			a pointer	to a complex coordinate and returns the number of iterations it 
+			takes for that point	to diverge. <a name="Generate"></a><b>_Generate</b> 
+			is the other function, and it loops through	all the pixels on the screen, 
+			calling _IteratePixel on the corresponding complex coordinate and then 
+			using _colorMap and the LIMIT_colors to write the appropriate color data 
+			based on what _IteratePixel returns. _Generate is called by the main loop
+			implemented in <b>_DoFrame</b> (which is given to you).  When this call
+			is made, the address of the buffer at which to store the fractal image 
+			is passed as an argument.<p>
+
+			Looking at some C code that summarizes what these functions do is
+			probably illustrative even if you are not intimately familiar with
+			C.
+
+			<blockquote><code><pre>#define SCREEN_WIDTH 640
+#define SCREEN_HEIGHT 480
+struct Complex {
+  double Real, Imag;
+}	
+struct Complex Z, C; <font color="blue">// Declare two of these complex number structures</font>
+...
+
+void _Generate(unsigned char*** buffer) {
+<font color="blue">// pass in the address to write the image at</font>
+  unsigned short iterations;
+
+  _SetLimit(); <font color="blue">// Call this once to set _iterationLimit</font>
+
+  for (int j = 0; j < SCREEN_HEIGHT; j++) { 
+    for (int i = 0; i < SCREEN_WIDTH; i++) {
+      C.real = _minX + (_maxX - _minX) * i / SCREEN_WIDTH;
+      C.imag = _minY + (_maxY - _minY) * j / SCREEN_HEIGHT;
+      <font color="blue">// convert screen coordinates into complex-plane coordinates</font>
+
+      iterations = _IteratePixel(&C); 
+      <font color="blue">// pass a pointer to C (the coordinates to test)</font>
+
+      if (iterations == _iterationLimit) {
+      <font color="blue">// paint the current pixel (buffer[j][i]) with the color for points in the set</font>
+        buffer[j][i][0] = LIMIT_BLUE; 
+        buffer[j][i][1] = LIMIT_GREEN;
+        buffer[j][i][2] = LIMIT_RED;
+      }
+      else {
+      <font color="blue">// paint the current pixel with a color from _colorMap</font>
+        unsigned short wrappedColor = iterati<F5>ons % (NUM_COLORS * COLOR_STEPS);
+        <font color="blue">// use wraparound to map the number of iterations into a color index</font>
+        for (int k = 0; k < 3; k++) {
+          buffer[j][i][k] = _colorMap[wrappedColor][k];
+        }
+      }
+    }
+  }		
+}
+
+unsigned long _IteratePixel(const struct Complex* pos) {
+<font color="blue">// pass in the address of C in our Z = Z^2 + C equation</font>
+  unsigned short iterations = 0;
+  Z.Real = 0;
+  Z.Imag = 0;
+							
+  while (iterations < _iterationLimit) { 
+    double ZRealNext, ZImagNext;
+    ZRealNext = Z.Real * Z.Real - Z.Imag * Z.Imag;
+    ZImagNext = 2 * Z.Real * Z.Imag;
+    <font color="blue">// ZNext = Z^2</font>
+
+    Z.Real = ZRealNext + pos->Real;
+    Z.Imag = ZImagNext + pos->Imag;
+    <font color="blue">// Z = Z^2 + C</font>
+
+    if (Z.Real * Z.Real + Z.Imag * Z.Imag >= 4) { <font color="blue">// if |Z| >= 2</font>
+      return iterations;
+    }
+
+    iterations = iterations + 1;
+  }		
+  return iterations; <font color="blue">// iterations == _iterationLimit if we got here</font>
+}
+			</pre></code></blockquote>
+
+			Most of the constructs and variables you see above see can be directly 
+			implemented in your code or are already present:
+		
+			<ul>
+        <li><b>SCREEN_WIDTH</b> and <b>SCREEN_HEIGHT</b>:  Defines we've
+				given you that control the number of pixels in the generated images.
+				<li><b>Complex</b>:  A structure that simplifies access to related
+				variables.  Implemented in the given mp4.asm with the STRUC/ENDSTRUC
+				macro.  These macros create several defines for you including 
+				Complex.Real, Complex.Imag, and Complex_size.  Check the lab manual 
+				for details of what they are and how to use them.
+				<li><b>Z</b>, <b>C</b>:  Two global variables of type Complex as defined
+				above.
+				<li><b>_Generate</b>:  Puts a fractal into the buffer specified by its
+				only argument.  First it calls _SetLimit so that the _iterationLimit
+				will be appropriate for the current view.  Then it loops through all
+				the pixels on the screen and converts them to complex coordinates (the
+				equation is given fairly clearly in the code above).  The address of
+				where the current coordinate is stored is passed as the argument to
+				_IteratePixel which counts how many iterations can be done before that
+				point diverges.  Using this information, it writes a pixel to the 
+				buffer either from _colorMap or from the LIMIT_COLOR defines.
+				<li><b>_SetLimit</b>:  <a href="#SetLimit">Described above</a>.
+				<li><b>_minX</b>, etc:  <a href="#minX">Described above</a>.
+				<li><b>_IteratePixel</b>:  Accepts a pointer to a 'Complex' structure
+				as described a couple lines above.  It repeatedly applies the equation
+				Z = Z^2 + C using zero as the initial Z and the passed data as C. As 
+				it's computing it keeps a count of how many times the equation has 
+				been executed without the magnitude of Z going above two.  If it does
+				exceed two, the function returns the current iteration count. 
+				Otherwise it continues iterating until the count is equal to the 
+				value in _iterationLimit at which point it gives up (still returning
+				the current count which should be equal to _iterationLimit as we've
+				just said).				
+				<li><b>_iterationLimit</b>:  <a href="#iterationLimit">Described above</a>.
+				<li><b>LIMIT_BLUE</b>, etc:  <a href="#LIMIT_COLORS">Described above</a>.
+				<li><b>_colorMap</b>:  <a href="#colorMap">Described above</a>.
+			</ul>
+
+			<h3>User Interaction</h3>
+			Unlike previous assignments, the mouse is the sole input device for this
+			machine problem.  The action taken upon clicking and then releasing
+			(<b>nothing happens until the release</b>) each button is as	follows:
+			
+			<ul>
+			<li>Left: View zooms in by a factor of two
+			<li>Right: View zooms out by a factor of two (but not beyond the initial
+			view)
+			<li>Middle: Exits the program.
+			</ul>
+			
+			Because there is a good chance that the user will click the
+			mouse during the lengthy fractal computation, we need to use an interrupt.
+			In particular, we're going to setup a 
+			<a href="http://en.wikipedia.org/wiki/Callback_%28computer_science%29">
+			<b>callback function</b></a> that will be called whenever either mouse
+			button is clicked.  The job of this callback function will be to read
+			the button states (pressed or not) and also the position of the mouse
+			and store these in global variables that the rest of our program can
+			read and respond to.<p>
+
+			Working with protected mode, we don't have the same access to interrupts
+			that we did	in real mode.  Instead, the program must switch to real mode,
+			make the interrupt call it wants, and then switch back to protected mode.
+			Doing	this by hand would be a tedious exercise, but fortunately there is 
+			a PModeLib function that does this for you.<p>
+
+			
+			<a href="http://courses.engr.illinois.edu/ece390/books/labmanual/pmodelib-ref-simulate.html">
+			<b>DPMI_Int</b></a> takes a real mode interrupt number given in BX
+			and register values in 
+			<a href="http://courses.engr.illinois.edu/ece390/books/labmanual/pmodelib-ref.html#PMODELIB-REF-DPMI-REGS">
+			<b>DPMI_Regs</b></a>. It then switches to real mode, sets the registers
+			to the corresponding values in DPMI_Regs, and calls the interrupt.  The
+			resulting register state is written back to DPMI_Regs, where it will be
+			visible from protected mode, and the routine then finishes by returning
+			to protected mode.  This function is at the heart of both the 
+			<b>_InstallMouse</b> and <b>_RemoveMouse</b> routines that install and
+			remove your mouse handling routine, <b>_MouseCallback</b>.<p>
+
+			The interrupt that installs the mouse callback is number 33h, function
+			0Ch.  All the necessary details are given in the corresponding row in 
+			the table
+			<a href="http://www.cs.nyu.edu/~yap/classes/machineOrg/info/mouse.htm">
+			here</a>.
+
+			Here is a summary of what each of the three mouse procedures must do:<p>
+
+			_InstallMouse
+			<ul>
+			<li><b>_LockArea</b> for the locations in memory which will be read upon
+			executing the callback handler, namely the _mouseState variable and the
+			code for the handler itself.
+			<li>Use <b>_Get_RMCB</b> to get the address of a real mode callback
+			handler based on your protected mode handler (_MouseCallback).  Store 
+			this address for future use into the <b>_MouseSeg</b> and 
+			<b>_MouseOff</b> registers.
+			<li>Write the necessary register values for the int 33h call into the
+			appropriate places in DPMI_Regs.
+			<li>Call <b>DPMI_Int</b> with bx = 33h to install your handler.
+			</ul>
+
+			_RemoveMouse
+			<ul>
+			<li>Set the values in the DPMI_Regs so that a call to int 33h will remove
+			your previously installed handler.
+			<li>Call <b>DPMI_Int</b> with bx = 33h.
+			<li>Use <b>_Free_RMCB</b> to remove the real mode version of your 
+			callback function.
+			</ul>
+
+			_MouseCallback
+			<ul>
+			<li>The one argument that is passed to _MouseCallback is a pointer to
+			the DPMI_Regs structure you will need.
+			<li>Test if _mouseState is nonzero.  If so, the previous mouse click
+			has not been processed so just exit.
+			<li>Check the state of DPMI_Regs to determine what buttons are pressed.
+			<b>Note that although the 'button state' is returned in BX, you actually 
+			want to look at AX, the 'event mask'</b>.  The bits in BX represent 
+			current mouse button state rather than state transitions. So BX has 1 in 
+			one of its low 3 bits if the corresponding button is pressed (if you're 
+			following the
+			<a href="http://www.cs.nyu.edu/~yap/classes/machineOrg/info/mouse.htm">
+			table</a>, there's a typo: bit	2 corresponds to the middle button).  
+			We're recording button releases though, and so the information in BX is 
+			not useful.  AX contains the information we need; AX & LEFT_BUTTON for 
+			example, is nonzero when the left button has just been released.
+			<li>Copy the relevant mouse state data into <b>_mouseX</b>, 
+			<b>_mouseY</b>, and <b>_mouseState</b>.
+			</ul>
+
+			Implementing these three functions is all you need to do in order for 
+			the interface to work;  the code that reads _mouseState and decides
+			what to do is in the given function <b>_DoFrame</b>.  In this function,
+			if _mouseState is LEFT_BUTTON or RIGHT_BUTTON, it calls <b>_Zoom</b>
+			(also given to you) with the appropriate arguments to zoom either in or
+			out.  If _mouseState is MIDDLE_BUTTON, it causes the program to exit.<p>
+
+			The catch is, the way interrupts are handled in protected mode, <b>
+			if you use the library version of _InstallMouse, it installs the library
+			version of _MouseCallback, not yours</b>.  As a result, you will not be 
+			able to test your versions of these functions one at a time.  The
+			library version of _RemoveMouse *should* work with both your functions
+			and the library versions but it's possible that it will be incompatible
+			too.
+		
+			<h3>Alpha Blending</h3>
+			The last part of this assignment makes one fractal fade to the next
+			using alpha blending.  As was the case with the user interaction portion
+			of this MP, some of the grunt-work code has been given to you and you 
+			are only required to implement the key interesting routines.
+
+			In particular, <b>_Blend</b> is the only function you need to write for
+			fading to work.  It takes pointers to three images, one labeled the 
+			top source, one the bottom source, and one the destination.  _Blend's 
+			task is to combine the data in the two sources and write the resulting
+			image into the destination buffer.  The combination function depends
+			on the fourth argument, <b>alpha</b>.<p>
+		 
+			Alpha can be interpreted in different ways, but in our program we will 
+			consider it the percentage of the output image that comes from the top 
+			source.  The rest of the output comes from the bottom source.  <b>Although
+			we referred to it as a percentage, it is actually an integer from 0 to 
+			255.</b>  The reason for this is that in 32-bit images, the 
+			fourth byte of color data is this alpha value (the first three are still 
+			blue,	green, and red).  So even though it's easiest to think of as a
+			percentage, the alpha value needs to be divided by 255 for it to behave
+			as such.  Hence, an alpha byte of zero corresponds to 0/255 = 0% and a
+			byte of 255 corresponds to 255/255 = 100%.<p>
+
+			The combination function itself is given by:
+
+			<blockquote><center>
+			dst = (srcTop * alpha + srcBot * (255 - alpha)) / 255
+			</center></blockquote>
+
+			This equation is applied per byte.  That is to say, first you would
+			apply it to the blue value of the upper left pixels in the two
+			source images to get the blue value for the upper left pixel of
+			the destination image.  After that you would proceed to the green and red 
+			bytes, then continuing on to the remaining pixels.  Such highly parallel
+			integer arithmetic is what MMX was designed for.<p>
+
+			Instead of laboriously applying the formula to every byte of the 
+			image we can leverage MMX instructions and instead only apply it once
+			per pixel.  In doing so, the fade routine will run likely run about two
+			or three times more quickly.  This will be important if we want to animate 
+			fading since each step of the fade is done by calling _Blend; if it took 
+			a long time to perform the _Blend, the animation would be slow and
+			choppy.<p>
+
+			The algorithm will look something like this:
+
+			<blockquote><code><pre>(code to load constants like 0, alpha, 255-alpha into MMX registers)
+loop through pixel rows (Y) from zero to SCREEN_HEIGHT
+  loop through pixels (X) from zero to SCREEN_WIDTH
+    load current pixel from top source into an MMX register, say mm0
+    unpack mm0 from 4 bytes to 4 words
+    multiply the words in mm0 by alpha together at once
+    shift the result to the right by 8
+
+    load current pixel from bottom source into an MMX register, say mm1
+    unpack mm1 from 4 bytes to 4 words
+    multiply the words in mm1 by (255-alpha) together at once
+    shift the result to the right by 8
+
+    add the two results
+
+    pack the 4 words in the sum back into 4 bytes
+    store the 4 bytes into the current pixel to the destination image
+  end loop
+end loop 
+			</pre></code></blockquote>
+		
+			There are a couple things about the pseudocode above that should seem a
+			little off.  First, we appear to be reading and writing 4 bytes of data
+			at a time even though pixels are only 3 bytes apiece.  This is 
+			intentional.	The rest of the code has been set up such that it works 
+			safely.  Namely, the buffers are created at neighboring locations in 
+			memory with an extra byte at the end so that reads and writes to the 
+			extra fourth byte in the last pixel won't cause a memory exception.  For 
+			the rest of the pixels, reading the data and performing computation on it 
+			costs us nothing, and even though writing the extra byte into the output 
+			might seem dangerous, that byte is always overwritten when the formula is
+		 	applied to the next pixel (assuming you loop through the image from the
+			top left as in the pseudocode).  Moreover, this runs faster than trying
+			to worry about only reading, manipulating, and writing back 3 bytes at 
+			a time.<p>
+
+			The other apparent mistake is use of a shift right by 8 to implement
+			the divide by 255.  It's true that this is technically incorrect, but
+			for our purposes speed is more important than accuracy (and the amount
+			of inaccuracy would probably not be noticeable anyways).  By avoiding a
+			divide by 255, _Blend will run more quickly.<p>
+
+			<h2>Program Organization</h2>
+			
+			<p>Three functions are given to you:  _Main, _DoFrame, and _Zoom.  It's up 
+			to you to replace the library versions of _Generate and the other	procedures 
+			though. This is done by deleting the statements that call the <tt>libmp4</tt> 
+			subroutine and by adding your own code. Each subroutine that you write should 
+			match the output of the library subroutine exactly. </p>
+
+			<h2>Friendly Advice</h2>
+      <ul>
+        <li>The <tt>libmp4.lib</tt> file contains executable library subroutines 
+        for each of the routines that you need to implement. The library 
+        subroutines enable you to run the program and understand how it works before 
+				you implement it. You can test your program with any combination of 
+        your own code and library subroutines. You will receive credit only for 
+        the subroutines that you implement yourself. 
+        </li><li>Monitor the course WebBoard for clarifications and help. 
+				</li><li>START EARLY! 
+				</li></ul>
+
+				<p>Files for MP4 are on the <tt>V:</tt> drive in the directory 
+				<tt>V:\ece390\mp4</tt>. In this directory are the program framework 
+				<tt>mp4.asm</tt> and a running version of the program <tt>mp4lab.exe</tt>. 
+				Lab versions of subroutines are in <tt>libmp4.lib</tt>, which contains all 
+				subroutines of LIB291 plus versions of the MP4 subroutines (libMain for Main, etc). 
+				You will use mp4xit instead of dosxit. You should start by copying these files to your home 
+				directory with the following command: <br><tt>xcopy /s V:\ece390\mp4 
+				W:\mp4</tt><br>You may download the files from the server as 
+				<a href="mp4.zip">mp4.zip</a> </p>
+      
+				
+      <h2>Demonstration, Documentation, and Grading</h2>
+      <p>Demonstrate your program to an ECE 390 staff member.</p>
+			<p>As in previous MPs, keep an MP development log and write a cover memo.
+			The memo should address the following questions: 
+      </p><ul>
+        <li>How much time did you spend on each subroutine, from planning and 
+        design through final debugging? 
+        </li><li>What kinds of defects (bugs) did you find during the development of 
+        the program? When did you discover these defects (during code review or 
+        during testing)? How did you find them? 
+        </li><li>What did you learn about design, coding, testing, and debugging in 
+        this MP? 
+        </li><li>What went well in your work on this MP? What did not? 
+        </li><li>What you would do differently for the final project? </li></ul>
+      <p>After the demonstration, submit your program and cover memo. Your 
+      program will be graded according to the clarity of your design and the 
+      quality of your documentation.</p>
+			<p>Gradesheet:</p>
+			<ul>
+				<li>_Generate: 12
+				<li>_IteratePixel: 6
+				<li>_SetLimit: 6
+				<li>_InstallMouse: 3
+				<li>_MouseCallback: 6
+				<li>_RemoveMouse: 3
+				<li>_FillColorMap: 12
+				<li>_Blend: 12
+				<li>Technique: 3 
+				<li>Documentation: 3
+			  <li>Cover Memo: 4
+			</ul>
+      <hr>
+
+			<h2>mp4.asm (program framework)</h2>
+<font size="-1"><pre>; ECE 390 Spring 2006 MP4    
+; -- Fractals --
+;
+; Completed By:
+;  Your Name
+;
+; Mark Dykstra
+; University of Illinois Urbana Champaign
+; Dept. of Electrical & Computer Engineering
+;
+; Ver 1.0
+
+%include "lib291.inc"
+%include "libmp4.inc"
+
+	BITS	32
+
+	GLOBAL	_main
+;===== Section 1: Define Constants ============================================
+
+; Number of pixels the screen is wide and tall
+SCREEN_WIDTH	EQU 640
+SCREEN_HEIGHT	EQU 480
+
+; Number of colors given in _colors
+NUM_COLORS EQU 6
+
+; Number of levels to interpolate between entries in _colors
+COLOR_STEPS EQU 16
+
+; Amount to increase the alpha each frame of the blending animation
+FADE_SPEED EQU 12
+
+; The color to use when the iteration limit is exceeded
+LIMIT_BLUE EQU 0
+LIMIT_GREEN EQU 0
+LIMIT_RED  EQU 0
+
+LEFT_BUTTON EQU 2
+RIGHT_BUTTON EQU 8
+MIDDLE_BUTTON EQU 32
+
+STRUC Complex
+	.Real resq 1
+	.Imag resq 1
+ENDSTRUC
+
+;===== Section 2: Declare External Routines ===================================
+
+;===== Section 3: .bss ========================================================
+SECTION .bss
+
+_kbINT resb 1
+_kbIRQ resb 1
+_kbPort resw 1
+
+_mouseSeg	resw 1 ; real mode segment for MouseCallback
+_mouseOff	resw 1 ; real mode offset for MouseCallback
+
+_frontBuffer resd 1
+_backBuffer resd 1
+_blendedBuffer resd 1
+_ScreenOffset	resd 1
+
+_graphicsMode	resw 1
+
+_mouseX resw 1
+_mouseY resw 1
+
+_iterationLimit resw 1
+
+_colorMap resb 3 * NUM_COLORS * COLOR_STEPS
+
+fildPass resd 1 ; can be used to hold integers you want to convert into floats with fild
+diverges resd 1
+Z resb Complex_size
+C resb Complex_size
+
+;===== Section 4: .data =======================================================
+SECTION .data
+
+_minX dq -2.5
+_minY dq -1.5
+_maxX dq 1.5
+_maxY dq 1.5
+
+_mouseState db 0
+
+_timesZoomed db 0
+
+%if 1
+;           BBB, GGG, RRR
+_colors  db   0,   0, 240
+         db   0, 240, 240
+         db   0, 240,   0
+         db 240, 240,   0
+         db 240,   0,   0
+         db 240,   0, 240  
+         db   0,   0, 240
+; repeat first color at the bottom for convenience later
+%endif
+
+
+;===== Section 5: Main Procedure ==============================================
+SECTION .text
+
+_main:
+	call _LibInit
+	test eax, eax
+	jnz near .mainExit
+
+	; Allocate memory to store three buffers 
+ 	;  (plus a byte at the end so we can write 32 bits to the last pixel)
+	invoke _AllocMem, dword SCREEN_WIDTH * SCREEN_HEIGHT * 9 + 1
+	cmp eax, -1
+	je near .mainExit
+	mov [_frontBuffer], eax
+	add eax, SCREEN_WIDTH * SCREEN_HEIGHT * 3
+	mov [_backBuffer], eax
+	add eax, SCREEN_WIDTH * SCREEN_HEIGHT * 3
+	mov [_blendedBuffer], eax
+
+	; Graphics Init
+	invoke _InitGraphics, dword _kbINT, dword _kbIRQ, dword _kbPort
+	test eax, eax
+	jnz near .graphicserror
+
+	; Find Graphics Mode: SCREEN_WIDTH x SCREEN_HEIGHT x 24
+	invoke _FindGraphicsMode, word SCREEN_WIDTH, word SCREEN_HEIGHT, word 24, dword 1
+	cmp ax, -1
+	je near .graphicserror
+	mov [_graphicsMode], ax
+
+	invoke _SetGraphicsMode, word [_graphicsMode]
+	test eax, eax
+	jnz near .graphicserror
+
+	call _InstallMouse
+
+	; Use the colors defined at _colors to make a color map
+	invoke _FillColorMap, dword _colors, dword _colorMap
+
+.executionLoop
+	; generate fractal in _frontBuffer then fade to it from _back
+	; oddly, this works much more quickly than switching the pointers
+	invoke _DoFrame, dword[_frontBuffer], dword[_backBuffer]
+	test  eax, eax
+	jnz .done
+
+	; generate fractal in _backBuffer then fade to it from _front
+	invoke _DoFrame, dword[_backBuffer], dword[_frontBuffer]
+	test  eax, eax
+	jnz .done
+
+ 	jmp  .executionLoop
+
+.done
+.mouseerror
+	call _RemoveMouse
+	call _UnsetGraphicsMode
+
+.graphicserror
+	call _ExitGraphics
+
+.mainExit
+	call _LibExit
+	call MP4LibExit
+	ret
+
+
+
+; DoFrame(frontBuffer, backBuffer)
+; PURPOSE:  Generates a fractal in frontBuffer and fades it into view
+; ARGS:     frontBuffer: A pointer to the 24-bit buffer to hold the fractal
+;           backBuffer:  A pointer to the 24-bit buffer holding the currently
+;                          displayed image
+; INPUTS:   _mouseState: Information about what buttons have been pressed
+; OUTPUTS:  _blendedBuffer: The blended image is written here
+;           _ScreenOffset: This buffer implicitly gets updated when we _CopyToScreen
+; CALLS:    _Generate
+;           _Blend
+;           _CopyToScreen
+;           _Zoom
+proc _DoFrame
+.frontBuffer arg 4
+.backBuffer arg 4
+
+	mov  esi, [ebp + .frontBuffer]
+	mov  edi, [ebp + .backBuffer]
+
+	pusha
+	invoke _Generate, esi
+	popa
+
+	mov  ecx, FADE_SPEED
+.fadeLoop
+	pusha
+	invoke _Blend, esi, edi, dword[_blendedBuffer], ecx
+	invoke _CopyToScreen, dword[_blendedBuffer], dword SCREEN_WIDTH * 3, dword 0, dword 0, dword SCREEN_WIDTH, dword SCREEN_HEIGHT, dword 0, dword 0
+	popa
+	add  ecx, FADE_SPEED
+	cmp  ecx, 256
+	jb   .fadeLoop
+
+
+	invoke _CopyToScreen, dword esi, dword SCREEN_WIDTH * 3, dword 0, dword 0, dword SCREEN_WIDTH, dword SCREEN_HEIGHT, dword 0, dword 0
+	; finish by drawing the new fractal
+
+.spinLoop
+	cmp  byte [_mouseState], 0
+	je   .spinLoop
+	; wait for mouse input
+
+	test byte [_mouseState], MIDDLE_BUTTON
+	jnz  near .quit
+
+	test byte [_mouseState], LEFT_BUTTON
+	jz   .notLeft
+
+	invoke _Zoom, 1
+	
+.notLeft
+	test byte [_mouseState], RIGHT_BUTTON
+	jz   .notRight
+
+	invoke _Zoom, 0
+
+.notRight
+	mov  byte [_mouseState], 0
+
+	test  eax, eax
+	je    .spinLoop
+	; if the Zoom didn't do anything (because we couldn't zoom out any further)
+
+	mov  eax, 0
+	ret
+
+.quit
+	mov  eax, 1
+	ret
+endproc
+_DoFrame_arglen equ 8
+
+
+
+
+; Zoom(zoomIn)
+; PURPOSE:  Zooms the view in by a factor of two, centering on the last position
+;             that was clicked by the user
+; ARGS:     zoomIn:  Nonzero if we should zoom in, zero if we should zoom out
+; INPUTS:   _minX, _maxX, minY, _maxY:  Give the initial zoom state
+; RETURNS:  (eax):  Nonzero if zooming was performed
+; OUTPUTS:  _minX, _maxX, minY, _maxY:  Modified to give a view half or twice
+;              the size of the previous and centered on the last mouse click
+;           _timesZoomed:  Global that keeps track of zoom depth in order to determine
+;              an appropriate iteration limit in _SetLimit
+; CALLS:    Nothing
+; USES:     Floating Point (64-bit)
+proc _Zoom
+.zoomIn arg 1
+
+	cmp  byte [ebp + .zoomIn], 0
+	jne	 .safe
+	cmp  byte [_timesZoomed], 0
+	jne  .safe
+	mov  eax, 0
+	ret
+	; disallow zooming out beyond initial view (would result in _iterationLimit of 0)
+	
+.safe
+	finit
+
+	fld  qword [_minX]
+	mov  dword [fildPass], SCREEN_WIDTH
+	fild dword [fildPass]
+	movzx  esi, word [_mouseX]
+	mov  dword [fildPass], esi
+	fild dword [fildPass]
+	fld  qword [_maxX]
+	fld  qword [_minX]
+	fsubp st1
+	fmulp st1
+	fdivrp st1
+	faddp st1
+	; push minX + (maxX - minX) * mouseX / SCREEN_WIDTH (new center)
+
+	fld  qword [_maxX]
+	fld  qword [_minX]
+	fsubp st1
+  ; push window width
+
+	cmp byte [ebp + .zoomIn], 0
+	je   .doneScaleX
+	fld1
+	fadd st0
+	fadd st0
+	fdivp st1
+.doneScaleX
+	fld  st0
+	; if we didn't jump, push width twice (giving total of current width * 2)
+  ; otherwise pop window width, push quarterwidth two times (total 1/2 width)
+
+	fadd st2
+	fstp qword [_maxX]
+	fsubp st1
+	fstp qword [_minX]
+	; write center + quarterwidth to _maxX, center - quarterwidth to _minX
+
+	fld  qword [_minY]
+	mov  dword [fildPass], SCREEN_HEIGHT
+	fild dword [fildPass]
+	movzx  esi, word [_mouseY]
+	mov  dword [fildPass], esi
+	fild dword [fildPass]
+	fld  qword [_maxY]
+	fld  qword [_minY]
+	fsubp st1
+	fmulp st1
+	fdivrp st1
+	faddp st1
+	; push minY + (maxY - minY) * mouseY / SCREEN_HEIGHT (new center)
+
+	fld  qword [_maxY]
+	fld  qword [_minY]
+	fsubp st1
+  ; push window height
+
+	cmp byte [ebp + .zoomIn], 0
+	je   .doneScaleY
+	fld1
+	fadd st0
+	fadd st0
+	fdivp st1
+.doneScaleY
+	fld  st0
+	; if we didn't jump, push height twice (giving total of current height * 2)
+  ; otherwise pop window height, push quarterheight two times (total 1/2 height)
+
+	fadd st2
+	fstp qword [_maxY]
+	fsubp st1
+	fstp qword [_minY]
+	; write center + quarterheight to _maxY, center - quarterheight to _minY
+
+	cmp  byte [ebp + .zoomIn], 0
+	je  .decrement
+	inc  byte [_timesZoomed]
+	jmp  .done
+.decrement
+	dec  byte [_timesZoomed]
+	; update _timesZoomed depending on which way we went
+
+.done
+	mov  eax, 1
+	ret
+endproc
+_Zoom_arglen equ 1
+
+
+
+;--------------------------------------------------------------
+;--          Replace Library Calls with your Code!           --
+;--You should only need to replace the 'call'/'invoke' lines --
+;--          Do not forget to add Function Headers           --
+;--------------------------------------------------------------
+
+
+
+;--------------------------------------------------------------
+;--                         _Blend()                         --
+;--------------------------------------------------------------
+proc _Blend
+.srcTop arg 4
+.srcBot arg 4
+.dst    arg 4
+.alpha  arg 4
+
+	invoke _libBlend, dword [ebp + .srcTop], dword [ebp + .srcBot], dword [ebp + .dst], dword [ebp + .alpha]
+	ret
+
+endproc
+_Blend_arglen equ 16
+
+
+
+;--------------------------------------------------------------
+;--                       _Generate()                        --
+;--------------------------------------------------------------
+proc _Generate
+.dst arg 4
+
+	invoke _libGenerate, dword [ebp + .dst]
+	ret
+
+endproc
+_Generate_arglen equ 4
+
+
+
+;--------------------------------------------------------------
+;--                        _SetLimit()                       --
+;--------------------------------------------------------------
+_SetLimit
+	call _libSetLimit
+	ret
+
+
+
+;--------------------------------------------------------------
+;--                      _IteratePixel                       --
+;--------------------------------------------------------------
+proc _IteratePixel
+.pos arg 4
+
+	invoke _libIteratePixel, dword [ebp + .pos]
+  ret
+
+endproc
+_IteratePixel_arglen equ 4
+
+
+
+;--------------------------------------------------------------
+;--                     _FillColorMap()                      --
+;--------------------------------------------------------------
+proc _FillColorMap
+.colors arg 4
+.cmap arg 4
+
+	invoke _libFillColorMap, dword [ebp + .colors], dword [ebp + .cmap]
+	ret
+
+endproc
+_FillColorMap_arglen equ 8
+
+
+
+;--------------------------------------------------------------
+;--                     _InstallMouse()                      --
+;--------------------------------------------------------------
+_InstallMouse
+	call _libInstallMouse
+	ret	
+
+
+
+;--------------------------------------------------------------
+;--                       _RemoveMouse()                     --
+;--------------------------------------------------------------
+_RemoveMouse
+	call _libRemoveMouse
+	ret
+
+
+
+;--------------------------------------------------------------
+;--                     _MouseCallback()                     --
+;--------------------------------------------------------------
+proc _MouseCallback
+.DPMIRegsPtr arg 4
+
+	invoke _libMouseCallback, dword [ebp + .DPMIRegsPtr]
+	ret
+
+endproc
+_MouseCallback_end
+_MouseCallback_arglen	EQU	4
+
+</pre></font>
+</td>
+  </tr>
+
+<!--#include file="foot.asp" -->

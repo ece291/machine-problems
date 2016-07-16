@@ -1,0 +1,41 @@
+W:\MP1>MP1 ECE291
+
+------------- Original matrix ------------
+EHUBBELQMI
+TI9ABCPUSS
+ADUSLEAAAT
+LDPSE2TKME
+LECE291EER
+LNHMK1UKTA
+ADDBINARYM
+CAILLIX3BU
+COLYLDOOWK
+OOEDIVHEXR
+MOODNIBBLE
+MENTIMESEG
+
+-------------- Final matrix --------------
+.....E....
+.....C....
+.....E....
+.....2....
+.ECE291...
+.....1....
+..........
+..........
+..........
+..........
+..........
+..........
+
+
+LIBMP1 Ver 1.0 Calls: 
+ -PrintMatrix 
+ -CheckLetter 
+ -CheckUp 
+ -CheckDown 
+ -ReplaceDown 
+ -CheckLeft 
+ -CheckRight 
+ -ReplaceRight 
+

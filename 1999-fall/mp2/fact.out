@@ -1,0 +1,99 @@
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+0!
+Verifying and parsing the string...
+0!
+1
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+1!
+Verifying and parsing the string...
+1!
+1
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+7!
+Verifying and parsing the string...
+7!
+5040
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+3!!
+Verifying and parsing the string...
+3!!
+6!
+720
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+-1!
+Verifying and parsing the string...
+Ä1!
+Type 12 error: Cannot take the factorial of a negative number.
+The equation was not fully simplified due to an error.
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+8!
+Verifying and parsing the string...
+8!
+Type 3 error: Calculation overflow.
+The equation was not fully simplified due to an error.
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+2! + 7!
+Verifying and parsing the string...
+2! + 7!
+2 + 7!
+2 + 5040
+5042
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+(4!)
+Verifying and parsing the string...
+(4!)
+(24)
+24
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+(5)!
+Verifying and parsing the string...
+(5)!
+5!
+120
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+!4
+Verifying and parsing the string...
+Type 7 error: Encountered a binary operator while expecting a number.
+The equation was not fully simplified due to an error.
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+4 + !
+Verifying and parsing the string...
+Type 7 error: Encountered a binary operator while expecting a number.
+The equation was not fully simplified due to an error.
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+
+
+LIBMP2 Ver 1.0 Calls
+-LibInput
+-LibCheckParens
+-LibParse
+-LibCheckDone
+-LibFindInner
+-LibFindOne
+-LibSolveOne
+-LibGetOp1
+-LibGetOp2

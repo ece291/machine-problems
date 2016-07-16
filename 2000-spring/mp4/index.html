@@ -1,0 +1,206 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <title>MP4: Networked Quake2D</title>
+</head>
+<body bgcolor="#FFFFFF">
+&nbsp;
+<table BORDER=0 CELLPADDING=3 WIDTH="100%" >
+<tr>
+<td ALIGN=LEFT WIDTH="33%">ECE291</td>
+
+<td ALIGN=CENTER WIDTH="34%">
+<center>Computer Engineering II</center>
+</td>
+
+<td ALIGN=RIGHT WIDTH="33%">Polychronopoulos, Spring 2000</td>
+</tr>
+</table>
+
+<h1 align='center'>
+Machine Problem 4 and 5: Networked Quake2D</h1>
+
+<table align='center' BORDER CELLPADDING=3 WIDTH="60%" >
+<tr><td ALIGN=RIGHT><b>Assigned</b></td>
+    <td>Thursday, March 23, 2000</td>
+</tr>
+
+<tr><td ALIGN=RIGHT><b>Purpose</b></td>
+    <td>Protected Mode, Video Mode Graphics, Networking, Mouse</td>
+</tr>
+
+<tr><td ALIGN=RIGHT><b>Points</b></td>
+    <td>100</td>
+</tr>
+
+<tr><td ALIGN=RIGHT><b>Checkpoint Due Date</b></td>
+    <td>Tuesday April 4 5:00pm</td>
+</tr>
+
+<tr><td ALIGN=RIGHT><b>Final Due Date</b></td>
+    <td>Tuesday April 11 5:00pm (April 4, 5:00pm for 5 point bonus)</td>
+</tr>
+</table>
+<Center><IMG SRC="http://www.ece.uiuc.edu/ece291/icon/construct.gif" width="38" height="38" >This MP is under (somewhat constant) improvement.</Center>
+
+<a name='intro'><h2>Introduction</h2></a>
+<em>This double-MP introduces many concepts.  Some of them are very
+alien to the way the course has worked through now.  Reading through the
+entirety of the MP writeup is highly suggested!</em>
+
+<p>Having made your way through the previous four Machine Problems, and the
+exam, you've shown yourself to be a true ECE 291 student.  Now you can
+almost see the carrot dangling out there, just this double-MP, a final
+project, and two exams away.
+
+<p>So we're stepping up the difficulty - and the rewards are
+commensurate.  Have you ever looked at what we're doing in assembly and
+wondered how something like Quake is possible?  The sheer size alone is
+daunting - how can you fit that in 64k?  You can't.  How about a few
+segments, like you started using in MP3?  Nope - still too big.
+
+<p>Hey wait!  What about the fact that text mode is obviously not up to
+the task of representing a 3D world, much less a complex 2D world?
+
+<p>Enter Protected Mode (often referred to as P-Mode), a powerful way of
+gaining access to as much memory as the computer has to offer.  With
+this power comes some limitations, and differences.  Right off the bat
+you'll have to adjust to writing for <a href='http://www.cryogen.com/nasm/'>NASM</a>
+instead of MASM.  Here's a <a
+href='http://www.ece.uiuc.edu/ece291/archive/mp/f99/mp5/masm_nasm.html'>quick
+reference</a> on the surface differences between the two.  Similarly,
+you are welcome to read through the <a
+href='http://www.ece.uiuc.edu/ece291/archive/mp/f99/mp5/tutorial.html'>entire
+MP tutorial</a>.  For more about the development environment (and how to install
+it at home), see <a href='http://www.ece.uiuc.edu/ece291/archive/mp/f99/mp5/dev_env.html'>
+this page</a> from the tutorial.
+
+<p>Be sure to read carefully through the preliminary procedure as some things
+have changed from previous MPs.  This includes the build process, as you'll be
+using tools that are much more like Unix tools (make and gcc) than the Microsoft
+Unix-ish tools you've been using in past MPs.
+<p>To help make the transition to protected mode easier, a large library has
+been provided to you.  The documentation for all the library functions is
+<a href="library.html">online</a>, and even the <em>entire</em> source code
+is available in the MP's lib/ directory!  Please notice that all functions the
+library provides and all the functions you will be writing for this MP conform
+to the C calling convention.  This means the arguments are passed on the stack in
+reverse order, you are free to modify (without saving) eax, ebx, ecx, and edx
+(this also means that you should not expect these registers to be preserved when
+calling a library function), and the return value is in eax/ax/al (depending on
+its size).
+<a href="http://www.ece.uiuc.edu/ece291/archive/mp/f99/mp5/lib_intro.html#Pete's Proc and Invoke Macros">
+A few macros</a> have been provided to make coding C procedures easier.  Also,
+a very large library, written in assembly and with source, has been given to
+you to make coding some parts of this MP much easier.  The source can be found
+in the lib/ directory of the MP, and the <a href='library.html'>Library
+Reference</a> is available online to help you find the functions you need.
+<p>Also remember that you now have full usage of the <em>entire</em> Intel
+instruction set, including all 32-bit registers and extended addressing modes.
+This means that you are free to address with any register, and even have an
+index register multiplied by a power of two, e.g.: mov eax, [edx+ecx*4+5].  You
+can use this to your definite advantage when you need to multiply by 3, 5, or
+9: just look up the LEA instruction and think about the advanced addressing
+modes.  Don't forget that you can't access the high 16 bits of the 32 bit
+registers directly, you either need to clear, shift, or load out of memory
+to set those bits.  Feel free to look at the library source code for ideas
+and examples of how to use the extended registers and addressing modes!
+<p>The final three things that enter into play here are graphics, mouse
+control, and networking.  The first two are amazingly easy to use, both
+conceptually and otherwise.  There is a library for the third, but its
+use can seem a little obtuse.  Time to move on to the Problem
+Description pages, and then start programming.
+
+<h2><a href='description.html'>Problem Description</a></h2>
+<h2><a href='procedures.html'>The Procedures</a></h2>
+<a name='prelim'><h2>Preliminary Procedure</h2></a>
+<ul>
+<li>
+Copy the given MP4 files from the network drive to your home directory
+with the following command:</li>
+
+<br><tt>xcopy /s V:\ece291\mp4 W:\mp4</tt>
+<br>Alternatively, from home you can download the same files as <a href="http://www.ece.uiuc.edu/ece291/mp/mp4/mp4.zip">mp4.zip</a>.
+<li>
+<B>Unlike previous MP's</B>, you need to run V:\djgpp\djgpp.bat before building
+your program (only once per DOS session!).<br>Run
+<tt>make</tt> to build an executable program
+using the given ECE291 library functions.</li>
+
+<li>
+As with previous MP's, use a text editor to modify the program. As given,
+the program uses LIBMP4 routines to implement all functionality. To receive
+full credit for the assignment, you will need to implement each of the
+subroutines described above with your own code.</li>
+
+<li>
+By modifying a few comments, you can mix and match usage of your own code
+and Library routines. You may notice that the LIBMP4 routines contain extraneous
+and difficult-to-read code. They are not meant to be easily unassembled!</li>
+</ul>
+<i>Monitor the newsgroup and this on-line section for revisions to the
+MP or to the write-up</i>
+
+<h2>Checkpoint</h2>
+
+Because this MP is so large, we have made a checkpoint due a week before the
+final due date.  You must turn the following procedures into a TA before the
+checkpoint due date.  Print off the
+<a href='mp4checkpoint.html'>Checkpoint Gradesheet</a> and
+demonstrate to a TA that you have completed the procedures on it.  There will
+be no early points for handing in the checkpoint early, but it is in your best
+interest to do so, to give yourself more time on the remainder of the MP (and
+time to complete the bonus procedures).  The checkpoint is worth <b>25%</b>
+of your total MP grade, so don't forget to turn it in!
+
+<ul>
+<li><a href='procedures.html#drawtext'>_DrawText</a></li>
+<li><a href='procedures.html#transparentblit'>_TransparentBlit</a></li>
+<li><a href='procedures.html#refreshscreen'>_RefreshScreen</a></li>
+<li><a href='procedures.html#loadmap'>_LoadMap</a></li>
+<li><a href='procedures.html#keyboardisr'>KeyboardISR</a></li>
+<li><a href='procedures.html#mousecallback'>MouseCallback</a></li>
+<li><a href='procedures.html#timerisr'>TimerISR</a></li>
+</ul>
+
+<h2>Final Steps</h2>
+
+<ol>
+<li>
+Verify that your program meets all requirements for handin.</li>
+
+<li>
+Print a copy of the
+<a href="mp4grade.html">MP4
+grading sheet</a>.</li>
+
+<li>
+Demonstrate MP4.EXE to a TA or to the instructor.</li>
+
+<li>
+Be prepared to answer questions about any aspect of the operation of your
+program. The TAs will not accept an MP if you cannot fully explain all
+operations of your code.</li>
+
+<li>
+Handin in your program by running:</li>
+
+<br><tt>A:\Handin </tt><i>YourWindowsLogin</i>
+<li>
+Print your MP4.ASM 4 pages per page and double sided.
+If you don't know how to do this ask a TA for assistance.</li>
+
+<li>
+Staple the MP4 grading sheet to the front of your MP4.ASM file and give
+both to the same TA that approved your demonstration.</li>
+</ol>
+
+<pre>
+</pre>
+<hr>
+
+<p><a href="mp4.asm">mp4.asm</a></p>
+
+</body>
+</html>

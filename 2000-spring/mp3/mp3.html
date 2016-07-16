@@ -1,0 +1,762 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+   <title>MP3</title>
+</head>
+<body bgcolor="#FFFFFF">
+&nbsp;
+<table BORDER=0 CELLPADDING=3 WIDTH="100%" >
+<tr>
+<td ALIGN=LEFT WIDTH="33%">ECE291</td>
+
+<td ALIGN=CENTER WIDTH="34%">
+<center>Computer Engineering II</center>
+</td>
+
+<td ALIGN=RIGHT WIDTH="33%">Polychronopoulos, Spring 2000</td>
+</tr>
+</table>
+
+<center>
+<h1>
+Machine Problem 3: Text-Mode Blackjack</h1></center>
+
+<center><table BORDER CELLPADDING=3 WIDTH="60%" >
+<caption>
+<center></caption>
+<TBODY>
+<br></TBODY></center>
+
+<tr>
+<td ALIGN=RIGHT><b>Assigned</b></td>
+
+<td>Thursday, March 2, 2000</td>
+</tr>
+
+<tr>
+<td ALIGN=RIGHT><b>Purpose</b></td>
+
+<td>Text-Mode Graphics, Keyboard Interrupts</td>
+</tr>
+
+<tr>
+<td ALIGN=RIGHT><b>Points</b></td>
+
+<td>50</td>
+</tr>
+
+<tr>
+<td ALIGN=RIGHT><b>Due Date</b></td>
+
+<td>March 28 - 5:00pm, March 21 - 5:00 for 5 point bonus</td>
+</tr>
+</table>
+<!--<Center><IMG SRC="../../icon/construct.gif" >This MP is under construction</Center>-->
+<h2>
+Introduction</h2>
+&nbsp;
+<center><table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="100%" >
+<tr>
+<td WIDTH="100%">
+<center>Welcome to the fabulous world of Las Vegas (not really, but we can pretend
+right?).&nbsp; The strip glitters on down as far as the eye can see.&nbsp; And
+what do you want to do?&nbsp; Cards.&nbsp; Lots of them.&nbsp; And what card
+game is the basis that all of Las Vegas what built upon?&nbsp; That's right,
+blackjack.</center>
+</td>
+</tr>
+
+<tr>
+<td WIDTH="100%">
+</td>
+</tr>
+
+<tr>
+<td WIDTH="100%">
+<center>For your next MP, you will design a very simple version of this classic
+casino game.&nbsp;</center>
+</td>
+</tr>
+</table></center>
+
+<h2>
+Problem Description</h2>
+
+<center><img SRC="mp3grafx.jpg" BORDER=0 height=533 width=834></center>
+
+<blockquote>
+  <p><font size="4">&nbsp;&nbsp;&nbsp; </font><font size="3">Conceptually,
+  blackjack is a very simple game.&nbsp; The game starts out by the dealer
+  dealing himself two cards (only the second of which is shown to the player),
+  and dealing two cards to the player.&nbsp; Then it is the player's turn.&nbsp;
+  The player then decides whether to &quot;hit&quot; or &quot;stay.&quot;&nbsp;
+  If the player chose to hit, then he has chosen to get another card.&nbsp; If
+  they chose to stay, then they have decided that they like their score.&nbsp;
+  After the player's turn, it is the dealer's turn.&nbsp; The dealer is very
+  much like the player, with one major difference.&nbsp; For the dealer, if his
+  score is above 15, then they can not hit.&nbsp; If it is below 16, then the
+  dealer MUST hit.</font><p><font size="3">&nbsp;&nbsp;&nbsp; The object of the
+  game is to get as close to a score of 21 without going over.&nbsp; The cards
+  are scored as follows:&nbsp; number card = number on card, face card = 10
+  points, ace = 1 or 11 points.&nbsp; If the player gets an ace and a face card
+  off the initial deal, then it is called &quot;blackjack.&quot;&nbsp; The
+  player automatically wins.&nbsp; The other ways the player wins are if the
+  player has a higher score than the dealer, if the player gets five cards
+  without going over 21, or if the dealer's score is over 21 (known as
+  &quot;busting&quot;).</font><p>&nbsp;&nbsp;&nbsp;<font size="3"> Obviously, if
+  the player busts, then he loses.&nbsp; If you disagree with the rules of
+  blackjack at the 291 casino, then you will be kindly (if you're lucky)
+  escorted out of the building.</font><p><font size="3">&nbsp;&nbsp;&nbsp; For
+  this MP, you will be implementing a version of this game in text mode video.</font><br>
+</blockquote>
+<h2>
+Implementation</h2>
+<i>A word about Interrupt Service Routines</i>:
+<ul>
+<li>
+In MP2, we used LIB291's <tt>kbdine</tt> to read data from the keyboard.
+Calling this function causes your computer to poll the default keyboard
+handler until a key is read into the DOS keyboard buffer.</li>
+
+<li>
+For this MP, we don't want to have to continuously poll the keyboard.&nbsp;
+Thankfully, in assembly it is easy to write your own interrupt service
+routines.&nbsp; This could come in handy if you wanted to have an asynchronous
+input from multiple devices.&nbsp; We would not like to have to wait on
+the keyboard input while other devices may be trying to offer input as
+well.</li>
+
+<li>
+The use of customized interrupt service routines (interrupt handlers) allows
+the program to handle <i>asynchronous I/O</i>. With asynchronous I/O, the
+program is able to do other things while waiting for data from one particular
+input.&nbsp; In this MP you are required to watch for inputs from&nbsp;
+the keyboard.</li>
+
+<li>
+The subject of ISRs is discussed in lectures 13 through 16.&nbsp; Read
+the lecture notes and Chapter 9 in the lab manual for more information.</li>
+
+<li>
+The card array is stored thusly (in the cardArray variable) :&nbsp;
+<ul>
+  <li>(0 - 12)&nbsp;&nbsp; : Hearts (0-8 = numbers 2 to 10, 9 = Jack, 10 =
+    Queen, 11 = King, 12 = Ace)</li>
+  <li>(13 - 25) : Diamonds (13 - 21 = numbers 2 to 10, 22 = Jack, 23 = Queen, 24
+    = King, 25 = Ace)</li>
+  <li>(26 - 38) : Clubs (26 - 34 = numbers 2 to 10, 35 = Jack, 36 = Queen, 37 =
+    King, 38 = Ace)</li>
+  <li>(39 - 51) : Spades (39 - 47 = numbers 2 to 10, 48 = Jack, 49 = Queen, 50 =
+    King, 51 = Ace)</li>
+  <li>A previously drawn card will have a value of 1, whereas an undrawn card
+    will have a value of 0.</li>
+</ul>
+</li>
+<li>Because of the fact that aces can count as 1 or 11, we need to keep track of
+  two scores for the player.</li>
+<li>The ASCII values for the suits (the picture representations of each):
+  <ul>
+    <li>Hearts = 03h</li>
+    <li>Diamonds = 04h</li>
+    <li>Clubs = 05h</li>
+    <li>Spades = 06h</li>
+  </ul>
+</li>
+<li>In order to generate a random number from 0 - 51, you must first get a
+  random number from the computer's timer.&nbsp; This can be done using
+  interrupt 21h (read on 21h to see which subfunction does this).&nbsp; Then, in
+  order to convert it to the range, we need to use a modulus operator (no, there
+  is no modulus opcode).&nbsp; This can be done using the DIV command.&nbsp;
+  This same principle must be used to convert a card in the range 0 to 51 into a
+  card within a suit.&nbsp; The DIV command will give the suit in one output
+  register, and the card within that suit in the other.&nbsp; It is up to you to
+  determine what number we need to divide these values by.</li>
+</ul>
+
+<h3>
+Procedures</h3>
+
+<ul>
+<li>
+This assignment has twelve procedures. You will receive credit for this
+assignment by replacing each of the twelve procedures listed below with
+your own code.</li>
+
+<li>
+Experiment with the working code to gain a full understanding of how the
+program works.</li>
+
+<li>
+Use defined constants/variables where appropriate.</li>
+
+<li>
+Comment ALL the functions and make sure that they preserve all register
+values.&nbsp; Be sure to include function headers for ALL functions that
+you write.</li>
+
+<li>
+For a gold star, implement &quot;splitting&quot; for the player's hand.</li>
+</ul>
+
+<ul>
+<li>
+<b><font size=+1>KbdInstall</font></b></li>
+
+<ul>
+<li>
+<b>Inputs :</b> None</li>
+
+<li>
+<b>Outputs : </b>oldKbdV updated</li>
+
+<li>
+<b>Calls : </b>None</li>
+
+<li>
+<b>Purpose :</b> The purpose of this function is to install your keyboard
+handler to handle keyboard interrupts.&nbsp; This function saves the value
+of the default keyboard routine in the variable oldKbdV.</li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+<li>
+Code this routine at the same time as KbdUninstall.</li>
+
+<li>
+Use DOS interrupt 21h to read and set the handler vector.</li>
+
+<li>
+While coding this function, have it point to libKbdHandler.&nbsp; Only point it
+to KbdHandler if you have implemented the handler.</li>
+</ul>
+
+<li>
+<b>Points : 3 (with KbdUninstall) </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li>
+<b><font size=+1>KbdUninstall</font></b></li>
+
+<ul>
+<li>
+<b>Inputs : </b>oldKbdV</li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls : </b>None</li>
+
+<li>
+<b>Purpose :</b> This procedure takes in the address of the default keyboard
+handler and returns the keyboard interrupt handler to this default address.</li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+<li>
+Code this routine at the same time as KbdInstall.</li>
+
+<li>
+Again, use DOS interrupt 21h to set the vector.</li>
+</ul>
+
+<li>
+<b>Points : 3 (with KbdInstall) </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li>
+<b><font size=+1>KbdHandler</font></b></li>
+
+<ul>
+<li>
+<b>Inputs : </b>None</li>
+
+<li>
+<b>Outputs : </b>exitFlag, drawCard, stayPlayer, and spaceFlag updated.</li>
+
+<li>
+<b>Calls : </b>None</li>
+
+<li>
+<b>Purpose :</b> This function is the new keyboard handler that you are
+writing for the program.&nbsp; It updates the flags according to what key
+was pressed by the user.</li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+<li>
+<b>DO NOT CALL THE DOS HANDLER.</b></li>
+
+<li>
+Your code should reset the PIC.</li>
+
+<li>
+exitFlag signifies when the user wants to exit the program, drawCard is
+when the user wants to "hit," stayPlayer is when the user wants to "stay,"
+and spaceFlag is used for when the program should wait until spacebar is
+pressed before continuing.</li>
+
+<li>
+See the lab manual for an example of a keyboard handler.</li>
+
+<li>
+Be sure to save all registers.</li>
+
+<li>
+Keys to be used :
+<ul>
+  <li>H = player wants to hit</li>
+  <li>S = player wants to stay</li>
+  <li>ESC = player wants to leave program</li>
+  <li>Spacebar = player wants to exit a waiting loop</li>
+</ul>
+</li>
+</ul>
+
+<li>
+<b>Points : 5 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li>
+<b><font size=+1>DrawBackground</font></b></li>
+
+<ul>
+<li>
+<b>Inputs : </b>wallpaper</li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls : </b>None</li>
+
+<li>
+<b>Purpose : </b>This procedure takes the byte array defined in the variable
+wallpaper, and displays it entirely onto the video screen.</li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+<li>
+The variable wallpaper is defined in the file background.dat</li>
+
+<li>
+Only call this function at the beginning of a new deal.</li>
+
+<li>
+Display the entire file byte by byte on the "video segment".</li>
+</ul>
+
+<li>
+<b>Points : 3 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li>
+<b><font size=+1>StartGame</font></b></li>
+
+<ul>
+<li>
+<b>Inputs : </b>None</li>
+
+<li>
+<b>Outputs : </b>playerCards, dealerCards, playerHand, dealerHand, playerScore1,
+playerScore2, dealerScore, blackjackFlag, cardArray updated</li>
+
+<li>
+<b>Calls : </b>DrawCardFromDeck, DisplayCard, CalculateScore, DisplayScore</li>
+
+<li>
+<b>Purpose : </b>This function performs several necessary operations.&nbsp;
+First it resets all variables to their conditions at the start of a game.&nbsp;
+Then it "shuffles" the deck.&nbsp; It also draws the first two cards for
+each player, displaying all but the first card drawn by the dealer.&nbsp;
+After each card drawn, it recalculates the score for the person who drew
+the card, and if it was the human player, it then displays the new score.</li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+<li>
+Here is the order for this function:</li>
+
+<ul>
+<li>
+Initialize all variables</li>
+
+<li>
+"Shuffle" the deck (reset all cards to not drawn)</li>
+
+<li>
+Draw a card for the dealer</li>
+
+<li>
+Draw a card for the player</li>
+
+<li>
+Draw a card for the dealer</li>
+
+<li>
+Draw a card for the player</li>
+</ul>
+
+<li>
+Remember to place all cards drawn into the appropriate player/dealer hand.</li>
+
+<li>
+Keep track of how many cards in each hand (variables are provided).</li>
+
+<li>
+Only display the last three cards drawn.</li>
+
+<li>
+Wait for spacebar press after each drawing.</li>
+
+<li>
+Calculate the scores and place them in the appropriate player/dealer score
+variable</li>
+
+<ul>
+<li>
+There are two scores kept for the player, update them both.</li>
+
+<li>
+Display the score to the screen if it is the player's score.</li>
+</ul>
+</ul>
+<li><b>Points : 5 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>DisplayCard</b></font>
+    <ul>
+      <li><font size="3"><b>Inputs :</b></font>
+        <ul>
+          <li><font size="3">DX = Index of the card to draw (from 0 to 51).</font></li>
+          <li><font size="3">DI = Index of the upper left position to draw the
+            card on the screen.</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Outputs : </b>None</font></li>
+      <li><font size="3"><b>Calls : </b>None</font></li>
+      <li><font size="3"><b>Purpose : </b>The purpose of this function is to
+        display a card image on the screen.&nbsp; The background for the card is
+        intense white, and the numbers/suits on the card are either black or
+        red.&nbsp; The cards are eight pixels wide, and ten pixels across.</font></li>
+      <li><b><font size="3">Notes :&nbsp;</font></b>
+        <ul>
+          <li><font size="3">Remember to check for which suit you are drawing in
+            order to set the foreground color to either black or red. There is
+            an easy way to determine suit.</font></li>
+          <li><font size="3">Please note that the number/letter of the card is
+            displayed immediately to the right of the suit on the top half of
+            the card, and immediately to the left of the suit on the
+            bottom.&nbsp; This means that there will be special attention to the
+            number ten when displaying.</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 5 </b></font></li>
+    </ul>
+  </li>
+</ul>
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>DrawCardFromDeck</b></font>
+    <ul>
+      <li><font size="3"><b>Inputs : </b>CardArray</font></li>
+      <li><b><font size="3">Outputs :</font></b>
+        <ul>
+          <li><font size="3">DX = card index that was generated as the drawn
+            card (from 0 to 51)</font></li>
+          <li><font size="3">CardArray updated</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Calls : </b>None</font></li>
+      <li><font size="3"><b>Purpose : </b>The purpose of this function is to
+        randomly draw a new card from the available cards.&nbsp; This is done by
+        first selecting a new card, seeing if it was already drawn, and if it
+        was, selecting a new card.</font></li>
+      <li><b><font size="3">Notes :&nbsp;</font></b>
+        <ul>
+          <li><font size="3">Use the get time interrupt (INT 21h) to get a
+            random number.</font></li>
+          <li><font size="3">Convert this number into a number from 0 to 51.</font></li>
+          <li><font size="3">If a card was already drawn, it should have a 1 in
+            its position in the card array.</font></li>
+          <li><font size="3">Don't forget that if a card wasn't already drawn,
+            that you should mark that it is now drawn.</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 4 </b></font></li>
+    </ul>
+  </li>
+</ul>
+<p>&nbsp;</p>
+<ul>
+  <li><b><font size="4">CalculateScore</font></b>
+    <ul>
+      <li><font size="3"><b>Inputs :&nbsp;</b></font>
+        <ul>
+          <li><font size="3">AX = 0 (if player to be calculated) or 1 (if dealer
+            to be calculated)</font></li>
+          <li><font size="3">playerHand, dealerHand, playerCards, dealerCards</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Outputs :&nbsp;</b></font>
+        <ul>
+          <li><font size="3">AX = first score generated</font></li>
+          <li><font size="3">BP = second score generated</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Calls : </b>None</font></li>
+      <li><font size="3"><b>Purpose :&nbsp;</b> The purpose of this function is
+        to calculate the scores that either the dealer or the player can have.</font></li>
+      <li><b><font size="3">Notes :&nbsp;</font></b>
+        <ul>
+          <li><font size="3">The reason we need two scores is because of the
+            possibility of drawing an ace.</font></li>
+          <li><font size="3">For the dealer, the first ace drawn will ALWAYS
+            count as a score of 11.&nbsp; Subsequent aces will ALWAYS count as
+            1.</font></li>
+          <li><font size="3">For the player, we need to keep track of both
+            possibilities.&nbsp; For the first ace, score one get 11 points,
+            while score two only gets one point.&nbsp; Since we can never have
+            two aces count as 11 (our score would go over 21), any ace other
+            than the first will ALWAYS count as one point.</font></li>
+          <li><font size="3">Remember to loop through the appropriate hand only
+            as many times as that player has cards.</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 5 </b></font></li>
+    </ul>
+  </li>
+</ul>
+<p>&nbsp;</p>
+<ul>
+  <li><b><font size="4">DisplayScore</font></b>
+    <ul>
+      <li><font size="3"><b>Inputs : </b>playerScore1, playerScore2, scoreBuffer</font></li>
+      <li><font size="3"><b>Outputs : </b>None</font></li>
+      <li><font size="3"><b>Calls : </b>BINASC</font></li>
+      <li><font size="3"><b>Purpose : </b>The purpose of this function is to
+        display in the bottom left corner the players best score that is under
+        21.&nbsp; If both scores are over 21, then display the lesser of the two
+        scores.</font></li>
+      <li><b><font size="3">Notes :</font></b>
+        <ul>
+          <li><font size="3">Read the lab manual description of BINASC.&nbsp;
+            Use the provided score buffer to place the ASCII string for the
+            score in.</font></li>
+          <li><font size="3">Do not use DSPMSG to display the string.&nbsp;
+            Since we are in text mode, this will not work.</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 4 </b></font></li>
+    </ul>
+  </li>
+</ul>
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>PlayerTurn</b></font>
+    <ul>
+      <li><font size="3"><b>Inputs : </b>playerHand, playerCards, playerScore1,
+        playerScore2</font></li>
+      <li><font size="3"><b>Outputs : </b>playerHand, playerCards, playerScore1,
+        playerScore2, blackjackFlag</font></li>
+      <li><font size="3"><b>Calls : </b>DisplayCard, DrawCardFromDeck,
+        CalculateScore, DisplayScore</font></li>
+      <li><font size="3"><b>Purpose : </b>The purpose of this function is to
+        simulate the player's turn.&nbsp; I loops continuously, only breaking if
+        the player decides to stay, exit, or goes over the limit of 21
+        points.&nbsp; If a player decides to hit, then it draws a card for the
+        player, recalculates the score, and redisplays the score.</font></li>
+      <li><font size="3"><b>Notes :</b>&nbsp;</font>
+        <ul>
+          <li><font size="3">Remember to initialize the appropriate flag
+            variables, and to check for them within your turn loop.</font></li>
+          <li><font size="3">When a player hits, remember to reenter the loop
+            after reinitializing the hit flag.</font></li>
+          <li><font size="3">Only set the blackjackFlag if the player got a
+            blackjack off the deal.&nbsp; In this case, exit immediately.</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 5</b> </font></li>
+    </ul>
+  </li>
+</ul>
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>DealerTurn</b></font>
+    <ul>
+      <li><font size="3"><b>Inputs : </b>dealerHand, dealerScore, dealerCards</font></li>
+      <li><font size="3"><b>Outputs :</b> dealerHand, dealerScore, dealerCards</font></li>
+      <li><font size="3"><b>Calls : </b>DrawCardFromDeck, DisplayCard,
+        CalculateScore</font></li>
+      <li><font size="3"><b>Purpose : </b>The purpose for this function is to
+        simulate the dealers turn.&nbsp; It follows the pattern of the players
+        turn, but in between draws it waits for a space input.&nbsp; The dealer
+        always draws if the score is less than 16, and always stays otherwise.</font></li>
+      <li><b><font size="3">Notes :</font></b>
+        <ul>
+          <li><font size="3">Again, remember to initialize the flag variables.</font></li>
+          <li><font size="3">The dealer does not recognize blackjack as anything
+            other than a score of 21 (no special cases needed).</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 4 </b></font>
+        <p>&nbsp;</li>
+    </ul>
+  </li>
+<li>
+<b><font size=+1>MP3Main</font></b>
+<ul>
+  <li><font size="3"><b>This is the program's main function, so be sure to write
+    it first.</b></font></li>
+  <li><font size="3">Read through all the other functions you need to implement
+    to get some idea of how to tie them together.</font></li>
+  <li><font size="3">Here is pseudocode for how this function works:</font>
+    <ul>
+      <li><font size="3">Install the keyboard handler</font></li>
+      <li><font size="3">while (the player doesn't want to exit)</font>
+        <ul>
+          <li><font size="3">Draw the background</font></li>
+          <li><font size="3">Start a new game</font></li>
+          <li><font size="3">Let the player take turn</font></li>
+          <li><font size="3">Display the dealer's first card drawn</font></li>
+          <li><font size="3">Let the dealer take turn</font></li>
+          <li><font size="3">Check for win/loss/draw/blackjack conditions</font></li>
+          <li><font size="3">Display the appropriate end game string</font></li>
+          <li><font size="3">Pause at end of game</font></li>
+        </ul>
+      </li>
+      <li><font size="3">Uninstall keyboard handler</font></li>
+      <li><font size="3">exit</font></li>
+    </ul>
+  </li>
+  <li><b><font size="3">Notes :</font></b>
+    <ul>
+      <li><font size="3">Remember to keep the flags properly updated (after a
+        wait you should always reset the spaceFlag, etc.)</font></li>
+      <li><font size="3">Exiting the program should work from any of the
+        functions that you write (you may need to check for this condition in
+        any function).&nbsp; This should also still work even while in a wait
+        loop.</font></li>
+      <li><font size="3">If the player has blackjack, then skip the dealer's
+        turn.</font></li>
+      <li><font size="3">Observe the TA solution for a few games to see how the
+        general flow of the game proceeds.</font></li>
+      <li><font size="3">Remember that you should only count the highest player
+        score under or equal to 21 (check for which score you should use).</font></li>
+      <li><font size="3">Remember to check for all win loss conditions</font>
+        <ul>
+          <li><font size="3">Player has higher score than dealer (win)</font></li>
+          <li><font size="3">Player has blackjack (win - blackjack)</font></li>
+          <li><font size="3">Player has five cards (and less than or equal to 21
+            points) (win)</font></li>
+          <li><font size="3">Dealer has score over 21 (win)</font></li>
+          <li><font size="3">Dealer and player have same score (draw)</font></li>
+          <li><font size="3">Player has lower score than dealer (lose)</font></li>
+          <li><font size="3">Player has score over 21 (lose)</font></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><font size="3"><b>Points : 7</b></font></li>
+</ul>
+  </li>
+
+  <p>&nbsp;
+</ul>
+<b><font size=+2>Preliminary Procedure</font></b>
+<ul>
+<li>
+Copy the given MP3 files from the network drive to your home directory
+with the following command:</li>
+
+<br><tt>xcopy /s V:\ece291\mp3 W:\mp3</tt>
+<br>Alternatively, from home you can download the same files as <a href="http://www.ece.uiuc.edu/ece291/mp/mp3/mp3.zip">mp3.zip</a>.
+<li>
+As with previous MP's, run <tt>NMake</tt> to build an executable program
+using the given ECE291 library functions.</li>
+
+<li>
+As with previous MP's, use a text editor to modify the program. As given,
+the program uses LIBMP3 routines to implement all functionality. To receive
+full credit for the assignment, you will need to implement each of the
+subroutines described above with your own code.</li>
+
+<li>
+By modifying a few comments, you can mix and match usage of your own code
+and Library routines. You may notice that the LIBMP3 routines contain extraneous
+and difficult-to-read code. They are not meant to be easily unassembled!</li>
+</ul>
+<i>Monitor the newsgroup and this on-line section for revisions to the
+MP or to the write-up</i>
+<h2>
+Final Steps</h2>
+
+<ol>
+<li>
+Verify that your program meets all requirements for handin.</li>
+
+<li>
+Print a copy of the <a href="http://www.ece.uiuc.edu/~ece291/mp/mp3/mp3grade.html">MP3
+grading sheet</a>.</li>
+
+<li>
+Demonstrate MP3.EXE to a TA or to the instructor.</li>
+
+<li>
+Be prepared to answer questions about any aspect of the operation of your
+program. The TAs will not accept an MP if you cannot fully explain all
+operations of your code.</li>
+
+<li>
+Handin in your program by running:</li>
+
+<br><tt>A:\Handin </tt><i>YourWindowsLogin</i>
+<li>
+Print&nbsp;<span style="BACKGROUND-COLOR: #ffffff"><font color="#0000FF">MP3.ASM</span></font>.
+Make sure that you print out your code 4 pages per page and double sided.
+If you don't know how to do this ask a TA for assistance.</li>
+
+<li>
+Staple the MP3 grading sheet to the front of your MP3.ASM file and give
+both to the same TA that approved your demonstration.</li>
+</ol>
+
+<pre>
+</pre>
+<hr>
+
+<p><a href="mp3.asm"><b><font size="7">mp3.asm</font></b></a></p>
+
+</body>
+</html>

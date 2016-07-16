@@ -1,0 +1,1074 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage Express 2.0">
+<title>mp3</title>
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p>&nbsp; <br>
+&nbsp; </p>
+
+<table border="0" width="100%">
+    <tr>
+        <td width="33%">ECE291</td>
+        <td align="center" width="34%">Computer Engineering II</td>
+        <td align="right" width="33%">Moorman, Summer 1999</td>
+    </tr>
+</table>
+
+<h1 align="center">Machine Problem 3: Matching Game</h1>
+<!-- Copyright 1996-1999, John W Lockwood, All rights reserved
+     For usage information: contact lockwood@ipoint.vlsi.uiuc.edu or visit
+     http://ipoint.vlsi.uiuc.edu/~lockwood/
+-->
+<p align="center">&nbsp; </p>
+<div align="center"><center>
+
+<table border="1" cellpadding="2" width="60%">
+    <tr>
+        <td align="right"><b>Assigned</b></td>
+        <td>Tuesday, July 6, 1999</td>
+    </tr>
+    <tr>
+        <td align="right"><b>Due Date</b></td>
+        <td>Tuesday, July 13, 1999</td>
+    </tr>
+    <tr>
+        <td align="right"><b>Purpose</b></td>
+        <td>Text Mode Graphics, Tables, Software&nbsp; <br>
+        Interrupts, Mouse Functions</td>
+    </tr>
+    <tr>
+        <td align="right"><b>Points</b></td>
+        <td>50</td>
+    </tr>
+</table>
+</center></div>
+
+<h2 align="center"><img src="mp3grfx.gif" width="576"
+height="432"></h2>
+
+<h2>Introduction</h2>
+
+<p>In the days before the University of Illinois ECE department,
+future engineers would demonstrate their extraordinary thinking
+power by challenging the less gifted to games that required every
+ounce of brain in the body.&nbsp; One such game was the matching
+game, more commonly known as &quot;Memory&quot;.&nbsp; A number
+of pairs of cards or tiles were shuffeled and placed face-down on
+a table.&nbsp; A player had to select two tiles and turn them
+over, revealing the faces of the tiles.&nbsp; If the faces
+matched, the tiles were removed from the table.&nbsp; If the
+faces did not match, the tiles were again turned face-down and
+the player had to pick again.&nbsp; This continued until all of
+the tiles were removed from the table.&nbsp; The person who took
+the lowest number of picks to clear the table was declared the
+most intelligent, and was given praise by the rest of the
+community. </p>
+
+<p>In this MP, we will recreate the matching game on a
+computer.&nbsp; Our game will consist of 8 pairs of tiles, for a
+total of 16 tiles.&nbsp; The player will use the mouse to select
+a tile, revealing the tile's face.&nbsp; Once two tiles are
+selected, the player must click the mouse again to continue
+playing.&nbsp; If the faces match, the tiles are removed from the
+board, otherwise the tiles are turned face-down again.&nbsp; The
+game keeps track of the number of picks the player makes, and
+increments this number every time a tile is selected.&nbsp; The
+game also counts the number of matches made, and increments this
+when a match is made. <br>
+&nbsp; </p>
+
+<h2>Implementation</h2>
+
+<p>Your implementation of this MP should mimic that of the
+library code.&nbsp; You will use text-mode graphics to display
+the user interface and the tiles on the screen.&nbsp; All of the
+game's input will be through the mouse. </p>
+
+<p>When finished, your program should: </p>
+
+<ul>
+    <li>Display the menu buttons on the right of the screen with
+        the game options.</li>
+    <li>Use Mouse input to determine which game option was
+        selected.</li>
+    <li>Use Mouse input to determine if a tile was clicked, and
+        if so, which one was clicked.</li>
+    <li>Display the face of the tile once it has been selected.</li>
+    <li>Determine if one or two tiles have been selected.</li>
+    <li>Determine if a match is made once two tiles are selected.</li>
+    <li>Keep track of the number of player picks and tile
+        matches.</li>
+    <li>Give the player hints.</li>
+    <li>Tell the player that he/she wins once all 8 pairs have
+        been matched.</li>
+</ul>
+
+<h2>User Interface</h2>
+
+<p>The program uses a menu-driven interface.&nbsp; Play with the
+library code to get a feel of how the program operates, i.e. what
+each menu button does and what happens when a tile is selected. </p>
+
+<p>The menu consists of 5 buttons under the [Mail Menu] title: </p>
+
+<ul>
+    <li>[Restart] restarts the game when selected.</li>
+    <li>[Show All] displays all of the remaining tiles on the
+        board.</li>
+    <li>[Matches] show the number of matches the player has
+        made.&nbsp; This cannot be selected.</li>
+    <li>[Hint] reveals a pair of tiles.</li>
+    <li>[Quit Game] allows the player to quit the game.</li>
+</ul>
+
+<p>In addition to the main menu, input can be given to the
+program by clicking the mouse on a face-down tile.&nbsp; Once a
+tile is selected, it's face is displayed.&nbsp; The key data
+structure for this program is called <font color="#000000"><b>GameMatrix</b></font>.&nbsp;
+It is an array of bytes that holds the tile face at each location
+on the screen.&nbsp; Since there are 8 pairs of tiles, there are
+8 possible tile faces, numbered 0 through 7.&nbsp; On the screen,
+the tiles are placed in a 4x4 grid, with each place on the grid
+corresponding to an entry in <b>GameMatrix</b> as follows: <br>
+&nbsp;&nbsp; </p>
+<div align="center"><center>
+
+<table border="2" cellpadding="0" cellspacing="0" width="5%"
+cols="4" height="5%">
+    <tr>
+        <td>0</td>
+        <td>1</td>
+        <td>2</td>
+        <td>3</td>
+    </tr>
+    <tr>
+        <td>4</td>
+        <td>5</td>
+        <td>6</td>
+        <td>7</td>
+    </tr>
+    <tr>
+        <td>8</td>
+        <td>9</td>
+        <td>10</td>
+        <td>11</td>
+    </tr>
+    <tr>
+        <td>12</td>
+        <td>13</td>
+        <td>14</td>
+        <td>15</td>
+    </tr>
+</table>
+</center></div>
+
+<p>So, the upper-left tile on the screen corresponds to entry 0
+in <b>GameMatrix</b>.&nbsp; For later reference, these will be
+referred to by tile <i>locations</i>.&nbsp;&nbsp;&nbsp; Each
+entry in <b>GameMatrix</b> holds the tile <i>face type</i>, a
+value between 0 and 7.&nbsp; For example, a shuffeled <b>GameMatrix</b>
+may look like the following: <br>
+&nbsp;&nbsp; </p>
+<div align="center"><center>
+
+<table border="3" cellpadding="0" cellspacing="0" width="5%"
+cols="4" height="5%">
+    <tr>
+        <td>&nbsp;1</td>
+        <td>&nbsp;5</td>
+        <td>&nbsp;3</td>
+        <td>&nbsp;7</td>
+    </tr>
+    <tr>
+        <td>&nbsp;7</td>
+        <td>&nbsp;0</td>
+        <td>&nbsp;2</td>
+        <td>&nbsp;6</td>
+    </tr>
+    <tr>
+        <td>&nbsp;6</td>
+        <td>&nbsp;4</td>
+        <td>&nbsp;4</td>
+        <td>&nbsp;1</td>
+    </tr>
+    <tr>
+        <td>&nbsp;2</td>
+        <td>&nbsp;3</td>
+        <td>&nbsp;5</td>
+        <td>&nbsp;0</td>
+    </tr>
+</table>
+</center></div>
+
+<p>So, the tile at <i>location</i> 14 would have <i>face type</i>
+5. </p>
+
+<h2>Text Mode</h2>
+
+<p>You will be using text-mode graphics to display the game on
+the screen. This involves the technique of memory-mapped IO to
+display the appropriate characters by writing the character byte
+and attribute byte to the video memory.&nbsp; For this MP, you
+will additionally be using 80x50 text-mode.&nbsp; Treat it the
+same way you would treat 80x25 mode, except that now you double
+the memory page size. <br>
+&nbsp; </p>
+
+<h2>Data Structures</h2>
+
+<p>The following variable have been defined for you in the
+program framework. </p>
+
+<dl>
+    <dd><ul>
+            <li><b>TilePlace</b>: Array of words containing the
+                video-memory address of the first byte of the
+                upper-left character of each tile on the
+                grid.&nbsp; Each word in this array corresponds
+                to the location in <b>GameMatrix</b>.&nbsp; For
+                example, the first <i>location</i> in <b>GameMatrix</b>
+                is drawn at the place on the screen stored in the
+                first word in <b>TilePlace</b>.&nbsp; <br>
+                CAUTION: <b>GameMatrix</b> has bytes, <b>TilePlace</b>
+                has words.</li>
+            <li><b>MenuPlace</b>: Array of words containing the
+                video-memory address of the first byte of the
+                left-most character of each button on the menu.</li>
+            <li><b>GameMatrix</b>: Table of bytes containing the <i>face
+                type</i> of each tile at each<i> location</i> on
+                the grid (see above).&nbsp; The <i>face type</i>
+                is an index into <b>CardFace</b>.</li>
+            <li><b>GameBackup</b>: A copy of GameMatrix. This may
+                come in handy.....</li>
+            <li><b>CardFace</b>: Array of bytes containing the
+                character values for each type of tile
+                face.&nbsp; Once a<i> face type</i> is extracted
+                from a given <i>location</i> in <b>GameMatrix</b>,
+                the face type is used as an index into this array
+                to get the character byte to draw the face of the
+                tile.&nbsp; <br>
+                NOTE: If you would like to be creative, you can
+                change the entries to this array to any 8
+                characters you wish to use.&nbsp; Just be
+                careful.</li>
+            <li><b>NumPicks</b>: The number of picks the player
+                has made</li>
+            <li><b>NumMatches</b>: The number of matches the
+                player has made</li>
+            <li><b>Selection</b>: Pair of bytes that hold the
+                location of selected tiles.</li>
+            <li><b>SelIndex</b>: Byte that hold the current
+                number of tiles selected. <br>
+                HINT: This value correspond to an index in <b>Selection</b></li>
+            <li><b>RandVal</b>: A word value that is the output
+                of the Random function</li>
+<!--<li><b>RandCal</b>: A byte value that is tells the
+                Random function whether or not the function has
+                been called before.</li>-->        </ul>
+    </dd>
+</dl>
+
+<p>Additionally, the following string variables have been defined
+for you: </p>
+
+<ul>
+    <li><b>MoveText</b>: Array of bytes holding the text for the
+        sentence showing how many picks have been made.</li>
+    <li><b>MenuText</b>: Array of bytes containing the text for
+        the various menu buttons.</li>
+    <li><b>YouWin</b>: Array of bytes holding the text for the
+        You Win sentence shown once 8 matches have been made.</li>
+    <li><b>TextString</b>: Array of bytes representing a string
+        that can be used to help display number on the screen.</li>
+</ul>
+
+<p>To make the programming easier and to keep everything
+standard, many constants have been defined to specify character
+bytes commonly used, character attributes commonly used,
+locations used, etc.&nbsp; Please note that many of data
+structures use constants.&nbsp; You may change some of the
+constants if you like, but there are some that are vital to the
+program, and changing them will cause disaster.&nbsp; Those you
+can change will be noted with * at the end of the
+description.&nbsp; Constants TEXTLOC, TEXTCOLOR, and TEXTLENGTH
+refer to the variable <b>MoveText</b>. <br>
+&nbsp; </p>
+
+<ul>
+    <li>TEXTVIDSEG =&nbsp; 0B800h : page 0 of text video graphics</li>
+    <li>BACKCOLOR = 1 : color of background*</li>
+    <li>BACKCHAR = 176 : character of background*</li>
+    <li>BLACKSTART = 5*160+16 : location where black section
+        starts</li>
+    <li>BLACKWIDTH = 39 : width in characters for black section
+        of screen</li>
+    <li>BLACKHEIGHT = 39 : height in characters of black section
+        of screen</li>
+    <li>TILESTART = BLACKSTART+2*160+4 : location on screen of
+        first tile</li>
+    <li>TILECOLOR = 2&nbsp; : color of tile back*</li>
+    <li>TILECHAR = 63 : character of tile back*</li>
+    <li>TILEWIDTH = 5&nbsp; : width in characters of a tile</li>
+    <li>TILEHEIGHT = 5&nbsp; : height in charaters of a tile</li>
+    <li>TEXTLOC = 49*160+40 : location of place where text is
+        written</li>
+    <li>TEXTCOLOR = 4 : color of text*</li>
+    <li>TEXTLENGTH = 27 : length of text message</li>
+    <li>COUNTLOC = TEXTLOC+40&nbsp; : location of current pick
+        counter</li>
+    <li>MENUSTART = 16*160+114&nbsp; : starting location of main
+        menu</li>
+    <li>MATCHLOC = MENUSTART+11*160+22 : location where number of
+        matches is written</li>
+    <li>MENUCOLOR = 01001111b&nbsp; : attribute byte for main
+        menu*</li>
+    <li>MENULENGTH = 13&nbsp; : length of each menu bar</li>
+    <li>MENUSIZE = 5&nbsp; : number of menu bars in menu</li>
+    <li>DEADTILE = 0FFh : replaces matched tile types in
+        GameMatrix</li>
+    <li>RESTCLICK = 1&nbsp; : value used when RESET is clicked</li>
+    <li>SHOWCLICK = 2 : value used when SHOWALL is clicked</li>
+    <li>QUITCLICK = 3&nbsp; : value used when QUIT is clicked</li>
+    <li>TILECLICK = 4&nbsp; : value used when a tile is clicked</li>
+    <li>HINTCLICK = 5 : value used when HINT bar is clicked</li>
+    <li>SHUFAMOUNT = 200&nbsp; : number of times <b>GameMatrix</b>
+        is shuffled*</li>
+    <li>WINLOC = 70&nbsp; : location of winning text</li>
+    <li>WINCOLOR = 10011110b&nbsp; : attribute byte for winning
+        text*</li>
+    <li>WINLENGTH = 11&nbsp; : length of winning text</li>
+    <li>CONSTANT1 = 17477 : first random constant (k1)</li>
+    <li>CONSTANT2 = 9001 : second random constant (k2)</li>
+    <li>DELAY1 = 5000 : delay constant to use for Hint</li>
+    <li>DELAY2 = 5000 : another delay constant to use for Hint</li>
+</ul>
+
+<h2>Procedures</h2>
+
+<ul>
+    <li>This assignment has nine procedures.&nbsp; You will
+        receive credit for this assignment by replacing each of
+        the nine procedures listed below with your own code.</li>
+    <li>Experiment with the working code to fully understand how
+        the finished program should work.</li>
+    <li>Read through the given Main routine to gain an
+        understanding of the main structure of the program.&nbsp;
+        Although this is a simple procedure, it will provide
+        insight into how the program is organized.</li>
+    <li>Your program should exactly match the functionality of
+        the library subroutines.</li>
+    <li>If you change any of the constants that you are allowed
+        to change (see above), you must recompile the mp3.asm
+        file to see the changes. </li>
+    <li>ES is set to the text video segment in the main function.
+        If you change the value of ES, make sure you reset ES to
+        the text video segment before you write to the screen.</li>
+    <li>All procedures should be modular.&nbsp; They should
+        preserve any registers not specifically used for return
+        values.</li>
+    <li><b><i>Important: Library routines only call other Library
+        routines</i></b>.&nbsp; Keep this in mind when you are
+        testing your code.</li>
+</ul>
+
+<ul>
+    <li><font size="4"><b>Random</b></font> <ul>
+            <li>Purpose: To generate a random number </li>
+            <li>Inputs: <b>RandVal</b> : The random value from
+                the previous call to Random. </li>
+            <li>Outputs: <b>ax </b>: A new random number based on
+                the old <b>RandVal</b> and two constants, between
+                1 and 65535. </li>
+            <li>Description: This function generates a 16-bit
+                pseudo-random number using two large prime number
+                seeds CONSTANT1 and CONSTANT2 and the previous
+                random number R(n) and calculates the new random
+                number R(n+1) using the following equation: <br>
+                R(n+1) = (CONSTANT1 * R(n) + CONSTANT2) % maxval<br>
+                where maxval is the maximum output value (FFFFh)
+                and n is the n'th call the to the function. </li>
+            <li>Hints: <ul>
+                    <li>% is the mod operation</li>
+                    <li>Perform multiplication and division using
+                        16-bit operations</li>
+                    <li><b>RandVal</b> holds new Random
+                        calculation and AX is the previous value
+                        of <b>RandVal</b>. </li>
+                </ul>
+            </li>
+            <li>Calls: None </li>
+            <li>Points: 4 </li>
+        </ul>
+    </li>
+    <li><font size="4"><b>DrawTile</b></font> <ul>
+            <li>Purpose: To draw a single tile on the screen. </li>
+            <li>Inputs: <ul>
+                    <li>al : the character for the tile </li>
+                    <li>ah : the attribute for the tile character
+                    </li>
+                    <li>bx : the starting video memory address
+                        for the tile </li>
+                </ul>
+            </li>
+            <li>Outputs: To screen. </li>
+            <li>Description: This function draws a single tile to
+                the screen. All tiles are just one character
+                type, and that character number is stored in
+                al.&nbsp; The attribute for the character is
+                stored in ah. The starting address, bx, is the
+                video memory address of the upper-left character
+                in the tile. </li>
+            <li>Hints: Use the given constants to draw the tiles
+                the correct height and width. </li>
+            <li>Calls: none </li>
+            <li>Points: 3 </li>
+        </ul>
+    </li>
+    <li><font size="4"><b>DrawStatic</b></font> <ul>
+            <li>Purpose: To draw the entire game board. </li>
+            <li>Inputs: None. </li>
+            <li>Outputs: To screen. </li>
+            <li>Description: This function draws the entire game
+                board. It draws the background, the black
+                section, the menu, the face-down tiles (the tile
+                backs are showing), and the text telling the
+                player how many picks he/she has made. </li>
+            <li>Notes: This function has a lot of code, but most
+                of it is just drawing to the screen. </li>
+            <li>Hints: Use the given constants and tables to help
+                get the correct values for the size and color and
+                place of screen elements. </li>
+            <li>Calls: DrawTile </li>
+            <li>Points: 5 </li>
+        </ul>
+    </li>
+    <li><font size="4"><b>MouseControl</b></font> <ul>
+            <li>Purpose: To get user input via the mouse. </li>
+            <li>Inputs: None. </li>
+            <li>Outputs: <ul>
+                    <li>ah : 0 unless a tile was clicked. If a
+                        tile is clicked, ah is the tile location
+                        (0 to 15) in <b>GameMatrix</b>. </li>
+                    <li>al : The value telling the program what
+                        was clicked: <ul>
+                            <li>TILECLICK : a tile was clicked. </li>
+                            <li>QUITCLICK : the QUIT bar was
+                                clicked. </li>
+                            <li>RESTCLICK : the RESTART bar was
+                                clicked. </li>
+                            <li>SHOWCLICK : the SHOWALL bar was
+                                clicked. </li>
+                            <li>HINTCLICK : the HINT bar was
+                                clicked. </li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+            <li>Description: The function tells the main
+                procedure what the user did. The program stays in
+                this function until the user selects something
+                that the program can use, either a menu bar or a
+                tile. If the user does not click a tile or a menu
+                bar, the function just loops and waits. If a
+                valid screen element is clicked, ax is set to the
+                appropriate values and the function is exited. </li>
+            <li>Notes: <ul>
+                    <li>The program spends most of its time in
+                        this procedure. It waits for the user to
+                        click a valid screen element (by clicked,
+                        think of a mouse button press AND
+                        release, not just press). </li>
+                    <li>The mouse status is read via software
+                        interrupts. Input register AX and INT 33h
+                        are used. Refer to the lab manual for
+                        information on the mouse interrupts. </li>
+                    <li>In the main procedure the mouse is
+                        already initialized and made visible to
+                        the screen. </li>
+                </ul>
+            </li>
+            <li>Hints: <ul>
+                    <li>Perform mouse operations on a button
+                        release, not a button press. Think of why
+                        this is the case. </li>
+                    <li>You will need to do many comparisons in
+                        this procedure. Before diving into the
+                        code, think of some shortcuts you can
+                        take by using the given constants and
+                        tables. </li>
+                    <li>If a tile has been removed due to a
+                        match, nothing should happen when the
+                        mouse is clicked on a blank space. There
+                        are many ways to take care of this, but
+                        think before you code; there is an easy
+                        way to do this (note: I said EASY, not
+                        SHORT). </li>
+                    <li>If a tile has been clicked and is showing,
+                        then mouse control should not allow this
+                        to return a valid click.</li>
+                </ul>
+            </li>
+            <li>Calls: None. </li>
+            <li>Points 8 </li>
+        </ul>
+    </li>
+    <li><font size="4"><b>ProcessTile</b></font> <ul>
+            <li>Purpose: To draw the face of a selected tile to
+                the screen, and to check and see if a match has
+                been made. </li>
+            <li>Inputs: ah : Location in <b>GameMatrix</b> of
+                tile that was clicked. </li>
+            <li>Outputs: <ul>
+                    <li>To screen. </li>
+                    <li>Update <b>NumPicks</b>. </li>
+                    <li>If a match is made, update <b>NumMatches</b>.
+                    </li>
+                </ul>
+            </li>
+            <li>Description: This function does a lot. First, it
+                draws the selected tile's face on the screen and
+                increments the pick counter. The color of the
+                tile face corresponds to the tile face type.
+                Next, it checks to see if a match has been made.
+                If the player has only selected one tile, the
+                function exits. Once two are selected, the player
+                must click the mouse again before going on. If a
+                match is made, the match counter is incremented
+                and the tiles are erased from the screen. If the
+                tiles don't match, the selected tiles are redrawn
+                face down. Once the player has matched all of the
+                tiles (eight matches), the You Win is displayed. </li>
+            <li>Notes: <ul>
+                    <li>Remember to increment the pick counter
+                        whenever a tile is selected, and
+                        increment the match counter only when a
+                        match is made. </li>
+                    <li>You have to remember not only how many
+                        tiles are currently selected, but also
+                        what tiles were selected. </li>
+                    <li>If two tiles are selected and they do not
+                        match, the number of tiles currently
+                        selected goes back to zero. </li>
+                    <li>After two tiles are selected, the player
+                        must click the mouse again to go on. </li>
+                    <li>If a match is made, the two matching
+                        tiles are erased from <b>GameMatrix</b>. </li>
+                    <li>If eight matches are made, display the
+                        You Win message. </li>
+                </ul>
+            </li>
+            <li>Hints: <ul>
+                    <li>If a match is made, the two matching
+                        tiles are erased from the board. Think of
+                        this as drawing a black tile. </li>
+                    <li>When removing the matching pair of tiles
+                        from <b>GameMatrix</b>, use the constant
+                        DEADTILE to replace the face type in the
+                        matching tile locations. </li>
+                    <li>When drawing a selected tile, use the
+                        tile face type for the color of the face.
+                        Remember: there is a face type 0, but
+                        color 0 is black. So, you will have to
+                        increment the face type to get the color
+                        of the face. If you want, you may use
+                        another array like <b>CardFace</b> that
+                        holds all of the colors of the tiles.
+                        This way, you can be more creative. </li>
+                    <li>Use the given constants and variables to
+                        get needed values. </li>
+                </ul>
+            </li>
+            <li>Calls: DrawTile, Update. </li>
+            <li>Points: 10 </li>
+        </ul>
+    </li>
+    <li><font size="4"><b>SetUp</b></font> <ul>
+            <li>Purpose: Initializes the game by setting the <b>NumPicks</b>
+                and <b>NumMatches</b> counters to zero, and by
+                shuffling the <b>GameMatrix</b>. </li>
+            <li>Inputs: <ul>
+                    <li><b>NumPicks</b> </li>
+                    <li><b>NumMatches</b> </li>
+                    <li><b>GameMatrix</b> </li>
+                </ul>
+            </li>
+            <li>Outputs: <ul>
+                    <li><b>NumPicks</b> is set to zero. </li>
+                    <li><b>NumMatches</b> is set to zero. </li>
+                    <li>A shuffled <b>GameMatrix</b>. </li>
+                </ul>
+            </li>
+            <li>Description: This function sets the counters to
+                zero and shuffles <b>GameMatrix</b>. </li>
+            <li>Notes: <ul>
+                    <li>The tiles must be placed in a random
+                        fashion, so use Random to shuffle <b>GameMatrix</b>.
+                    </li>
+                    <li>While shuffling, remember that when you
+                        are done, there must be two and only two
+                        of each tile face type in the matrix, and
+                        every spot must have a tile face type. </li>
+                </ul>
+            </li>
+            <li>Hints: <ul>
+                    <li>When shuffling, think of an alternate way
+                        rather than just putting a random tile
+                        type in each location of the matrix. </li>
+                    <li>You may wany to use <b>GameBackup</b>
+                        here. </li>
+                </ul>
+            </li>
+            <li>Calls: Random. </li>
+            <li>Points: 4 </li>
+        </ul>
+    </li>
+    <li><font size="4"><b>Update</b></font></li>
+    <ul>
+            <li>Purpose: To update the counters in the game.</li>
+            <li>Input: <ul>
+                    <li><b>NumPicks</b>: The number of player
+                        picks. </li>
+                    <li><b>NumMatches</b>: The number of matches
+                        made so far. </li>
+                </ul>
+            </li>
+            <li>Output: To screen. </li>
+            <li>Description: This procedure displays the values
+                of <b>NumPicks</b> and <b>NumMatches</b> to the
+                screen. </li>
+            <li>Notes: </li>
+            <li>Hints: Use the ECE 291 library function binasc
+                and the given variable <b>TextString</b>. </li>
+            <li>Calls: None. </li>
+            <li>Points: 3 </li>
+        </ul>
+    </li>
+    <li><font size="4"><b>ShowAll</b></font></li>
+    <ul>
+            <li>Purpose: To show the faces of the remaining
+                tiles. </li>
+            <li>Input: <ul>
+                    <li><b>GameMatrix</b> </li>
+                    <li><b>NumMatches</b> </li>
+                </ul>
+            </li>
+            <li>Output: <ul>
+                    <li><b>NumMatches</b> is set to 8. </li>
+                    <li>To screen. </li>
+                </ul>
+            </li>
+            <li>Description: This procedure displays all of the
+                remaining tiles to the screen and sets <b>NumMatches</b>
+                to 8. </li>
+            <li>Notes: This should only display the REMAINING
+                tiles, not the matched ones. </li>
+            <li>Hints: Tiles that have been removed are stored in
+                <b>GameMatrix</b> using the constant DEADTILE. </li>
+            <li>Calls: DrawTile, Update. </li>
+            <li>Points: 3 </li>
+        </ul>
+    </li>
+    <li><font size="4"><b>ProcessHint</b></font></li>
+    <ul>
+            <li>Purpose : To give the player a hint on a matching
+                pair of tiles. </li>
+            <li>Inputs: <ul>
+                    <li>Selection: Pair of bytes that stores the
+                        locations of the selected tiles. </li>
+                    <li>SelIndex: Byte indicating the number of
+                        tiles selected. </li>
+                </ul>
+            </li>
+            <li>Outputs: <ul>
+                    <li>SelIndex = 0. </li>
+                    <li>To screen. </li>
+                </ul>
+            </li>
+            <li>Description: This procedure is called when the
+                HINT bar is selected from the main menu. If no
+                tiles have been selected, this procedure should
+                scan through <b>GameMatrix</b> looking for the
+                first tile that has not been removed, find its
+                matching twin, and display both tiles. If one
+                tile has already been selected, this procedure
+                should find and display the matching twin. Once
+                the pair has been displayed, the procedure delays
+                for a length of time. After the delay, both tiles
+                are again turned face down. The player can then
+                continue playing as if no tiles have been
+                selected. </li>
+            <li>Notes: <ul>
+                    <li>Remember that if a tile has been removed
+                        from <b>GameMatrix</b>, the face type
+                        stored is the constant DEADTILE. </li>
+                    <li>Once the matching pair has been displayed
+                        and hidden again, the player can continue
+                        playing as if nothing happened, i.e. <b>SelIndex</b>
+                        is set to zero. </li>
+                    <li>During the delay, make sure you burn
+                        enough clock cycles so that the tile
+                        faces are visible long enough for the
+                        player to see. </li>
+                </ul>
+            </li>
+            <li>Hints: The given constants DEADTILE, DELAY1, and
+                DELAY2 will come in handy here. </li>
+            <li>Calls: DrawTile</li>
+            <li>Points : 10</li>
+        </ul>
+    </li>
+</ul>
+
+<h2>&nbsp;Preliminary Procedure</h2>
+
+<ul>
+    <li>Copy the empty MP3 program (MP3.ASM), libraries
+        (libmp3.lib,lib291.lib), and Makefile from the network
+        drive to your home directory with the following command:
+        xcopy /s V:\ece291\mp3 W:\mp3</li>
+    <li>Alternatively, from home, you can download the same files
+        as <a href="mp3.zip">mp3.zip</a>.</li>
+    <li>As with previous MPs, run NMake to build an executable
+        program using the given ECE291 library functions.</li>
+    <li>As with previous MPs, use a text editor to modify the
+        program. As given, the program uses LIBMP3 routines to
+        implement all functionality. To receive full credit for
+        the assignment, you will need to implement each of the
+        subroutines described above with your own code.</li>
+    <li>As with previous MPs, use CodeView (CV) to debug and test
+        your program. Because you only receive credit for
+        procedures that function completely as specified, it is
+        best to debug each routine individually.</li>
+    <li>Some advice: START EARLY. This MP takes a lot of code to
+        finish. </li>
+</ul>
+
+<h2>Final Steps</h2>
+
+<ol>
+    <li>Print a copy of the MP3 grading sheet. </li>
+    <li>Demonstrate MP3.EXE to a TA or to the instructor. <br>
+        Be prepared to answer questions about any aspect of the
+        operation of your program. The TAs will not accept an MP
+        if you cannot fully explain all operations of your code. </li>
+    <li>Handin in your program by running: <br>
+        A:\Handin YourWindowsLogin </li>
+    <li>Print MP3.ASM using GreenPrint32. </li>
+    <li>Staple the MP3 grading sheet to the front of your MP3.ASM
+        file and give both to the same TA that approved your
+        demonstration. </li>
+</ol>
+
+<h2>mp3.asm (Program framework)</h2>
+
+
+<xmp>
+        PAGE 75, 132
+        TITLE ECE291 MP3 -- Your name, date
+
+COMMENT %
+       ECE 291, Summer 1999
+       Jay Moorman
+       MP 3: Matching Game
+       Written by: Paul Pawola
+        %
+
+;======== CONSTANTS =============================================
+
+TEXTVIDSEG  EQU 0B800h          ; text-video segment
+
+; screen constants
+
+BACKCOLOR   EQU 1              ; color of background
+BACKCHAR    EQU 176             ; character of background
+BLACKSTART  EQU 816             ; where black section starts
+BLACKWIDTH  EQU 39              ; character width for black section
+BLACKHEIGHT EQU 39              ; character height for black section
+TILESTART   EQU BLACKSTART+2*160+4   ; first tile location
+TILECOLOR   EQU 2               ; color of tile back
+TILECHAR    EQU 63              ; character of tile face
+TILEWIDTH   EQU 5               ; number of characters across for tile
+TILEHEIGHT  EQU 5               ; number of characters down for tile
+TEXTLOC     EQU 7880            ; place where to write text
+TEXTCOLOR   EQU 4               ; color of text
+TEXTLENGTH  EQU 27              ; length of text message
+COUNTLOC    EQU TEXTLOC+40      ; place to put current pick counter
+
+MENUSTART   EQU 2674            ; location of start of main menu
+MATCHLOC    EQU MENUSTART+11*160+22 ; place to write number of matches
+MENUCOLOR   EQU 01001111b       ; attribute byte for menu
+MENULENGTH  EQU 13              ; length of each menu bar
+MENUSIZE    EQU 6               ; number of bars on menu
+
+DEADTILE    EQU 0FFh            ; value used for a tile after it has been matched
+
+; Mouse Constants
+RESTCLICK   EQU 1               ; value for when RESET is clicked
+SHOWCLICK   EQU 2               ; value for when SHOWALL is clicked
+QUITCLICK   EQU 3               ; value for when QUIT is clicked
+TILECLICK   EQU 4               ; value for when a tile is clicked
+HINTCLICK   EQU 5               ; value for when HINT is clicked
+
+SHUFAMOUNT  EQU 200             ; number of times GameMatrix is shuffeled
+WINLOC      EQU 70              ; location of winning text
+WINCOLOR    EQU 10011110b       ; attribute for winning text
+WINLENGTH   EQU 11              ; length of win text
+
+CONSTANT1   EQU 17477           ; first random constant (K1)
+CONSTANT2   EQU 9001            ; second random constant (K2)
+DELAY1      EQU 5000            ; delay constant
+DELAY2      EQU 5000            ; delay constant
+         
+;======== EXTERNALS =============================================
+; -- LIB291 Routines (Free) ---
+
+extrn rsave:near, rrest:near, dspout:near, dspmsg:near
+extrn binasc:near, kbdin:near, dosxit:near
+
+extrn mp3xit:near
+
+; -- LIBMP3 Routines (not free)
+
+extrn LibRandom:near
+extrn LibDrawTile:near
+extrn LibDrawStatic:near
+extrn LibMouseControl:near
+extrn LibUpdate:near
+extrn LibSetUp:near
+extrn LibProcessTile:near
+extrn LibShowAll:near
+extrn LibProcessHint:near
+
+; -- Ignore this part: just for the library code
+ ; this file just variables visible to library code
+
+PUBLIC MoveText
+PUBLIC TilePlace
+PUBLIC MenuText
+PUBLIC MenuPlace
+PUBLIC GameMatrix
+PUBLIC YouWin
+PUBLIC CardFace
+PUBLIC RandVal
+PUBLIC NumPicks
+PUBLIC NumMatches
+PUBLIC TextString
+PUBLIC Selection
+PUBLIC SelIndex
+PUBLIC GameBackup
+
+; these are public constants
+PUBLIC BACKCOLOR
+PUBLIC BACKCHAR
+PUBLIC TILECOLOR
+PUBLIC TILECHAR
+PUBLIC TEXTCOLOR
+PUBLIC MENUCOLOR
+PUBLIC SHUFAMOUNT
+PUBLIC WINCOLOR
+
+
+; ======== STACK SEGMENT ========================================
+
+stkseg    segment stack
+          db   128 dup ('STACK   ')
+stkseg    ends
+
+;====== BEGIN DATA/CODE SEGMENT =================================
+cseg    segment public 'CODE'  
+        assume  cs:cseg, ds:cseg, , ss:stkseg, es:nothing
+
+
+;======== VARIABLES =============================================
+
+MoveText db '  Number of Picks :        '   ;text for move counter
+
+TilePlace dw TILESTART                  ; table of tile starting locations
+          dw TILESTART+0*160+20
+          dw TILESTART+0*160+40
+          dw TILESTART+0*160+60
+          dw TILESTART+10*160
+          dw TILESTART+10*160+20
+          dw TILESTART+10*160+40
+          dw TILESTART+10*160+60
+          dw TILESTART+20*160
+          dw TILESTART+20*160+20
+          dw TILESTART+20*160+40
+          dw TILESTART+20*160+60
+          dw TILESTART+30*160
+          dw TILESTART+30*160+20
+          dw TILESTART+30*160+40
+          dw TILESTART+30*160+60
+
+MenuText db '  Main Menu  ','$'          ; table of messages for menu
+         db '  Restart    ','$'         
+         db '  Show All   ','$'
+         db '  Matches:   ','$'
+         db '  Hint       ','$'
+         db '  Quit Game  ','$'
+
+MenuPlace dw MENUSTART                  ; table of locations for menu
+          dw MENUSTART+5*160
+          dw MENUSTART+8*160
+          dw MENUSTART+11*160
+          dw MENUSTART+14*160
+          dw MENUSTART+17*160
+
+GameMatrix db 0, 1, 2, 3                ; matrix showing tile locations
+           db 4, 5, 6, 7                ; only 8 possible tiles, in pairs
+           db 7, 6, 5, 4                ; of two
+           db 3, 2, 1, 0
+
+GameBackup db 0, 1, 2, 3                ; use as a copy of GameMatrix
+           db 4, 5, 6, 7
+           db 7, 6, 5, 4
+           db 3, 2, 1, 0
+
+
+CardFace db 01h, 03h, 04h, 05h          ; array of tile faces
+         db 06h, 0ECh, 0Eh, 0Fh
+
+YouWin db 'You Win!!!!'                 ; game winning text
+
+
+RandVal dw 3                            ; random value
+
+NumPicks dw 0                           ; number of picks made (no max)
+NumMatches db 0                         ; number of matches made (max of 8)
+TextString db '       '                 ; string used to draw numbers to screen
+
+Selection db 0,0                        ; pair of selected tiles
+SelIndex db 0                           ; index into pair.
+
+;======== PROCEDURES ============================================
+; Your procedures go here.  Comment out the call to the libary code
+; to test your procedure.  REMEMBER: Library code calls other library
+; procedures.
+
+Random PROC NEAR
+        call LibRandom        
+        ret
+Random ENDP
+
+DrawTile PROC NEAR
+        call LibDrawTile
+        ret
+DrawTIle ENDP
+
+DrawStatic PROC NEAR
+        call LibDrawStatic
+        ret
+DrawStatic ENDP
+
+MouseControl PROC NEAR
+        call LibMouseControl
+        ret
+MouseControl ENDP
+
+ProcessTile PROC NEAR
+        call LibProcessTile
+        ret
+ProcessTile ENDP
+
+SetUp PROC NEAR
+        call LibSetUp
+        ret
+SetUp ENDP
+
+Update PROC NEAR
+        call LibUpdate
+        ret
+Update ENDP
+
+ShowAll PROC NEAR
+        call LibShowAll
+        ret
+ShowAll ENDP
+
+ProcessHint PROC NEAR
+        call LibProcessHint
+        ret
+ProcessHint ENDP
+
+;======== MAIN PROCEDURE ========================================
+
+MAIN Proc FAR
+; Initialize DS register
+        mov  ax, cseg
+        mov  ds, ax
+; Put display into 80x50 text mode
+        mov  ax, 1202h                ; Sets to 400 line scan mode
+        mov  bl, 30h
+        int  10h
+        mov  ax, 3                    ; Sets to 8x8 font
+        int  10h
+        mov  ax, 1112h                ; Enter text mode
+        mov  bl, 0
+        int  10h
+        mov ah, 02h                   ; hide text cursor
+        mov bh, 0
+        mov dh, 50
+        int 10h
+        mov  ax, TEXTVIDSEG           ; Setup the video segment as register es
+        mov  es,ax
+; Initialize mouse
+        mov ax, 0000h
+        int 33h
+; Show Mouse
+        mov ax, 0001h
+        int 33h
+; GameStart
+GAMERESTART:
+        call DrawStatic              ; draw background
+        
+        call SetUp                   ; set up game play
+        call Update                  ; write Matches and Picks to screen
+WAITMOUSE:
+        call MouseControl            ; get mouse result
+        cmp al, QUITCLICK            ; if quit, then done
+        je GAMEDONE
+        cmp al, RESTCLICK            ; if restart, the restart game
+        je GAMERESTART
+        cmp al, SHOWCLICK            ; if showall was clicked, show all tiles
+        jne CHECKHINT   
+        call ShowAll
+        jmp WAITMOUSE
+CHECKHINT:                           ; test if HINT was clicked
+        cmp al, HINTCLICK
+        jne ITWASATILE
+        call ProcessHint                                       
+        jmp WAITMOUSE
+ITWASATILE:
+        cmp al, TILECLICK            ; test for a tile
+        jne GAMERESTART
+        call ProcessTile
+        jmp WAITMOUSE                ; after tile is processed, go back to mouse
+GAMEDONE:
+        mov  ax, 1202h          ; Scan lines
+        mov  bl, 30h
+        int  10h
+        mov  ax, 3              ; Font
+        int  10h
+        mov  ax, 1112h          ; Text Mode
+        mov  bl, 0
+        int  10h
+        call mp3xit             ; Exit program
+MAIN ENDP
+
+; ======= END OF PROCEDURES AND DATA ============================
+
+CSEG    ends
+        end    main
+ 
+
+ </xmp>
+
+
+</body>
+</html>

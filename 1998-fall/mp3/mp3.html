@@ -1,0 +1,1177 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.05 [en] (Win95; I) [Netscape]">
+   <TITLE>mp3</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+&nbsp;
+<TABLE BORDER=0 CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TD ALIGN=LEFT WIDTH="33%">ECE291</TD>
+
+<TD ALIGN=CENTER WIDTH="34%">Computer Engineering II</TD>
+
+<TD ALIGN=RIGHT WIDTH="33%">Lockwood, Fall 1998</TD>
+</TR>
+</TABLE>
+
+<CENTER>
+<H1>
+Machine Problem 3: LiteCycles</H1></CENTER>
+
+<CENTER><TABLE BORDER CELLPADDING=3 WIDTH="60%" >
+<TR>
+<TD ALIGN=RIGHT><B>Purpose</B></TD>
+
+<TD>Text-mode graphics, keyboard and timer interrupts.</TD>
+</TR>
+
+<TR>
+<TD ALIGN=RIGHT><B>Points</B></TD>
+
+<TD>50</TD>
+</TR>
+
+<TR>
+<TD ALIGN=RIGHT><B>Due Date</B></TD>
+
+<TD>Wednesday 10/21/98 (25/50 points) - Checkpoint 1&nbsp;
+<BR>Wednesday 10/28/98 (50/50 points) - Checkpoint 2&nbsp;</TD>
+</TR>
+</TABLE></CENTER>
+<!-- <IMG SRC="../../icon/construct.gif" >This MP is under construction -->
+<H2>
+Introduction</H2>
+In this MP, you will be implementing a game based on the famous litecycles
+scene from the great science fiction movie, <I>TRON</I>!. In this game,
+each of the two players drive hi-tech cycles within a game grid, generating
+colored walls behind them.&nbsp; The object of the game is to force your
+opponent into one of the walls (either yours or theirs) while staying alive
+yourself.&nbsp; With each round, the pace of play is increased and the
+players starting positions are varied. A view of the screen is shown below.
+<BR><IMG SRC="mp3-2.gif" width="652" height="659">
+<H2>
+Text-mode Video</H2>
+The display will be implemented using text-mode video. For maximum speed,
+your code will write directly to video memory (beginning at address B8000h).&nbsp;
+Each character block on the screen represents an ASCII character and its
+corresponding attributes.&nbsp; The attributes include the foreground color,&nbsp;
+background color, and whether the character blinks or not.&nbsp; A suitable
+set of attributes are given to you in MP3CONST.ASM.
+<H2>
+Keyboard Control</H2>
+This MP uses the keyboard to control movement. If a player is controlled
+via the keyboard, its direction is kept the same until a different direction
+is requested.&nbsp; Since we do not want to stop the game while waiting
+for a keypress that may not occur, we need an asynchronous method for accessing
+keyboard input.&nbsp; We will replace the default keyboard handler with
+our own code so that we don't have to wait for a keypress. We will instead
+just check a variable. The InstKey routine is called to install a new handler
+into the vector table. The DeInstKey routine is used to remove it (and
+restore the DOS default routine).
+
+<P>The topic of interrupts was discussed in great detail during the Lecture
+14 class period. The operation of the keyboard controller was discussed
+during Lecture 16.
+<H2>
+Timer Control</H2>
+In many applications, it is important that events happen at the same rate,
+regardless of the speed of the machine. It wouldn't be very easy to play
+a version of PacMan written for a 8086 on a PPro without a timer, PacMan
+would perish before you could decide your first move!&nbsp; We will write
+our own timer interrupt handler for this MP, which will allow us to specify
+the relative delay between events (which in our case will be updates of
+the state of the game).
+
+<P>The default timer interrupt rate is 18.2 times per second.&nbsp; Unfortunately,
+this is not fast enough for this MP, as action can occur more frequently
+than that.&nbsp; One of the jobs of InstTimer will be to increase the interrupt
+rate up to 72.8 times per second. See the lab notes for details.
+<H2>
+Data Structures</H2>
+
+<UL>
+<LI>
+Constants for this MP are defined in <TT>MP3CONST.ASM</TT>.&nbsp; Some
+of them are explained below.</LI>
+
+<UL>
+<LI>
+<B>P1_U, P2_L, etc.</B> : These define the scan codes for keyboard control
+of the players.&nbsp; See the lab manual and lecture notes for more information
+on scan codes.</LI>
+
+<LI>
+<B>UP, DOWN, LEFT, RIGHT</B> : These should be used when comparing directions
+or passing them as arguments.&nbsp; It is much easier to read your code
+if you use enumerated values instead of directly using integers.</LI>
+
+<LI>
+<B>GRIDSPACE, GRIDWALL, P1WALL, P2WALL</B> : Use these values when writing
+and reading from the <TT>grid</TT> array. The outside perimeter should
+possess the value <TT>GRIDWALL</TT>.&nbsp; Walls created by player one
+and player two should have the values <TT>P1WALL</TT> and <TT>P2WALL</TT>,
+respectively. All other points (spaces) should have the value <TT>GRIDSPACE</TT>.</LI>
+
+<LI>
+<B>SCREENSIZE_X, SCREENSIZE_Y</B> : Size of the video screen in columns
+and lines.&nbsp; Normally, this will be 80 x 50, but you should allow for
+modifications by using these constants instead of hard-coded values.</LI>
+
+<LI>
+<B>GRIDSIZE_X, GRIDSIZE_Y</B> : Size of the game grid.&nbsp; <TT>GRIDSIZE_X</TT>
+&lt;= <TT>SCREENSIZE_X</TT> and <TT>GRIDSIZE_Y</TT> &lt;= (<TT>SCREENSIZE_Y</TT>
+- 1).&nbsp; The grid should be positioned at the upper-left corner of the
+screen.</LI>
+
+<LI>
+<B>*ATTR</B> : The text-mode video attributes for drawing text, grid background,
+crash, or player wall.&nbsp; Use these in the higher byte when writing
+to video memory.</LI>
+
+<LI>
+<B>*SYMBOL</B> : The ASCII values for a crash indicator or a player wall.&nbsp;
+Use these in the lower byte when writing to video memory.&nbsp; For the
+grid perimeter walls, find the appropriate symbols in an ASCII table, and
+add your own constants (e.g., LOWER_RIGHT_CORNER, etc.).</LI>
+</UL>
+
+<p>
+
+<LI>
+Some variables have already been defined for you in the program framework.</LI>
+
+<UL>
+<LI>
+<B>grid</B> : A two-dimensional array of bytes that describes where all
+the walls in the game are. Its dimensions are specified by the constants
+<TT>GRIDSIZE_X</TT> and <TT>GRIDSIZE_Y</TT> and is indexed from the upper
+left-hand corner, first across, then down. This array is written to only
+by <TT>DrawCycles</TT> but can be read from various routines.&nbsp; Often,
+an offset value refering to the beginning of <TT>grid</TT> is passed to
+a routine as an argument.</LI>
+
+<LI>
+<B>p1X, p1Y, p2X, p2Y</B> : The current x- and y-coordinates of the two
+players within <TT>grid</TT>. The point (0,0) is at the upper-left hand
+corner of the grid.</LI>
+
+<LI>
+<B>playerPosState</B> : Determines which one of four starting positions
+will be used for the next round.&nbsp; See SetPlayerPos for details.</LI>
+
+<LI>
+<B>p1Score, p2Score</B> : The current scores for the two players.&nbsp;
+Scores start out at zero.&nbsp; If a player crashes, the other player's
+score is incremented by one, except for in the special case where the two
+players collide or otherwise crash during the same step (in which case 
+scores should remain the same).</LI>
+
+<LI>
+<B>p1KeyDir, p2KeyDir : W</B>ritten to by our modifed keyboard interrupt
+handler. <TT>p1KeyDir</TT> and <TT>p2KeyDir</TT> take on either <TT>UP</TT>,
+<TT>DOWN</TT>, <TT>LEFT</TT>, or <TT>RIGHT</TT> if an appropriate key is
+pressed.&nbsp; For example, if the handler detects the scan code corresponding
+to <TT>P1_R</TT>, then it will set <TT>p1KeyDir</TT> to <TT>RIGHT</TT>.</LI>
+
+<LI>
+<B>escPressed, spcPressed</B> : Written to by our modifed keyboard interrupt
+handler.&nbsp; A value of one (1) is written to these variables if the
+escape key or the space bar is press, respectively.&nbsp; The user code
+that checks for the setting of these values should reset the value to zero
+(0) before checking for a value of one (1).</LI>
+
+<LI>
+<B>p1Dir, p2Dir</B> : These are the directions that each player is heading
+in as determined by <TT>P1Control</TT> and <TT>P2Control</TT>, respectively
+for use in DrawCycles.&nbsp; Your AI might want to take advantage of this
+information as well.</LI>
+
+<LI>
+<B>round</B> : Specifies which round we are in.&nbsp; <TT>round</TT> should
+start at one (1) and increment at the end of each round.</LI>
+
+<LI>
+<B>timerCount</B> : Incremented by the timer interrupt handler each time
+it is called.&nbsp; When set up, it should increment approximately 72 times
+per second.&nbsp; It is up to user code to reset <TT>timerCount</TT> if
+necessary.</LI>
+
+<LI>
+<B>gameSpeed</B> : Used to control game pace.&nbsp; Modified by <TT>SetGameSpeed</TT>.
+<TT>gameSpeed</TT> is initially set to 24, which should correspond to a
+pace of 3 steps per second (72/24).&nbsp; In <TT>SetGameSpeed</TT> it is
+decreased slightly at the end of each round.</LI>
+
+<LI>
+<B>oldTimerV, oldKeyV</B> : Hold far pointers to the default timer and
+keyboard interrupt handlers.&nbsp; Used in the interrupt install/deinstall
+routines.</LI>
+
+<LI>
+<B>p1Name, p2Name</B> : 8-byte (plus '$') strings to specify the player's
+names.</LI>
+</UL>
+</UL>
+
+<H2>
+Procedures</H2>
+
+<UL>
+<LI>
+This assignment has eight procedures. You will receive credit for this
+assignment by replacing each of the eight procedures listed below with
+your own code.</LI>
+
+<LI>
+Experiment with the working code to gain a full understanding of how the
+program works.&nbsp; The library version of P2Control uses the artificial
+intelligence AI291 instead of keyboard inputs so that you can get a feel
+for how that works.  For best results, operate the program in FULL-SCREEN
+mode (Hit ALT-ENTER to switch between windowed and full-screen mode). </LI>
+
+<LI>
+Your program should exactly match the functionality of the library subroutines.</LI>
+
+<LI>
+All subroutines should be <I>modular</I>. They should use the stack to
+<I>preserve</I> the value of any registers they may modify.</LI>
+
+<LI>
+Use defined constants where appropriate.</LI>
+</UL>
+
+<UL>
+<LI>
+<B><FONT SIZE=+2>For Checkpoint 1, you must complete the following routines:</FONT></B></LI>
+</UL>
+
+<UL>
+<UL>
+<LI>
+<B><FONT SIZE=+2>GameMain</FONT></B></LI>
+
+<UL>
+<LI>
+<B>Purpose</B>: Control game flow.</LI>
+
+<OL>
+<LI>
+Install and deinstall timer and keyboard handlers at the beginning and
+end.</LI>
+
+<LI>
+Print out StartMsg</LI>
+
+<LI>
+Initialize screen and grid and configure player starting positions and
+game speed before the start of every round</LI>
+
+<LI>
+Wait for the space bar to be pressed in between rounds</LI>
+
+<LI>
+During a game, between each step, wait for <TT>timerCount</TT> to reach
+<TT>gameSpeed</TT> and then ...</LI>
+
+<LI>
+Get directions from both players</LI>
+
+<LI>
+Draw litecycles on the screen</LI>
+
+<LI>
+If a player crashed, display the appropriate message (check behavior of
+library version)</LI>
+
+<LI>
+Update scores and round.</LI>
+</OL>
+
+<LI>
+<B>Inputs:</B> Keyboard controls</LI>
+
+<LI>
+<B>Outputs:</B> A TRON LiteCycles game!</LI>
+
+<LI>
+<B>Notes:</B></LI>
+
+<OL>
+<LI>
+When in doubt, check out how the library version does something.</LI>
+
+<LI>
+Use the provided strings for messages when possible.</LI>
+</OL>
+
+<LI>
+<B>Points</B>: 8</LI>
+</UL>
+&nbsp;
+<LI>
+<B><FONT SIZE=+2>DrawScreen</FONT></B></LI>
+
+<UL>
+<LI>
+<B>Purpose</B>: Writes the initial game grid to video memory</LI>
+
+<UL>
+<LI>
+Draws grid perimeter and inside spaces.</LI>
+
+<LI>
+Prints status line on line below bottom wall of grid.</LI>
+</UL>
+
+<LI>
+<B>Inputs:</B></LI>
+
+<UL>
+<LI>
+<TT>RoundInfoMsg</TT> (non-changing)</LI>
+
+<LI>
+<TT>round</TT></LI>
+
+<LI>
+<TT>p1Name, p2Name</TT></LI>
+
+<LI>
+<TT>p1Score, p2Score</TT></LI>
+</UL>
+
+<LI>
+<B>Outputs:</B> Writes to video memory (segment <TT>0B800h</TT>)</LI>
+
+<LI>
+<B>Notes:</B></LI>
+
+<LI>
+<B>Hints:</B> It would be handy to write helper functions that write strings
+or integers to video memory for printing the status line.</LI>
+
+<LI>
+<B>Points</B>: 5</LI>
+</UL>
+&nbsp;
+<LI>
+<B><FONT SIZE=+2>ResetGrid</FONT></B></LI>
+
+<UL>
+<LI>
+<B>Purpose</B>: Initialize <TT>grid</TT> before each round.</LI>
+
+<UL>
+<LI>
+The perimeter should be set to <TT>GRIDWALL</TT> and the interior should
+be set to <TT>GRIDSPACE</TT>.</LI>
+</UL>
+
+<LI>
+<B>Inputs:</B><TT>grid</TT> (uninitialized)</LI>
+
+<LI>
+<B>Outputs:</B><TT>grid</TT> (initialized)</LI>
+
+<LI>
+<B>Points</B>: 3</LI>
+</UL>
+&nbsp;
+<LI>
+<B><FONT SIZE=+2>SetPlayerPos</FONT></B></LI>
+
+<UL>
+<LI>
+<B>Purpose</B>: Setup initial position of each player</LI>
+
+<LI>
+<B>Inputs:</B> <TT>playerPosState</TT></LI>
+
+<LI>
+<B>Outputs:</B></LI>
+
+<UL>
+<LI>
+If <TT>playerPosState</TT> = 0</LI>
+
+<UL>
+<LI>
+p1 is at (9,45), p2 is at (70,45)</LI>
+
+<LI>
+p1Dir and p1KeyDir are <TT>UP</TT>, p2Dir and p2KeyDir are <TT>UP</TT></LI>
+</UL>
+
+<LI>
+= 1</LI>
+
+<UL>
+<LI>
+p1 is at (29,30), p2 is at (50,40)</LI>
+
+<LI>
+p1Dir and p1KeyDir are <TT>RIGHT</TT>, p2Dir and p2KeyDir are <TT>LEFT</TT></LI>
+</UL>
+
+<LI>
+= 2</LI>
+
+<UL>
+<LI>
+p1 is at (4,45), p2 is at (75,35)</LI>
+
+<LI>
+p1Dir and p1KeyDir are <TT>RIGHT</TT>, p2Dir and p2KeyDir are <TT>UP</TT></LI>
+</UL>
+
+<LI>
+= 3</LI>
+
+<UL>
+<LI>
+p1 is at (35,25), p2 is at (45,26)</LI>
+
+<LI>
+p1Dir and p1KeyDir are <TT>LEFT</TT>, p2Dir and p2KeyDir are <TT>RIGHT</TT></LI>
+</UL>
+
+<LI>
+playerPosState = (old playerPosState + 1 ) mod 4 (but don't use <TT>DIV</TT>!)</LI>
+</UL>
+
+<LI>
+<B>Points</B>: 3</LI>
+</UL>
+&nbsp;
+<LI>
+<B><FONT SIZE=+2>SetGameSpeed</FONT></B></LI>
+
+<UL>
+<LI>
+<B>Purpose</B>: Determine the next round's pace</LI>
+
+<LI>
+<B>Inputs: </B><TT>gameSpeed</TT> (old value)</LI>
+
+<LI>
+<B>Outputs:</B> <TT>gameSpeed</TT></LI>
+
+<LI>
+<B>Notes:</B></LI>
+
+<UL>
+<LI>
+If old <TT>gameSpeed</TT> = 1, then do not change it</LI>
+
+<LI>
+Else new <TT>gameSpeed</TT> = (15 * old <TT>gameSpeed</TT> / 16)</LI>
+</UL>
+
+<LI>
+<B>Hints:</B> Don't use <TT>DIV</TT>!</LI>
+
+<LI>
+<B>Points</B>: 3</LI>
+</UL>
+&nbsp;
+<LI>
+<B><FONT SIZE=+2>P1Control, P2Control</FONT></B></LI>
+
+<UL>
+<LI>
+<B>Purpose</B>: Determines next directions to head in for players.</LI>
+
+<UL>
+<LI>
+Could get direction from keyboard (p1KeyDir, p2KeyDir).</LI>
+
+<LI>
+Could get direction from an AI (<I>username</I>AI or AI291).</LI>
+</UL>
+
+<LI>
+<B>Inputs:</B></LI>
+
+<UL>
+<LI>
+p[1,2]Dir (previous direction taken)</LI>
+
+<LI>
+p[1,2]KeyDir</LI>
+
+<LI>
+DH : this player's x-coordinate</LI>
+
+<LI>
+DL : this player's y-coordinate</LI>
+
+<LI>
+CH, CL : other player's x- and y-coords</LI>
+
+<LI>
+SI : offset of <TT>grid</TT></LI>
+</UL>
+
+<LI>
+<B>Outputs: </B>p[1,2]Dir holds value of next direction for this player.</LI>
+
+<LI>
+<B>Notes:</B></LI>
+
+<UL>
+<LI>
+The expression [1,2] means to use '1' if this is P1Control and to use '2'
+if this is P2Control.</LI>
+
+<LI>
+Configure each of P1Control and P2Control to use either keyboard or AI
+input by commenting out select blocks of code at a time.</LI>
+</UL>
+
+<LI>
+<B>Hints:</B> Not all the inputs necessarily need to be used.</LI>
+
+<LI>
+<B>Points</B>: 3</LI>
+</UL>
+&nbsp;</UL>
+
+<LI>
+<FONT SIZE=+2>For <B>Checkpoint 2</B>, you must complete the remaining
+routines:</FONT></LI>
+</UL>
+
+<UL>
+<UL>
+<LI>
+<B><FONT SIZE=+2>DrawCycles</FONT></B></LI>
+
+<UL>
+<LI>
+<B>Purpose</B>: Moves litecycles to new positions and check for collisions</LI>
+
+<LI>
+<B>Inputs:</B></LI>
+
+<UL>
+<LI>
+<TT>p1Dir, p2Dir</TT></LI>
+
+<LI>
+<TT>grid</TT></LI>
+
+<LI>
+<TT>p1X, p1Y, p2X, p2Y</TT></LI>
+</UL>
+
+<LI>
+<B>Outputs:</B></LI>
+
+<UL>
+<LI>
+If no crashes, draws a&nbsp; <TT>PLAYERSYMBOL</TT> at each player's new
+position.</LI>
+
+<LI>
+If someone crashes, draws a <TT>CRASHSYMBOL</TT> at the site of the crash.</LI>
+
+<LI>
+AL</LI>
+
+<UL>
+<LI>
+0000b - no crash</LI>
+
+<LI>
+0001b - player one crashed</LI>
+
+<LI>
+0010b - player two crashed</LI>
+
+<LI>
+0011b - both players crashed</LI>
+
+<LI>
+01xxb - players collided (special case of both players crashed)&nbsp; This
+means that both players reach the same grid point during the same step.</LI>
+</UL>
+</UL>
+
+<LI>
+<B>Hints:</B> It would be handy to write a helper function (or macro) that
+convert x- and y-coordinates into an offset into <TT>grid</TT>.</LI>
+
+<LI>
+<B>Points</B>: 8</LI>
+</UL>
+&nbsp;
+<LI>
+<B><FONT SIZE=+2>InstTimer, DeInstTimer, MyTimerHandler</FONT></B></LI>
+
+<UL>
+<LI>
+<B>Purpose</B>: Controls pace of game through timer interrupts</LI>
+
+<UL>
+<LI>
+<B>InstTimer</B></LI>
+
+<UL>
+<LI>
+Saves default interrupt vector in <TT>OldTimerV</TT>.</LI>
+
+<LI>
+Points the timer interrupt to <TT>MyTimerHandler</TT>.</LI>
+
+<LI>
+Configures timer chip to send a signal 72 times per second.</LI>
+</UL>
+
+<LI>
+<B>DeInstTimer</B></LI>
+
+<UL>
+<LI>
+Restores <TT>OldTimerV</TT> as the default timer routine.</LI>
+
+<LI>
+Reconfigures the timer chip to send a signal 18 times per second.</LI>
+</UL>
+
+<LI>
+<B>MyTimerHandler</B></LI>
+
+<UL>
+<LI>
+Increments <TT>timerCount</TT> each time that it is called.</LI>
+
+<LI>
+Calls <TT>OldTimerV</TT> 18 times per second (i.e., every fourth time).</LI>
+
+<LI>
+Sends ACK and end-of-intterrupt.</LI>
+</UL>
+</UL>
+
+<LI>
+<B>Inputs:</B></LI>
+
+<UL>
+<LI>
+none for <TT>InstTimer</TT></LI>
+
+<LI>
+<TT>OldTimerV</TT> for <TT>DeInstTimer</TT></LI>
+
+<LI>
+<TT>timerCount</TT> for <TT>MyTimerHandler</TT></LI>
+</UL>
+
+<LI>
+<B>Outputs:</B></LI>
+
+<UL>
+<LI>
+<TT>OldTimerV</TT> for <TT>InstTimer</TT></LI>
+
+<LI>
+none for <TT>DeInstTimer</TT></LI>
+
+<LI>
+<TT>timerCount</TT> for <TT>MyTimerHandler</TT></LI>
+</UL>
+
+<LI>
+<B>Notes:</B> Follow the instructions given in lecture for installing interrupts
+and for interrupt handlers.</LI>
+
+<LI>
+<B>Hints:</B></LI>
+
+<UL>
+<LI>
+To aid in debugging, test these three routines separately of any others.</LI>
+
+<LI>
+Remember to initialize DS if you need to access variables.</LI>
+</UL>
+
+<LI>
+<B>Points</B>: 6</LI>
+</UL>
+&nbsp;
+<LI>
+<B><FONT SIZE=+2>InstKey, DeInstKey, MyKeyHandler</FONT></B></LI>
+
+<UL>
+<LI>
+<B>Purpose</B>: Grabs game control commands from the keyboard</LI>
+
+<UL>
+<LI>
+<B>InstKey</B>: Saves default interrupt vector in OldKeyV</LI>
+
+<LI>
+<B>DeInstKey</B>: Restores default interrupt vector from OldKeyV</LI>
+
+<LI>
+<B>MyKeyHandler</B></LI>
+
+<UL>
+<LI>
+Sets <TT>escPressed</TT> to one (1) if the escape key is pressed.</LI>
+
+<LI>
+Sets <TT>spcPressed</TT> to one(1) if the space bar is pressed</LI>
+
+<LI>
+Sets <TT>p1KeyDir</TT> to one of <TT>UP</TT>, <TT>DOWN</TT>, <TT>LEFT</TT>,
+or <TT>RIGHT</TT>, depending on whether P1_U, P1_D, P1_L, or P1_R were
+pressed.</LI>
+
+<LI>
+Similarly for <TT>p2KeyDir</TT>.</LI>
+
+<LI>
+Sends ACK and end-of-interrupt.</LI>
+</UL>
+</UL>
+
+<LI>
+<B>Inputs:</B></LI>
+
+<UL>
+<LI>
+none for <TT>InstKey</TT></LI>
+
+<LI>
+<TT>OldKeyV</TT> for <TT>DeInstKey</TT></LI>
+
+<LI>
+none for <TT>MyKeyHandler</TT></LI>
+</UL>
+
+<LI>
+<B>Outputs:</B></LI>
+
+<UL>
+<LI>
+<TT>OldKeyV</TT> for <TT>InstKey</TT></LI>
+
+<LI>
+none for <TT>DeInstKey</TT></LI>
+
+<LI>
+<TT>escPressed, spcPressed, p1KeyDir, p2KeyDir</TT></LI>
+</UL>
+
+<LI>
+<B>Hints:</B></LI>
+
+<UL>
+<LI>
+Remember to initialize DS if you need to access variables.</LI>
+</UL>
+
+<LI>
+<B>Points</B>: 6</LI>
+</UL>
+&nbsp;
+<LI>
+<B><FONT SIZE=+2>AI291</FONT></B></LI>
+
+<UL>
+<LI>
+<B>Purpose: </B>An example AI. Call it from your P1Control or P2Control</LI>
+
+<LI>
+<B>Inputs: </B>same as AI<I>username</I></LI>
+
+<LI>
+<B>Outputs: </B>same as AI<I>username</I></LI>
+
+<LI>
+<B>Notes: </B>This AI is fairly simple and can survive a long time., but
+behaves very passively (doesn't go after the other player).</LI>
+
+<LI>
+<B>Points</B>: 0 (it's already written!)</LI>
+</UL>
+&nbsp;
+<LI>
+<B><FONT SIZE=+2>AI<I>username</I></FONT></B></LI>
+
+<UL>
+<LI>
+<B>Purpose</B>: An artificial intelligence. Have the computer play against
+itself or a human</LI>
+
+<UL>
+<LI>
+Your AI should be able to beat AI291 in at least two thirds of the rounds.</LI>
+
+<LI>
+Your AI should be able to beat the ECE291 staff most of the time.</LI>
+</UL>
+
+<LI>
+<B>Inputs:</B></LI>
+
+<UL>
+<LI>
+DH, DL: hold player's x- and y-coords, respectively</LI>
+
+<LI>
+CH, CL: hold other player's x- and y-coords, respectively</LI>
+
+<LI>
+SI: offset of <TT>grid</TT></LI>
+
+<LI>
+BL: player's previous direction taken</LI>
+</UL>
+
+<LI>
+<B>Outputs: </B>AL: holds value of next direction for player</LI>
+
+<LI>
+<B>Notes:</B></LI>
+
+<UL>
+<LI>
+Feel free to add additional variables to hold state for your AI, but do
+not modify any predefined variables.</LI>
+
+<LI>
+Substitute your username in AI<I>username</I> (so user <TT>jessica</TT>
+would call her AI "AIjessica")</LI>
+</UL>
+
+<LI>
+<B>Hints: </B>Use helper routines to help your AI look around.</LI>
+
+<LI>
+<B>Points</B>: 5</LI>
+</UL>
+</UL>
+</UL>
+
+<H2>
+Preliminary Procedure</H2>
+
+<UL>
+<LI>
+Copy the empty MP2 program (<TT>MP3.ASM</TT>), the constant definition
+file (MP3CONST.ASM), libraries (<TT>libmp3.lib</TT>, <TT>lib291.lib</TT>),
+and <TT>Makefile</TT> from the network drive to your home directory with
+the following command:</LI>
+
+<BR><TT>xcopy /S V:\ece291\mp3 W:\mp3</TT>
+<BR>Alternatively, from home, you can download the same files as <A HREF="mp3.zip">mp3.zip</A>.
+<LI>
+As before, run <TT>NMake</TT> to build an executable program using the
+given ECE291 library functions.</LI>
+
+<LI>
+As in the past, use a text editor to modify the program. As given, the
+program uses LIBMP3 routines to implement all functionality. To receive
+full credit for the assignment, you will need to implement each of the
+subroutines described above with your own code.</LI>
+
+<LI>
+As before, use CodeView (<TT>CV</TT>) to debug and test your program. Because
+you only receive credit for procedures that function completely as specified,
+it is best to debug each routine individually.</LI>
+
+<LI>
+By modifying a few comments, you can mix and match usage of your own code
+and Library routines. You may notice that the LIBMP3 routines contain extraneous
+and difficult-to-read code. They are not meant to be unassembled!</LI>
+</UL>
+
+<H2>
+Revision History</H2>
+
+<UL>
+<LI>
+Version 1.0: (10/12/98) - First code release</LI>
+
+<BR><I>Monitor the newsgroup and this on-line section for revisions to
+the MP or to the writeup</I></UL>
+
+<H2>
+Final Steps</H2>
+
+<OL>
+<LI>
+Print a copy of the <A HREF="mp3grade.html">MP3
+grading sheet</A>.</LI>
+
+<LI>
+Demonstrate the first checkpoint of MP3.EXE to a TA or to the instructor.</LI>
+
+<UL>
+<LI>
+Be prepared to answer questions about any aspect of the operation of your
+program. The TAs will not accept an MP if you cannot fully explain all
+operations of your code.</LI>
+</UL>
+
+<LI>
+Demonstrate the second checkpoint of MP3.EXE to a TA or to the instructor.</LI>
+
+<UL>
+<LI>
+Be prepared to answer questions about any aspect of the operation of your
+program. The TAs will not accept an MP if you cannot fully explain all
+operations of your code.</LI>
+</UL>
+
+<LI>
+Handin in your program by running:</LI>
+
+<UL>
+<LI>
+<TT>A:\Handin </TT><I>YourWindowsLogin</I></LI>
+
+<LI>
+Print <FONT COLOR="#FF0000">MP3.ASM</FONT></LI>
+</UL>
+
+<LI>
+Staple the MP3 grading sheet to the front of your MP2.ASM file and give
+both to the same TA that approved your demonstration.</LI>
+</OL>
+
+<HR>
+<H2>
+MP3.ASM</H2>
+<font size=-1><pre>
+TITLE ECE291:MP3-LiteCycles - Your Name - Date
+
+COMMENT % TRON LiteCycle Game with AI players.
+
+          ECE291: Machine Problem 3
+          Prof. John W. Lockwood
+          Guest Author: Josh Scheid
+          University of Illinois
+          Dept. of Electrical & Computer Engineering
+          Fall 1998
+          
+          Ver. 1.0
+        %
+
+;====== Constants =========================================================
+
+INCLUDE mp3const.asm    ; MP3 constants file
+
+;====== Externals =========================================================
+
+; -- LIB291 Routines (Free) ---
+extrn binasc:near, dspmsg:near
+extrn rsave:near, rrest:near
+extrn mp3xit:near               ; Exit program with a call to this procedure
+
+; -- LIBMP3 Routines (Replace these with your own code) ---
+
+extrn DrawScreen:near           ; display initial game grid on screen
+extrn ResetGrid:near            ; initialize game grid
+extrn DrawCycles:near           ; place cycles at new position and
+                                ; check for collisions
+extrn SetPlayerPos:near         ; determine player starting positions
+extrn SetGameSpeed:near         ; determine new game speed
+extrn InstTimer:near            ; install 'MyTimerHandler in place of default
+                                ; handler and speed up timer rate
+extrn DeInstTimer:near          ; deinstall 'MyTimerHandler'; reinstall
+                                ; default handler and restore normal timer rate
+extrn MyTimerHandler:near       ; handle timer interrupt
+extrn InstKey:near              ; install 'MyKeyHandler' in place of default
+extrn DeInstKey:near            ; deinstall 'MyKeyHandler'; reinstall default
+extrn MyKeyHandler:near         ; handle keyboard interrupt
+
+extrn GameMain:near             ; executes game loop and inner round loop
+
+extrn P1Control:near            ; get next direction that player one will go
+extrn P2Control:near            ; get next direction that player two will go
+
+;====== SECTION 3: Define stack segment ===================================
+stkseg  segment stack                   ; *** STACK SEGMENT ***
+        db      64 dup ('STACK   ')     ; 64*8 = 512 Bytes of Stack
+stkseg  ends
+
+;====== SECTION 4: Define code segment ====================================
+cseg    segment public  'CODE'    ; *** CODE SEGMENT ***
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== SECTION 5: Variables ==============================================
+PUBLIC StartMsg, CrashedMsg, WonRoundMsg, CrashedMsg, WonRoundMsg, AndMsg
+PUBLIC BothCrashedMsg, CollidedMsg, SpaceMsg, Blank8Msg, RoundInfoMsg
+PUBLIC grid, p1X, p1Y, p2X, p2Y 
+PUBLIC playerPosState, p1Score, p2Score, p1Name, p2Name, escPressed, spcPressed      
+PUBLIC p1KeyDir, p2KeyDir, p1Dir, p2Dir, round, pbuf 
+PUBLIC oldTimerV, oldKeyV, timerCount, gameSpeed      
+
+StartMsg        db CR,LF
+  db '----------------------- MP3: LiteCycles ----------------------',CR,LF
+  db CR,LF
+  db 'Controls:  Player 1 (blue)    Player 2 (red)                 ',CR,LF
+  db CR,LF
+  db '   UP         W               8 (numpad)                  ',CR,LF
+  db '   DOWN       S               2 (numpad)                  ',CR,LF
+  db '   LEFT       A               4 (numpad)                  ',CR,LF
+  db '   RIGHT      D               6 (numpad)                  ',CR,LF
+  db CR,LF
+  db 'Press the escape key <esc> at any time to end the game.      ',CR,LF
+  db CR,LF
+  db 'Press the space bar now to begin!!!                          ',CR,LF,'$'
+
+CrashedMsg      db ' crashed!','$'
+WonRoundMsg     db ' won round ','$'
+AndMsg          db ' and ','$'
+BothCrashedMsg  db ' both crashed!','$'
+CollidedMsg     db ' collided!','$'
+SpaceMsg        db '(press the space bar to start next round)','$'
+Blank8Msg       db '        ','$'
+
+RoundInfoMsg    db      '    Round:','$'
+
+grid            db      (GRIDSIZE_X * GRIDSIZE_Y) dup(?)
+                        ;allocates memory for game grid
+
+p1X             db      ?      ;player 1 X coord
+p1Y             db      ?      ;         Y coord
+p2X             db      ?      ;player 2 X coord
+p2Y             db      ?      ;         Y coord
+
+playerPosState  db      0       ;player position state
+
+p1Score         dw      0       ;number of rounds that player 1 has won
+p2Score         dw      0       ;number of rounds that player 2 has won
+
+; Eight-character strings for player names
+p1Name     db      'Player1 ','$'
+p2Name     db      'Player2 ','$'
+
+escPressed      db      0       ;flag set if ESC key pressed
+spcPressed      db      0       ;flag set if SPC key pressed
+
+; for controlling players through kbd
+p1KeyDir        db      UP      ;set by MyKeyHandler
+p2KeyDir        db      UP
+
+p1Dir           db      UP      ;direction specified by P1Control
+p2Dir           db      UP      ;direction specified by P2Control
+
+round           dw      1       ;current round of game play
+
+pbuf            db      7 dup (?) ;buffer for BINASC
+
+oldTimerV       dd      ?       ;far pointer to default 08h
+                                ;  interrupt function
+oldKeyV         dd      ?       ;far pointer to default key
+                                ;  interrupt function                                
+timerCount      db      0       ;counter (to be incremented every 1/72 sec) 
+
+gameSpeed       db      24      ;value that TimerCount should reach before
+                                ;advancing game state
+                                ;initial speed should be 1/3 sec. (24/72)                                
+                                   
+;====== Procedures ========================================================
+
+
+; Your Subroutines go here !
+; ---- ----------- -- ----
+
+
+;====== Main procedure ====================================================
+
+MAIN    PROC    FAR
+
+        MOV     AX, CSEG
+        MOV     DS, AX
+
+        ; Put display into 80x50 text mode
+        MOV     AX, 1202h               ; Sets to 400 line scan mode
+        MOV     BL, 30h
+        int     10h
+        MOV     AX, 3                   ; Sets to 8x8 font
+        INT     10h
+        MOV     AX, 1112h               ; Enter text mode
+        MOV     BL, 0
+        INT     10h
+        
+        CALL    GameMain                ; Where all the action happens!
+        
+        CALL    MP3XIT                  ; Exit to DOS
+
+MAIN    ENDP
+
+CSEG    ENDS
+        END     MAIN
+</pre></font>
+
+<hr>
+
+<H2>MP3CONST.ASM</H2>
+<font size=-1><pre>
+TITLE ECE291:MP3-Constants
+
+COMMENT % TRON LiteCycle Game Constant Declarations
+        %
+        
+;====== Constants =========================================================
+
+;ASCII values for common characters
+BEEP    EQU 7
+CR      EQU 13
+LF      EQU 10
+ESCKEY  EQU 27
+SPACE   EQU 32
+
+;Player 1 keyboard control scan codes (not ASCII)
+P1_U    EQU 17  ;'W'
+P1_D    EQU 31  ;'S'
+P1_L    EQU 30  ;'A'
+P1_R    EQU 32  ;'D'
+
+;Player 2 keyboard control scan codes (not ASCII)
+P2_U    EQU 72  ;'8' on num. pad
+P2_D    EQU 80  ;'2' "
+P2_L    EQU 75  ;'4' "
+P2_R    EQU 77  ;'6' "
+
+;Constant values for specifying player direction
+;  (used in variables p1NextDir and p2NextDir)
+UP      EQU 0
+DOWN    EQU 1
+LEFT    EQU 2
+RIGHT   EQU 3
+
+;Constant values for use in Grid array
+GRIDSPACE       EQU     0       ; a point with no walls
+P1WALL          EQU     1       ; a point with a wall made by player 1
+P2WALL          EQU     2       ; a point with a wall made by player 2
+GRIDWALL        EQU     3       ; a point along the outside grid wallkk
+
+;Dimension definitions
+SCREENSIZE_X    EQU 80  ;Size of dos screen in x direction
+SCREENSIZE_Y    EQU 50  ;Size of dos screen in y direction
+GRIDSIZE_X      EQU 80  ;Size of game grid in x direction
+GRIDSIZE_Y      EQU 49  ;Size of game grid in y direction
+
+TEXTATTR        EQU 02h ;TxtVid attribute byte for game text
+                        ;Currently green on black
+GRIDATTR        EQU 01h ;TxtVid attribute byte for game grid
+                        ;Currently blue on black
+CRASHATTR       EQU 0Eh ;TxtVid attribute byte for crash symbol
+                        ;Currently yellow on black
+P1ATTR          EQU 79h ;TxtVid attribute byte for player 1 cycle & walls
+P2ATTR          EQU 74h ;TxtVid attribute byte for player 2 cycle & walls
+
+CRASHSYMBOL     EQU 0Fh ;ASCII value of symbol to draw at crash site.
+PLAYERSYMBOL    EQU 0DBh;ASCII value of symbol to draw for player wall.       
+</pre></font>
+</BODY>
+</HTML>

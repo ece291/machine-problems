@@ -1,0 +1,508 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 2</title>
+</head>
+
+<body bgcolor=ffffff>
+<p>
+<table cellpadding=3 width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Lockwood, Fall 1997</td></tr></table>
+<h2> </h2>
+<center><h1>Machine Problem 2: Data Compression </h1></center>
+<p>
+<center><table border=1 cellpadding=3 width=60%>
+  <tr><td align=right><b>Due Date</b></td><td>Friday 10/3/97</td></tr>
+  <tr><td align=right><b>Purpose</b></td><td>
+     Math, User I/O, Subroutines
+     </td></tr>
+   <tr><td align=right><b>Points</b></td><td>50</td></tr>
+</table>
+</center>
+
+<h2>Introduction</h2>
+  Compression algorithms reduce the size of data by
+  eliminating redundancy.  These algorithms often allow the
+   information content of a mesage, image, or picture to be
+   preserved using a fewer number of bits. 
+  Run Lenth Encoding (RLE) is one such compression algorithm that 
+  preserves the exact content of the original information.  
+<p>
+  Many every-day devices use compression.  Modems encode data reduncies 
+  to increase thoughput.  Fax machines encode blank areas 
+  to reduce facsimile transmission time.
+  Graphic programs save disk space by encoding the redundancy in photos.
+<p>
+  A run length encoder looks for strings of identical symbols.  
+  When found, the encoder transmits the data element once followed by
+  a special <i>repeat</i> (REP) symbol to indicate redunancy, and a count that 
+  indicates how many times the symbol should be repeated.
+<p>
+  In this MP, we will encode and decode English text messages.  
+  The English alphabit contains 26 letters (A..Z).  
+  Five bits of data can be used to uniquely represent 2^5=32 symbols. 
+  This is sufficient information to encode all of the letters 
+  and still provide a few extra symbols for characters such as 
+  the space and asterisk (*). 
+
+<h2>Encoding Rules</h2>
+  <ul>
+  <li>We will encode characters with the following symbols:<p>
+  <table border=1>
+  <tr><th align=center>Character<br><i>(ASCII)</i></th><th>Symbol<br><i>(Binary)</i></th></tr>
+  <tr><td align=center> <b>_</b> <i>(space)</i><td><tt>00000</tt></tr>
+  <tr><td align=center> <B> A </b>            <td><tt>00001</tt></tr>
+  <tr><td align=center> <b> B </b>            <td><tt>00010</tt></tr>
+  <tr><td align=center> <b> C </b>            <td><tt>00011</tt></tr>
+  <tr><td align=center> ...            <td> ... </tr>
+  <tr><td align=center> <b> Z </b>            <td><tt>11010</tt></tr>
+  <tr><td align=center><i>(undefined)</i><td><tt>11011</tr>
+  <tr><td align=center> <b> * </b><i>(asterisk)</i><td><tt>11100</tt></tr>
+  <tr><td align=center><i>(undefined)</i><td><tt>11101</tr>
+  <tr><td align=center><i>(undefined)</i><td><tt>11110</tr>
+  <tr><td align=center> <b>REP</b> <i>(repeat)</i><td><tt>11111</tt></tr>
+  </table>
+ <p>
+<li>Repeating characters should be encoded as: <p>
+    <table border=1><tr></td>
+      <td>  Symbol  </td>
+      <td>  <b> REP </b>  </td>
+      <td>  Count  </td></tr></table><p>
+    Where 
+    <ul>
+    <li><i>Count</i> is a five-bit number that
+         refers to the number of characters that repeat <i>in 
+         addition to</i> the character itself.
+    <li>Due to the size of <i>Count</i>, runs are limited to 32 symbols.
+    <li>To prevent encoding data from becoming larger than the 
+        original data, only runs of three or more characters should be 
+        run length encoded.
+    </ul>
+</ul>
+
+<h2>User Interface</h2>
+  <ul>
+  <li>You are given the framework of a program which provides
+      a menu-driven interface. <p>
+
+  <li>By selecting an option from the menu, the user can:
+      <ul>
+      <li>Enter text message or binary data
+      <li>Print the contents of the message or buffer
+      <li>Encode a message or decode the buffer
+      </ul><p>
+
+  <li>All binary data is entered and displayed from left-to-right with
+      the <i>Least Significant Bit (LSB)</i> first.
+
+     <p>      
+  <li>Your input routines must be robust to all types
+      of user input including backspace, invalid input, buffer underflow, 
+      and overflow.
+  </ul>
+
+<h2>Sample Input & Output</h2>
+<ul>
+<li>An understanding of the program is best obtained by 
+    running the program interactively.  
+  <ul>
+  <li>If you haven't alrady done so, go to the ECE291 lab and 
+      run the program.
+  <li>Alternatively, Download and decompress <a href="mp2.zip">mp2.zip</a> 
+  </ul>
+<p>
+
+<li>The results from a sample run are shown below:<p>
+<table border=1><tr><td><pre>------------- MP2 Menu --------------
+  Enter   (T)ext     / (B)inary
+  Print   (M)essage  / (R)buffeR
+  RLE     (E)ncode   / (D)ecode
+------ [ESC] or (Q)uit to exit ------
+
+t
+Enter Text Message: 
+ABCD
+
+e
+Compressed Size = 20 bits ~= 2 bytes.  (LSBit .. MSBit)
+10000 01000 11000 00100
+
+t
+Enter Text Message: 
+****
+
+e
+Compressed Size = 15 bits ~= 1 bytes.  (LSBit .. MSBit)
+00111 11111 11000
+
+b
+Enter Binary Data (LSBit .. MSBit): 
+00010 10100 00110 11111 11000 11110 00000 11101 11110 01001 00110 00100
+
+d
+Text Message=
+HELLLLO WORLD </pre></td></tr></table>
+    <p>
+
+<li>Three sets of sample input data are included with this MP:   <br>
+    <tt>test1.in</tt>, <tt>test2.in</tt>, and <tt>test3.in</tt> 
+<li>The corresponding outputs for the same data are: <br>
+    <tt>test1.out</tt>, <tt>test2.out</tt>, and <tt>test3.out</tt>. 
+<li>Your program can read input from a file with the following command: <br>
+     <tt> MP2 < test</tt><i>x</i><tt>.in </tt> 
+</ul>
+
+
+<h2>Data Structures</h2>
+  <ul>
+  <li>A few variables have already been defined for you in the program
+      framework.  
+     <ul>
+     <li><b>TextMsg</b>: String of bytes that holds an ASCII message,
+          terminated with the '$' end-of-string marker.
+     <li><b>Buffer</b>: A <i>packed</i> array of bytes that holds the
+         encoded data.  Groups of 5 bits are stored in adjacent <i>bit</i>
+         locations.  You'll need to find a way to insert and extract
+         five bits to and from this array at a time.  
+     <li><b>BufferLength</b>: A word which stores the length (in bits) of 
+         the variable buffer.
+     </ul> <p>
+   <li>and a few constants have also been defined:
+     <ul>
+     <li><b>BufferMaxLength</b> == 35 <i>bytes</i></b>
+     <li><b>BufferMaxLengthBits</b> == 8*BufferMaxLength <i>bits</i>
+     <li><b>TextMsgMaxLength</b> == 56 <i>bytes</i> </b>
+     </ul>
+  </ul>
+
+<h2>Procedures</h2>
+
+  <ul>
+  <li>This assignment has eight procedures.  
+      You will receive credit for this
+      assignment by replacing each of the <font color="red">eight</font>
+      procedures listed below with your own code.  
+  <li>You need to experiment with the working code 
+      to gain a full understanding of how the programs works,
+      what the procedures do, and how the procedures interact with each other.
+  <li>Your program should exactly match the functionality of the library 
+      subroutines.
+  <li>All subroutines should be <i>modular</i>.  They should use the stack to
+      <i>preserve</i> the value of any registers they may modify.  
+  </ul>
+
+<ul>
+
+
+<li><font size=+1><b>PrintTextMsg</b></font>
+  <ul>
+  <li><b>Purpose</b>: Prints the contents of the <tt>TextMsg</tt>
+       variable.
+  <li><b>Inputs:</b> TextMsg variable
+  <li><b>Outputs:</b> Writes to screen
+  <li><b>Points</b>: 1
+  </ul><p>
+
+<li><font size=+1><b>ReadTextMsg</b></font>
+  <ul>
+  <li><b>Purpose</b>: Read TextMsg from the keyboard.  
+     <ul>
+     <li>Converts lowercase letters to uppercase letters
+     <li>Rejects all invalid input (and beeps)
+     <li>Allows backspacing (BS = ASCII 8)
+     <li>Prevents Underflow and Overflow of variable
+     <li>Terminates with a carriage return  (CR = ASCII 13)
+     <li>Rejects line feeds (LF = ASCII 10) 
+     <li>Marks end of TextMsg with the '$'.
+     </ul>
+  <li><b>Inputs:</b> Keyboard
+  <li><b>Outputs:</b> TextMsg variable
+  <li><b>Hint:</b> To erase a character from the screen, print 
+   a backspace, then whitespace, then backspace.
+  <li><b>Points</b>: 7
+  </ul><p>
+
+<li><font size=+1><b>PrintBuffer</b></font>
+  <ul>
+  <li><b>Purpose</b>: Prints the size contents of the binary 
+       <tt>Buffer</tt> array
+     <ul>
+     <li>Prints 5 bits at a time.
+     <li>Prints least significant bit of each symbol first.
+     </ul>
+  <li><b>Inputs:</b> Buffer & BufferLength variables
+  <li><b>Outputs:</b> Writes to screen
+  <li><b>Note:</b> This routine is deceptively tricky due to the
+       fact that symbols are packed into groups of five 5 bits rather
+       than the more convienient byte-sized grouping.
+  <li><b>Hint:</b> Review your shifting techniques and modulo arithmetic!
+  <li><b>Points</b>: 7
+  </ul><p>
+
+<li><font size=+1><b>Encode</b></font>
+  <ul>
+  <li><b>Purpose</b>: Encodes a single ASCII character into a 5-bit symbol
+         as defined above.
+  <li><b>Input:</b> AL = ASCII character
+  <li><b>Output:</b> DL = 5-bit Symbol 
+  <li><b>Points</b>: 3
+  </ul><p>
+
+
+<li><font size=+1><b>AppendBuffer</b></font>
+  <ul>
+  <li><b>Purpose</b>: Appends a 5-bit symbol to the end of the encoded array.
+  <li><b>Input</b>: AL = Symbol to append
+  <li><b>Output</b>: Appends 5 bits to <i>Buffer</i> then 
+     adds 5 to <i>BufferLength</i> 
+  <li><b>Notes</b>: Append the bits, not the byte!
+  <li><b>Points</b>: 5
+  </ul><p>
+
+<li><font size=+1><b>ReadBuffer</b></font>
+  <ul>
+  <li><b>Purpose</b>: Read binary Buffer from the keyboard.  
+     <ul>
+     <li>Accepts only 0's and 1's
+     <li>Ignores spaces and Rejects all other invalid input (and beeps)
+     <li>Allows backspacing
+     <li>Prevents Underflow and Overflow of variable
+     <li>Terminates with a carriage return  (CR = ASCII 13)
+     <li>Rejects line feeds (LF = ASCII 10) 
+     <li>Sets BufferLength = number of bits read
+     </ul>
+  <li><b>Inputs:</b> Keyboard
+  <li><b>Outputs:</b> Buffer and BufferLength variable
+  <li><b>Points</b>: 7
+  </ul><p>
+
+<li><font size=+1><b>DecodeRLE</b></font>
+  <ul>
+  <li><b>Purpose</b>: Decodes Buffer to TextBuf as described above
+  <li><b>Inputs</b>: Buffer & BufferLength Variables
+  <li><b>Output</b>: TextMsg
+  <li><b>Points</b>: 10
+  </ul><p>
+
+<li><font size=+1><b>EncodeRLE</b></font>
+  <ul>
+  <li><b>Purpose</b>: Encodes TextBuf to Buffer as described above
+  <li><b>Input</b>: TextMsg
+  <li><b>Output</b>: Buffer & BufferLength Variables
+  <li><b>Points</b>: 10
+  </ul><p>
+</ul>
+
+
+<h2>Preliminary Procedure</h2>
+<ul>
+<li>Copy the 
+    empty MP2 program (<tt>MP2.ASM</tt>), 
+    sample input files 
+     (<tt>test1.in</tt>, <tt>test2.in</tt>, <tt>test3.in</tt>),
+    corresponding output files
+     (<tt>test1.out</tt>, <tt>test2.out</tt>, <tt>test3.out</tt>),
+    libraries (<tt>libmp2.lib</tt>, <tt>lib291.lib</tt>), and 
+    <tt>Makefile</tt> from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s I:\ece291\mp2 F:\mp2</tt><br>
+    Alternatively, from home, you can download the same files as 
+    <a href="mp2.zip">mp2.zip</a>.
+<li>As with MP0 and MP1, run <tt>NMake</tt> to build an executable program 
+    using the given ECE291 library functions.
+<li>As with MP0 and MP1, use a text editor to modify the program.
+    As given, the program uses <font color="red">LIBMP2</font> routines 
+    to implement all
+    functionality.  To receive full credit for the assignment,
+    you will need to implement each of the subroutines described above with
+    your own code.
+<li>As with MP0 and MP1, use CodeView (<tt>CV</tt>) to debug and test your 
+    program.
+    Because you only receive credit for procedures that function completely
+    as specified, it is best to debug each routine individually.  
+<li>By modifying a few comments, you can mix and match usage of your 
+    own code and Library routines.  You may notice that the LIBMP2
+    routines contain extraneous and difficult-to-read code.  They 
+    are not meant to be unassembled!
+</ul>
+
+
+<h2>Final Steps</h2>
+<ol>
+<li>Demonstrate MP2.EXE to a TA or to the instructor.  
+    You will
+    then be asked to recompile and demonstrate 
+    MP2 with different input files.
+    Your program must work with all given input.
+    Once approved, you are ready to turn in your program.
+<li>Be prepared to answer questions about any aspect of the operation of your
+    program.  The TAs will not accept an MP if you cannot fully
+    explain the operation of your code.
+<li>Copy your programs to handin floppy: <br>
+    <tt>A:\Handin </tt> <i>YourWindowsLogin</i>
+<li>Print <font color="red">MP2.ASM </font>
+<li>Take your printout and disk with MP1 to the same TA which approved your 
+    demonstration.  Be sure that your name is on the disk and on the printout. 
+</ol>
+
+<hr>
+
+<h2>MP2.ASM (Program framework)</h2>
+<font size=-1> <xmp> 
+        PAGE 75, 132
+        TITLE ECE291:MP2:MP2-Compress - Your Name - Date
+
+COMMENT *
+        Data Compression.
+
+        The world contains a great deal of data.  Luckily, a great
+        deal of it is redundant (i.e., repeats itself or has repeating
+        patterns).  Using compression algorithms, one can encode such
+        data using a smaller number of bits.
+
+        For this MP, you will write a program which uses Run-Length
+        Encoding (RLE) to compress textual data.  As you will see, RLE
+        is most effective on data which has long runs of identical characters.
+
+        ECE291: Machine Problem 2
+        Prof. John W. Lockwood
+        Dept. of Electrical & Computer Engineering
+        Unversity of Illinois
+        Fall 1997
+
+        Ver 1.0
+        *
+
+;====== Constants =========================================================
+
+BEEP    EQU 7
+BS      EQU 8
+CR      EQU 13
+LF      EQU 10
+
+ESCKEY  EQU 27
+SPACE   EQU 32
+
+BufferMaxLength      EQU 35 ; Bytes
+BufferMaxLengthBits  EQU BufferMaxLength * 8 ; Bits
+TextMsgMaxLength     EQU 56 ; Bytes
+
+;====== Externals =========================================================
+
+; -- LIB291 Routines (Free) ---
+
+extrn kbdine:near, kbdin:near, dspout:near   ; LIB291 Routines
+extrn dspmsg:near, binasc:near, ascbin:near  ; (Always Free)
+extrn mp2xit:near ; Exit program with a call to this procedure
+
+; -- LIBMP2 Routines (Replace these with your own code) ---
+
+extrn PrintBuffer:near   ; Print contents of Buffer
+extrn ReadBuffer:near    ; Read Buffer from keyboard
+extrn ReadTextMsg:near   ; Read TextMsg from keyboard
+extrn PrintTextMsg:near  ; Print contents of TxtMsg
+extrn Encode:near        ; Encode ASCII -> 5-bit
+extrn AppendBuffer:near  ; Add a character to Buffer
+extrn EncodeRLE:near     ; Run Length Encode TextMsg -> Buffer
+extrn DecodeRLE:near     ; Run Length Decode Buffer -> TextMsg
+
+;====== SECTION 3: Define stack segment ===================================
+stkseg  segment stack                   ; *** STACK SEGMENT ***
+        db      64 dup ('STACK   ')     ; 64*8 = 512 Bytes of Stack
+stkseg  ends
+
+;====== SECTION 4: Define code segment ====================================
+cseg    segment public  'CODE'    ; *** CODE SEGMENT ***
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== SECTION 5: Variables ==============================================
+
+Buffer  db BufferMaxLength    dup(0)        ; Data Buffer for encoded Message
+TextMsg db TextMsgMaxLength   dup('$'), '$' ; Text Message 
+
+BufferLength dw 0 ; Number of bits in buffer
+
+crlf db CR,LF,'$' ; DOS uses carriage return + Linefeed for new line
+
+PUBLIC Buffer, TextMsg, BufferLength 
+
+;====== Procedures ========================================================
+
+
+; Your Subroutines go here !
+; ---- ----------- -- ----
+
+;====== Main procedure ====================================================
+
+MenuMessage db CR,LF, \
+  '------------- MP2 Menu --------------',CR,LF,\
+  '  Enter   (T)ext     / (B)inary',CR,LF, \
+  '  Print   (M)essage  / (R)buffeR',CR,LF, \
+  '  RLE     (E)ncode   / (D)ecode',CR,LF, \
+  '------ [ESC] or (Q)uit to exit ------',CR,LF,'$'
+
+main    proc    far
+        mov     ax, cseg
+        mov     ds, ax
+
+          MOV DX, Offset MenuMessage
+          CALL DSPMSG                   ; Display Menu
+
+MainLoop: MOV DX, Offset CRLF
+          CALL DSPMSG
+
+MainRead: CALL KBDIN                    ; Read Input
+
+          CMP AL,'a'
+          JB  MainOpt
+          CMP AL,'z'                    ; Convert Lowercase to Uppercase
+          JA  MainOpt
+          SUB AL,'a'-'A'
+
+MainOpt:  CMP AL,'T'
+          JNE MainNotT                   
+          Call ReadTextMsg              ; Read in a text message
+          JMP MainLoop
+
+MainNotT: CMP AL,'B'
+          JNE MainNotB
+          Call ReadBuffer               ; Read in a binary message
+          JMP MainLoop
+
+MainNotB: CMP AL,'M'
+          JNE MainNotM
+          Call PrintTextMsg             ; Print TextMsg
+          JMP MainLoop
+
+MainNotM: CMP AL,'R'
+          JNE MainNotR                  ; Print Buffer
+          Call PrintBuffer              ; (show least significants bit first) 
+          JMP MainLoop                  
+
+MainNotR: CMP AL,'E'
+          JNE MainNotE
+          Call EncodeRLE                ; Run Length Encode Message 
+          Call PrintBuffer              ; and print result
+          JMP MainLoop
+
+MainNotE: CMP AL,'D'
+          JNE MainNotD
+          Call DecodeRLE                ; Run Length Decode Message
+          Call PrintTextMsg             ; and show result
+          JMP MainLoop
+
+MainNotD: CMP AL,ESCKEY
+          JE  MainDone                  ; Quit program
+          CMP AL,'Q'
+          JE  MainDone
+
+          JMP MainRead                  ; Ignore any other character 
+
+MainDone: call MP2xit ; Exit to DOS
+
+main    endp
+cseg    ends
+        end     main
+</xmp>
+</body>

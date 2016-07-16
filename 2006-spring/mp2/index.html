@@ -1,0 +1,916 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>ECE 390 Machine Problem 2</title>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252"><link href="index_files/ece390.css" type="text/css" rel="stylesheet"></head>
+
+<!--#include file="headvb.asp" -->
+
+  <tr>
+    <td valign="top">
+      <h1 align="center">Machine Problem 2: Labyrinth</h1>
+      <div align="center">
+      <center>
+      <table border="1" width="513">
+        <tbody>
+        <tr>
+          <td align="right" width="64">Assigned</td>
+          <td width="433">Thursday, February 9, 2006</td></tr>
+        <tr>
+          <td align="right" width="64">Due Date</td>
+          <td width="433">Wednesday, February 22, 2006</td></tr>
+        <tr>
+          <td align="right" width="64">Purpose</td>
+					<td roman="" width="433">Design and implement subroutines that pass
+						arguments on the stack using C-style conventions, use recursion and
+						branching.</td></tr>
+        <tr>
+          <td align="right" width="64">Points</td>
+          <td width="433">70</td></tr></tbody></table></center></div>
+			<p>In this MP, you will write a program that generates a maze randomly with 
+			size specified by the user.  The program then finds all shortest paths from
+			the starting position to the goal.  If no path exists, the program reports
+			this to the user.</p>
+			
+			<p>Reading: Lab Notes -- Libraries (Chapter 9), Mixing Assembly and C 
+			(Section 8.2), 16-bit C Programming (Section 8.3), Arrays (Section 7.1).</p>
+			<h2>Screen Dump</h2>
+			<p>Below is a screenshot of an example run of the program.  You can see 
+			three stages of the maze solution process:  after generation at the top, 
+			after distance-marking in the middle, and after finding solutions on the
+			bottom.</p>
+			<center><img src="mp2screen.png" width="508" height="943"></center>
+      <h2>Program Specification</h2>
+			<p>The program begins by asking the user what size maze to generate.  Mazes
+			are squares and can be from 4 to 20 blocks across.  Each block is stored as 
+			a 16-bit word in the 2-D array <i>maze</i>.  The blocks are stored in row-major
+			order meaning that adjacent words in memory are located in the same row of the maze.
+		 	The	value of each word describes the corresponding block in the maze as follows:<br><br>
+      <table>
+        <tbody>
+        <tr>
+					<td><b>EMPTY</b></td><td>0FFFDh</td>
+					<td>Block is empty and has not been entered</td></tr>
+        <tr>
+					<td><b>WALL</b></td><td>0FFFEh</td>
+					<td>Block represents a wall in the maze that cannot be crossed</td></tr>
+        <tr>
+					<td><b>SOLUTION</b></td><td>0FFFFh</td>
+					<td>Block has been identified as part of a shortest solution to the maze</td></tr>
+        <tr>
+					<td>Other</td><td>0 - 0FFFCh</td>
+					<td>This value is the minimum distance from this block back to the starting point</td></tr>
+				</tbody>
+			</table>
+			<p>The three constants in bold are defined by EQU's at the top of <i>mp2.asm</i>
+			so you can and should use these mnemonics rather than the hex values.  There are
+			two other notable features of the maze, the start and goal, which are not stored 
+			in the <i>maze</i> array.  Rather, four variables, <i>startX, startY, goalX,</i>
+			and <i>goalY</i> store the coordinates of the these two locations.  Several
+			examples below should help clarify what data is stored in the array
+			at different points during execution.</p>
+			
+			<p><b>Generating the maze</b> involves initializing <i>maze</i> with 
+			WALL values around the edges of the maze and EMPTY values in the middle.  Exactly 
+			one quarter of these EMPTY values are replaced with walls by writing WALL values
+			to positions chosen at random throughout the maze.  If you choose a random location
+			and find that a wall already exists there, you must pick another location so that 
+			you still end up with the correct number of walls.  After placing the walls, choose
+			two more random locations as the start and goal positions whose coordinates are 
+			to be kept in the variables <i>startX, startY, goalX, and goalY</i> for future use.
+			At this point, the maze might look something like this:</p>
+
+			<table align='center' cellpadding=4>
+				<tbody>
+					<tr>
+						<td colspan=5 align='center'><i>maze</i> array</td>
+						<td width=40 align='center'> -> </td>
+						<td colspan=5 align='center'>Representation on screen</td>				
+					</tr>									
+					<tr>
+						<td align='center'>WALL</td><td align='center'>WALL</td><td align='center'>WALL</td><td align='center'>WALL</td><td align='center'>WALL</td>
+						<td align='center'> -> </td>
+						<td align='center'>####</td><td align='center'>####</td><td align='center'>####</td><td align='center'>####</td><td align='center'>####</td>
+					</tr>
+					<tr>
+						<td align='center'>WALL</td><td align='center'>EMPTY</td><td align='center'>WALL</td><td align='center'>EMPTY</td><td align='center'>WALL</td>
+						<td align='center'> -> </td>
+						<td align='center'>####</td><td align='center'>    </td><td align='center'>####</td><td align='center'>[SS]</td><td align='center'>####</td>
+					</tr>
+					<tr>
+									<td align='center'>WALL</td><td align='center'>EMPTY</td><td align='center'>EMPTY</td><td align='center'>EMPTY</td><td align='center'>WALL</td>
+						<td align='center'> -> </td>
+						<td align='center'>####</td><td align='center'>[GG]</td><td align='center'>    </td><td align='center'>    </td><td align='center'>####</td>
+					</tr>
+					<tr>
+						<td align='center'>WALL</td><td align='center'>EMPTY</td><td align='center'>EMPTY</td><td align='center'>WALL</td><td align='center'>WALL</td>
+						<td align='center'> -> </td>
+						<td align='center'>####</td><td align='center'>    </td><td align='center'>    </td><td align='center'>####</td><td align='center'>####</td>
+					</tr>
+					<tr>
+						<td align='center'>WALL</td><td align='center'>WALL</td><td align='center'>WALL</td><td align='center'>WALL</td><td align='center'>WALL</td>
+						<td align='center'> -> </td>
+						<td align='center'>####</td><td align='center'>####</td><td align='center'>####</td><td align='center'>####</td><td align='center'>####</td>
+					</tr>
+					<tr>
+						<td colspan=11 align='center'>where startX = 3, startY = 1, goalX = 1, and goalY = 2</td>
+					</tr>						
+				</tbody>
+			</table>
+			
+			<p><b>Solving the maze</b> is a two step process.  The first step is to recursively
+			determine the distances to every reachable position in the maze with <i>SolveMaze</i>.
+			When calling <i>SolveMaze</i>, you provide a position to start from and the number 
+			of steps that have already been taken.  For example, to begin the solution process 
+			you would pass in (<i>startX, startY</i>) and zero steps.</p>
+			<p>The body of <i>SolveMaze</i> first checks the passed location in the maze.
+			The corresponding value in <i>maze</i> must be one of the following:<br><br>
+			<table>
+				<tr>
+					<td>1) <b>EMPTY</b></td>
+					<td>, in which case we have not visited this location before, or</td>
+				</tr>
+				<tr>
+					<td>2) < #steps passed</td>
+					<td>, in which case we have found a shorter solution to this location.</td>
+				</tr>
+			</table>
+
+			<p>If neither of these are true, the subroutine returns.  Otherwise it writes 
+			into <i>maze</i> the number of steps passed and recursively calls itself on 
+			the four adjacent blocks in the maze.  This will continue until all reachable
+			positions have been marked with their minimum distances.  Furthermore, the 
+			recursion must stop at this point because neither of the above conditions can
+			be satisfied.</p>
+			<p>After <i>SolveMaze</i> runs we can tell whether or not a solution exists; if
+			the value at <i>goalX, goalY</i> is something other than EMPTY, it must be the
+			minimum number of steps required to that location, i.e., to solve the maze.  If 
+			no solution exists notify the user. If a solution does exist, the maze from the 
+			above example would now look something like this:
+
+			<table align='center' cellpadding=4>
+				<tbody>
+					<tr>
+						<td colspan=5 align='center'><i>maze</i> array</td>
+						<td width=40 align='center'> -> </td>
+						<td colspan=5 align='center'>Representation on screen</td>				
+					</tr>									
+					<tr>
+						<td align='center'>WALL</td><td align='center'>WALL</td><td align='center'>WALL</td><td align='center'>WALL</td><td align='center'>WALL</td>
+						<td align='center'> -> </td>
+						<td align='center'>####</td><td align='center'>####</td><td align='center'>####</td><td align='center'>####</td><td align='center'>####</td>
+					</tr>
+					<tr>
+						<td align='center'>WALL</td><td align='center'>0004h</td><td align='center'>WALL</td><td align='center'>0000h</td><td align='center'>WALL</td>
+						<td align='center'> -> </td>
+						<td align='center'>####</td><td align='center'>04</td><td align='center'>####</td><td align='center'>[SS]</td><td align='center'>####</td>
+					</tr>
+					<tr>
+									<td align='center'>WALL</td><td align='center'>0003h</td><td align='center'>0002h</td><td align='center'>0001h</td><td align='center'>WALL</td>
+						<td align='center'> -> </td>
+						<td align='center'>####</td><td align='center'>[GG]</td><td align='center'>02</td><td align='center'> 01 </td><td align='center'>####</td>
+					</tr>
+					<tr>
+						<td align='center'>WALL</td><td align='center'>0004h</td><td align='center'>0003h</td><td align='center'>WALL</td><td align='center'>WALL</td>
+						<td align='center'> -> </td>
+						<td align='center'>####</td><td align='center'>04</td><td align='center'>03</td><td align='center'>####</td><td align='center'>####</td>
+					</tr>
+					<tr>
+						<td align='center'>WALL</td><td align='center'>WALL</td><td align='center'>WALL</td><td align='center'>WALL</td><td align='center'>WALL</td>
+						<td align='center'> -> </td>
+						<td align='center'>####</td><td align='center'>####</td><td align='center'>####</td><td align='center'>####</td><td align='center'>####</td>
+					</tr>			
+				</tbody>
+			</table>			
+			
+			<p>If a solution does exist, then <b>the second step in solving the maze</b> is to 
+			mark the solution by calling <i>MarkSolutions</i> which operates somewhat like
+			<i>SolveMaze</i> did.  This time however, you begin by calling <i>MarkSolutions</i>
+			on the goal</p>
+			<p><i>MarkSolutions</i> first marks the passed location as SOLUTION.  Then it
+			looks at its four neighbors and calls itself recursively on those neighbors 
+			that are one step closer to the start symbol (their distance is one less). Once
+			the start symbol is reached (distance is zero) no further recursive calls are 
+			allowed.  When <i>MarkSolutions</i> finally returns, all possible shortest 
+			solutions to the original maze have been marked with the SOLUTION value.  In this 
+			final state, the maze we've been looking at should look like this:</p>
+
+			<table align='center' cellpadding=4>
+				<tbody>
+					<tr>
+						<td colspan=5 align='center'><i>maze</i> array</td>
+						<td width=40 align='center'> -> </td>
+						<td colspan=5 align='center'>Representation on screen</td>				
+					</tr>									
+					<tr>
+						<td align='center'>WALL</td><td align='center'>WALL</td><td align='center'>WALL</td><td align='center'>WALL</td><td align='center'>WALL</td>
+						<td align='center'> -> </td>
+						<td align='center'>####</td><td align='center'>####</td><td align='center'>####</td><td align='center'>####</td><td align='center'>####</td>
+					</tr>
+					<tr>
+						<td align='center'>WALL</td><td align='center'>0004h</td><td align='center'>WALL</td><td align='center'>SOLUTION</td><td align='center'>WALL</td>
+						<td align='center'> -> </td>
+						<td align='center'>####</td><td align='center'>04</td><td align='center'>####</td><td align='center'>[SS]</td><td align='center'>####</td>
+					</tr>
+					<tr>
+						<td align='center'>WALL</td><td align='center'>SOLUTION</td><td align='center'>SOLUTION</td><td align='center'>SOLUTION</td><td align='center'>WALL</td>
+						<td align='center'> -> </td>
+						<td align='center'>####</td><td align='center'>[GG]</td><td align='center'>....</td><td align='center'>....</td><td align='center'>####</td>
+					</tr>
+					<tr>
+						<td align='center'>WALL</td><td align='center'>0004h</td><td align='center'>0003h</td><td align='center'>WALL</td><td align='center'>WALL</td>
+						<td align='center'> -> </td>
+						<td align='center'>####</td><td align='center'>04</td><td align='center'>03</td><td align='center'>####</td><td align='center'>####</td>
+					</tr>
+					<tr>
+						<td align='center'>WALL</td><td align='center'>WALL</td><td align='center'>WALL</td><td align='center'>WALL</td><td align='center'>WALL</td>
+						<td align='center'> -> </td>
+						<td align='center'>####</td><td align='center'>####</td><td align='center'>####</td><td align='center'>####</td><td align='center'>####</td>
+					</tr>		
+				</tbody>
+			</table>
+
+			
+			<p>There are a couple points in the program at which you should display the maze
+			and they correspond to the three examples shown above.  You should display the maze
+			immediately after generating the maze, after marking the minimum distances, and, 
+			if a solution exists, after the solutions have been marked.</p>
+			<p><b>Final consideration</b>: The subroutines in this MP are to be written
+			to accept arguments according to C-style conventions.  For details, please see
+			Sections 8.2 and 8.3 of the lab manual, but the basic gist of it is that arguments
+			to a function are written to the stack by the calling function prior to the call.  
+			The called function returns its value in AL, AX, or DX:AX, depending on the size 
+			of the return value, and then it is up to the calling routine to take the 
+			arguments it passed back off the stack.  As an example, the random number
+			generator, <i>Rand</i>, that we provide you in this MP uses C calling conventions
+		 	so you would call it like this to get a random number from 0 to AX-1:<br>
+			<pre>  push ax
+  call Rand
+  add sp, 2	</pre>
+			<h2>Program Organization</h2>
+			<p>The program has the following global variables: </p>
+			<table>
+				<tr>
+					<td><i>maze</i></td><td>An array of words holding the maze layout in row-major order</td>
+				</tr>
+				<tr>
+					<td><i>mazeSize</i></td><td>A byte used to remember the size of the maze as input by the user</td>
+				</tr>
+				<tr>
+					<td><i>blocks</i></td><td>A byte indicating the number of walls to place in the maze.  Should equal (<i>mazeSize</i>-2)^2 / 4</td>
+				</tr>
+				<tr>
+					<td><i>startX</i>, etc</td><td>Bytes that hold the coordinates of the start and goal positions</td>
+				</tr>
+				<tr>
+					<td><i>R</i></td><td>The random number seed.  You should not need to access this except through calls to <i>Rand</i></td>
+				</tr>
+			</table>
+			
+			<p>Four functions are given to you, <i>Main</i>, <i>Randomize</i>, <i>Rand</i>,
+			and <i>DisplayMaze</i>.  <i>Main</i>, as in previous MPs, controls the flow of
+			the program and is where execution begins. <i>Randomize</i> seeds the random 
+			number generator based on the system time in order to get a new number sequence
+			each execution; it is called once near	the start of procedure <i>Main</i>
+			which is the only time it needs to be called;  you will not need to call it in 
+			the functions you write.  After <i>Randomize</i> has been called, calling 
+			<i>Rand</i> will return a random number in AX.  Finally, <i>Display</i> draws
+			the maze according to the state of the <i>maze</i> array.  This is another
+			function that is called in <i>Main</i> and should not need to be called 
+			elsewhere in the program.</p>
+			<p>It's up to you to replace the library versions of <i>UserIn</i> and the other
+			procedures though. This is done by deleting the statements that call the 
+			<tt>libmp2</tt> subroutine and by adding your own code. Each subroutine that you 
+			write should match the output of the library subroutine exactly.  If you like,
+			you are free to modify or re-implement <i>DisplayMaze</i> to display the maze
+			in a different way but it should still be readable and it should still convey
+			the same information (walls vs empty spaces, start and goal positions, distances,
+			etc.).</p>
+
+			<p>Below is a detailed description of all the functions you are responsible for 
+			writing. Document each subroutine with a header. In the Lab Notes, standards 
+			for headers appear on page 4, and examples of subroutines on pages 28-33 and 
+			84-88.</p>
+
+      <table border="1">
+        <tbody>
+        <tr valign="top">
+          <td><b><font size="+1">UserIn</font></b></td>
+          <td>
+            <ul>
+							<li>Sets <i>mazeSize</i> and <i>blocks</i> according to the user's input 
+              </li><li>Input: 
+              <ul>
+								<li><tt>(IO)</tt>: User keyboard input</li>
+							</ul>
+							<li>Outputs:</li>
+							<ul>
+								<li><tt>(Global) mazeSize </tt>: Dimensions of the maze to be built</li>
+								<li><tt>(Global) blocks </tt>: Number of wall blocks to lay inside the maze</li>
+							</ul>
+							</li><li>Calls: kbdin, dspmsg, ascbin, mp2xit
+							</li><li>Call Type: Procedure
+							</li><li>UserIn prints a prompt for the user to enter a size from 4-20 for
+							the maze.
+							</li><li>UserIn then accepts up to two ASCII numbers as input from the keyboard.
+							These numbers are echoed back onto the screen.
+							</li><li>If two numbers have already been accepted, no additional numbers should
+							be recorded.
+							</li><li>If the user presses backspace, UserIn removes the most recently
+							entered digit (assuming there is one).
+							</li><li>If the user presses escape, UserIn calls mp2xit to end the program.
+							</li><li>If the user presses enter and there is at least one digit entered,
+							convert it from ASCII.  If it is not a valid number (between 4 and 20), 
+							request another number.
+							</li><li>Once a valid size is obtained, store it into <i>mazeSize</i>. 
+							Additionally, store the value (<i>mazeSize</i> - 2)^2 / 4 (one quarter of 
+							the area of the maze excluding the edges) into memory location <i>blocks</i>.  
+							</li><li>Ignore any other keypresses.
+							</li>
+						</ul>
+					</td>
+				</tr>
+        <tr valign="top">
+          <td><b><font size="+1">FindSpace</font></b></td>
+          <td>
+            <ul>
+							<li>Searches random locations in <i>maze</i> until an EMPTY space is found
+              </li><li>Input: 
+              <ul>
+								<li><tt>(Global) maze </tt></li>
+							</ul>
+							<li>Output:</li>
+							<ul>
+								<li><tt>(DX:AX)</tt>: Packed doubleword containing the x index in AX and the y index in DX</li>
+							</ul>
+							</li><li>Calls: Rand
+							</li><li>Call Type: C-style function
+							</li><li>FindSpace calls Rand to generate a random offset into the maze.  Note that it is 
+							EXTREMELY important that you only make one call to Rand to generate the random
+							location.  Calling Rand once to generate an X coordinate and once to generate
+							a Y coordinate will cause you much grief.
+							</li><li>There are initially (mazeSize-2)^2 EMPTY locations so have the
+							call to Rand spit out a number from 0 to ((mazeSize-2)^2 - 1).  Convert this
+							number into an X and a Y coordinate, both ranging from 1 to mazeSize-2 
+							(the range of coordinates in the maze that don't include the borders).
+							</li><li>Check the value of <i>maze</i> at this location.  If it is not 
+							EMPTY, go back and try again with a new random number.
+							</li><li>Otherwise, return the answer in DX:AX.
+							</li>
+						</ul>
+					</td>
+				</tr>
+        <tr valign="top">
+          <td><b><font size="+1">GenerateMazeOuter</font></b></td>
+          <td>
+            <ul>
+							<li>Clears <i>maze</i> and draws walls around the maze edges
+              </li><li>Input: 
+              <ul>
+								<li><tt>(Global) mazeSize </tt></li>
+							</ul>
+							<li>Output:</li>
+							<ul>
+								<li><tt>(Global) maze </tt>(initialized with walls on edges)</li>
+							</ul>
+							</li><li>Calls: None
+							</li><li>Call Type: Procedure
+							</li><li>GenerateMazeOuter begins by writing EMPTY to the first mazeSize^2 
+							elements of <i>maze</i>.
+							</li><li>Then use a loop to write WALL to the positions in <i>maze</i> that
+							correspond to the maze edges.  If 'i' was your hypothetical loop counter,
+							these positions would be maze[i][0], maze[i][mazeSize-1], maze[0][i], and
+							maze[mazeSize-1][i].
+						</ul>
+					</td>
+				</tr>
+        <tr valign="top">
+          <td><b><font size="+1">GenerateMazeInner</font></b></td>
+          <td>
+            <ul>
+							<li>Lays interior maze walls and chooses start and goal positions
+              </li><li>Inputs: 
+              <ul>
+								<li><tt>(Global) mazeSize </tt></li>
+								<li><tt>(Global) blocks </tt></li>
+							</ul>
+							<li>Outputs:</li>
+							<ul>
+								<li><tt>(Global) maze </tt>(filled with random walls)</li>
+								<li><tt>(Global) startX, startY, goalX, goalY </tt>: Start and goal positions</li>
+							</ul>
+							</li><li>Calls: FindSpace
+							</li><li>Call Type: Procedure
+							</li><li>GenerateMazeInner calls <i>FindSpace</i> <i>blocks</i> number of 
+							times to generate the interior walls.  After each call, write WALL into maze 
+							at the space specified by <i>FindSpace</i>.
+							</li><li>Call <i>FindSpace</i> two more times to generate start and goal
+							positions.  Instead of storing data in <i>maze</i>, record these coordinates
+							in the globals <i>startX</i>, <i>startY</i>, <i>goalX</i>, and <i>goalY</i>.
+							</li>
+						</ul>
+					</td>
+				</tr>
+        <tr valign="top">
+          <td><b><font size="+1">SolveMaze</font></b></td>
+          <td>
+            <ul>
+							<li>Recursively calculates the distance to every reachable point in <i>maze</i>
+              </li><li>Inputs: 
+              <ul>
+								<li><tt>(BP + 4) x</tt>: X coordinate of position to solve from</li>
+								<li><tt>(BP + 6) y</tt>: Y coordinate of position to solve form</li>
+								<li><tt>(BP + 8) steps</tt>: Distance of the current position from the start symbol</li>
+								<li><tt>(Global) maze</tt></li>
+								<li><tt>(Global) mazeSize</tt></li>
+							</ul>
+							<li>Output:</li>
+							<ul>
+								<li><tt>(Global) maze </tt>(with reachable EMPTYs replaced with distances)</li>
+							</ul>
+							</li><li>Calls: SolveMaze
+							</li><li>Call Type: C-style procedure
+							</li><li>SolveMaze first checks the value of <i>maze</i> at the position
+							(<i>x,y</i>).
+							</li><li>If this value is WALL or less than the value of <i>steps</i>, return
+							</li><li>Otherwise, write <i>steps</i> into <i>maze</i>[<i>y</i>][<i>x</i>]
+							and make these recursive calls:
+								<ul>
+									<li><i>SolveMaze</i>(<i>x</i>+1, <i>y</i>, <i>steps</i>+1)</li>
+									<li><i>SolveMaze</i>(<i>x</i>, <i>y</i>+1, <i>steps</i>+1)</li>
+									<li><i>SolveMaze</i>(<i>x</i>-1, <i>y</i>, <i>steps</i>+1)</li>
+									<li><i>SolveMaze</i>(<i>x</i>, <i>y</i>-1, <i>steps</i>+1)</li>
+								</ul>
+							</li>
+						</ul>
+					</td>
+				</tr>
+        <tr valign="top">
+					<td><b><font size="+1">MarkSolutions</font></b></td>
+          <td>
+            <ul>
+							<li>Recursively uses distance information to determine solutions
+              </li><li>Inputs: 
+              <ul>
+								<li><tt>(BP + 4) x</tt>: X coordinate of position to solve from</li>
+								<li><tt>(BP + 6) y</tt>: Y coordinate of position to solve from</li>
+								<li><tt>(Global) maze</tt></li>
+								<li><tt>(Global) mazeSize</tt></li>
+							</ul>
+							<li>Output:</li>
+							<ul>
+								<li><tt>(Global) maze </tt>(with solution paths marked by SOLUTION values)</li>
+							</ul>
+							</li><li>Calls: MarkSolutions
+							</li><li>Call Type: C-style procedure
+							</li><li>MarkSolutions stores the value <i>maze</i> at the position
+							(<i>x,y</i>) into AX and writes SOLUTION in its place.
+							</li><li>If AX is zero, return because we have reached the goal.
+							</li><li>Otherwise, for each of the four neighbors of (<i>x,y</i>), if
+							the value of <i>maze</i> at that neighboring location is one less than 
+							AX, call MarkSolutions recursively on that position.
+							</li>
+						</ul>
+					</td>
+				</tr>
+				</tbody>
+			</table>
+
+			<h2>Friendly Advice</h2>
+      <ul>
+        <li>The <tt>libmp2.lib</tt> file contains executable library subroutines 
+        for each of the routines that you need to implement. The library 
+        subroutines enable you to run the program and understand how it works before 
+				you implement it. You can test your program with any combination of 
+        your own code and library subroutines. You will receive credit only for 
+        the subroutines that you implement yourself. 
+        </li><li>You may define new memory variables as needed. Variables associated 
+        with a subroutine may be declared between the header and the first 
+        instruction of the subroutine. 
+        </li><li>Each subroutine should save and restore any registers that it uses, 
+        except for registers that deliver subroutine outputs. The caller may use 
+        registers without outputs and expect them to remain unchanged. 
+        </li><li>Be careful when transmitting subroutine outputs via registers.
+        For example, if you use POPA at the end of a subroutine, avoid overwriting a
+				register that delivers an output.
+				</li><li>Likewise, be careful when dealing with arguments passed on the stack
+				that you keep track of where on the stack they are.  An argument that was at 
+				[SP + 4] when your function began will not still be at that location after you 
+				PUSHA.  For functions that have arguments passed on the stack it's a good idea
+				to copy the stack pointer, SP, into BP when you enter the function since BP
+				won't change as you push and pop other variables.
+				</li><li>The <i>maze</i> array is an array of words.  This is because the more 
+				complex maze generation algorithm originally planned could have resulted in a
+				20x20 maze where the distance from start to goal could have caused overflow
+				problems.  But as a consequence, when indexing the array you will need to double
+				all your offsets.  I.e., <i>maze</i>[<i>y</i>][<i>x</i>] is found at address
+				<i>maze</i> + 2 * (<i>y</i> * mazeSize + x).
+				</li><li>Remember that it will cause problems in <i>FindSpace</i> if you place 
+				walls by generating	X and Y coordinates separately.
+        </li><li>Monitor the course WebBoard for clarifications and help. 
+				</li><li>START EARLY! </li></ul>
+
+				<p>Files for MP2 are on the <tt>V:</tt> drive in the directory 
+				<tt>V:\ece390\mp2</tt>. In this directory are the program framework 
+				<tt>mp2.asm</tt> and a running version of the program <tt>mp2lab.exe</tt>. 
+				Lab versions of subroutines are in <tt>libmp2.lib</tt>, which contains all 
+				subroutines of LIB291 plus versions of the MP2 subroutines (libMain for Main, etc). 
+				You will use mp2xit instead of dosxit. You should start by copying these files to your home 
+				directory with the following command: <br><tt>xcopy /s V:\ece390\mp2 
+				W:\mp2</tt><br>You may download the files from the server as <a href="mp2.zip">mp2.zip</a> </p>
+      
+				
+      <h2>Demonstration, Documentation, and Grading</h2>
+      <p>Demonstrate your program to an ECE 390 staff member.</p>
+      <p>As in MP1, keep an MP development log and write a cover memo, which 
+      should address the following questions: 
+      </p><ul>
+        <li>How much time did you spend on each subroutine, from planning and 
+        design through final debugging? 
+        </li><li>What kinds of defects (bugs) did you find during the development of 
+        the program? When did you discover these defects (during code review or 
+        during testing)? How did you find them? 
+        </li><li>What did you learn about design, coding, testing, and debugging in 
+        this MP? 
+        </li><li>What went well in your work on this MP? What did not? 
+        </li><li>What you would do differently for the next MP? </li></ul>
+      <p>After the demonstration, submit your program and cover memo. Your 
+      program will be graded according to the clarity of your design and the 
+      quality of your documentation.</p>
+			<p>Gradesheet:</p>
+			<ul>
+				<li>UserIn: 10
+				<li>FindSpace: 10
+			  <li>GenerateMazeOuter: 10
+				<li>GenerateMazeInner: 5
+			  <li>SolveMaze: 15
+			  <li>MarkSolutions: 10
+				<li>Technique: 3 
+				<li>Documentation: 3
+			  <li>Cover Memo: 4
+			</ul>
+      <hr>
+
+        <h2>mp2.asm (program framework)</h2>
+<pre>
+<font color="#ff0000">; MP2 - Labyrinth</font>
+<font color="#ff0000">;       Your Name</font>
+<font color="#ff0000">;       Today's Date</font>
+
+       <font color="#804040">BITS</font>    <font color="#ff00ff">16</font>
+
+<font color="#ff0000">;====== SECTION 1: Define constants =======================================</font>
+
+       <font color="#0000ff">CR</font>        <font color="#804040">EQU</font>  <font color="#ff00ff">0Dh</font>
+       <font color="#0000ff">LF</font>        <font color="#804040">EQU</font>  <font color="#ff00ff">0Ah</font>
+       <font color="#0000ff">ESC</font>       <font color="#804040">EQU</font>  <font color="#ff00ff">1Bh</font>
+       <font color="#0000ff">BS</font>        <font color="#804040">EQU</font>  <font color="#ff00ff">08h</font>
+
+       <font color="#0000ff">MAXSIZE</font>   <font color="#804040">EQU</font>  <font color="#ff00ff">20</font>
+       <font color="#0000ff">EMPTY</font>     <font color="#804040">EQU</font>  <font color="#ff00ff">0FFFDh</font>
+       <font color="#0000ff">WALL</font>      <font color="#804040">EQU</font>  <font color="#ff00ff">0FFFEh</font>
+       <font color="#0000ff">SOLUTION</font>  <font color="#804040">EQU</font>  <font color="#ff00ff">0FFFFh</font>
+
+<font color="#ff0000">; You may define additional constants here</font>
+
+<font color="#ff0000">;====== SECTION 2: Declare external procedures ============================</font>
+
+<font color="#ff0000">;from the 291 library</font>
+<font color="#0000ff">EXTERN</font>  <font color="#0000ff">kbdin</font>, <font color="#0000ff">dspout</font>, <font color="#0000ff">dspmsg</font>, <font color="#0000ff">ascbin</font>, <font color="#0000ff">dosxit</font>
+
+<font color="#0000ff">GLOBAL</font> <font color="#0000ff">Main</font>, <font color="#0000ff">Randomize</font>, <font color="#0000ff">Rand</font>, <font color="#0000ff">DisplayMaze</font>
+<font color="#0000ff">EXTERN</font> <font color="#0000ff">libUserIn</font>, <font color="#0000ff">libFindSpace</font>, <font color="#0000ff">libGenerateMazeOuter</font>, <font color="#0000ff">libGenerateMazeInner</font>
+<font color="#0000ff">GLOBAL</font> <font color="#0000ff">FindSpace</font>, <font color="#0000ff">GenerateMazeOuter</font>, <font color="#0000ff">GenerateMazeInner</font>, <font color="#0000ff">SolveMaze</font>, <font color="#0000ff">MarkSolutions</font>
+<font color="#0000ff">EXTERN</font> <font color="#0000ff">libSolveMaze</font>, <font color="#0000ff">libMarkSolutions</font>, <font color="#0000ff">mp2xit</font>
+<font color="#0000ff">GLOBAL</font> <font color="#0000ff">maze</font>, <font color="#0000ff">mazeSize</font>, <font color="#0000ff">blocks</font>, <font color="#0000ff">startX</font>, <font color="#0000ff">startY</font>, <font color="#0000ff">goalX</font>, <font color="#0000ff">goalY</font>
+<font color="#0000ff">GLOBAL</font> <font color="#0000ff">inputBuffer</font>, <font color="#0000ff">startSymbol</font>, <font color="#0000ff">goalSymbol</font>, <font color="#0000ff">emptySymbol</font>, <font color="#0000ff">wallSymbol</font>
+<font color="#0000ff">GLOBAL</font> <font color="#0000ff">solutionSymbol</font>, <font color="#0000ff">nullMsg</font>, <font color="#0000ff">newline</font>
+
+<font color="#ff0000">;====== SECTION 3: Define stack segment ===================================</font>
+
+<font color="#804040">SEGMENT</font> <font color="#0000ff">stkseg</font> <font color="#0000ff">STACK</font>                    <font color="#ff0000">; *** STACK SEGMENT ***</font>
+        <font color="#0000ff">RESB</font>      <font color="#ff00ff">64</font>*<font color="#ff00ff">8</font>
+<font color="#0000ff">stacktop</font>:
+        <font color="#0000ff">RESB</font>    <font color="#ff00ff">0</font>                       <font color="#ff0000">; NASM bug workaround</font>
+
+<font color="#ff0000">;====== SECTION 4: Define code segment ====================================</font>
+
+<font color="#804040">SEGMENT</font> <font color="#0000ff">code</font>                            <font color="#ff0000">; *** CODE SEGMENT ***</font>
+
+<font color="#ff0000">;====== SECTION 5: Declare variables for main procedure ===================</font>
+<font color="#0000ff">maze</font>        <font color="#0000ff">RESW</font>  <font color="#0000ff">MAXSIZE</font>*<font color="#0000ff">MAXSIZE</font>
+<font color="#0000ff">mazeSize</font>    <font color="#0000ff">DB</font>  <font color="#0000ff">MAXSIZE</font>
+<font color="#0000ff">blocks</font>      <font color="#0000ff">DB</font>  <font color="#0000ff">MAXSIZE</font>*<font color="#0000ff">MAXSIZE</font>/<font color="#ff00ff">4</font>
+
+<font color="#0000ff">startX</font>      <font color="#0000ff">DB</font>  <font color="#ff00ff">0</font>
+<font color="#0000ff">startY</font>      <font color="#0000ff">DB</font>  <font color="#ff00ff">0</font>
+<font color="#0000ff">goalX</font>       <font color="#0000ff">DB</font>  <font color="#ff00ff">0</font>
+<font color="#0000ff">goalY</font>       <font color="#0000ff">DB</font>  <font color="#ff00ff">0</font>
+
+<font color="#0000ff">inputBuffer</font> <font color="#0000ff">RESB</font> <font color="#ff00ff">3</font>
+<font color="#0000ff">R</font>           <font color="#0000ff">DW</font>  <font color="#ff00ff">1</font>
+
+<font color="#0000ff">startSymbol</font> <font color="#0000ff">DB</font>  <font color="#ff00ff">'[SS]'</font>,<font color="#ff00ff">'$'</font>
+<font color="#0000ff">goalSymbol</font>      <font color="#0000ff">DB</font>  <font color="#ff00ff">'[GG]'</font>,<font color="#ff00ff">'$'</font>
+<font color="#0000ff">emptySymbol</font> <font color="#0000ff">DB</font>  <font color="#ff00ff">'    '</font>,<font color="#ff00ff">'$'</font>
+<font color="#0000ff">wallSymbol</font>  <font color="#0000ff">DB</font>  <font color="#ff00ff">'####'</font>,<font color="#ff00ff">'$'</font>
+<font color="#0000ff">solutionSymbol</font> <font color="#0000ff">DB</font> <font color="#ff00ff">'....'</font>,<font color="#ff00ff">'$'</font>
+<font color="#0000ff">nullMsg</font>     <font color="#0000ff">DB</font>  <font color="#ff00ff">'$'</font>
+<font color="#0000ff">newline</font>     <font color="#0000ff">DB</font>  <font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'$'</font>
+<font color="#0000ff">original</font>    <font color="#0000ff">DB</font>  <font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'Original Maze:'</font>,<font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'$'</font>
+<font color="#0000ff">distances</font>   <font color="#0000ff">DB</font>  <font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'Calculated Distances:'</font>,<font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'$'</font>
+<font color="#0000ff">shortpaths</font>  <font color="#0000ff">DB</font>  <font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'Shortest Paths to Goal:'</font>,<font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'$'</font>
+<font color="#0000ff">noSolution</font>  <font color="#0000ff">DB</font>  <font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'No Solution for this Maze :('</font>,<font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'$'</font>
+
+
+
+<font color="#ff0000">;====== You can create your own variables here ============================</font>
+
+
+<font color="#ff0000">;====== SECTION 6: Program initialization =================================</font>
+
+<font color="#804040">..start</font>:
+       <font color="#804040">mov</font>  AX, CS                  <font color="#ff0000">; Initialize Default Segment register</font>
+       <font color="#804040">mov</font>  DS, AX
+       <font color="#804040">mov</font>  AX, <font color="#0000ff">stkseg</font>              <font color="#ff0000">; Initialize Stack Segment register</font>
+       <font color="#804040">mov</font>  SS, AX
+       <font color="#804040">mov</font>  SP, <font color="#0000ff">stacktop</font>            <font color="#ff0000">; Initialize Stack Pointer register</font>
+
+<font color="#ff0000">;====== SECTION 7: Main procedure =========================================</font>
+
+<font color="#0000ff">Main</font>:
+
+       <font color="#804040">call</font> <font color="#0000ff">Randomize</font>
+       <font color="#804040">call</font> <font color="#0000ff">UserIn</font>
+       <font color="#804040">call</font> <font color="#0000ff">GenerateMazeOuter</font>
+       <font color="#804040">call</font> <font color="#0000ff">GenerateMazeInner</font>
+
+       <font color="#804040">mov</font>  dx, <font color="#0000ff">original</font>
+       <font color="#804040">call</font> <font color="#0000ff">dspmsg</font>
+       <font color="#804040">call</font> <font color="#0000ff">DisplayMaze</font>
+       <font color="#804040">call</font> <font color="#0000ff">kbdin</font>
+
+       <font color="#804040">push</font> <font color="#0000ff">word</font> <font color="#ff00ff">0</font>
+       <font color="#804040">movzx</font> ax, [<font color="#0000ff">startY</font>]
+       <font color="#804040">push</font> ax
+       <font color="#804040">movzx</font> ax, [<font color="#0000ff">startX</font>]
+       <font color="#804040">push</font> ax
+       <font color="#804040">call</font> <font color="#0000ff">SolveMaze</font>
+       <font color="#804040">add</font>  sp, <font color="#ff00ff">6</font>
+       <font color="#ff0000">; SolveMaze(startX, startY, 0)</font>
+
+       <font color="#804040">mov</font>  dx, <font color="#0000ff">distances</font>
+       <font color="#804040">call</font> <font color="#0000ff">dspmsg</font>
+       <font color="#804040">call</font> <font color="#0000ff">DisplayMaze</font>
+       <font color="#804040">call</font> <font color="#0000ff">kbdin</font>
+
+       <font color="#804040">movzx</font> ax, [<font color="#0000ff">goalY</font>]
+       <font color="#804040">movzx</font> bx, [<font color="#0000ff">mazeSize</font>]
+       <font color="#804040">mul</font>  bx
+       <font color="#804040">movzx</font> bx, [<font color="#0000ff">goalX</font>]
+       <font color="#804040">add</font>  bx, ax
+       <font color="#804040">shl</font>  bx, <font color="#ff00ff">1</font>
+       <font color="#804040">cmp</font>  <font color="#0000ff">word</font> [<font color="#0000ff">maze</font> + bx], <font color="#0000ff">EMPTY</font>
+       <font color="#804040">jne</font>  <font color="#0000ff">.solution</font>
+       <font color="#ff0000">; if maze[goalX][goalY] == EMPTY, no solution</font>
+
+<font color="#0000ff">.noSolution</font>
+       <font color="#804040">mov</font>  dx, <font color="#0000ff">noSolution</font>
+       <font color="#804040">call</font> <font color="#0000ff">dspmsg</font>
+       <font color="#804040">jmp</font>  <font color="#0000ff">.done</font>
+
+<font color="#0000ff">.solution</font>
+       <font color="#804040">movzx</font> ax, [<font color="#0000ff">goalY</font>]
+       <font color="#804040">push</font> ax
+       <font color="#804040">movzx</font> ax, [<font color="#0000ff">goalX</font>]
+       <font color="#804040">push</font> ax
+       <font color="#804040">call</font> <font color="#0000ff">MarkSolutions</font>
+       <font color="#804040">add</font>  sp, <font color="#ff00ff">4</font>
+       <font color="#ff0000">; MarkSolutions(goalX, goalY)</font>
+
+       <font color="#804040">mov</font>  dx, <font color="#0000ff">shortpaths</font>
+       <font color="#804040">call</font> <font color="#0000ff">dspmsg</font>
+
+<font color="#0000ff">.done</font>
+       <font color="#804040">call</font> <font color="#0000ff">DisplayMaze</font>
+       <font color="#804040">call</font> <font color="#0000ff">mp2xit</font>
+       <font color="#804040">ret</font>
+
+<font color="#ff0000">;       VOID Randomize()</font>
+<font color="#ff0000">;       PURPOSE: Seeds the random number generator based on the current time</font>
+<font color="#ff0000">;       INPUTS:  (IO) Current time</font>
+<font color="#ff0000">;       OUTPUTS: (Global) R: The current random number</font>
+<font color="#ff0000">;       CONVENTION: Procedure</font>
+<font color="#0000ff">Randomize</font>:
+       <font color="#804040">push</font> ax
+       <font color="#804040">push</font> dx
+
+       <font color="#804040">mov</font>  ah, <font color="#ff00ff">2Ch</font>
+       <font color="#804040">int</font>  <font color="#ff00ff">21h</font>
+       <font color="#804040">mov</font>  <font color="#0000ff">word</font> [<font color="#0000ff">R</font>], dx
+       <font color="#ff0000">; Use interrupt to request time.  DH = seconds, DL = hundredths</font>
+
+       <font color="#804040">pop</font>  dx
+       <font color="#804040">pop</font>  ax
+       <font color="#804040">ret</font>
+
+<font color="#ff0000">;       WORD Rand(WORD maxNumber)</font>
+<font color="#ff0000">;       PURPOSE: Generates random number</font>
+<font color="#ff0000">;       INPUTS:  (stack) maxNumber: range of random number</font>
+<font color="#ff0000">;                (global) R: current stored random number</font>
+<font color="#ff0000">;       OUTPUTS: (AX): random number in range 0 ... (maxNumber-1)</font>
+<font color="#ff0000">;       CONVENTION: C-style</font>
+<font color="#0000ff">Rand</font>:
+       <font color="#804040">push</font> bp
+       <font color="#804040">mov</font>  bp, sp
+
+       <font color="#804040">push</font> dx
+       <font color="#804040">push</font> bx
+
+       <font color="#804040">mov</font>  ax, <font color="#0000ff">word</font> [<font color="#0000ff">R</font>]
+       <font color="#804040">mov</font>  bx, <font color="#ff00ff">2153</font>
+       <font color="#804040">mul</font>  bx
+       <font color="#804040">add</font>  ax, <font color="#ff00ff">13849</font>
+       <font color="#804040">mov</font>  <font color="#0000ff">word</font> [<font color="#0000ff">R</font>], ax
+       <font color="#804040">mov</font>  dx, <font color="#ff00ff">0</font>
+       <font color="#804040">div</font>  <font color="#0000ff">word</font> [BP + <font color="#ff00ff">4</font>]
+       <font color="#804040">mov</font>  ax, dx
+
+       <font color="#804040">pop</font>  bx
+       <font color="#804040">pop</font>  dx
+       <font color="#804040">pop</font>  bp
+       <font color="#804040">ret</font>
+
+<font color="#ff0000">;       VOID DisplayMaze()</font>
+<font color="#ff0000">;       PURPOSE: Draws the maze using symbols for EMPTY, WALL, start point, etc</font>
+<font color="#ff0000">;            Reachable squares have their distance printed instead of EMPTY</font>
+<font color="#ff0000">;       INPUTS:  (Global) mazeSize</font>
+<font color="#ff0000">;          (Global) maze</font>
+<font color="#ff0000">;          (Global) startX, startY, goalX, goalY</font>
+<font color="#ff0000">;       OUTPUTS: (IO) Maze written to screen</font>
+<font color="#ff0000">;       CONVENTION: Procedure</font>
+<font color="#0000ff">DisplayMaze</font>:
+       <font color="#804040">pusha</font>
+
+       <font color="#804040">mov</font>  ch, <font color="#ff00ff">0</font>
+<font color="#0000ff">.outerLoop</font>
+       <font color="#804040">mov</font>  cl, <font color="#ff00ff">0</font>
+<font color="#0000ff">.innerLoop</font>
+
+       <font color="#804040">cmp</font>  cl, [<font color="#0000ff">startX</font>]
+       <font color="#804040">jne</font>  <font color="#0000ff">.notStart</font>
+       <font color="#804040">cmp</font>  ch, [<font color="#0000ff">startY</font>]
+       <font color="#804040">jne</font>  <font color="#0000ff">.notStart</font>
+       <font color="#804040">mov</font>  dx, <font color="#0000ff">startSymbol</font>
+       <font color="#804040">jmp</font>  <font color="#0000ff">.innerLoopEnd</font>
+
+<font color="#0000ff">.notStart</font>
+       <font color="#804040">cmp</font>  cl, [<font color="#0000ff">goalX</font>]
+       <font color="#804040">jne</font>  <font color="#0000ff">.notGoal</font>
+       <font color="#804040">cmp</font>  ch, [<font color="#0000ff">goalY</font>]
+       <font color="#804040">jne</font>  <font color="#0000ff">.notGoal</font>
+       <font color="#804040">mov</font>  dx, <font color="#0000ff">goalSymbol</font>
+       <font color="#804040">jmp</font>  <font color="#0000ff">.innerLoopEnd</font>
+
+<font color="#0000ff">.notGoal</font>
+       <font color="#804040">mov</font>  al, [<font color="#0000ff">mazeSize</font>]
+       <font color="#804040">mul</font>  ch
+       <font color="#804040">movzx</font> bx, cl
+       <font color="#804040">add</font>  bx, ax
+       <font color="#804040">sal</font>  bx, <font color="#ff00ff">1</font>
+       <font color="#804040">mov</font>  ax, [<font color="#0000ff">maze</font> + bx]
+       <font color="#ff0000">; bx = 2 * (x + mazeSize * y), ax = maze[x][y]</font>
+
+       <font color="#804040">cmp</font>  ax, <font color="#0000ff">EMPTY</font>
+       <font color="#804040">jne</font>  <font color="#0000ff">.notEmpty</font>
+       <font color="#804040">mov</font>  dx, <font color="#0000ff">emptySymbol</font>
+       <font color="#804040">jmp</font>  <font color="#0000ff">.innerLoopEnd</font>
+
+<font color="#0000ff">.notEmpty</font>
+       <font color="#804040">cmp</font>  ax, <font color="#0000ff">WALL</font>
+       <font color="#804040">jne</font>  <font color="#0000ff">.notWall</font>
+       <font color="#804040">mov</font>  dx, <font color="#0000ff">wallSymbol</font>
+       <font color="#804040">jmp</font>  <font color="#0000ff">.innerLoopEnd</font>
+
+<font color="#0000ff">.notWall</font>
+       <font color="#804040">cmp</font>  ax, <font color="#0000ff">SOLUTION</font>
+       <font color="#804040">jne</font>  <font color="#0000ff">.notSolution</font>
+       <font color="#804040">mov</font>  dx, <font color="#0000ff">solutionSymbol</font>
+       <font color="#804040">jmp</font>  <font color="#0000ff">.innerLoopEnd</font>
+
+<font color="#0000ff">.notSolution</font>
+       <font color="#804040">mov</font>  dl, <font color="#ff00ff">' '</font>
+       <font color="#804040">call</font> <font color="#0000ff">dspout</font>
+       <font color="#804040">mov</font>  dl, <font color="#ff00ff">10</font>
+       <font color="#804040">div</font>  dl
+       <font color="#804040">add</font>  al, <font color="#ff00ff">30h</font>
+       <font color="#804040">mov</font>  dl, al
+       <font color="#804040">call</font> <font color="#0000ff">dspout</font>
+       <font color="#804040">add</font>  ah, <font color="#ff00ff">30h</font>
+       <font color="#804040">mov</font>  dl, ah
+       <font color="#804040">call</font> <font color="#0000ff">dspout</font>
+       <font color="#804040">mov</font>  dl, <font color="#ff00ff">' '</font>
+       <font color="#804040">call</font> <font color="#0000ff">dspout</font>
+       <font color="#ff0000">; convert ax (the distance) to 2 digit ascii number</font>
+
+       <font color="#804040">mov</font>  dx, <font color="#0000ff">nullMsg</font>
+       <font color="#ff0000">; don't display anything at the dspmsg below</font>
+
+<font color="#0000ff">.innerLoopEnd</font>
+       <font color="#804040">call</font> <font color="#0000ff">dspmsg</font>
+       <font color="#804040">inc</font>  cl
+       <font color="#804040">cmp</font>  cl, [<font color="#0000ff">mazeSize</font>]
+       <font color="#804040">jne</font>  <font color="#0000ff">.innerLoop</font>
+
+       <font color="#804040">cmp</font>  <font color="#0000ff">byte</font> [<font color="#0000ff">mazeSize</font>], <font color="#0000ff">MAXSIZE</font>
+       <font color="#804040">je</font>   <font color="#0000ff">.outerLoopEnd</font>
+       <font color="#ff0000">; if mazeSize == 20, the text will automatically wrap, otherwise add CR/LF</font>
+
+       <font color="#804040">mov</font>  dx, <font color="#0000ff">newline</font>
+       <font color="#804040">call</font> <font color="#0000ff">dspmsg</font>
+
+<font color="#0000ff">.outerLoopEnd</font>
+       <font color="#804040">inc</font>  ch
+       <font color="#804040">cmp</font>  ch, [<font color="#0000ff">mazeSize</font>]
+       <font color="#804040">jne</font>  <font color="#0000ff">.outerLoop</font>
+
+       <font color="#804040">popa</font>
+       <font color="#804040">ret</font>
+
+
+<font color="#ff0000">; Your code will start here.</font>
+
+
+<font color="#0000ff">UserIn</font>:
+
+    <font color="#804040">call</font>    <font color="#0000ff">libUserIn</font>
+
+    <font color="#804040">ret</font>
+
+
+<font color="#0000ff">FindSpace</font>:
+
+    <font color="#804040">call</font>    <font color="#0000ff">libFindSpace</font>
+
+    <font color="#804040">ret</font>
+
+
+<font color="#0000ff">GenerateMazeOuter</font>:
+
+    <font color="#804040">call</font>    <font color="#0000ff">libGenerateMazeOuter</font>
+
+    <font color="#804040">ret</font>
+
+
+<font color="#0000ff">GenerateMazeInner</font>:
+
+    <font color="#804040">call</font>    <font color="#0000ff">libGenerateMazeInner</font>
+
+    <font color="#804040">ret</font>
+
+
+<font color="#0000ff">SolveMaze</font>:
+    <font color="#804040">push</font> bp
+    <font color="#804040">mov</font>  bp, sp
+
+    <font color="#804040">push</font> <font color="#0000ff">word</font> [bp + <font color="#ff00ff">8</font>]
+    <font color="#804040">push</font> <font color="#0000ff">word</font> [bp + <font color="#ff00ff">6</font>]
+    <font color="#804040">push</font> <font color="#0000ff">word</font> [bp + <font color="#ff00ff">4</font>]
+    <font color="#804040">call</font> <font color="#0000ff">libSolveMaze</font>
+    <font color="#804040">add</font>  sp, <font color="#ff00ff">6</font>
+
+    <font color="#804040">pop</font>  bp
+    <font color="#804040">ret</font>
+
+
+<font color="#0000ff">MarkSolutions</font>:
+    <font color="#804040">push</font> bp
+    <font color="#804040">mov</font>  bp, sp
+
+    <font color="#804040">push</font> <font color="#0000ff">word</font> [bp + <font color="#ff00ff">6</font>]
+    <font color="#804040">push</font> <font color="#0000ff">word</font> [bp + <font color="#ff00ff">4</font>]
+    <font color="#804040">call</font> <font color="#0000ff">libMarkSolutions</font>
+    <font color="#804040">add</font>  sp, <font color="#ff00ff">4</font>
+
+    <font color="#804040">pop</font>  bp
+    <font color="#804040">ret</font>
+</pre>
+      <HR>
+      <H2>Makefile</H2>
+<pre>
+<font color="#0000ff">MPNAME</font>=mp2
+
+<font color="#0000ff">all:</font> <font color="#0000ff">$(MPNAME)</font>.exe
+
+<font color="#0000ff">clean: </font>
+<font color="#ff00ff">    rm -f </font><font color="#0000ff">$(MPNAME)</font><font color="#ff00ff">.exe </font><font color="#0000ff">$(MPNAME)</font><font color="#ff00ff">.obj </font><font color="#0000ff">$(MPNAME)</font><font color="#ff00ff">.lst </font><font color="#0000ff">$(MPNAME)</font><font color="#ff00ff">.map</font>
+
+<font color="#0000ff">%.exe:</font> <font color="#0000ff">%</font>.obj
+<font color="#ff00ff">    tlink /c /v </font><font color="#0000ff">$&lt;</font><font color="#ff00ff">, </font><font color="#0000ff">$*</font><font color="#ff00ff">.exe, </font><font color="#0000ff">$*</font><font color="#ff00ff">.map, lib291.lib libmp2.lib</font>
+
+<font color="#0000ff">%.obj:</font> <font color="#0000ff">%</font>.asm
+<font color="#ff00ff">    nasm -g -f obj -o </font><font color="#0000ff">$*</font><font color="#ff00ff">.obj </font><font color="#0000ff">$&lt;</font><font color="#ff00ff"> -l </font><font color="#0000ff">$*</font><font color="#ff00ff">.lst</font>
+
+</pre>
+    </td>
+  </tr>
+
+<!--#include file="foot.asp" -->

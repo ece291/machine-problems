@@ -1,0 +1,106 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>Gameplay</title>
+</head>
+
+<body>
+
+<h1>Gameplay</h1>
+The game board is represented as a two-dimensional array, 16x24 in size, and
+is stored in the GameBoard variable. There is a border of size 1 around all four
+sides of the board, the walls are of size 1, and the space in which the
+pieces can move is 12x20.&nbsp; There is also another row at the top of the
+board, the reason for which we'll get to later.&nbsp; This array contains both zero and non-zero values. Zero values
+in the GameBoard array indicate cells in where blocks are
+not contained, while non-zero values correspond to blocks and/or the game board
+walls.&nbsp; The non-zero values are the colors of the blocks.
+<p> Each of the 7 pieces is also represented as a
+two-dimensional array, 4x4 in size, and they are collectively stored in the
+Pieces variable.&nbsp; Also, the current falling piece is stored in the
+CurrentPiece variable.&nbsp; For each of the 16 array cells that make up a piece
+in the Pieces array, the value of the cell will either be 0, which means that
+this cell is not used in constructing the piece, or 1 which means it is
+used.&nbsp; So when you generate new pieces, you should copy the 0s out of the
+Pieces array into the CurrentPiece array, and when you encounter a 1, you'll
+need to get a random number to determine this block's color, and then you write
+the value of the random number to the CurrentPiece array.&nbsp;&nbsp;</p>
+<p>In previous MPs, your flags were separate variables, each taking up a byte in memory.
+This is a waste because you only need one bit for each flag. In this MP, the
+GameFlags variable will hold all of the flags you'll need to implement the game.
+So, you must make sure than when you set or clear a flag that you don't alter
+the values of the other flags. This will require bitwise operations such as <tt>and</tt>
+and <tt>or</tt> to set, clear, or toggle only 1 bit of a byte.
+<p>Only pieces that have fallen completely will be stored in the game board. Thus, the current falling piece will not appear in this array until it
+stops falling and breaks apart. You will need to keep track of the X and Y position of the
+current falling piece within the game board. Variables XPos and YPos will be
+used to do this. XPos and YPos represent the upper left-hand corner (offset 0)
+of the CurrentPiece variable. In the illustration below, the * indicates the
+array cell to which XPos and YPos refer. Zero values in the CurrentPiece array
+are shown as white squares.
+<p>&nbsp;<center><img src="xposypos.gif" width="192" height="192"></center>
+<p>Note that the X and Y position of the current piece on the game board is
+NOT the X and Y position of the current piece on the screen. The game board starts at screen coordinate (col,row) = (320,0), so you will
+need to use the offset of this location when you're drawing the current piece to the video buffer.
+<p>You'll have to perform collision checking between the current falling piece
+and the boundaries and other pieces in the game board. To do this, you'll need to know the X and Y position of the current piece,
+contained in XPos and YPos respectively, the contents of the CurrentPiece array,
+and the contents of the GameBoard array. Loop through each cell in the
+CurrentPiece array. If you encounter a non-zero value, you have found part of
+the current piece. Then, check the corresponding cell in the GameBoard array. If
+this value is also non-zero, then there is a collision between the piece and the
+game board, and in this case you should move the piece back to its original
+location (reset its XPos and YPos values).<p>The process of clearing blocks
+requires three steps:&nbsp; first you mark the blocks that are to be cleared,
+then you clear the marked blocks from the game board, and then you drop any
+blocks resting on top of those blocks.&nbsp;&nbsp;<p>In order to mark blocks, you have
+to determine whether 3 or more blocks of the same color appear vertically,
+horizontally, or diagonally.&nbsp; There are many ways to possibly do this, but
+I recommend that you&nbsp;come up with an algorithm that is as painless as
+possible.&nbsp; With the extra blank row at the top of the game board, you're ensured that there is a buffer of size two around the area in which the
+pieces can move.&nbsp; So, from the current block in the game board that you're
+currently processing, you can check its value, the value of its immediate neighbor
+in 1 of the 8 directions, and then the value of that block's neighbor in the <b>same</b> 
+direction as before.&nbsp; In order to make this checking process more 
+efficient, the lookup table below has been created which contains the relative 
+offsets of neighboring blocks to the current block.&nbsp;&nbsp;<p><tt>_BlockPosArray db 
+-16, -32, -15, -30, 1, 2, 17, 34, 16, 32, 15, 30, -1, -2, -17, -34</tt>
+<p>The numbers are stored in 8 pairs, representing each of the 8
+directions.&nbsp; Within each pair, the first number is the relative offset of
+the block one away from the current block, and the second number is the relative
+offset of the block two away.&nbsp; Taking the first pair, -16 is the relative
+offset of the block directly above the current block, and -32 is the relative
+offset of the block two above the current block.&nbsp; The numbers in the array
+continue around in a clockwise fashion.<p>This isn't the most efficient way of 
+checking three matching colors in a row, however.&nbsp; Instead of starting at 
+one end of a 3-sequence of blocks, you can start in the middle block and check 
+the block &quot;behind&quot; you and the one &quot;in front&quot; of you.&nbsp; What does this 
+accomplish, you ask?&nbsp; It halves the number of cases that you must check 
+because you combined cases (e.g. up and down, left and right) by switching the 
+starting point to the middle.&nbsp; Here's the updated lookup table.<pre>_BlockPosArray db -16, 16, -15, 15, -1, 1, -17, 17</pre>
+<p>If the values of all three blocks are the same, then mark all three
+blocks.&nbsp; To do this, set the most significant bit of the byte to 1.&nbsp;
+Note that when you are comparing values, you should disregard whether or not
+this block has already been marked, as a marked red block is still a red block
+which can possibly be used to clear a different pattern of blocks.&nbsp; Since
+you're setting the MSB to 1 when marked, an equality test on the value of this
+byte and a byte that hasn't been marked will come back false, even though both
+are the same color.</p>
+<p>Clearing blocks is simple.&nbsp; You know what blocks you have to clear and
+the characteristics of these blocks.&nbsp; When you clear the blocks you don't
+want anything in those spots after the clear.&nbsp; I shouldn't need to say
+anything more about it.</p>
+<p>All that's left is dropping the blocks.&nbsp; What you need to do is, for
+each column, move every suspended block down as far as possible.&nbsp; No hints
+on this one, you'll have to come up with the algorithm yourself.&nbsp; I'd
+suggest drawing a picture of different test cases, and manually move blocks down
+in order to see what you have to do before you start doing it.&nbsp; Jumping
+into the code right away will only make you more confused when you go back to
+debug it.</p>
+
+</body>
+
+</html>

@@ -1,0 +1,224 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>Vector Math</title>
+</head>
+
+<body>
+
+<h1>Vector Math</h1>
+
+<p>The core of this MP is learning to use SSE instructions in order to create
+vector math functions.&nbsp; Here we'll introduce the formulae you'll be
+implementing in this MP.&nbsp; First up though is describing the Vector, Point,
+and Matrix STRUC's that you'll be working with in the MP.</p>
+
+<h2>Vector STRUC</h2>
+<p>The Vector STRUC declares a 4x1 vector, and it contains four components: x,
+y, and z will represent the location of the point in <b>world</b> space, and a
+homogeneous coordinate h is also declared.&nbsp; This coordinate is used to
+simplify the number of calculations required to perform the same task had this
+coordinate not be present.&nbsp; Each coordinate is a double word in size and
+will hold floating point values.</p>
+
+<h2>Point STRUC</h2>
+<p>The Point STRUC contains three components: x and y will represent the
+location of the point in <b>screen</b> space, and z will contain the depth of
+the pixel to be checked against the Z-Buffer.&nbsp; Each coordinate is a word in
+size and will hold integer values.</p>
+<h2>Matrix STRUC</h2>
+<p>The Matrix STRUC declares a 4x4 matrix.&nbsp; We will be using 4x4 matrices
+instead of 3x3 matrices, even though we are in a 3D environment, because of
+homogeneous coordinantes.&nbsp; Each location in the matrix is a double word in
+size and will hold floating point values.</p>
+
+<h2>Vector Normalization</h2>
+<p>This operation returns a vector of length 1 in the same direction as the
+input vector (which may have a length less than, greater than, or equal to
+1).&nbsp; The formula to normalize a vector V is:</p>
+<pre>V = 1 / sqrt(V.x^2 + V.y^2 + V.z^2) * V</pre>
+<p>So, you multiply each component of the vector V by the scalar quantity above
+to normalize it.&nbsp; This function is given to you and is heavily commented so
+you can see the movement of the data between xmm registers.&nbsp; If a location
+of a register contains xxxxxxx, that means I do not care about the value of the
+data in this location.&nbsp; I highly suggest reading through this function to
+get a better idea of how to write code with SSE instructions.</p>
+<h2>Vector Cross Product</h2>
+<p>The cross product operation involves calculating a vector that is perpendicular
+to both input vectors.&nbsp; The formula is as follows:</p>
+<pre>            |<b>x   y   z  </b>|
+A x B = det |A.x A.y A.z| = (A.y * B.z - B.y * A.z)<b>x</b> - (A.x * B.z - B.x * A.z)<b>y</b> + (A.x * B.y - B.x * A.y)<b>z</b>
+            |B.x B.y B.z|</pre>
+<p>So, you create a 3x3 matrix, placing the three directions in the first row,
+the components of vector A in the second row, and the components of vector B in
+the third row.&nbsp; Notice that the homogeneous coordinate is not present -
+remember it will only be used to hold temporary calculations and has no impact
+on the direction of the vector.&nbsp; Thus, the <b>x</b> coordinate of the
+result vector will be equal to A.y * B.z - B.y * A.z and so on.&nbsp; The value
+of the homogeneous coordinate of the cross product vector should be 0.0.</p>
+<h2>Multiplication of a Vector and a Matrix</h2>
+<p>Multiplying a 4x4 matrix times a 4x1 vector will return a 4x1 vector.&nbsp;
+We will be multiplying vectors with matrices in order to convert points from
+world space to screen space.</p>
+<pre>        [M11 M12 M13 M14]   [V.x]   [M11 * V.x + M12 * V.y + M13 * V.z + M14 * V.h]
+M * V = [M21 M22 M23 M24] * [V.y] = [M21 * V.x + M22 * V.y + M23 * V.z + M24 * V.h]
+        [M31 M32 M33 M34]   [V.z]   [M31 * V.x + M32 * V.y + M33 * V.z + M34 * V.h]
+        [M41 M42 M43 M44]   [V.h]   [M41 * V.x + M42 * V.y + M43 * V.z + M44 * V.h]</pre>
+<p>Thus, the <b>x </b>coordinate of the result vector is obtained by multiplying
+the values in the first row of the matrix with the corresponding locations in
+the vector (first with first, second with second, etc.) and then adding those
+results together.&nbsp; The values of <b>y</b>, <b>z</b>, and <b>h</b> are also
+obtained this way, the only difference is that they use matrix rows 2, 3, and 4
+respectively.</p>
+<h2>Camera Models and Camera Space</h2>
+<p>Our camera will be modeled by three vectors: an Eye vector which will
+determine the location of the camera in the world, a LookAt vector which
+describes which direction the camera is pointing, and an Up vector which is a
+measure of the camera's rotation about the z-axis.&nbsp; We will be using these
+three vectors to create a camera matrix which will transform our points from
+world space to camera space.&nbsp; In camera space, points are oriented as to
+how the camera perceives them.&nbsp; For example, If I had a point at (10,0,0)
+and the camera was at (0,0,0), the point would appear at (10,0,0) to the
+camera.&nbsp; However, if I moved the camera to (5,0,0), the camera now sees the
+point as being at (5,0,0).&nbsp; Since the camera was moved up 5 places, all
+points in front of it are now 5 places closer.&nbsp; Similarly if we moved the
+camera back 5 places to (-5,0,0), all points in front of the camera are now 5
+places back.&nbsp; </p>
+<h3>Creating the Camera Matrix</h3>
+<p>Here's how we construct our camera matrix:</p>
+<pre>Let a = norm(LookAt - Eye)
+Let b = norm(Up)</pre>
+<p>Then</p>
+<pre>c = a x b
+b = c x a</pre>
+<p>and the camera matrix contains the values:</p>
+<pre>[ c.x  c.y  c.z 0.0]
+[ b.x  b.y  b.x 0.0]
+[-a.x -a.y -a.z 0.0]
+[ 0.0  0.0  0.0 1.0]</pre>
+<p>First, calculate the difference of the LookAt and Eye vectors and normalize
+the result.&nbsp; Then normalize the up vector.&nbsp; Take the cross product of
+those two vectors and store the result to a third vector.&nbsp; Then, take
+another cross product which will make sure the Up vector (represented by <b>b </b>above)
+is pointing in the correct direction.&nbsp; Lastly, fill the matrix with the
+appropriate values, and you're done!</p>
+<h3>Walking around the World</h3>
+<p>The arrow keys on the keyboard let you walk forward, backward, right and left
+in the world.&nbsp; Moving forward and backward are pretty straightforward, but
+left and right movement takes a little more work.</p>
+<ul>
+  <li>Moving Forward<br>
+    <br>
+    To move forward, first calculate (LookAt - Eye) and save this temporary
+    result.&nbsp; Then set the camera's Eye vector to the&nbsp; camera's LookAt
+    vector.&nbsp; Finally, add the temporary (LookAt - Eye) value to the value
+    of the LookAt vector.<br>
+  </li>
+  <li>Moving Backward<br>
+    <br>
+    To move backward, first calculate (LookAt - Eye) and save this temporary
+    result.&nbsp; Then set the camera's LookAt vector to the&nbsp; camera's Eye
+    vector.&nbsp; Finally, subtract the temporary (LookAt - Eye) value from the
+    value of the Eye vector.<br>
+  </li>
+  <li>Moving Left<br>
+    <br>
+    To move left, we need to determine the vector perpendicular and to the left
+    of the direction the camera is currently facing.&nbsp; So, first we'll have
+    to calculate (LookAt - Eye) as before.&nbsp; Then, you'll have to take the
+    cross product of this vector with the vector &lt;0,1,0&gt; and normalize the
+    result.&nbsp; Finally, you'll have to add this value to both the LookAt and
+    Eye vectors.<br>
+  </li>
+  <li>Moving Right<br>
+    <br>
+    To move right, we need to determine the vector perpendicular and to the
+    right of the direction the camera is currently facing.&nbsp; So, first we'll
+    have to calculate (LookAt - Eye) as before.&nbsp; Then, you'll have to take
+    the cross product of this vector with the vector &lt;0,-1,0&gt; and
+    normalize the result.&nbsp; Finally, you'll have to add this value to both
+    the LookAt and Eye vectors.</li>
+</ul>
+<h3>Changing Camera Positions</h3>
+<p>There are four default camera positions for the MP, and the mouse buttons let
+you switch between them.&nbsp; The left mouse button will move to the next
+camera position, and the right mouse button will return you to the location of
+the current default position.&nbsp; The four positions are defined in the _CameraPositions
+variable, and the current location is contained in the _CameraPos
+variable.&nbsp; To return to the current position, copy the Eye, LookAt, and Up
+vectors for the current camera position out of _Camera Positions and store them
+to [_CameraEye], [_CameraLookAt], and [_CameraUp] respectively.&nbsp; To switch
+camera positions, increment _CameraPos and then do the previously mentioned
+action.&nbsp; If you are on the fourth camera position and you want to switch
+positions, you should return to the first default position.</p>
+<h2>Perspective Projection and Screen Space</h2>
+<p>The closer an object is to your eye, the larger it appears to you and
+vice-versa.&nbsp; Perspective projection is a projection model that takes this
+into account.&nbsp; When a point is projected onto screen space, the locations
+of the points on the screen, it will have an (x,y,z) value.&nbsp; The (x,y)
+values denote its location on the screen, and the z value is the depth of the
+pixel.&nbsp; To implement perspective projection, we multiply a vector
+containing a point in camera space by the perspective projection matrix below:</p>
+
+<pre>[0.75 0.0   0.0   0.0]
+[0.0  1.0   0.0   0.0]
+[0.0  0.0 -1.02 -2.02]
+[0.0  0.0  -1.0   0.0]</pre>
+
+<p>So, to convert a point from world space to screen space, you'll need to
+follow these steps:</p>
+
+<ol>
+  <li>Create a Translation matrix of the form:
+<pre>[1.0 0.0 0.0 -CameraEye.x]
+[0.0 1.0 0.0 -CameraEye.y]
+[0.0 0.0 1.0 -CameraEye.z]
+[0.0 0.0 0.0 1.0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ]</pre>
+
+and multiply the vector containing the point by this matrix.&nbsp; This will
+    move the camera to the origin.  An identity matrix has been declared for you,
+and you can first copy this matrix to your translate matrix and then fill in the
+negative eye coordinates.<br>
+  </li>
+  <li>Multiply the vector in (1) by the camera matrix to convert the point to
+    camera space<br>
+  </li>
+  <li>Multiply the vector in (2) by the perspective projection
+    matrix.&nbsp;&nbsp;<br>
+  </li>
+  <li>After the multiplication in (3), the homogeneous coordinate of the vector
+    will contain the depth information for the point.&nbsp;&nbsp; Divide each
+    coordinate of the vector by the value of the homogeneous coordinate.&nbsp;
+    The resulting vector will have the form:<pre>[V.x/V.h V.y/V.h V.z/V.h 1]</pre>
+    This normalizes the coordinates to the range 1...-1 for x
+and y and -1...1 for z.&nbsp; The reason why it is reversed for x and y is
+because I am taking the +z direction to go into the screen, but the convention
+is for the -z direction to go into the screen.&nbsp; However, our coordinates
+for x, y, and z range from 0-639, 0-479, and 0-65535 respectively.&nbsp; The
+    next steps will convert the points from normalized screen space to our
+    640x480 screen.<br>
+  </li>
+  <li>Multiply the vector in (4) by the vector: <pre>[-1.0 -1.0 1.0 1.0]</pre>This will cause all coordinates
+      to be in the range -1...1.  This vector is given to you as [_NormalCoordsVector].<br>
+ </li>
+  <li>Add the vector in (5) to the vector: <pre>[1.0 1.0 1.0 0.0]</pre>This will
+    shift the range for all coordinates from -1...1 to 0...2.<br>
+  </li>
+  <li>Multiply the vector in (6) by the vector: <pre>[319.5 239.5 32767.5 1.0]</pre>This will
+    convert the x point into the range 0...639, the y point into the range
+    0...479, and the z point into the range 0...65535.  This vector is given to you as [_ScreenScaleVector].<br>
+  </li>
+  <li>Convert the floating point values for each of the coordinates to integer
+    values and store the results to a point structure
+    <p>&nbsp;</p>
+    <p>&nbsp;</li>
+</ol>
+
+<p>&nbsp; </p>
+
+</body>
+
+</html>

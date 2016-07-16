@@ -1,0 +1,235 @@
+<HTML>
+<HEAD>
+   <TITLE>ECE291 Machine Problem 3</TITLE>
+</HEAD>
+<BODY>
+
+<TABLE CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TD align=left   width=33%>ECE291</TD>
+
+<TD align=center width=34%>Computer Engineering II</TD>
+
+<TD align=right  width=33%>Moorman, Summer 1998</TD>
+</TR>
+</TABLE>
+
+<H1 ALIGN=CENTER>Machine Problem 3: Grading Report</H1>
+
+<CENTER><P><I><FONT SIZE=-1>Please print this page and provide it to the
+TA when you demonstrate your machine problem. <BR>
+When you submit this, the TA should: 3<BR>
+check your solutions, <BR>
+ask a random question that tests your understanding of the MP,<BR>
+assign points for each item on the list,<BR>
+assign bonus/penalty points,<BR>
+and provide the floppy for electronic handin.<BR>
+This page should be stapled to the front of your MP3 assignment. </FONT></I></P></CENTER>
+
+<CENTER><P><FORM></P></CENTER>
+
+<CENTER><TABLE CELLPADDING=7 >
+<TR>
+<TD>
+<TABLE>
+<TR>
+<TD align=right>Name: </TD>
+
+<TD><INPUT name="name" size=30></TD>
+</TR>
+
+<TR>
+<TD align=right>Date Submitted: </TD>
+
+<TD><INPUT name="submitted" size=20></TD>
+</TR>
+
+<TR>
+<TD align=right>Demo To: </TD>
+
+<TD><INPUT name="demoto" size=6>Graded By: <INPUT name="gradedby" size=6></TD>
+</TR>
+</TABLE>
+</TD>
+
+<TD>
+<TABLE BORDER=1 >
+<TR>
+<TD><INPUT type=checkbox name="gradebook">Handin to floppy </TD>
+</TR>
+
+<TR>
+<TD><INPUT type=checkbox name="gradebook">Score recorded </TD>
+</TR>
+
+<TR>
+<TD><INPUT type=checkbox name="gold_star">Gold Star<BR>
+<I>Programming Excellence</I></TD>
+</TR>
+</TABLE>
+</TD>
+</TR>
+</TABLE></CENTER>
+
+
+<P></FORM></P>
+
+<TABLE BORDER=1 CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TH>Category</TH>
+
+<TH>Points</TH>
+
+<TH>Min</TH>
+
+<TH>Max</TH>
+</TR>
+
+<TR> <TD><B>MouseControl</B> 
+        <UL>
+        <LI>Correctly uses the Mouse software interrupt to determine
+            the state of the mouse.
+        <LI>Correctly determines which button was clicked.
+        <LI>Properly returns the correct value for the specific buttons.
+        <LI>Uses constants for positions and does not 'hardcode' values.
+        <LI>Is robust to any button clicks.
+        </UL></TD> <TD><PRE> </PRE></TD>   <TD>0</TD>  <TD>5</TD> </TR>
+
+<TR> <TD><B>DrawCard</B> 
+        <UL>
+        <LI>Draw any card to the screen at the specified location.
+        <LI>Uses the proper input values to calculate the screen position.
+        <LI>Uses SI, and DI inputs and does not hardcode for <tt>CardArray</tt>
+            and <tt>CardLength</tt>.
+        <LI>Correctly displays all cards including Aces, 10's, and Face cards.
+        <LI>Correctly uses an input of 0 to display the back of the card.
+        <LI>Uses the suit ASCII character table and does NOT hardcode values.
+        </UL></TD> <TD><PRE> </PRE></TD>   <TD>0</TD>  <TD>8</TD> </TR>
+
+<TR><TD><B>DrawBoard</B> 
+        <UL>
+        <LI>Properly displays all static elements to the screen.
+        <LI>Use the video segment from ES.
+        <LI>Defined Constants are used for positions and not hardcoded values.
+        </UL></TD> <TD><PRE> </PRE></TD>   <TD>0</TD>  <TD>5</TD> </TR>
+
+<TR><TD><B>DrawScore</B> 
+        <UL>
+        <LI>Properly displays the current <tt>Score</tt> to the screen.
+        <LI>Blanks out old score before updating.
+        </UL></TD> <TD><PRE> </PRE></TD>   <TD>0</TD>  <TD>2</TD> </TR>
+
+<TR><TD><B>ResetBoard</B> 
+        <UL>
+        <LI>Correctly resets the board on the screen and all necessary
+            variables.
+        <LI>Reinitializes the <tt>CardArray</tt> and <tt>CardLength</tt>
+        <LI>The <tt>Score</tt> is initialized to <tt>INIT_SCORE</tt>.
+        <LI>The <tt>Flags</tt> are reset.
+        </UL></TD> <TD><PRE> </PRE></TD>   <TD>0</TD>  <TD>4</TD> </TR>
+
+<TR><TD><B>Hit</B> 
+        <UL>
+        <LI>Routine exits if any flags are initially set.
+        <LI>Correctly 'Hits' the player with a new card.
+        <LI>New cards are chosen Randomly from the remaining cards in the deck.
+        <LI>Tne <tt>CardArray</tt> and <tt>CardLength</tt> are properly
+            updated to reflect the new state of the Deck.
+        <LI>The deck is properly reinitialized if the last card is
+            removed from the deck.
+        <LI>The <tt>PlayerTot</tt> is updated to reflect the new total.
+        <LI>Aces can count as either 11 or 1.
+        <LI>Face cards count only as 10.
+        <LI>If the player busts the proper flags are set.
+        </UL></TD> <TD><PRE> </PRE></TD>   <TD>0</TD>  <TD>7</TD> </TR>
+
+                                     
+<TR><TD><B>Deal</B> 
+        <UL>
+        <LI>Properly begins (deals) a new hand.
+        <LI>Refreshes the screen and draws the updated <tt>Score</tt>.
+        <LI>The dealer receives two cards, one face down.
+        <LI>The user receives two cards face up.
+        <LI>All cards are properly displayed to the screen.
+        <LI>New cards are chosen Randomly from the remaining cards in the deck.
+        <LI>Cards are properly removed from <tt>CardArray</tt> and the
+            <tt>CardLength</tt> is correctly updated.
+        <LI>The deck is properly reinitialized if the last card is
+            removed from the deck.
+        <LI>The <tt>Flags</tt> are reset to 0.
+        <LI>The hand totals (<tt>PlayerTot</tt> and <tt>DealerTot</tt>)
+            are cleared and updated to reflect the new totals.
+        <LI>The Face down card is stored in <tt>HiddenCard</tt>.
+        </UL></TD> <TD><PRE> </PRE></TD>   <TD>0</TD>  <TD>7</TD> </TR>
+
+<TR><TD><B>Stay</B> 
+        <UL>
+        <LI>Properly performs the Dealer AI according to the defined rules.
+        <LI>Routine exits if any flags are initially set.
+        <LI>Displays the correct <tt>HiddenCard</tt> to the screen.
+        <LI>Correctly 'Hits' the dealer with any new cards needed.
+        <LI>New cards are chosen Randomly from the remaining cards in the deck.
+        <LI>Tne <tt>CardArray</tt> and <tt>CardLength</tt> are properly
+            updated to reflect the new state of the Deck.
+        <LI>The deck is properly reinitialized if the last card is
+            removed from the deck.
+        <LI>The <tt>DealerTot</tt> is updated to reflect the new total.
+        <LI>Aces can count as either 11 or 1.
+        <LI>Face cards count only as 10.
+        <LI>If the dealer busts the proper flags are set.
+        </UL></TD> <TD><PRE> </PRE></TD>   <TD>0</TD>  <TD>7</TD> </TR>
+
+
+<TR><TD><B>Winner</B> 
+        <UL>
+        <LI>Correctly determines which player won the hand.
+        <LI>Uses <tt>PlayerTot</tt> and <tt>DealerTot</tt> for comparison.
+        <LI>Outputs the correct message to the screen according to the results.
+        <LI>Outputs the correct message if either bust flag is set.
+        <LI>Sets <tt>Flags</tt> for new 'Deal' only.
+        <LI>Updates the <tt>Score</tt> of the user according to <tt>BET</tt>.
+        <LI>Check if the <tt>Score</tt> is still within range of
+            <tt>MIN_SCORE</tt> to <tt>MAX_SCORE</tt>.
+        <LI>Properly sets the <tt>GAMEOVER</tt> flag if the user has
+            exceeded the range.
+        </UL></TD> <TD><PRE> </PRE></TD>   <TD>0</TD>  <TD>5</TD> </TR>
+
+<TR>
+<TD><B>Functionality SubTotal</B> </TD>
+<TD> <PRE> </PRE> </TD> <TD>0</TD> <TD>50</TD> </TR>
+
+<tr><td><b>Comments</b> <i>(* percentage of code written)</i> <br>
+  <ul>
+  <li>Clear and precise line & procedure comments <Br>
+      (describes all major routines): -0
+  <li>Sports Announcer comments (line-by-line): -1
+  <li>Unclear comments: -1
+  <li>Sparse comments: -3
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>Technique & Style</b>  <i>(* percentage of code written)</i><br>
+  <ul>
+  <li>Compact and Efficient code: -0
+  <li>Contains repeated code (lacks loops): -3 
+  <li>Makes poor use of registers and/or variables: -2 <Br>
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>I/O Specs & Modularity</b> <i>(* percentage of code written)</i> <br>
+  <ul>
+  <li>Violates specifications for given subroutines: -5
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>Penalty/Bonus</b> <br>
+    <i>Before 5pm, Wed 7/15/98: +1 pt/weekday</i><br>
+    <i>After 5pm, Thurs 7/16/98: -10 pts/weekday </i>
+    </td><td><pre> </pre></td><td>-50</td><td>5</td></tr>
+
+<tr><td><b>Total</b> </td><td><pre> </pre></td>  <td>0</td><td>55</td></tr>
+
+</TABLE>
+
+</BODY>
+</HTML>

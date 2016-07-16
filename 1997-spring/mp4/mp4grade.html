@@ -1,0 +1,171 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 4</title>
+</head>
+
+<body>
+<p>
+<table cellpadding=3 width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Lockwood, Spring 1997</td></tr></table>
+
+
+<center><h1>Machine Problem 4: Grading Report</h1></center>
+<p>
+<center><i>Please print this page and provide it to the TA when you
+demonstrate your machine problem.  The TA should verify each functionality
+item, initial the 'Demo' box, assign functionality and bonus points,
+then copy your files to the HANDIN floppy.  
+This page should be stapled to the front of your printed .ASM program.
+</i>
+<p>
+
+<form>
+<table border=0 cellpadding=7><tr><td>
+<table border=0 cellpadding=1>
+<tr><td align=right>Name: </td><td><input name="name" size=30>
+<tr><td align=right>Date Submitted: </td><td><input name="submitted" size=20>
+<tr><td align=right>Demo To: </td><td><input name="demoto" size=6>
+ Graded By: <input name="gradedby" size=6>
+</td></tr></table>
+</td><td>
+<table border=1>
+<tr><Td><input type=checkbox name="gradebook">Handin to floppy 
+<tr><Td><input type=checkbox name="gradebook">Score recorded
+<tr><Td><input type=checkbox name="gold_star">Gold Star<br>
+        <i>Programming Excellence</i></td></tr>
+</td></tr>
+</table>
+</td></tr></table>
+</form>
+</center>
+
+<table border=1 cellpadding=3 width=100%>
+<tr><Th>Category</th><th>Points</th><th>Min</th><th>Max</th></tr>
+
+<tr><td><b>Main</b>  <ul>
+    <li>Invokes other procedures as needed
+    <li>Replaces <tt>MainLIB</tt> 
+  </ul>
+  </td><td><pre> </pre></td>  <td>0</td><td>5</td></tr>
+
+<tr><td><b>InstTime</b>  <ul>
+    <li>Installs MyTimeInt on IRQ0
+    <li>Preserves old vector 
+  </ul>
+  </td><td><pre> </pre></td>  <td>0</td><td>2</td></tr>
+
+<tr><td><b>MyTimeInt</b>  <ul>
+    <li>Efficiently recalculates acceleration, velocity, and postion
+        for both X and Y coordinates.  
+    <li>Updates time 
+    <li>Reduces amount of fuel 
+    <li>Provides no thrust when fuel is empty
+    <li>Checks for boundry conditions in position (lander  cannot leave screen)
+  </ul>
+  </td><td><pre> </pre></td>  <td>0</td><td>10</td></tr>
+
+<tr><td><b>DeInstTime</b>  <ul>
+    <li>Restores original IRQ0 
+    <li>Returns to a stable DOS shell
+  </ul>
+  </td><td><pre> </pre></td>  <td>0</td><td>1</td></tr>
+
+<tr><td><b>InstKey</b>  <ul>
+    <li>Installs MyKeyInt on IRQ1
+    <li>Preserves old vector 
+  </ul>
+  </td><td><pre> </pre></td>  <td>0</td><td>2</td></tr>
+
+<tr><td><b>MyKeyInt</b>  <ul>
+    <li>Tracks Left, Right, Up, Down, and Escape buttons 
+    <li>Allows multiple thrusters to operate simultaneously
+    <li>Verify robustness to crashing if other keys are pressed 
+  </ul>
+  </td><td><pre> </pre></td>  <td>0</td><td>10</td></tr>
+
+<tr><td><b>DeInstKey</b>  <ul>
+    <li>Restores original IRQ1 
+    <li>Returns to a stable DOS shell (check keyboard) 
+  </ul>
+  </td><td><pre> </pre></td>  <td>0</td><td>1</td></tr>
+
+<tr><td><b>DrawScreen</b> 
+  <ul>
+    <li>Displays static Text and gauges
+        (Artistic liberties encouraged)
+    <li>Contains modular subroutines which avoid code duplication
+  </ul>
+  </td><td><pre> </pre></td>  <td>0</td><td>8</td></tr>
+
+<tr><td><b>ReDrawScreen</b> 
+  <ul>
+    <li>Updates numerical guages values (altitude, velocity, and position)
+    <li>Updates graphical gauge indicators
+    <li>Redraws lunar landing module 
+  </ul>
+  </td><td><pre> </pre></td>  <td>0</td><td>7</td></tr>
+
+<tr><td><b>FinalScreen</b> 
+  <ul>
+    <li>Determines damage to lunar lander due to landing 
+    <li>Reports Fuel Usage 
+    <li>Reports Flight Time (in seconds)
+  </ul>
+  </td><td><pre> </pre></td>  <td>0</td><td>4</td></tr>
+
+<tr><td><b>Functionality SubTotal</b>  
+  </td><td><pre> </pre></td>  <td>0</td><td>50</td></tr>
+
+
+
+<tr><td><b>Modularity</b> <i>(* percentage of code written)</i> <br>
+  <ul>
+  <li>Lacks appropriate use of additional subroutines to avoid code
+      duplication.
+  <li>Violates specifications for given subroutines
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+<tr><td><b>Technique & Style</b>  <i>(* percentage of code written)</i><br>
+  <ul>
+  <li>Compact and Efficient code
+  <li>Extraneous use of code, registers and/or variables: -3 <Br>
+  </ul>
+
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+<tr><td><b>Comments</b> <i>(* percentage of code written)</i> <br>
+  <ul>
+  <li>Clear and precise comments: +5
+  <li>Sports Announcer-type comments: -1
+  <li>Sparse and/or unclear comments: -3
+  </ul>
+
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+<tr><td><b>Penalty/Bonus</b> <br>
+    <i>Before Tue 4/8: +1 pt/day</i><br>
+    <i>Deadline after Tue 4/8: -5 pts/day </i>
+    </td><td><pre> </pre></td><td>-50</td><td>5</td></tr>
+
+<tr><td><b>AutoSolve (Bonus) </b>  <br>
+    <ul>
+    <li>Automatically lands from <i>anywhere</i> on the screen 
+         with no damage to lunar lander. <Br> 
+        <i>(Edit initial values in MP4.ASM variable section or use mouse) 
+    <li>Test Cases (record fuel usage to land from each position)
+      <ol>
+      <li>X=0, V_x=18, Y=60*324, V_y=0 (original postion) :
+      <li>X=324*20, V_x=18, Y=60*324, V_y=0 :
+      <li>X=324*40, V_x=-18, Y=30*324, V_y=18 :
+      </ol>
+    <li>Total Fuel Usage (1+2+3) : 
+    </ul>
+    </td><td><pre> </pre></td>  <td>0</td><td>5</td></tr>
+
+<tr><td><b>Total</b> </td><td><pre> </pre></td>  <td>0</td><td>55</td></tr>
+
+
+</table>
+<p>
+</center>
+</body>

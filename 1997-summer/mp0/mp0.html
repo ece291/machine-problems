@@ -1,0 +1,475 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 0</title>
+</head>
+
+<body bgcolor=ffffff>
+<p>
+<table width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Plavcan, Summer 1997</td></tr></table>
+<center><h1>Machine Problem 0</h1></center>
+
+
+<center><table border=1 cellpadding=2 width=60%>
+  <tr><td align=right><b>Assigned</b></td>  <td>Tuesday 6/17/97</td></tr>
+  <tr><td align=right><b>Due Date</b></td>         <td>Friday 6/20/97</td></tr>
+  <tr><td align=right><b>Purpose</b></td><td>
+     Learn how to edit, assemble, and execute a  simple
+     assembly  language  program and compile an equivalent C program.
+     </td></tr>
+   <tr><td align=right><b>Points</b></td><td>25</td></tr>
+</table>
+</center>
+
+<h2>Introduction</h2>
+  This machine problem will introduce you to the ECE291 laboratory.
+In this machine problem, you will learn to use the computers in 
+the ECE291 lab, learn how to move files over the network,
+and learn how to invoke the software used for this course.
+  <p>
+  You will use a text editor to modify the two equivalent
+programs listed at the end of this handout.  You will then use MASM
+to assemble MP0A.ASM and the C compiler for MP0C.C.  You will then
+link each of these programs with the ECE291 library (LIB291) to
+produce an executable program.  You will examine files created as
+MASM assembled your program and use DEBUG to trace though the 
+execution of the program.
+
+<h2>Preliminary Procedure</h2>
+<ol>
+<li>Visit the ECE291 laboratory in room 238 Everitt Lab.  You
+    will need an activated key card to open the door.
+<p>
+<li>Have a seat at any available computer in the laboratory. 
+    Turn on the computer. The machine should boot into Windows 95.
+<p>
+<li>Enter your login and password.  You can obtain your
+    login information from the TAs in the lab in exchange for
+    having your photo taken.
+<p>
+<li>Start a DOS shell.  This can be done by clicking on
+    the <i>start</i> button, navigating to <i>Programs</i>, then
+    releasing the mouse button on <i>MS-DOS Prompt</i>.
+<p>
+<li>For the machines in the
+    ECE291 lab, you will be using the following drive letters: <br>
+    <table cellpadding=2 border=1 width=80%>
+    <tr><th>Drive</th><th>Description</th><th>Purpose</th></tr>
+    <tr><td>A:</td>
+        <td>3.5" Floppy</td>
+        <td>Portable media </td></tr>
+    <tr><td>C:</td>
+        <td>Hard Drive (local)</td>
+        <td>Holds windows, MASM, C<br>
+        <i>Please don't store files here</i></td></tr>
+    <tr><td>G:</td>
+        <td>Class Drive (network)</td>
+        <td>Class material, libraries, example code</td></tr>
+    <tr><td>F:</td>
+        <td>Your home directory (network)</td>
+        <td>Store your MPs here!<br>
+            This drive will be mounted each time you log in,
+            and is accessible from any machine in the lab.</td></tr>
+  </table>
+<p>
+<li>Copy the MP0 directory on the class drive to your private directory
+    by typing:<br> 
+    <tt>xcopy /s G:\ece291\mp0 F:\mp0</tt><br>
+    When prompted, respond with <tt>D</tt> to copy the entire directory.
+<p>
+
+<li>Go into your private directory
+  <ul>
+  <li>Switch to your drive by typing<br>
+      <tt>F:</tt>
+  <li>Switch to the mp0 directory by typing <br>
+      <tt>cd \mp0</tt>
+  </ul>
+</ol>
+
+<h2>An example in Assembler</h2>
+<ol>
+<li>Type <tt>EDIT MP0A.ASM</tt> to view the assembly program.
+    View the code using [page-up] and [page-down] to scroll up and down.
+    When you are finished, type [alt-F] to get to the file menu.  Select
+    <tt>X</tt> to edit.  You don't want to make any changes yet.<br>
+<p>
+<li>Assemble the program MP0A.ASM using MASM with the following command<br>
+          <tt>MASM MP0A,,; </tt> <br>
+
+  <ul>    
+  <li>Verifty the the files MP0A.LST and MP0A.OBJ were created by 
+      typing<br>
+      <tt>DIR</tt> 
+  <li>Print your listing using the following command: <br>
+    <tt>copy MP0A.LST LPT1: </tt> 
+  <li>Pick  up  your  listing  from  the laser  printer.   The  listing
+   contains  a  wealth  of information about the  program  you  just
+   assembled.
+  <li>The  first  part of the listing looks like a copy of the  program
+   itself,  but  there is some "extra" information on  the  lefthand
+   side.  As you will learn later, this is the actual "machine code"
+   for  the  program  you  just assembled.  The  machine  code  (the
+   numbers you see on the left) is what the computer can understand,
+   whereas  the  text  to  the  right is a representation  of  those
+   numbers  which humans can (hopefully!) understand.  An  assembler
+   (like MASM) is a program which translates the human-readable code
+   (called the source code) into computer-readable code (called  the
+   machine  code).   The listing simply gives both  the  source  and
+   machine code together.
+   
+   <li>Following  the program portion of the listing is some information
+   about  the  program  itself.  There are three  sections  entitled
+   "Segments  and Groups", "Procedures, parameters and locals",  and
+   "Symbols".   For  example, the symbol sheet lists the  variables,
+   constants, and external      procedures used in the program.  You
+   will probably not use these sections often.
+ 
+   <li>Now, take a closer look at the assembly source code.  The code is
+   broken into several sections to illustrate the various components
+   in  an  assembly program.  This is certainly not the only way  to
+   organize an assembly program, but it gives a good starting point.
+   Again,  you  do  not  need  to  understand  precisely  what   the
+   statements  are  doing  at this point,  but  notice  the  overall
+   structure  of  the  program.  This will be a good  reference  for
+   future machine problems.<p>
+ 
+   <ul><li>Section  1  defines several constants to be used throughout
+   the program.  Each constant has a value that is associated with a
+   particular name using the EQU statement.
+
+   <li>Section  2 declares external procedures (meaning code  that
+   has already been written but is in a different file) that will be
+   used in this program.  External procedures are declared with  the
+   EXTRN statement.
+
+  <li>Section  3  defines a special required structure  called  a
+  stack segment.  You will discover why a stack is necessary in the
+  future.   The  stack segment is declared using the SEGMENT  STACK
+  ... ENDS statements.
+
+  <li>Section 4 declares the beginning of the code segment - that
+  part  of  the file which contains the program instructions.   The
+  code  segment  is  declared using the  SEGMENT  PUBLIC  ...  ENDS
+  statements.  (The ENDS statement appears at the end of the code -
+  - in section 6.)
+
+  <li>Section  5 initializes several variables to be  used.   For
+  this  program,  these variables are just sequences of  characters
+  called strings.  Variables can be defined using the DB statement.
+
+  <li>Section  6  contains  the  code  for  the  main  procedure.
+  Procedures are declared using the PROC ... ENDP statements.
+  </ul>
+ </ul><p>
+
+<li>Link the assembled program with the library subroutines
+  and execute it.<br>
+  <i>(The file called LIB291.LIB contains the
+  library subroutines that were used in this program)</i> <br>
+  <tt>LINK MP0A,,,LIB291/MAP;</tt><br>
+
+  At this point, you should have just created the executable program
+  called MP0A.EXE.
+  <p>
+<li>Run the program by just typing its name: <br>
+  <tt>MP0A</tt><br>
+  Try typing different characters.   Press the ESC key to return to
+  DOS.<br>
+  <i>Remember: this program is looking for upper-case letters!</i>
+    <p>
+
+<li>Now examine your program with the debugging tool DEBUG.<br>
+  <tt>DEBUG MP0A.EXE</tt><br>
+  The  prompt used by DEBUG is a hyphen "-".  Type the following
+  commands to view your program  as it executes.
+  <p>
+  <ul>
+  <li><tt>R</tt> <i>Register display command</i><br>
+  Display the  contents
+  of  the internal registers
+
+  <li><tt>T</tt> <i>Trace by executing one step</i><br>
+  Execute the first instruction of your program.
+  Notice that register AX has changed value.  The first instruction
+  of  the  program (MOV AX, CSEG) puts the offset of CSEG into  AX.
+  Also  notice  that  register  IP, the  instruction  pointer,  has
+  changed  value.   It  always specifies the  offset  of  the  next
+  instruction  to  be executed.  The instruction displayed  is  the
+  next  one  to  be  executed.   Now display  the  memory  contents
+  beginning at offset 0000 in the Code Segment (CS).
+
+  <li><tt>D CS:0000</tt> <i>Dump  80h bytes  of information </i><br>
+  Each  byte  appears in hexadecimal.  On the right  side  are  the
+  characters  whose ASCII codes are given by the bytes; the  period
+  "."  appears  when  the corresponding character  is  unprintable.
+  Display  the memory contents of the Stack Segment (SS)  beginning
+  at offset 0000 and ending at offset 01FFh.
+
+  <li><tt>D SS:0000 01FF</tt> <i>Dump Stack Segment from 0000 to 01FF </i><br>
+  Beginning at offset 0045h, unassemble 32 bytes into symbolic
+  instructions.
+
+  <li><tt>U CS:0045</tt> <i>Unassemble</i><br>
+  These instructions should resemble the instructions beginning  at
+  MAIN in the program listing.
+  
+  <li><tt>Q</tt> <i>Quit Debug</i>
+  You are finished with DEBUG.
+  </ul><p>
+
+<li>Now edit the program MP0A.ASM.  You need to make the 
+  following changes:
+
+  <ol>
+  <li>Your name and the current date should be at the 
+      beginning of the program 
+  <li>Make the program print your name (not <tt>Your Name</tt>) when
+      N is pressed.
+  <li>Add a feature to the program
+      that prints the message 'ece291' when the 'E' 
+      button is pressed. <br>
+      <p>
+      <i>Hints:</i>
+      <ul>
+      <li>This feature is similar to the parts of the program which 
+          print your name when 'N' is pressed.
+      <li>You'll need to modify the <tt>hdmsg</tt> variable so that
+          it also mentions that the user can press "E".
+      <li>You'll need to add one line of code to declare a new variable 
+          in section 5 (call it <tt>cname</tt> which is defined as
+          <tt>CR,LF,'ece291','$'</tt>
+      <li>You'll need to add two lines of code in the <tt>main: </tt> 
+          part of section 6 which compare the value of the register AL
+          with the key of 'E' then conditionally jumps to a later
+          section of your code called <tt>pr291</tt>
+      <li>You'll need to add 3 lines of code
+          near the bottom of section 6 that performs a similar 
+          function as the three lines of code following the
+          <tt>prname: </tt> label.  The label for this part of
+          the code should be <tt>pr291: </tt> The message that
+          it should specify is <tt>cname</tt>.
+      </ul> 
+  </ol>
+  <p> 
+<li>Assemble this new program using MASM and correct errors by
+  returning to the text editor.  Print the final listing.<br>
+  <p>
+<li>Link  the  assembled  program  with  the   library
+  subroutines  and  execute the program using the same steps
+  as before.  Be sure that pressing 'N'
+  gives your name and that pressing 'E' prints 'ece291'.
+
+</ol>
+
+<h2>An example in C</h2>
+<ol>
+<li>This course focuses on the use of assembly language,
+    but  we will occasionally be using the C programming language  as
+    well.  In your directory, you should have a file called MP0C.C 
+    This C program will perform the same function as the assembly
+    program  you originally assembled with MASM.  <p>
+
+<li>Compile the program
+  using the Microsoft C compiler on your machine as follows:<br>
+  <tt>CL MP0C.C</tt><Br>
+  This step should create a file called MP0C.EXE
+  <p>
+
+<li>Run the program by typing its name<br>
+  <tt>MP0C</tt>
+  <p>
+
+<li>Now edit the program MP0C.C.  
+  Notice the program has similarities to the assembly program,  but
+  is  in  general  much simpler to understand.  The  first  section
+  declares  external  library routines  to  be  used  in  the  main
+  program.  The next section declares constants similar to the  EQU
+  statement  in  the assembly program.   Finally, the main  program
+  appears in the third section.
+  <p>
+
+<li>You need to modify the program in the following ways
+  <ol>
+      <li>Your name and the current date should be at the 
+          beginning of the program 
+      <li>In your own words, you should add comments to the
+          program that describe what it does.
+      <li>Make the program print your name (not <tt>Your Name</tt>) when
+          N is pressed.
+      <li>As before, add a feature to the program
+          that prints the message 'ece291' when the 'E' 
+          button is pressed. <br><i>Hint: this feature is similar 
+          to the parts of the program which print your name.</i>
+  </ol>    
+ </ol>
+  <p>
+
+<h2>Final Steps</h2>
+<ol>
+<li>Demonstrate  both the MP0A.EXE and MP0C.EXE  programs
+  to  a  TA or instructor.  Once the TA approves, you are 
+  ready to turn in your program.
+  <p>
+
+<li>Give the printouts of your modified MP0C.C 
+  and modified MPOA.LST to the same TA which approved your demonstration.
+  Be sure that your name appears in each of the programs.  
+  For future machine problems, you will also run a <i>handin</i>
+  program to electronically submit your assignment.
+  <p>
+
+<li>Log off and shut down your computer.
+  <ul>
+  <li>Terminate all DOS shells with the  <tt>EXIT</tt> command.<br>
+  <li>Log off by clicking on the <i>start</i> button and 
+    navigating to <i>Shutdown</i>.
+    <ul>
+    <li>If other students are waiting to use the computer, 
+        select <i>Close all programs and log on as another user</i>.
+    <li>If you will be the last to use the computer,
+        select <i>Shutdown</i>, wait for the computer to stop,
+        then turn off the power for both the CPU and monitor.
+    </ul>   
+  </ul>   
+  <p>
+
+<li>You are now finished!
+</ol>
+
+<hr>
+<h2>MP0A.ASM</h2>
+<font size=-1><xmp>
+
+	PAGE 75, 132
+	TITLE   MP0     your name       current date
+
+COMMENT *
+	This program illustrates LIB291 input and output routines plus
+	a simple subroutine call for I/O.  Be sure to also put your name
+	in the two places where it says 'your name' and also change
+	the date where it says 'current date'.
+	*
+
+;====== SECTION 1: Define constants =======================================
+
+	CR      EQU     0Dh
+	LF      EQU     0Ah
+	BEL     EQU     07h
+	ESCKEY  EQU     1Bh
+
+;====== SECTION 2: Declare external procedures ============================
+
+	extrn   kbdine:near, dspout:near, dspmsg:near, dosxit:near
+
+;====== SECTION 3: Define stack segment ===================================
+
+stkseg  segment stack                   ; *** STACK SEGMENT ***
+	db      64 dup ('STACK   ')
+stkseg  ends
+
+;====== SECTION 4: Define code segment ====================================
+
+cseg    segment public                  ; *** CODE SEGMENT ***
+	assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== SECTION 5: Declare variables for main procedure ===================
+hdmsg   db      'MPD: Type "N" or the "ESC" key','$'
+prompt  db      CR,LF,'MPD:','$'
+xitmsg  db      CR,LF,'MPD: Exit to DOS','$'
+usrname db      CR,LF,'your name','$'
+
+;====== SECTION 6: Main procedure =========================================
+
+main    proc    far
+	mov     ax, cseg                ; Initialize DS register
+	mov     ds, ax
+	mov     dx, offset hdmsg        ; DX = "Address" of hdmsg text
+	call    dspmsg                  ; Display message
+toplp:  mov     dx, offset prompt       ; Prompt for letter command
+	call    dspmsg
+	call    kbdine                  ; Get keyboard character in AL
+	cmp     al, ESCKEY              ; Exit on ESC character
+	je      mpdxit
+	cmp     al, 'N'                 ; Print user name on 'N' character
+	je      prname
+	mov     dl, BEL                 ; Ring the bell if other character
+	call    dspout
+	jmp     toplp
+
+prname: mov     dx, offset usrname      ; Type out user name
+	call    dspmsg
+	jmp     toplp
+
+mpdxit: mov     dx, offset xitmsg       ; Type out exit message
+	call    dspmsg
+	call    dosxit                  ; Exit to DOS
+main    endp
+
+cseg    ends
+	end     main
+
+</xmp>
+</font>
+<hr>
+<h2>MP0C.C</h2>
+<font size=-1>
+<xmp>
+
+// **************************************************************
+// MP0c: Demo C Program                                         
+// Your Name: Current Date                                      
+// **************************************************************
+
+// Describe what this program does, in your own words.
+
+// Declare external functions from external libraries
+#include <stdlib.h>
+#include <stdio.h>
+
+// Define constants
+// Values are substituted into your code at compile time.
+#define BEL    0x07
+#define ESCKEY 0x1b
+
+// Procedure to read keyboard input
+char inecho() {
+  char c;
+
+  c = getch();                  // Get a character
+  printf("%c",c);               // Echo it to the screen
+  return(c);                    // Return character
+}
+
+// Main program
+void main() {
+  char  c;                        // Declare a character variable
+  printf("MP0: Type \"N\" or the \"ESC\" key");
+
+  // Repeat the following loop
+  while(1) {
+    printf("\nMP0:");           // Print prompt message
+
+    c  = inecho();              // Get a character from keyboard
+
+    switch(c) {                 // Perform action based  on input
+
+      case ESCKEY:
+        printf("\nMP0: Exit to DOS\n");
+        exit(0);
+
+      case 'N':
+        printf("\nYour Name");
+        break;
+
+      default:
+        printf("%c",BEL);
+        break;
+    }
+  }
+}
+</xmp></font>
+</body>
+</html>

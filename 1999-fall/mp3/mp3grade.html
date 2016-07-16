@@ -1,0 +1,290 @@
+<HTML>
+<HEAD>
+   <TITLE>ECE291 Machine Problem 3</TITLE>
+</HEAD>
+<BODY>
+
+<TABLE CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TD align=left   width=33%>ECE291</TD>
+
+<TD align=center width=34%>Computer Engineering II</TD>
+
+<TD align=right  width=33%>Kalbarczyk, Fall 1999</TD>
+</TR>
+</TABLE>
+
+<H1 ALIGN=CENTER>Machine Problem 3: Grading Report</H1>
+
+<CENTER><P><I><FONT SIZE=-1>Please print this page and provide it to the
+TA when you demonstrate your machine problem. <BR>
+When you submit this, the TA should: <BR>
+check your solutions, <BR>
+ask a random question that tests your understanding of the MP,<BR>
+assign points for each item on the list,<BR>
+check the 'Demo' box, <BR>
+assign bonus/penalty points,<BR>
+and provide the floppy for electronic handin.<BR>
+This page should be stapled to the front of your MP3 assignment. </FONT></I></P></CENTER>
+
+<CENTER><P><FORM></CENTER>
+
+<CENTER><TABLE CELLPADDING=7 >
+<TR>
+<TD>
+<TABLE>
+<TR>
+<TD align=right>Name: </TD>
+
+<TD><INPUT name="name" size=30></TD>
+</TR>
+
+<TR>
+<TD align=right>Date Submitted: </TD>
+
+<TD><INPUT name="submitted" size=20></TD>
+</TR>
+
+<TR>
+<TD align=right>Demo To: </TD>
+
+<TD><INPUT name="demoto" size=6>Graded By: <INPUT name="gradedby" size=6></TD>
+</TR>
+</TABLE>
+</TD>
+
+<TD>
+<TABLE BORDER=1 >
+<TR>
+<TD><INPUT type=checkbox name="gradebook">Handin to floppy </TD>
+</TR>
+
+<TR>
+<TD><INPUT type=checkbox name="gradebook">Score recorded </TD>
+</TR>
+
+<TR>
+<TD><INPUT type=checkbox name="gold_star">Gold Star<BR>
+<I>Programming Excellence</I></TD>
+</TR>
+</TABLE>
+</TD>
+</TR>
+</TABLE></CENTER>
+
+<P><INPUT type="checkbox">Completed Checksheet. (Grader will give you this
+when you turn it in.)</P>
+
+<P></FORM>
+
+<TABLE BORDER=1 CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TH>Category</TH>
+
+<TH>Points</TH>
+
+<TH>Min</TH>
+
+<TH>Max</TH>
+</TR>
+
+<TR>
+<TD><b>MP3Main</b> 
+<UL>
+<LI>Terminates the game on pressing the Esc key anytime during game play.</LI>
+<LI>Loops until all the lives are used up.</LI>
+<LI>Handles any race condition ( the ball should not hang in mid-air for a few
+  seconds ).</LI>
+<LI>Causes the player paddle to move smoothly.</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>5</TD>
+</TR>
+
+<TR>
+<TD><b>GenerateGame</b> 
+<UL>
+<LI>Generates the ball at a different location ( in the middle row ), for each
+  new game.</LI>
+<LI>Ends the game when no more lives are remaining.</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>5</TD>
+</TR>
+
+<TR>
+<TD><b>DrawScreen</b> 
+<UL>
+<li>Does not cause the screen to flicker.</li>
+<LI>Draws the paddles and ball correctly on the screen.</LI>
+<LI>Updates the score and lives remaining properly.</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>5</TD>
+</TR>
+
+<TR>
+<TD><b>UpdatePlayers</b> 
+<UL>
+<LI>Handles the UP key and DOWN key appropriately.&nbsp;
+<LI>Causes the AI to move with a certain amount of randomness.
+<LI>There should be at least one case where the AI randomly returns the ball,
+  and another where it misses.
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>5</TD>
+</TR>
+
+<TR>
+<TD><b>UpdateBall</b> 
+<UL>
+<LI>Makes sure that the ball bounces off the paddles, and NOT otherwise.
+<LI>Simulates the library code in handling the motion of the ball at the edges.
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>5</TD>
+</TR>
+
+
+<TR>
+<TD><b>UpdateMap</b> 
+<UL>
+<LI>Handles all ball movement ( except at the edges ).
+<LI>Updates the wallpaper correctly, on bouncing off a block.
+<LI>Simulates the library code in handling the motion of the ball near the
+  blocks.
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>5</TD>
+</TR>
+
+
+<TR>
+<TD><b>Keyboard ISR</b> 
+<UL>
+<LI>This is a combined check for all three function calls:</LI>
+<LI>Installs and Uninstalls the KbdHandler correctly.</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>10</TD>
+</TR>
+
+<tr>
+<TD><b>Timer ISR</b> 
+<UL>
+<LI>This is a combined check for all three function calls.</LI>
+<LI>Installs and Uninstalls the TimerHandler correctly.</LI>
+<LI>Sets the timer chip to fire 36 times a second and resets it back to 18 when
+  done.</LI>
+<LI>Calls oldTimerV every second time so as not to disturb other programs
+  running simultaneously in memory.</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>10</TD>
+</tr>
+
+
+<TR>
+<TD><B>Functionality Subtotal</B> </TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>50</TD>
+</TR>
+
+
+<tr><td><b>Comments</b> <i>(* percentage of code written)</i> 
+  <ul>
+  <li>Clear and precise line & procedure comments (describes all major routines): -0
+  <li>Sports Announcer comments (line-by-line): -1
+  <li>Unclear comments: -1
+  <li>Sparse comments: -3
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>Technique & Style</b>  <i>(* percentage of code written)</i>
+  <ul>
+  <li>Compact and Efficient code: -0
+  <li>Contains repeated code (lacks loops): -3 
+  <li>Does not use Defined constants: -2
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>I/O Specs & Modularity</b> <i>(* percentage of code written)</i> 
+  <ul>
+  <li>Violates specifications for given subroutines: -5
+  <li>Procedures do not preserve registers: -3
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>Penalty/Bonus</b> <br>
+    <i>Before 5pm, Tue 10/19/99: +1 pt/weekday</i><br>
+    <i>After 5pm, Tue 10/26/99: -10 pts/weekday </i>
+    </td><td><pre> </pre></td><td>-50</td><td>5</td></tr>
+
+<tr><td><b>Total</b> </td><td><pre> </pre></td>  <td>0</td><td>55</td></tr>
+
+</TABLE>
+
+</BODY>
+</HTML>

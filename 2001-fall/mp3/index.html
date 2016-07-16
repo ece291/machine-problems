@@ -1,0 +1,860 @@
+<%
+title = "ECE 291 - MP3"
+subtitle = "MP3"
+%>
+
+<!--#include file="headvb.asp"-->
+
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <title>MP3</title>
+</head>
+<body bgcolor="#FFFFFF">
+&nbsp;
+
+<center>
+<h1>
+Machine Problem 3: Chat 291</h1>
+</center>
+
+<center><table BORDER="1" CELLPADDING=3 WIDTH="60%" >
+<tr>
+<td ALIGN=RIGHT><b>Assigned</b></td>
+
+<td>9:00 AM, Monday, October 8, 2001</td>
+</tr>
+
+<tr>
+<td ALIGN=RIGHT><b>Purpose</b></td>
+
+<td>Text-Mode Graphics, Serial communication,&nbsp; and Keyboard Interrupts</td>
+</tr>
+
+<tr>
+<td ALIGN=RIGHT><b>Points</b></td>
+
+<td>75</td>
+</tr>
+
+<tr>
+<td ALIGN=RIGHT><b>Due Date</b></td>
+
+<td>Monday, October 22 - 5:00pm</td>
+</tr>
+</table></center>
+<!--<Center><IMG SRC="../../icon/construct.gif" >This MP is under construction</Center>-->
+<h2>
+Introduction</h2>
+<blockquote>
+<p>
+This MP will introduce you to text-mode video,&nbsp; interrupt service
+routines, and serial communication.&nbsp; You will need to develop a firm
+understanding of these concepts in order to complete it.</p>
+</blockquote>
+
+<h2>
+Problem Description</h2>
+
+<center><img SRC="mp3.gif" BORDER=0 width="652" height="512"></center>
+
+<blockquote>
+  <p>&nbsp;</p>
+  <p><font size="3">In this MP, we're going to hook into the computer's keyboard
+  and timer interrupts, to run some of the code asynchronously from the main
+  loop. Asynchronously means, in this sense, that you never know ahead of time
+  when it will run. You could have two move opcodes, or a compare and a
+  conditional jump, and either could be interrupted to run the Interrupt Service
+  Routine (ISR). More on this shortly.</font></p>
+</blockquote>
+<h2>
+Implementation</h2>
+<h3>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</h3>
+  <h3> Interrupt Service Routines</h3>
+  <p>Hardware Interrupts are generated when various hardware events occur.&nbsp;
+  Examples include the timer, which triggers 18.2 times per second, the
+  keyboard, which triggers for every key press and release, the serial port,
+  which depending on the interrupt enable register, triggers each time the
+  receive buffer is full, and the mouse which
+  triggers for any movement or button press or release. These interrupts are the
+  hardware's way of saying &quot;I need attention,&quot; so that the rest of the
+  time the CPU can completely ignore such devices, and just execute code.</p>
+  <p>When the interrupt happens, the CPU is informed.&nbsp; The current opcode
+  finishes execution, and then the current program is interrupted. This is when
+  your interrupt service routine (ISR) is executed. As it happens between two effectively random lines of your program,
+  the ISR needs to save all registers and the flags. The hardware takes care of
+  part of this (by pushing of
+  the flags); the rest you must take care of by using IRET instead of RET (to pop the
+  flags), and saving your registers like normal.</p>
+  <h3>Text-Mode Video</h3>
+  <p>We will be using memory mapped I/O.&nbsp; Which means that you will want to
+  move 0B800h into ES and explicitly make it your segment when writing to&nbsp;
+  the screen. e.g. [es:bx].&nbsp; Remember that each character in text-mode
+  video has both an attribute and an ascii component.&nbsp; The size of the
+  screen is 80 by 25 characters.&nbsp; Consult lecture eleven of this semester
+  for more details on how text-mode video works.&nbsp; We will also be calling
+  interrupt 10h with ah=2 to set the cursor position in several functions.</p>
+  <h3>The Keyboard ISR</h3>
+  <p>When our keyboard handler is called, we know a key has been pressed or
+  released. Unfortunately, we don't know what key, whether it was pressed or
+  released, and whether the press is a true press or an auto-repeat press.
+  There's no way for us find out the last (except keeping track), but
+  as for which key and press or release, we can (and must) find this out by
+  asking the keyboard for the scancode. See section 10.1.2.2 of the&nbsp; lab
+  manual for information on retrieving these scancodes. The
+  pages after that describe how scancodes work.</p>
+<p>If you look at the scancodes and then at the ascii table, the first
+  thing you'll probably notice is that there's no connection. If you then look
+  down at the keyboard, however, you may notice a general correlation between
+  the scancode and the location of the key, with ESC being scancode 1, and the
+  numbers following an increasing pattern. We will be using two look-up tables
+to convert the scancodes into their ascii equivalent.&nbsp; We will also
+maintain two bits to tell us the state of the shift keys at all times.&nbsp; One
+bit will tell us whether the left shift is currently pressed and the other the
+same information about the right shift.&nbsp; Of course we have to update the
+bits accordingly when shift keys are pressed or released.</p>
+  <h3>Serial Communication</h3>
+  <p>There is a simple asynchronous transfer protocol that governs how data is
+  transmitted over the serial port.&nbsp; Basically there is a port, either
+  COM1BASE or COM2BASE, that is written the data value to be transmitted.&nbsp;
+  The other port is read by the receiving program after it determines that there
+  is something to be read.&nbsp; To determine this, it just looks at a certain
+  bit of a register at another port.&nbsp; I am being deliberately vague to get
+  the main idea of polled I/O across.&nbsp; Essentially, check a certain bit to
+  determine if there is data available to read; if there is then read it.</p>
+<p>Well your job in this MP will be harder because instead of polled I/O you
+will be using interrupt driven I/O.&nbsp; But it is a very similar concept. It
+boils down to setting up an interrupt service routine (ISR) that gets triggered
+if there is data available to be read; if there is then read it and say that you
+did.&nbsp; The hard part is setting up the ISR in the first place.&nbsp; What
+this entails is setting the baud rate, basically how fast the information is
+being sent, the data size, unmasking the ISR, and setting up information about
+when the ISR is triggered.&nbsp; Each of these things is done by writing to I/O
+ports.&nbsp; Looking in section 10.1.2.2 will show you examples of writing to
+and reading from ports.</p>
+<p>Okay now to get down to the details.&nbsp; I got the following table from <a name="13">http://www.beyondlogic.org/serial/serial.htm<br>
+</p>
+</a><center>
+<table border="1">
+  <tbody>
+    <tr>
+      <td><b>Base Address</b></td>
+      <td><b>DLAB</b></td>
+      <td><b>Read/Write</b></td>
+      <td><b>Abr.</b></td>
+      <td><b>Register Name</b></td>
+    </tr>
+    <tr>
+      <td rowSpan="3">+ 0</td>
+      <td>=0</td>
+      <td>Write</td>
+      <td>-</td>
+      <td>Transmitter Holding Buffer</td>
+    </tr>
+    <tr>
+      <td>=0</td>
+      <td>Read</td>
+      <td>-</td>
+      <td>Receiver Buffer</td>
+    </tr>
+    <tr>
+      <td>=1</td>
+      <td>Read/Write</td>
+      <td>-</td>
+      <td>Divisor Latch Low Byte</td>
+    </tr>
+    <tr>
+      <td rowSpan="2">+ 1</td>
+      <td>=0</td>
+      <td>Read/Write</td>
+      <td>IER</td>
+      <td>Interrupt Enable Register</td>
+    </tr>
+    <tr>
+      <td>=1</td>
+      <td>Read/Write</td>
+      <td>-</td>
+      <td>Divisor Latch High Byte</td>
+    </tr>
+    <tr>
+      <td rowSpan="2">+ 2</td>
+      <td>-</td>
+      <td>Read</td>
+      <td>IIR</td>
+      <td>Interrupt Identification Register</td>
+    </tr>
+    <tr>
+      <td>-</td>
+      <td>Write</td>
+      <td>FCR</td>
+      <td>FIFO Control Register</td>
+    </tr>
+    <tr>
+      <td>+ 3</td>
+      <td>-</td>
+      <td>Read/Write</td>
+      <td>LCR</td>
+      <td>Line Control Register</td>
+    </tr>
+    <tr>
+      <td>+ 4</td>
+      <td>-</td>
+      <td>Read/Write</td>
+      <td>MCR</td>
+      <td>Modem Control Register</td>
+    </tr>
+    <tr>
+      <td>+ 5</td>
+      <td>-</td>
+      <td>Read</td>
+      <td>LSR</td>
+      <td>Line Status Register</td>
+    </tr>
+    <tr>
+      <td>+ 6</td>
+      <td>-</td>
+      <td>Read</td>
+      <td>MSR</td>
+      <td>Modem Status Register</td>
+    </tr>
+    <tr>
+      <td>+ 7</td>
+      <td>-</td>
+      <td>Read/Write</td>
+      <td>-</td>
+      <td>Scratch Register</td>
+    </tr>
+  </tbody>
+</table>
+<font size="-1">Table 5 : Table of Registers</font></center><p>All the registers
+associated with a certain port are just offsets from that port's base
+address.&nbsp; For the two ports we will be using the base addresses are given
+as constants, namely COM1BASE and COM2BASE.&nbsp; There are actually twelve
+logical registers associated with each serial port, but only eight actual
+registers.&nbsp; This is possible because depending on the value of DLAB, some
+registers, base address+0 and +1, mean two different things.&nbsp; Also a
+register may have a different meaning depending on whether the operation is a
+read or write.&nbsp; Incidentally, the page I got this table from is a pretty
+decent resource.</p>
+<p>DLAB is just the most significant bit of the Line Control Register and can
+thus be set or cleared rather easily simply by writing to port COMxBASE+3.&nbsp;
+The least significant bit of the Interrupt Enable Register when set causes the
+ISR to be jumped to only when the Receiver Buffer is full.&nbsp;</p>
+<center>
+<table border="1">
+  <tbody>
+    <tr>
+      <td><b>Speed (BPS)</b></td>
+      <td><b>Divisor (Dec)</b></td>
+      <td><b>Divisor Latch High Byte</b></td>
+      <td><b>Divisor Latch Low Byte</b></td>
+    </tr>
+    <tr>
+      <td>50</td>
+      <td>2304</td>
+      <td>09h</td>
+      <td>00h</td>
+    </tr>
+    <tr>
+      <td>300</td>
+      <td>384</td>
+      <td>01h</td>
+      <td>80h</td>
+    </tr>
+    <tr>
+      <td>600</td>
+      <td>192</td>
+      <td>00h</td>
+      <td>C0h</td>
+    </tr>
+    <tr>
+      <td>2400</td>
+      <td>48</td>
+      <td>00h</td>
+      <td>30h</td>
+    </tr>
+    <tr>
+      <td>4800</td>
+      <td>24</td>
+      <td>00h</td>
+      <td>18h</td>
+    </tr>
+    <tr>
+      <td>9600</td>
+      <td>12</td>
+      <td>00h</td>
+      <td>0Ch</td>
+    </tr>
+    <tr>
+      <td>19200</td>
+      <td>6</td>
+      <td>00h</td>
+      <td>06h</td>
+    </tr>
+    <tr>
+      <td>38400</td>
+      <td>3</td>
+      <td>00h</td>
+      <td>03h</td>
+    </tr>
+    <tr>
+      <td>57600</td>
+      <td>2</td>
+      <td>00h</td>
+      <td>02h</td>
+    </tr>
+    <tr>
+      <td>115200</td>
+      <td>1</td>
+      <td>00h</td>
+      <td>01h</td>
+    </tr>
+  </tbody>
+</table>
+<font size="-1">Table 6 : Table of Commonly Used Baudrate Divisors</font></center><p>I
+got this table from the same website. We will want a baud rate of 9600 BPS, so
+we need to clear the Divisor Latch High Byte and set the Divisor Latch Low Byte
+to 0Ch.&nbsp; Luckily, the Divisor Latch High Byte defaults to 00h, so we only
+need to set the Low Byte.&nbsp; Also the IRQs for both ports start masked.&nbsp;
+What this means is that those IRQs are essentially out of use.&nbsp; To unmask
+them just write a 0 in port 21h.&nbsp; This feels kind of sloppy but it does the
+job.&nbsp;&nbsp;&nbsp;</p>
+  <h3>FIFO</h3>
+<p>A queue is a very simple data structure.&nbsp; It can be modeled by an array,
+an offset into it representing the oldest element, and a variable representing
+the number of elements currently in the array.&nbsp; Of course the elements in
+the array are cyclically ordered.&nbsp; The rest of the details I am sure you
+can figure out on your own.&nbsp;</p>
+  <h3>The Lookup Tables</h3>
+<p>Lookup tables are an efficient way to translate one set of inputs to another
+set of outputs as seen with currency conversions in MP2.&nbsp; In this MP
+QwertyNames and QwertyShift will be used to translate a scancode into its
+appropriate ASCII, while colorTable will be used to translate the function keys
+to the appropriate color.&nbsp; The outputs for the ascii values of the function
+keys from the lookup tables have been arbitrarily set to be 200 through
+209.&nbsp; In this MP we will be using the following two
+  lookup tables:</p>
+  <ul>
+    <li><code>QwertyNames</code>
+      <ul>
+        <li>This table is designed to facilitate converting scan codes into
+          their equivalent ascii characters.</li>
+      </ul>
+    </li>
+    <li><code>QwertyShift</code></li>
+	<ul>
+	 <li>This table is designed to facilitate converting scan codes into
+          their equivalent ascii shift characters.</li>
+	</ul>
+    <li><code>colorTable</code>
+      <ul>
+        <li>Each entry in colorTable is a byte representing an attribute in
+          text-mode video.</li>
+      </ul>
+      &nbsp;
+    </li>
+  </ul>
+
+<h2>
+Procedures</h2>
+
+<ul>
+<li>
+This assignment has 13 procedures. You will receive credit for this
+assignment by replacing each of the thirteen procedures listed below with
+your own code.</li>
+
+<li>
+Experiment with the working code to gain a full understanding of how the
+program works.</li>
+
+<li>
+Use defined constants/variables where appropriate.</li>
+
+<li>
+Comment ALL the functions and make sure that they preserve all register
+values.&nbsp; Be sure to include function headers for ALL functions that
+you write.</li>
+
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li>
+<b><font size="+1">MP3Main</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose :</b>    Setup the ISRs and handle each key press.</li>
+
+<li>
+<b>Inputs :</b> None</li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls :</b>    <code>InstallKeyboard, InstallPort, DrawBorder, GetNextKey,
+TypeKey, RemovePort, RemoveKeyboard, Interrupt 10h ah=2</code></li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+<li>Sets up position of cursor to be the upper left corner of the top text box
+  by using int 10h.&nbsp;&nbsp;</li>
+<li>In main loop, wait for a keypress, then handle the case when the key pressed
+  was one of the function keys; lastly, if&nbsp; it wasn't a function key
+  pressed, type the key to the screen</li>
+<li>You will want to install and uninstall your interrupt service routines as
+  well.</li>
+</ul>
+
+</ul>
+
+<ul>
+
+<li>
+<b>Points : 10</b>
+
+</li>
+</ul>
+</ul>
+
+<ul>
+<li><b><font size="+1">DrawBorder</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose :</b>   Draw the rectangular box that represent the two text windows</li>
+
+<li>
+<b>Inputs : </b>cx = offset of upper left corner of location to start displaying
+the text box</li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls : </b>None</li>
+
+<li>
+<b>Notes :</b> &nbsp;
+<ul>
+  <li>Use ATTR_BORDER as the attribute, and consult an ascii table to determine
+    the ascii values of the characters in the border.</li>
+</ul>
+</li>
+
+</ul>
+
+<ul>
+
+<li>
+<b>Points : 6</b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">InstallPort</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose :</b> Sets up the baud rate, data size, saves old ISR address,
+installs new ISR, unmasks all IRQs, and sets up the trigger for the interrupt</li>
+
+<li>
+<b>Inputs : </b>None</li>
+
+<li>
+<b>Outputs : </b>None&nbsp;</li>
+
+<li>
+<b>Calls : </b>Interrupt 21h</li>
+
+<li>
+<b>Notes :</b></li>
+
+</ul>
+
+<ul>
+
+<ul>
+<li>Use IRQ3 or 4 depending on the port</li>
+<li>[recvPort] = the base address of the correct communication port to use</li>
+<li>Remember to set DLAB in order to access the divisor latch register</li>
+<li>Remember to set the data transfer size to 8 bits, by writing PARAMS to LCR</li>
+<li>Save and set ISRs to [PortV] as you did in InstallKeyboard</li>
+<li>In order to unmask all IRQs, write a 0 to port 21h</li>
+<li>Set the interrupt enable register appropriately so that an interrupt is
+  triggered when the receive register is full</li>
+</ul>
+
+<li>
+<b>Points : 4 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">RemovePort</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose : </b>To restore the old handler and to mask the IRQs corresponding
+to the serial port.</li>
+
+<li>
+<b>Inputs : </b>None</li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls : </b>Interrupt 21h</li>
+
+</ul>
+
+<ul>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+<li> See <a href="http://www.ctyme.com/intr/int-21.htm">http://www.ctyme.com/intr/int-21.htm</a></li>
+<li>Restore old handler and mask IRQs by writing 18h to port 21h</li>
+</ul>
+
+</ul>
+
+<ul>
+
+<li>
+<b>Points : 3 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">PortISR</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose : </b>To add to the FIFO any data received over the serial port</li>
+
+<li>
+<b>Inputs : </b>None</li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls : </b>None</li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+<li>Examine [recvPort] to figure out which port address to read from</li>
+<li>Before accessing the [recvPort], it might be smart to clear DLAB and set
+  transfer to 8bits, although this may not be necessary</li>
+<li>Use [bufsize] and [bufhead] to determine if [recvBuf] is full; if it isn't,
+  then use them to determine the proper spot to add the next entry---basically
+  you are simulating an queue</li>
+<li>Remember to update [bufsize] if necessary</li>
+<li>See <a href="http://www.ece.uiuc.edu/ece291/lecture/lockwood/l11.html">Lecture 14</a>
+  for more information on writing and installing ISRs</li>
+<li>Don't forget to send a generic end of interrupt by writing 20h to port 20h,
+  just like in the KeyboardISR</li>
+</ul>
+
+<li>
+<b>Points : 5 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">InstallKeyboard, RemoveKeyboard</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose : </b>These procedures Install and Remove the Keyboard ISR</li>
+
+<li>
+<b>Inputs : </b>None</li>
+
+<li>
+<b>Outputs : </b>None</li>
+
+<li>
+<b>Calls : </b>Interrupt 21h</li>
+
+<li>
+<b>Notes :</b></li>
+
+<ul>
+
+<li>
+ See <a href="http://www.ctyme.com/intr/int-21.htm">http://www.ctyme.com/intr/int-21.htm</a></li>
+</ul>
+
+<li>
+<b>Points : 3 </b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+
+<ul>
+<li><b><font size="+1">KeyboardISR</font></b></li>
+
+<ul>
+
+<li>
+<b>Purpose : </b>Set [nextKey] to be the proper ASCII representation of the
+character typed.</li>
+
+<li>
+<b>Inputs : </b>None
+</li>
+
+<li>
+<b>Outputs :</b>
+ None
+</li>
+
+<li>
+<b>Calls : </b>None</li>
+
+<li>
+<b>Notes :</b>
+<ul>
+  <li>See the lab manual for a skeleton ISR</li>
+  <li>Set [quit] to 1 if escape is pressed</li>
+  <li>Remember to check for key presses and releases (highest bit of scancode
+    set =&gt; key release)</li>
+</ul>
+<ul>
+  <li>Upon a key press access the QwertyNames or QwertyShift look-up table to
+    determine the correct ASCII representation of the input</li>
+  <li>The least significant bit of the [shift] variable is set if RSHIFT is
+    currently pressed and zero otherwise; similarly with the second least
+    significant bit of [shift] for LSHIFT</li>
+  <li>If input is shift, then update the shift state correctly by modifying
+    [shift]</li>
+  <li>Upon a key release, if the key released was a shift then adjust the shift
+    state accordingly</li>
+  <li>Otherwise set [nextKey] to the correct ASCII representation of the typed
+    key&nbsp;</li>
+</ul>
+</li>
+
+</ul>
+
+<ul>
+
+<li><b>Points : 10</b></li>
+</ul>
+</ul>
+
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>GetNextKey</b></font>
+    <ul>
+      <li><font size="3"><b>Purpose : </b>Polls two buffers to get the next key
+        to be displayed onto the screen.</font></li>
+      <li><font size="3"><b>Inputs :&nbsp;</b>None</font>
+      </li>
+      <li><font size="3"><b>Outputs :&nbsp;</b>al = ascii of next key, dx =
+        TOP_OFF if user typed, else BOTTOM_OFF</font>
+      </li>
+      <li><font size="3"><b>Calls : </b>TransmitKey</font></li>
+      <li><b><font size="3">Notes :&nbsp;</font></b>
+        <ul>
+          <li>Exits if [quit] is nonzero; otherwise it loops until [nextKey] is
+            nonzero, or the [recvBuf] FIFO is non-empty.</li>
+          <li><font size="3">If [nextKey] is nonzero, then it transmits it to
+            the other user and clears [nextKey]</font></li>
+          <li><font size="3">It also sets dx appropriately depending on where
+            the input came from..</font></li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 10 </b></font></li>
+    </ul>
+  </li>
+</ul>
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>TransmitKey</b></font>
+    <ul>
+      <li><font size="3"><b>Purpose : </b>Transmits the data in al onto the
+        serial port</font></li>
+      <li><font size="3"><b>Inputs : </b>al = ASCII char to transmit</font>
+      </li>
+      <li><font size="3"><b>Outputs : </b>None</font></li>
+      <li><font size="3"><b>Calls : </b>None</font></li>
+      <li><b><font size="3">Notes :&nbsp;</font></b>
+        <ul>
+          <li>Use [recvPort] as always</li>
+          <li>This function is very short.</li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 2 </b></font></li>
+    </ul>
+  </li>
+</ul>
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>DrawNewLine</b></font>
+    <ul>
+      <li><font size="3"><b>Purpose : </b>Clears a line of text on the screen</font></li>
+      <li><font size="3"><b>Inputs : </b>di = offset of a location in the line
+        directly above where the new line will go, dx = offset of upper left
+        corner of text box</font>
+      </li>
+      <li><font size="3"><b>Outputs : </b>al = row#, ah = col#, di = offset of
+        next character</font></li>
+      <li><font size="3"><b>Calls : </b>None</font></li>
+      <li><b><font size="3">Notes :&nbsp;</font></b>
+        <ul>
+          <li>Remember the row, and col#'s start at 0</li>
+          <li>Remember not to zero the attribute when clearing a line.</li>
+          <li>Remember di is always the offset from the upper left corner of the
+            screen.</li>
+        </ul>
+      </li>
+    </ul>
+    <ul>
+      <li><font size="3"><b>Points : 4 </b></font></li>
+    </ul>
+  </li>
+</ul>
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>DrawBackspace</b></font>
+    <ul>
+      <li><font size="3"><b>Purpose : </b>Backspaces and moves the cursor back</font></li>
+      <li><font size="3"><b>Inputs : </b>di = offset of character from which to
+        backspace, dx = offset of upper left corner of text box</font>
+      </li>
+      <li><font size="3"><b>Outputs : </b>di = offset of next character</font></li>
+      <li><font size="3"><b>Calls : </b>Interrupt 10h ah=2</font></li>
+      <li><b><font size="3">Notes :&nbsp;</font></b>
+        <ul>
+          <li>Remember the library doesn't backspace unto the previous line, so
+            you don't have to either.</li>
+          <li>The library doesn't use dx, but if you want to implement
+            backspacing to the previous line you will need dx.</li>
+          <li>Remember di is always the offset from the upper left corner of the
+            screen.</li>
+        </ul>
+      </li>
+    </ul>
+    <ul>
+      <li><font size="3"><b>Points : 4 </b></font></li>
+    </ul>
+  </li>
+</ul>
+<p>&nbsp;</p>
+<ul>
+  <li><font size="4"><b>TypeKey</b></font>
+    <ul>
+      <li><font size="3"><b>Purpose : </b>To display at the proper location the
+        input ascii value</font></li>
+      <li><font size="3"><b>Inputs : </b>al = input ascii value, di,si = offsets
+        of current locations in top and bottom text box respectively, dx=offset
+        of upper left corner of the correct text box</font>
+      </li>
+      <li><font size="3"><b>Outputs : </b>di,si = offset of next character's in
+        the appropriate text box</font></li>
+      <li><font size="3"><b>Calls : </b>DrawBackspace, DrawNewLine, Interrupt
+        10h ah=2</font></li>
+      <li><b><font size="3">Notes :&nbsp;</font></b>
+        <ul>
+          <li>Check whether input is backspace or if input is enter, or if
+            current location is at the end of a line; in each case call the
+            proper function with the correct inputs</li>
+          <li>Notice DrawBackspace takes care of the cursor for you while
+            DrawNewLine does not</li>
+          <li>Otherwise just output the character and cursor as normal</li>
+          <li>Remember di is always the offset from the upper left corner of the
+            screen.</li>
+        </ul>
+      </li>
+      <li><font size="3"><b>Points : 8 </b></font></li>
+    </ul>
+  </li>
+</ul>
+<p>
+<i>Monitor the newsgroup and this on-line section for revisions to the
+MP or to the write-up</i>
+</p>
+<h2>General Notes</h2>
+<ul>
+  <li>The serial communication cable that you will need may not already be
+    hooked-up to a free computer in the lab.&nbsp; If this happens just talk to
+    a TA.</li>
+  <li>Remember to save and restore all modified registers that are not outputs.</li>
+  <li>Remember to start early! This MP has more difficult concepts, but when you
+    understand them, it is easier to code then the last one.</li>
+  <li>Monitor the newsgroup!&nbsp; There may be corrections made on this
+    write-up or on the newsgroup.</li>
+</ul>
+<h2>Procedure</h2>
+<ul>
+  <li>You will begin this MP with the following files:
+    <ul>
+      <li><tt>MP3.ASM</tt>: Program Framework
+      <li><tt>Makefile</tt>: Specifies how and when programs are assembled and
+        linked.
+      <li><tt>LIBMP3.LIB</tt>: Library functions for MP3
+      <li><tt>LIB291.LIB</tt>: General-purpose library functions</li>
+    </ul>
+  <li>
+  <p align="left">You may copy these files from the network drive to your home directory
+    with the following command:<br>
+    <tt>xcopy /s V:\ece291\mp3 W:\mp3 <br>
+  </tt>or download the files from this server as
+  <a href="http://courses.engr.illinois.edu/ece291/mp/mp3/mp3.zip">mp3.zip</a><br>
+  <li>Add your code to <tt>MP3.ASM</tt>.
+  <li>Assemble and link your program by typing<br>
+    <tt>make</tt><br>
+    This command reads <i>Makefile</i> then invokes NASM and LINK to build an
+    executable program.
+  <li>Use Turbo Debugger (TD) to find and correct program errors.
+  <li>Verify your program operation by testing the input test file. You should
+    alter the test file to check different scenarios with your code.</li>
+</ul>
+<h2>Final Steps</h2>
+<p>1. Demonstrate your MP3.EXE to a TA. You may be asked to recompile and demo
+the program. Your program must work with all given input.</p>
+<p>2. Be prepared to answer questions about any aspect of the operation of your
+program. The TAs will not accept an MP if you cannot fully explain your code and
+your implementation. Delayed MPs will be subject to late penalties as described
+in the course syllabus (10/pts per day).</p>
+<p>3. The TA will complete the code submission procedure.</p>
+<p>&nbsp;</p>
+
+<hr>
+
+<h2><a href="mp3.asm"><b>mp3.asm</b></a></h2>
+
+</body>
+</html>
+
+<!--#include file="foot.asp"-->

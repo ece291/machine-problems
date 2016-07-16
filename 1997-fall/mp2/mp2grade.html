@@ -1,0 +1,150 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 2</title>
+</head>
+
+<body>
+<font size=-1>
+<p>
+<table cellpadding=3 width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Lockwood, Fall 1997</td></tr></table>
+
+<center><h1>Machine Problem 2: Grading Report</h1></center>
+<p>
+<center><i>Please print this page and provide it to the TA when you
+demonstrate your machine problem. <br>
+The TA should verify each functionality
+item, initial the 'Demo' box, assign functionality and bonus points,<br>
+then copy your files to the HANDIN floppy.  
+This page should be stapled to the front of your printed .ASM program.
+</i>
+<p>
+
+<form>
+<table border=0 cellpadding=7><tr><td>
+<table border=0 cellpadding=1>
+<tr><td align=right>Name: </td><td><input name="name" size=30>
+<tr><td align=right>Date Submitted: </td><td><input name="submitted" size=20>
+<tr><td align=right>Demo To: </td><td><input name="demoto" size=6>
+ Graded By: <input name="gradedby" size=6>
+</td></tr></table>
+</td><td>
+<table border=1>
+<tr><Td><input type=checkbox name="gradebook">Handin to floppy 
+<tr><Td><input type=checkbox name="gradebook">Score recorded
+<tr><Td><input type=checkbox name="gold_star">Gold Star<br>
+        <i>Programming Excellence</i></td></tr>
+</td></tr>
+</table>
+</td></tr></table>
+</form>
+</center>
+
+<h3>General Notes</h3>
+  <ul>
+  <li>All procedures should preserve any registers modified
+  <li>Results should exactly match those for
+       <tt>test1</tt>, <tt>test2</tt>, and <tt>test3</tt>
+  <li>Use of MASM dot commands (.if .else .while ..) is prohibited.
+  <li>Not all test cases exercise all subroutines.  Only award
+      credit for those tested.
+  </ul>
+
+<table border=1 cellpadding=3 width=100%>
+<tr><Th>Category</th><th>Points</th><th>Min</th><th>Max</th></tr>
+
+<tr><td><b>PrintTextMsg</b>  <ul>
+    <li>Prints TextMsg 
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>1</td></tr>
+
+<tr><td><b>ReadTextMsg</b>  <ul>
+    <li>Converts lower case letters to uppercase : -2
+    <li>Rejects and beeps at invalid input : -3
+    <li>Allows backspacing (appears right on screen AND properly fills TextMsg) -4
+
+    <li>Prevents and beeps for too many characters or too many backspaces: -3
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>7</td></tr>
+
+<tr><td><b>PrintBuffer</b>  <ul>
+    <li>Prints contents of buffer 5 bits at a time <br>
+        <i>(No credit for implementations that use bytes)</i>
+    <li>Prints Least significant bit first 
+  </ul> </td><td><pre> </pre></td>  <td>0</td><td>7</td></tr>
+
+<tr><td><b>Encode</b>  <ul> 
+    <li>Convert character input in AL to symbol output in DL <br> 
+   </ul> </td><td><pre> </pre></td>  <td>0</td><td>3</td></tr>
+
+<tr><td><b>AppendBuffer</b>  <ul>
+    <li>Appends 5-bit symbol to end of encoded array <br>
+        <i>(No credit for implementations that use bytes)</i>
+   </ul> </td><td><pre> </pre></td>  <td>0</td><td>5</td></tr>
+
+<tr><td><b>ReadBuffer</b>  <ul>
+    <li>Reads binary buffer from keyboard  
+    <li>Accepts only 0/1 input
+    <li>Prevents underflow / overflow of buffer
+    <li>Appends 5-bit symbol to end of encoded array <br>
+        <i>(No credit for implementations that use bytes)</i>
+    <li>No support for backspace: -4
+   </ul> </td><td><pre> </pre></td>  <td>0</td><td>7</td></tr>
+
+<tr><td><b>DecodeRLE</b>  <ul>
+    <li>Must be able to decode data encoded with LIBMP2 routine.
+    <li>Results should exactly match those for
+       <tt>test1</tt>, <tt>test2</tt>, and <tt>test3</tt>
+   </ul> </td><td><pre> </pre></td>  <td>0</td><td>10</td></tr>
+
+<tr><td><b>EncodeRLE</b>  <ul>
+    <li>LIBMP2 Decode routine must be able to process this data.
+    <li>Results should exactly match those for
+       <tt>test1</tt>, <tt>test2</tt>, and <tt>test3</tt>
+   <li>Mis-encodes 2 bytes : -3
+   <li>Fails for >32 repeats : -4
+   </ul> </td><td><pre> </pre></td>  <td>0</td><td>10</td></tr>
+
+<tr><td><b>Functionality SubTotal</b>  
+  </td><td><pre> </pre></td>  <td>0</td><td>50</td></tr>
+
+<tr><td><b>Comments</b> <i>(* percentage of code written)</i> <br>
+  <ul>
+  <li>Clear and precise line & procedure comments <Br>
+      (describes all major routines): -0
+  <li>Sports Announcer comments (line-by-line): -1
+  <li>Unclear comments: -1
+  <li>Sparse comments: -3
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>Technique & Style</b>  <i>(* percentage of code written)</i><br>
+  <ul>
+  <li>Compact and Efficient code: -0
+  <li>Contains repeated code (lacks loops): -3 
+  <li>Makes poor use of registers and/or variables: -2 <Br>
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>I/O Specs & Modularity</b> <i>(* percentage of code written)</i> <br>
+  <ul>
+  <li>Violates specifications for given subroutines: -5 (all points)
+  <li>Preserves valus of registers: -5 (all points)
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>Penalty/Bonus</b> <br>
+    <i>Before 5pm, Fri 10/3/97: +1 pt/weekday</i><br>
+    <i>After 5pm, Fri 10/3/97: -5 pts/weekday (exclude Thr 10/9/97)</i>
+    </td><td><pre> </pre></td><td>-50</td><td>5</td></tr>
+
+<tr><td><b>Total</b> </td><td><pre> </pre></td>  <td>0</td><td>55</td></tr>
+
+
+</table>
+
+
+</font>
+<p>
+</center>
+</body>

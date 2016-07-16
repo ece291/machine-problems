@@ -1,0 +1,471 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!-- saved from url=(0042)http://courses.engr.illinois.edu/ece390/mp/mp2/ -->
+<!-- saved from url=(0041)https://netfiles.uiuc.edu/loui/MP2F04.htm --><HTML 
+xmlns="http://www.w3.org/1999/xhtml"><HEAD><TITLE>ECE 390 Machine Problem 3</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=windows-1252"><LINK 
+href="/ece390/ece390.css" type=text/css rel=stylesheet>
+<META content="MSHTML 6.00.2800.1458" name=GENERATOR></HEAD>
+<BODY>
+<TABLE class=header cellSpacing=0 cellPadding=0 width="100%">
+  <TBODY>
+  <TR>
+    <TD class=half vAlign=top align=left>
+      <P><A href="http://courses.engr.illinois.edu/ece390"><IMG 
+      src="/ece390/icon/ece390.jpg"></A><BR><B>  Computer Engineering 
+      II</B><BR><B>  <SPAN class=red>Machine Problem 3</SPAN></B></P></TD>
+    <TD class=half vAlign=center align=right>
+      <TABLE class=maxheight cellSpacing=1 cellPadding=0 width="100%" 
+        border=0><TBODY>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/schedule.html">Schedule</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/labsched.html">Lab 
+            schedule</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/hw.asp">Homework</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/books/labmanual/">Lab 
+            Manual</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/mp.asp">Machine 
+            Problems</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/resources">Resources</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/mp/mp0/fp">Final 
+            Project</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/user/photos">Photos</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/grades">Gradebook</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/feedback.asp">Feedback</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/syllabus.html">Syllabus</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/archive">Archives</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/lecture">Lectures</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/resources/turbo.zip">Download 
+            NASM</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390">Home</A>  </TD>
+          <TD>  <A 
+            href="https://courses.engr.illinois.edu/ece390/admin">Restricted 
+            access</A></TD></TR></TBODY></TABLE></TD></TR>
+  <TR>
+    <TD class=spacer colSpan=2><IMG height=8 alt="" src="" 
+  width=100></TD></TR></TBODY></TABLE>
+<TABLE cellSpacing=1 cellPadding=7 width="100%" border=0>
+  <TBODY></TBODY></TABLE>
+<TABLE cellSpacing=1 cellPadding=7 width="100%" border=0>
+  <TBODY>
+  <TR>
+    <TD vAlign=top>
+      <H1 align=center>Machine Problem 3: <br> Recursive Evaluation of Arithmetic Expressions</H1>
+      <DIV align=center>
+      <CENTER>
+      <TABLE width=513 border=1>
+        <TBODY>
+        <TR>
+          <TD align=right width=64>Assigned</TD>
+          <TD width=433>Tuesday, 28 September 2004</TD></TR>
+        <TR>
+          <TD align=right width=64>Due Date</TD>
+          <TD width=433>Wednesday, 13 October 2004</TD></TR>
+        <TR>
+          <TD align=right width=64>Purpose</TD>
+          <TD width=433 Roman?>To understand recursion.</TD></TR>
+        <TR>
+          <TD align=right width=64>Points</FONT></TD>
+          <TD width=433>60</TD></TR></TBODY></TABLE></CENTER></DIV>
+      <BLOCKQUOTE>To iterate is human; to recurse, divine. <I>-- L. Peter Deutsch</I><BR></BLOCKQUOTE>
+      <P>Program MP3 will input an arithmetic expression from the keyboard 
+      and output the value of the expression.</P>
+      <P>Files for MP3 are on the <TT>V:</TT> drive in the directory 
+      <TT>V:\ece390\mp3</TT>. In this directory are the program framework 
+      <TT>mp3.asm</TT> and a running version of the program <TT>mp3lab.exe</TT>. 
+      Lab versions of subroutines are in <TT>libmp3.lib</TT>, which contains all 
+      subroutines of LIB291 plus libMain, libGetExp, libExpr, libTerm, and libFactor. 
+      You will use mp3xit instead of dosxit. Some test data are in the file <tt>test3.in</tt>.
+      You should start by copying these 
+      files to your home directory with the following command: <BR><TT>xcopy /s 
+      V:\ece390\mp3 W:\mp3</TT><BR>You may download the files from the server as 
+      <A href="http://courses.engr.illinois.edu/ece390/mp/mp3/mp3.zip">mp3.zip</A> 
+      </P>
+      <H2>Program Specification</H2>
+      <P>The program prompts the user for an arithmetic expression comprising only digits,
+      parentheses, and operators '<tt>+</tt>' (addition), '<tt>-</tt>' (subtraction), 
+      '<tt>x</tt>' (multiplication), and '<tt>/</tt>'
+      (quotient of division). When the user presses the Enter key, the program calculates
+      the value of the expression, with multiplication and division taking precedence over
+      addition and subtraction. Expressions with operators of equal precedence are evaluated
+      from left to right. The program types 'Syntax error' if the expression is syntactically
+      incorrect. The program types 'Overflow' if overflow occurs, including a multiplication
+      whose product does not fit in one word. After responding, the program prompts the user 
+      for another expression. If the user presses the Enter key without typing an expression,
+      then the program exits to DOS. Sample dialogue:</P>
+<PRE>
+Expression: 6+7x-8      (Negative numbers can appear)
+   -50                  (Multiplication takes precedence over addition)
+   
+Expression: (6+7)x-8    (Parentheses can appear)
+  -104
+  
+Expression: 4-6+7
+     5                  (Left to right evaluation; not 4-(6+7)
+     
+Expression: (342*987+(
+Overflow                (Program found overflow before syntax error)
+
+Expression: 21/3()
+Syntax error
+</PRE>
+
+<P>The program can be run by typing <TT>mp3</TT> at the command prompt. If 
+you wish to use the test data files as input, type <TT>mp3 < 
+test3.in | more</TT> at the prompt. To output to a file <TT>test3.mp</TT>
+and compare the outputs 
+type <TT>mp3 < test3.in > test3.mp</TT> and then <TT>fc test3.mp 
+test3.out</TT> </P>
+
+      <H2>Program Organization</H2>
+     
+      <p> The organization of MP3 follows the syntax of arithmetic expressions,
+      specified in Backus-Naur form below:</p>
+<ol>
+<li>An <i>expression</i> is a <i>term</i> followed by zero or more repetitions
+of a pattern of either <tt>+</tt> followed by a <i>term</i> or <tt>-</tt> followed
+by a <i>term</i>:</li>
+<pre>
+        <i>expression</i> ::= <i>term</i> [ + <i>term</i> | - <i>term</i> ]*
+</pre>
+<li>A <i>term</i> is a <i>factor</i> followed by zero or more repetitions of a
+pattern of either <tt>x</tt> followed by a <i>factor</i> or <tt>/</tt> followed by
+a <i>factor</i>:</li>
+<pre>
+        <i>term</i> ::= <i>factor</i> [ x <i>factor</i> | / <i>factor</i> ]*
+</pre>
+<li>A <i>factor</i> is either a number or a parenthesized <i>expression</i>:</li>
+<pre>
+        <i>factor</i> ::= <i>number</i> | ( <i>expression</i> )
+</pre>
+<li>A <i>number</i> is an optional minus sign followed by one or more <i>digits</i>:</li>
+<pre>
+        <i>number</i> ::= [ - ] <i>digit</i> [ <i>digit</i> ]*
+</pre>
+<li>A <i>digit</i> is one of <tt>0, 1, 2, 3, 4, 5, 6, 7, 8,</tt> or <tt>9</tt></li>:
+<pre>
+        <i>digit</i> ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 
+</pre>
+</ol>
+<p>For example, the expression <tt>-3x(4-5)+67</tt> would be parsed as follows:</p>
+<img src="mp3example.jpg">
+<p>Program MP3 has a main program and subroutines GetEx, Expr, Term, and Factor.  You
+must write the code to replace the library subroutines 
+      libMainLoop, libGetEx, libExpr, libTerm, and libFactor. You will replace these 
+      subroutines from the <TT>libmp3</TT> library by deleting the statements 
+      that call the <TT>libmp3</TT> subroutine and by adding your own code. Each 
+      subroutine that you write should match the output of the library 
+      subroutine exactly.</p>
+      <p> To use the library subroutines, you must declare
+      <tt>GLOBAL</tt> the byte variable <tt>error</tt> which indicates whether
+      an error has occurred.  This variable takes on values 0 (no error), 1 
+      (syntax error), and 2 (overflow). </P>
+      <p>For subroutines Expr, Term, and Factor, register <tt>BX</tt> always points
+      to the next character to be processed. Below, this character is notated as
+      <tt>M(BX)</tt>.</p>
+      <p></p>
+   <TABLE border=1>
+        <TBODY>
+         <TR vAlign=top>
+          <TD><B><FONT size=+1>MainLoop</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Main loop of the program </li>
+              <LI>Calls: GetEx, Expr, binasc, dspmsg</li> 
+              <LI>MainLoop calls GetEx to obtain an input string. If the first character
+              is a carriage return, then MainLoop exits with a RET.
+              Otherwise, MainLoop calls Expr to determine the value of the expression.
+              After the call to Expr, if <tt>error</tt> is not zero, then the MainLoop
+              displays the appropriate message. If <tt>error</tt> is zero, then MainLoop
+              calls binasc to convert the value to a string of ASCII characters,
+              prints out the value, and repeats.
+              </LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>GetEx</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Accepts an input string of at most 59 characters from the 
+              keyboard 
+              <LI>Input: 
+              <UL>
+                <LI><TT>BX</TT> = offset of first location in memory to store 
+                the string </LI></UL>
+              <LI>Outputs: 
+              <UL>
+                <LI>None</LI></UL>
+              <LI>Calls: kbdin, dspout, dspmsg 
+              <LI>GetEx displays the prompt '<TT>Expression: </TT>' on the 
+              screen and reads in a character string from the keyboard with 
+              kbdin. If the character is a digit or a parenthesis or one of 
+              '<tt>+</tt>', '<tt>-</tt>', '<tt>x</tt>', or '<tt>/</tt>', then 
+              GetEx echoes the character on
+              the screen and stores it in the string of bytes. </li>
+              <LI>When the user presses the Enter (carriage return) key, GetEx 
+              appends a carriage return character to mark the end of the string, echoes a 
+              carriage return and line feed on the screen, and returns via a 
+              <TT>RET</TT> instruction. </li>
+              <LI>The user can press the backspace key to correct errors. GetEx
+              prevents the user from backspacing past the prompt message. 
+              <LI>When the user presses the Esc key, GetEx starts over from the 
+              beginning, displaying the prompt on the screen. 
+              <LI>The character string is stored in 60 consecutive bytes in 
+              memory, including one byte for the carriage return character. GetEx prevents the 
+              user from typing more than 59 characters. </LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Expr</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Determines the value of an expression. </li>
+              <LI>Inputs: 
+              <UL>
+                <LI><TT>BX</TT> = offset of first character of the expression</li>
+              </ul>
+              <LI>Outputs: 
+              <UL>
+                <LI><TT>AX</TT> = value of the expression </li>
+                <LI><TT>BX</TT> = offset of first character after the expression</li>
+                <LI><TT>error</TT> = 0 if no error, 2 if overflow</li>
+             </LI></UL>
+              <LI>Calls: Term </li>
+              <LI>Expr reserves four bytes on the stack for local variables: 
+              the value <i>v</i> computed so far (two bytes), the pending operator 
+              <i>op</i> (one byte), and one unused byte.</li>
+              <li>Here is a specification of Expr:</li>
+              <ul>
+                Call Term to obtain the value of the first term<br>
+                Store the value of the term in <i>v</i><br>
+                WHILE <tt>error</tt> = 0 and <tt>M(BX)</tt> is '<tt>+</tt>' or '<tt>-</tt>' DO<br>
+                        <ul>
+                        <i>op</i> := <tt>M(BX)</tt><br>
+                        Increment <tt>BX</tt> to point to next term<br>
+                        Call Term to get the value <i>w</i> of the next term and to change <tt>BX</tt><br>
+                        IF <tt>error</tt> is not zero THEN Exit Expr immediately END IF<br>
+                        IF <i>op</i> is <tt>+</tt> THEN <i>v</i> := <i>v</i> + <i>w</i> ELSE <i>v</i> := <i>v</i> - <i>w</i> END IF<br>
+                        IF overflow occurred THEN <tt>error</tt> := 2 END IF<br>
+                        </ul>
+                END WHILE<br>
+                Return with the value <i>v</i> in <tt>AX</tt> and the new <tt>BX</tt><br>
+              </ul>
+              </LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Term</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Determines the value of a term. </li>
+              <LI>Inputs: 
+              <UL>
+                <LI><TT>BX</TT> = offset of first character of the term</li>
+              </ul>
+              <LI>Outputs: 
+              <UL>
+                <LI><TT>AX</TT> = value of the term </li>
+                <LI><TT>BX</TT> = offset of first character after the term</li>
+                <LI><TT>error</TT> = 0 if no error, 2 if overflow</li>
+             </LI></UL>
+              <LI>Calls: Factor </li>
+              <LI>Term is very similar to Expr. Term sets <tt>error</tt> to 2 (overflow) after multiplication if
+              <tt>CF</tt> is 1. Before performing division, Term checks whether the divisor is 0, and if
+              so, Term sets <tt>error</tt> to 2.
+              </UL></td></tr>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Factor</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Determines the value of a factor. 
+             <LI>Inputs: 
+              <UL>
+                <LI><TT>BX</TT> = offset of first character of the factor</li>
+              </ul>
+              <LI>Outputs: 
+              <UL>
+                <LI><TT>AX</TT> = value <i>v</i> of the factor </li>
+                <LI><TT>BX</TT> = offset of first character after the factor</li>
+                <LI><TT>error</TT> = 0 if no error, 1 if syntax error, 2 if overflow</li>
+             </UL>
+              <LI>Calls: Expr </li>
+              <LI>Here is a specification of Factor:
+              <ul>
+              IF <tt>M(BX)</tt> is '<tt>(</tt>' THEN<br>
+                        <ul>
+                        Increment <tt>BX</tt> to point to expression within parentheses<br>
+                        Call Expr to obtain the value <i>v</i> of this expression<br>
+                        IF <tt>error</tt> = 0 THEN <br>
+                                <ul>
+                                IF <tt>M(BX)</tt> is '<tt>)</tt>' THEN Increment <tt>BX</tt> ELSE <tt>error</tt> := 1 END IF<br>
+                                </ul>
+                        END IF<br>
+                        </ul>
+              ELSE IF <tt>M(BX)</tt> is '<tt>-</tt>' or a digit THEN<br>
+                        <ul>
+                        REPEAT Store <tt>M(BX)</tt> in a buffer and increment <tt>BX</tt><br>
+                        UNTIL <tt>M(BX)</tt> is not a digit<br>
+                        Call ascbin to convert the buffered number to a binary value <i>v</i><br> 
+                        IF no digits in buffer THEN <tt>error</tt> := 1 <br>
+                        ELSE IF too many digits THEN <tt>error</tt> := 2 <br>
+                        END IF
+                        </ul>
+              ELSE <tt>error</tt> := 1<br>
+              END IF <br>
+              Return with the value <i>v</i> in <tt>AX</tt> and the new <tt>BX</tt><br> 
+              </ul>
+              </LI></UL></TD></TR></TBODY></TABLE>
+      <H2>Friendly Advice</H2>
+      <UL>
+        <LI>The <TT>libmp3.lib</TT> file contains executable library subroutines 
+        for each of the routines that you need to implement. The library 
+        subroutines enable you to run the program and understand how it works before 
+        you implement it. You can test your program with any combinations of 
+        your own code and library subroutines. You will receive credit only for 
+        the subroutines that you implement yourself. </li>
+        <li>When you use a library subroutine, declare it in an <tt>EXTERN</tt> statement.</li>
+        <li>To allow a library subroutine to call one of your own subroutines, declare your subroutine
+        name and <tt>error</tt> in a <tt>GLOBAL</tt> statement.</li>
+        <LI>You may define new memory variables as needed. Variables associated 
+        with a subroutine may be declared between the header and the first 
+        instruction of the subroutine. </li>
+        <LI>Each subroutine should save and restore any registers that it uses, 
+        except for registers that deliver subroutine outputs. The caller may use 
+        registers without outputs and expect them to remain unchanged. </li>
+        <li>If you use <tt>PUSHA</tt> and <tt>POPA</tt> in your subroutines, be sure to return the correct values
+        in <tt>AX</tt> and <tt>BX</tt>.</li>
+        <LI>To develop GetEx, you may modify GetStr from MP2. </li>
+        <LI>Monitor the course WebBoard for clarifications and help.</li> 
+        <LI>START EARLY! </LI></UL>
+      <H2>Demonstration, Documentation, and Grading</H2>
+      <P>Demonstrate your program to an ECE 390 staff member. You will be asked 
+      to show how the stack grows to handle an expression with parentheses.</P>
+      <P>As in previous MPs, keep an MP development log and write a cover memo, which 
+      should address the following questions: 
+      <UL>
+        <LI>How much time did you spend on each subroutine, from planning and 
+        design through final debugging? 
+        <LI>What kinds of defects (bugs) did you find during the development of 
+        the program? When did you discover these defects (during code review or 
+        during testing)? How did you find them? 
+        <LI>What did you learn about design, coding, testing, and debugging in 
+        this MP? 
+        <LI>What went well in your work on this MP? What did not? 
+        <LI>What you would do differently for the next MP? </LI></UL>
+      <P>After the demonstration, submit your program and cover memo. Your 
+      program will be graded according to the clarity of your design and the 
+      quality of your documentation.</P>
+      <P>Gradesheet:<BR>MainLoop 5 points, GetEx 6 points, Expr 12 points, Term 12 points, Factor, 15 points,
+      <BR>Style and documentation 6 points, Cover memo 4 
+      points</P>
+      <HR>
+
+      <H2>mp3.asm (program framework)</H2><FONT size=-1>
+<PRE>
+; MP3 - Arithmetic Expressions
+;
+; Your name
+; Date
+;
+; This program evaluates an arithmetic expression with parentheses.
+
+;; Michael Loui
+;; 11 September 2004
+
+        BITS    16
+
+;====== SECTION 1: Define constants =======================================
+
+        CR      EQU     0Dh
+        LF      EQU     0Ah
+        BS      EQU     08h
+        ESC     EQU     1Bh             ; ESC key
+        SPACE   EQU     20h
+        MaxLen  EQU     60              ; Maximum length of input string
+
+; You may define additional constants here
+
+;====== SECTION 2: Declare external procedures ============================
+
+EXTERN  kbdin, dspout, dspmsg, dosxit, ascbin, binasc
+EXTERN  libMainLoop, libGetEx, libExpr, libTerm, libFactor
+GLOBAL  GetEx, Expr, Term, Factor, error
+
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        RESB      256*8
+stacktop:
+        RESB    0                       ; NASM bug workaround
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+
+prompt  DB      CR,LF,LF,'Expression: ','$'
+errmsg  DB      CR,LF,'Syntax error','$'
+oflomsg DB      CR,LF,'Overflow','$'
+error   DB      0
+
+;You may declare additional variables here
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        MOV     AX, CS                  ; Initialize Default Segment register
+        MOV     DS, AX
+        MOV     AX, stkseg              ; Initialize Stack Segment register
+        MOV     SS, AX
+        MOV     SP, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+main:
+        CALL    MainLoop
+        CALL    mp3xit
+        
+
+MainLoop:
+        CALL    libMainLoop
+        RET
+
+GetEx:
+        CALL    libGetEx
+        RET
+
+Expr:
+        CALL    libExpr
+        RET
+        
+Term:
+        CALL    libTerm
+        RET
+
+Factor:
+        CALL    libFactor
+        RET
+
+</PRE></FONT></TD></TR></TBODY></TABLE>
+<TABLE class=dark cellSpacing=0 cellPadding=0 width="100%">
+  <TBODY>
+  <TR>
+    <TD><A href="http://courses.engr.illinois.edu/ece390/"><IMG height=17 alt="" 
+      src="MP3F04_files/go-back.gif" width=16>Return to ECE390 Home Page</A></TD>
+    <TD align=right>Fall 2004</TD></TR></TBODY></TABLE></BODY></HTML>

@@ -1,0 +1,390 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+   <TITLE>ECE291 Machine Problem 2</TITLE>
+   <META NAME="GENERATOR" CONTENT="Mozilla/3.01Gold (Win95; U) [Netscape]">
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<TABLE CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TD align=left   width=33%>ECE291</TD>
+
+<TD align=center width=34%>Computer Engineering II</TD>
+
+<TD align=right  width=33%>Plavcan, Spring 1997</TD>
+</TR>
+</TABLE>
+
+<H1 ALIGN=CENTER>Machine Problem 2: Infix Calculator</H1>
+
+<CENTER><TABLE BORDER=1 CELLPADDING=3 WIDTH="60%" >
+<TR>
+<TD align=right><B>Assigned</B></TD>
+
+<TD>Thursday 6/26/97</TD>
+</TR>
+
+<TR>
+<TD align=right><B>Due Date</B></TD>
+
+<TD>Tuesday 7/8/97</TD>
+</TR>
+
+<TR>
+<TD align=right><B>Purpose</B></TD>
+
+<TD>Learn to program and debug modular assembly code.<BR>
+Practice coding arithmetic and logical operations.<BR>
+Communicate with a human via text-based I/O. <BR>
+Use a recursive algorithm to solve a problem.</TD>
+</TR>
+
+<TR>
+<TD align=right><B>Points</B></TD>
+
+<TD>50</TD>
+</TR>
+</TABLE></CENTER>
+
+<H2>Introduction</H2>
+
+<UL>
+<P>You know, I never have my calculator around when I&nbsp;really need
+it! But I&nbsp;usually have my 8-pound laptop,<BR>
+which is great at math, if only I had a calculator program... For this
+assignment, you will develop a program which can handle simple arithmetic
+and logic statements, and which can group expressions together.</P>
+</UL>
+
+<H2>Problem Description</H2>
+
+<UL>
+<P>The calculator will evaluate expression in left-to-right order, unless
+they are grouped together using parentheses ( ). All part of the expression
+will be separated from each other by one or more spaces. The calculator
+should recognize all number in the range -32768 ... 32767, parentheses,
+and the following eight operations:</P>
+
+<CENTER><TABLE BORDER=1 WIDTH="40%" >
+<TR>
+<TD><FONT SIZE=-1>+</FONT></TD>
+
+<TD><FONT SIZE=-1>Addition</FONT></TD>
+</TR>
+
+<TR>
+<TD><FONT SIZE=-1>-</FONT></TD>
+
+<TD><FONT SIZE=-1>Subtraction</FONT></TD>
+</TR>
+
+<TR>
+<TD><FONT SIZE=-1>/</FONT></TD>
+
+<TD><FONT SIZE=-1>Signed Division</FONT></TD>
+</TR>
+
+<TR>
+<TD><FONT SIZE=-1>*</FONT></TD>
+
+<TD><FONT SIZE=-1>Signed Multiplication</FONT></TD>
+</TR>
+
+<TR VALIGN=CENTER>
+<TD><FONT SIZE=-1>&amp;</FONT></TD>
+
+<TD VALIGN=CENTER><FONT SIZE=-1>Logical AND</FONT></TD>
+</TR>
+
+<TR>
+<TD><FONT SIZE=-1>|</FONT></TD>
+
+<TD><FONT SIZE=-1>Logical OR</FONT></TD>
+</TR>
+
+<TR>
+<TD><FONT SIZE=-1>^</FONT></TD>
+
+<TD><FONT SIZE=-1>Logical XOR</FONT></TD>
+</TR>
+
+<TR>
+<TD><FONT SIZE=-1>%</FONT></TD>
+
+<TD><FONT SIZE=-1>Modulus (Signed Remainder)</FONT></TD>
+</TR>
+</TABLE></CENTER>
+</UL>
+
+<H2>Sample Output</H2>
+
+<UL>
+<LI>Before you begin, be sure that you fully understand the assignment.
+Perhaps the best way to understand how the program works is to watch it
+operate. Visit the lab or download the code <a href="mp2.zip">mp2.zip</a> and run the library-based MP2SOL.EXE.
+</LI>
+
+<LI>Actual Output from Library-based MP2SOL.EXE <TT>(MP2.OUT)</TT> </LI>
+
+<TABLE BORDER=1 CELLPADDING=3 >
+<TR>
+<TD>
+<PRE>F:\MP2&gt;mp2sol
+ECE291 Infix calculator, Solution!
+
+=&gt;3 + 4
+The result is: 7
+
+=&gt; 5 - 32
+The result is: -27
+
+=&gt; ( ( 3 + 4 ) / 2 - 3 ) + 57 / -2
+The result is: -28
+
+=&gt; ( 4545 / 3 ) &amp; 255 + 2
+The result is: 237
+
+=&gt; ( 3 - 5 ) - ( 5 / 3 )
+The result is: -3
+
+=&gt; 23333 ^ -6786
+The result is: -16805
+
+=&gt;
+MP2XIT - This program used:
+InputLine
+ValidChar
+Solve
+Parse
+FindToken
+LibMain
+</PRE>
+</TD>
+</TR>
+</TABLE>
+</UL>
+
+<H2>Implementation</H2>
+
+<P>The structure for this machine problem has already been defined to consist
+of the subroutines listed below. Once you understand the structure of the
+program, begin by coding the MAIN routine. There are library routines for
+all functions. You are encouraged to use these functions while you are
+debugging your code. </P>
+
+<P>Once you have coded your own MAIN routine, you may write the other routines
+in any order that you wish. For all procedures, input and output values
+are passed to and from the procedures via registers. If a register is not
+specified as an output, its value should not be altered by the routine.
+Use the stack to push and pop registers. </P>
+
+<H2>Library Subroutines</H2>
+
+<UL>
+<P>The following routines are included in MP2.LIB for your use. <BR>
+<I><U>You must replace these routines with your own code. </U></I></P>
+</UL>
+
+<OL>
+<TABLE BORDER=1 WIDTH="90%" >
+<TR VALIGN=TOP>
+<TD><B><FONT SIZE=+1>InputLine</FONT></B></TD>
+
+<TD>Read a string of characters from the keyboard 
+<P><U>Inputs:</U> <BR>
+BX - pointer to a buffer in memory<BR>
+CL - length of buffer<BR>
+<U>Outputs:<BR>
+</U>CL - length of string<BR>
+<U>Uses:</U> <BR>
+kbdin, dspout</P>
+
+<P>InputLine reads from the keyboard up to CL chracters, and will allow
+a user to backspace to erase their mistakes. Inputline will accept any
+characters, and will terminate when the user hits the return key. Unlike
+text files, the return key produes only a CR. Use kbdin to read characters,
+dspout to print them. The string pointed to by BX is filled with the string
+typed, and has a NULL as the last character.</P>
+</TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD><B><FONT SIZE=+1>ValidChar</FONT></B></TD>
+
+<TD>Decide whether a charcter is in the set '0123456789 +-/*&amp;^|%()'
+
+<P><U>Inputs:<BR>
+</U>AL - character to be checked<BR>
+<U>Outputs:<BR>
+</U>Zero flag will be set if character is valid, cleared if invalid</P>
+
+<P>ValidChar checks a single character. There are 21 different valid characters
+that are acceptable.</P>
+</TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD><B><FONT SIZE=+1>FindToken</FONT></B></TD>
+
+<TD>Scan for and copy a word from one string to another 
+<P><U>Inputs:</U> <BR>
+SI- pointer to starting point in source buffer<BR>
+DI - pointer to output buffer<BR>
+<U>Outputs:<BR>
+</U>SI - first non-space character following the word</P>
+
+<P>FindToken reads from the input string, byte by byte, and copies to the
+output string. First it reads (but does not copy) leading spaces. When
+it encounters a non-space character, it should begin copying characters
+to the output string, until it reads a NULL or a space. If it reads a space,
+it should read additional spaces until it again sees a non-space character.
+SI is moved to point to this character. The last character of the target
+string should be a '$' (so we can use ascbin or dspmsg on it!!!) </P>
+</TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD><B><FONT SIZE=+1>Parse</FONT></B></TD>
+
+<TD>Solve the value of a expression 
+<P><U>Inputs:<BR>
+</U>SI - pointer to NULL-terminated string containing the math expression<BR>
+<U>Outputs:<BR>
+</U>AX - result</P>
+</TD>
+</TR>
+
+<TR VALIGN=TOP>
+<TD><B><FONT SIZE=+1>Solve</FONT></B></TD>
+
+<TD>Calculates a single math/logic operation 
+<P><U>Inputs:</U> <BR>
+AX - first operand<BR>
+CX - second operand<BR>
+DL - operation: one of '+-/*&amp;^|%' (An ASCII character!)<BR>
+<U>Outputs:<BR>
+</U>AX - result of operation</P>
+
+<P>Hint: be extremely careful not to modify any registers other than the
+inputs/outputs. Use a string of all possible inputs to select the operation,
+then use a jump table to execute the code. There should only be a few&nbsp;(&lt;4)
+comparisons in your code for this function (though there will be quite
+a few jumps!)</P>
+</TD>
+</TR>
+
+<TR>
+<TD><B><FONT SIZE=+1>LibMain</FONT></B></TD>
+
+<TD>The code for main. Pseudocode: 
+<UL>
+<P>1. Print prompt<BR>
+2. Call InputLine. If zero charcters were read (just a CR), end program.<BR>
+3. Loop through all the characters, use Validchar to make sure they're
+ok.<BR>
+If not, print an error message, goto 1.<BR>
+4. Call Parse with SI pointing to the input buffer.<BR>
+5. Convert the result to an ASCII string. Print result message.<BR>
+6. Goto 1</P>
+</UL>
+</TD>
+</TR>
+</TABLE>
+
+<P>Hints:</P>
+
+<OL>
+<P>1. Use loops and strings to simplify character comparisons. The library
+version of Validchar had just<BR>
+ a few comparisons and 13 lines of code.</P>
+
+<P>2. Test simple cases first. Remember where numbers are stored, and push
+and pop them to save<BR>
+them where appropriate. BALANCE the STACK.</P>
+
+<P>3. Use CodeView when testing recursion to recover from crashes!</P>
+
+<P>4.Write and test each procedure separately, using library routines (known
+working code!)</P>
+</OL>
+
+<P>
+<HR></P>
+
+<H2>MP2.ASM</H2>
+
+<PRE>;
+; MP2.ASM
+;
+; A infix calculator for simple math
+; Uses memory operations and recursion/stack manipulation
+;
+;
+; Your Name Here
+; ECE291 Summer 1997
+; The Date Here
+;
+
+
+;============= Declare external references ===========
+;
+; These routines are in MP2.LIB, replace them with your own code
+;
+EXTRN libmain:near, inputline:near, validchar:near, parse:near
+EXTRN findtoken:near, solve:near
+
+; Freebies from MP2.LIB
+EXTRN dspmsg:near, kbdin:near, dspout:near, mp2xit:near
+
+;============= Define stack segment ==================
+
+stackseg SEGMENT STACK
+   db 512 dup ('STACK123')   ; 4 Kbytes of stack space
+stackseg ends
+
+
+;============= Define constants ======================
+
+CR EQU 0Dh                   ; carriage return
+LF EQU 0Ah                   ; linefeed
+NULL EQU 0
+BACK EQU 8                   ; backspace
+
+;============= Code segment begins ====================
+
+cseg SEGMENT PUBLIC
+ASSUME cs:cseg, ds:cseg, ss:stackseg, es:nothing
+
+;============= Define global variables ================
+
+buf db 80 dup (?)
+vchars db NULL,'()-0123456789 '
+ochars db '+-%/*^|&amp;'
+ansmsg db 'The result is: $'
+wrong  db 'Invalid character detected!',CR,LF,'$'
+prompt db CR,LF,'=&gt;$'
+nwline db CR,LF,'$'
+
+;============= Procedures go here =====================
+
+main PROC near
+   mov ax,cs
+   mov ds,ax                 ; set up data segment
+
+
+   call libmain              ; your program here!!!
+
+
+   call mp2xit               ; terminate program
+main endp
+
+cseg ENDS                    ; end code segment
+END main                     ; program starts with main
+
+
+</PRE>
+</OL>
+
+</BODY>
+</HTML>

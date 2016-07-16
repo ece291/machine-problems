@@ -1,0 +1,164 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>New Page 1</title>
+</head>
+
+<body>
+
+<h1 align="center"><font size="+2"><b><i>But What Do We Need to Know for the
+Exam!?</i></b></font></h1>
+<p>What's important?</p>
+<ol>
+  <li><a href="#1.  Memory Access">What happens when you access memory in Protected Mode?</a></li>
+  <li><a href="#2.  Protected Mode Differences">What's different about protected mode?&nbsp;&nbsp; (Things that have
+    nothing to do with NASM.)</a></li>
+  <li><a href="#3.  Funtion Calls">How do function calls work?</a></li>
+</ol>
+<p>When I answer my questions here, I give WAY more information than you need to
+give on the exam.&nbsp; Short answers that tell me, &quot;yeah, I guess this guy
+knows what's really going on&quot; will get full credit.</p>
+<h1 align="center"><font size="+2"><b><a name="1.  Memory Access">1.&nbsp; Memory Access</a></b></font></h1>
+<p>This is a Computer Engineering class.&nbsp; Knowing how memory works in a
+computer is very important.&nbsp; Don't memorize this -- it makes sense.&nbsp;
+If I told you, &quot;design a segmented memory system,&quot; this is probably
+what you'd design.&nbsp; If you can say that, you can come up with this
+yourself.</p>
+<p>The most complicated protected mode memory access can look something like
+this:&nbsp; <b><samp>mov eax, dword [gs:eax*4+edi+2000]</samp></b></p>
+<ol>
+  <li>It has to calculate the offset.
+    <ul>
+      <li>Read register eax</li>
+      <li>Shift it twice (because you can do this to one register in protected
+        mode.)</li>
+      <li>Add to it register edi</li>
+      <li>Add on the constant which the compiler calculates from variable
+        offsets or whatever.</li>
+    </ul>
+  </li>
+  <li>Read the info out of the Local Descriptor Table
+    <ul>
+      <li>The physical address of the LDT is stored in some register in the
+        processor, so it's got to get that.</li>
+      <li>In order to read the information, it has to know which entry in the
+        table to look at, so it reads the <b>gs</b> register.</li>
+      <li>Adds <b>gs</b> to the LDT register and reads the entries out of the
+        table:&nbsp; starting addr, max offset, info.</li>
+    </ul>
+  </li>
+  <li>Validate the access and throw an exception if it's not.
+    <ul>
+      <li>Make sure it's readable if you're reading.&nbsp; Make sure it's writeable
+        if you're writing.&nbsp; (This comes from info.)</li>
+      <li>Make sure the offset you calculates is less than or equal to the max
+        offset from LDT.</li>
+    </ul>
+  </li>
+  <li>Calculate the linear address
+    <ul>
+      <li>Add LDT's staring address to the calculated offset.</li>
+    </ul>
+  </li>
+  <li>Take that linear address and go through the virtual memory page tables to
+    get a physical address (which you'll learn enough about in 312 and any
+    Operating Systems classes you take.)</li>
+</ol>
+<p>We're not going to make you regurgitate this list, but as you write code, you
+should always keep in mind that this has to happen every time you access memory.&nbsp; What
+types of things could we ask?</p>
+<ul>
+  <li>How many places in memory does it actually have to look to do your one
+    access?</li>
+  <li>Here's the appropriate DPMI call.&nbsp; Get an LDT entry for 320x200 graphics
+    mode (Real mode A000:0000)&nbsp; What does this entry look like?</li>
+  <li>Here's the appropriate DPMI call.&nbsp; Prepare a DOS buffer for printing
+    out a string.</li>
+</ul>
+<h1 align="center"><font size="+2"><b><a name="2.  Protected Mode Differences">2.&nbsp; Protected Mode Differences</a></b></font></h1>
+<p>NASM is not protected mode.&nbsp; You can do protected mode in MASM.&nbsp;
+You can do real mode in NASM.&nbsp; 32-bit protected mode is all about the
+differences in hardware.&nbsp; So what was different because of NASM, and what
+actually needed protected mode hardware?</p>
+<table border="1" width="100%">
+  <tr>
+    <td width="50%">
+      <p align="center"><b>386 Protected Mode</b></td>
+    <td width="50%">
+      <p align="center"><b>NASM</b></td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <ul>
+        <li>Selectors, not Segments</li>
+        <li>32-bit registers</li>
+        <li>32-bit addresses</li>
+        <li>Memory access with <i>any</i> registers.</li>
+        <li>Ability to multiply one register by 2, 4, or 8 and add another
+          register.</li>
+        <li>Improved opcodes like <b><samp>shl eax, 5</samp></b></li>
+      </ul>
+    </td>
+    <td width="50%" valign="top">
+      <ul>
+        <li>Square brackets when you access memory</li>
+        <li>No variable types, so you need byte/word/dword</li>
+        <li>No square brackets when you don't.</li>
+        <li>No built in proc</li>
+        <li>291 Protected Mode Library</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+<p>What can we ask?&nbsp; We'll ask you to point out the places your code is different from
+8086 Real Mode code in MASM.</p>
+<h1 align="center"><font size="+2"><b><a name="3.  Funtion Calls">3.&nbsp; Funtion Calls</a></b></font></h1>
+<p>This is a Computer Engineering class.&nbsp; It's also important to know how
+function calls work in assembly and in high level languages.&nbsp; This was
+talked about in the lecture on C-Style procedures.&nbsp; This was talked about
+in the MP.&nbsp; This is another thing that makes <i>sense</i>.</p>
+<p>Given only
+instructions that operate on memory, if I told you &quot;divise a scheme to
+do recursive function calls,&quot; you would have come up with a scheme like
+this too.</p>
+<p><i><b>invoke</b></i></p>
+<ul>
+  <li><b>Push arguments</b> onto the stack, which decrements SP by the total
+    length of the arguments.&nbsp; (Where else are your arguments going to go?)</li>
+  <li><b>Call</b> the procedure.
+    <ul>
+      <li><b>Push return address</b> on the stack</li>
+      <li><b>Jump</b> to the procedure</li>
+    </ul>
+  </li>
+  <li><b>Add ESP,&nbsp; total length of arguments</b> to restore the stack to
+    where it was before.&nbsp; (You have to pop what you push.)</li>
+</ul>
+<p><i><b>proc</b></i></p>
+<ul>
+  <li><b>Push EBP</b> to save it's value.&nbsp; (<i>You</i> will access your
+    parameters by using BP, so you've got to save the previous routine's BP,
+    right?)</li>
+  <li><b>Mov EBP, ESP</b> so we have a reference to get the arguments.&nbsp;
+    (You're going to push things on the stack and call other routines, so you
+    can't access variables from ESP since that will be changing.)</li>
+</ul>
+<p><i><b>arg</b></i></p>
+<ul>
+  <li>Defines the offset constants from EBP.</li>
+</ul>
+<p><i><b>endproc</b></i></p>
+<ul>
+  <li><b>Mov ESP, EBP</b> to restore the stack pointer to what it was when we
+    entered.</li>
+  <li><b>Pop EBP</b> to restore it's value to the value the previous procedure
+    was using for <i>its</i> arguments.</li>
+  <li><b>Ret</b> to return to the procedure that called us.</li>
+</ul>
+
+</body>
+
+</html>

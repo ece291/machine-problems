@@ -1,0 +1,33 @@
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+(7)--3
+Verifying and parsing the string...
+(7)-Ä3
+7 * -Ä3
+7 * 3
+21
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+(8)~2
+Verifying and parsing the string...
+(8)~2
+8 * ~2
+8 * Ä3
+Ä24
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+
+
+LIBMP2 Ver 1.0 Calls
+-LibInput
+-LibCheckParens
+-LibParse
+-LibCheckDone
+-LibFindInner
+-LibFindOne
+-LibSolveOne
+-LibGetOp1
+-LibGetOp2

@@ -1,0 +1,63 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN"
+ "http://www.w3.org/TR/REC-html40/strict.dtd">
+<HTML>
+<HEAD><TITLE>ECE291: Machine Problem 1</TITLE>
+<LINK REL="stylesheet" HREF="/ece291/ece291.css">
+</HEAD>
+
+<body bgcolor="#ffffff" text="#000000" link="#31659c" vlink="#31659c" alink="#31659c" leftmargin=0 topmargin=0  marginheight=0 marginwidth=0>
+
+<table cellpadding=0 cellspacing=0 width=100% height="160">
+
+<tr>
+<td align="left" valign="top" width=50%>
+  <P><A HREF="/ece291"><img src="/ece291/icon/ece291.jpg" alt="" border=0 width="310" height="100"></A><BR>
+  <b>&nbsp;&nbsp;Computer Engineering II</b><BR>
+  <B>&nbsp;&nbsp;<font color=red>Machine Problem 1 (Due Thu Sep 13 5:00:00 pm)</font></b></P>
+</td>
+
+<TD ALIGN="RIGHT" VALIGN="CENTER" WIDTH="50%">
+
+<TABLE BORDER="0" WIDTH="100%" HEIGHT="100%" CELLSPACING="1" CELLPADDING="0">
+<TR><TD align="right" bgcolor="#EFEFEF"><A HREF="/ece291/schedule.html">Schedule</A>&nbsp;&nbsp;</TD><TD bgcolor="#EFEFEF">&nbsp;&nbsp;<a href="/ece291/labsched.html">Lab schedule</a></TD></TR>
+<TR><TD align="right"><a href="/ece291/hw.asp">Homework</a>&nbsp;&nbsp;</TD><TD>&nbsp;&nbsp;<a href="/ece291/books/nasm098d/html/nasmdoc0.html">NASM docs</a></TD></TR>
+<TR><TD align="right" bgcolor="#EFEFEF"><a href="/ece291/mp.asp">Machine Problems</a>&nbsp;&nbsp;</TD><TD bgcolor="#EFEFEF">&nbsp;&nbsp;<a href="/ece291/resources">Resources</a></TD></TR>
+<TR><TD align="right"><a href="/ece291/fp.asp">Final Project</a>&nbsp;&nbsp;</TD><TD>&nbsp;&nbsp;<a href="/ece291/photos">Photos</a></TD></TR>
+<TR><TD align="right" bgcolor="#EFEFEF"><a href="/ece291/grades">Gradebook</a>&nbsp;&nbsp;</TD><TD bgcolor="#EFEFEF">&nbsp;&nbsp;<a href="/ece291/feedback.asp">Feedback</a></TD></TR>
+<TR><TD align="right"><a href="/ece291/syllabus.html">Syllabus</a>&nbsp;&nbsp;</TD><TD>&nbsp;&nbsp;<a href="/ece291/archive">Archives</a></TD></TR>
+<TR><TD align="right" bgcolor="#EFEFEF"><a href="/ece291/lecture">Lectures</a>&nbsp;&nbsp;</TD><TD bgcolor="#EFEFEF">&nbsp;&nbsp;<a href="/ece291/resources/turbo.zip">Download NASM</a></TD></TR>
+<TR><TD align="right"><a href="/ece291">Home</a>&nbsp;&nbsp;</TD><TD>&nbsp;&nbsp;<a href="https://courses.engr.illinois.edu/ece291/admin">Restricted access</a></TD></TR>
+</TABLE>
+
+</TD></TR>
+
+<TR><TD COLSPAN="2" BGCOLOR="#31659c" HEIGHT="8"><IMG SRC="/ece291/icons/spacer.gif" WIDTH=100 HEIGHT=8></TD></TR>
+</TABLE>
+<P> </P>
+<table cellpadding=7 cellspacing=1 width=100% border=0>
+
+
+<tr><td colspan="2">
+<h3>When you submit this, the TA should:</h3>
+<ul><li>check your solutions,
+<li>ask a random question that tests your understanding of the MP,
+<li>assign points for each item on the list,
+<li>assign bonus and/or penalty points,
+<li>and handle the electronic handin.
+</ul>
+
+<table width=100%><tr bgcolor="#efefef" class="dark"><th>Functionality<th>Min<th>Max<th>Score<tr bgcolor="#efefef" class="dark" valign="middle"><td><strong>InterpretAmount</strong><td bgcolor="#efefef" class="dark" align="center" rowspan="3">0<td bgcolor="#efefef" class="dark" align="center" rowspan="3">11<td bgcolor="#efefef" class="dark" align="center" rowspan=3><tt><input type="text" size="4" maxlength="4" style="font-family:monotype" name="func0"></tt><tr><td style="padding-left:1cm">Verifies validity of the input<tr><td style="padding-left:1cm">Proper amounts are shown for each entry (<tt>dx</tt> was set correctly)<tr bgcolor="#efefef" class="dark" valign="middle"><td><strong>InterpretTag</strong><td bgcolor="#efefef" class="dark" align="center" rowspan="3">0<td bgcolor="#efefef" class="dark" align="center" rowspan="3">11<td bgcolor="#efefef" class="dark" align="center" rowspan=3><tt><input type="text" size="4" maxlength="4" style="font-family:monotype" name="func1"></tt><tr><td style="padding-left:1cm">Verified validity of the input<tr><td style="padding-left:1cm">Proper tags are shown for each entry (<tt>cl</tt> was set correctly)<tr bgcolor="#efefef" class="dark" valign="middle"><td><strong>AddDeposit</strong><td bgcolor="#efefef" class="dark" align="center" rowspan="3">0<td bgcolor="#efefef" class="dark" align="center" rowspan="3">8<td bgcolor="#efefef" class="dark" align="center" rowspan=3><tt><input type="text" size="4" maxlength="4" style="font-family:monotype" name="func2"></tt><tr><td style="padding-left:1cm">Displays appropriate menus<tr><td style="padding-left:1cm">Adds entry when completed correctly or aborts cleanly<tr bgcolor="#efefef" class="dark" valign="middle"><td><strong>AddWithdraw</strong><td bgcolor="#efefef" class="dark" align="center" rowspan="3">0<td bgcolor="#efefef" class="dark" align="center" rowspan="3">8<td bgcolor="#efefef" class="dark" align="center" rowspan=3><tt><input type="text" size="4" maxlength="4" style="font-family:monotype" name="func3"></tt><tr><td style="padding-left:1cm">Displays appropriate menus<tr><td style="padding-left:1cm">Adds entry when completed correctly or aborts cleanly<tr bgcolor="#efefef" class="dark" valign="middle"><td><strong>DisplayEntry</strong><td bgcolor="#efefef" class="dark" align="center" rowspan="2">0<td bgcolor="#efefef" class="dark" align="center" rowspan="2">11<td bgcolor="#efefef" class="dark" align="center" rowspan=2><tt><input type="text" size="4" maxlength="4" style="font-family:monotype" name="func4"></tt><tr><td style="padding-left:1cm">Displays proper withdrawal/deposit messages, amount, and tag<tr bgcolor="#efefef" class="dark" valign="middle"><td><strong>DisplayAllEntries</strong><td bgcolor="#efefef" class="dark" align="center" rowspan="2">0<td bgcolor="#efefef" class="dark" align="center" rowspan="2">7<td bgcolor="#efefef" class="dark" align="center" rowspan=2><tt><input type="text" size="4" maxlength="4" style="font-family:monotype" name="func5"></tt><tr><td style="padding-left:1cm">Displays all, and only all, entries<tr bgcolor="#efefef" class="dark" valign="middle"><td><strong>DisplayAcademicEntries</strong><td bgcolor="#efefef" class="dark" align="center" rowspan="3">0<td bgcolor="#efefef" class="dark" align="center" rowspan="3">8<td bgcolor="#efefef" class="dark" align="center" rowspan=3><tt><input type="text" size="4" maxlength="4" style="font-family:monotype" name="func6"></tt><tr><td style="padding-left:1cm">Displays all entries only with academic related tags set<tr><td style="padding-left:1cm">Displays msg_NoEntries if no matching entries<tr bgcolor="#efefef" class="dark" valign="middle"><td><strong>DisplayTotal</strong><td bgcolor="#efefef" class="dark" align="center" rowspan="2">0<td bgcolor="#efefef" class="dark" align="center" rowspan="2">11<td bgcolor="#efefef" class="dark" align="center" rowspan=2><tt><input type="text" size="4" maxlength="4" style="font-family:monotype" name="func7"></tt><tr><td style="padding-left:1cm">Displays correct total and appropriate message<tr bgcolor="#efefef" class="dark"><th>Score Modifiers<th>Min<th>Max<th>Score<tr bgcolor="#efefef" class="dark"><tr bgcolor="#efefef" class="dark" valign="middle"><td><strong>Modularity</strong><td><td><td bgcolor="#efefef" class="dark" align="center" rowspan="3"><tt><input type="text" size="4" maxlength="4" style="font-family:monotype" name="code0"></tt><tr><td style="padding-left:1cm">Program should follow all specifications of assignment<td align="center" bgcolor="#efefef" class="dark"><td align="center" bgcolor="#efefef" class="dark"><tr><td style="padding-left:1cm">Used hardcoded address rather than pointers<td align="center" bgcolor="#efefef" class="dark">-3<td align="center" bgcolor="#efefef" class="dark">0<tr bgcolor="#efefef" class="dark" valign="middle"><td><strong>Technique and Style</strong><td><td><td bgcolor="#efefef" class="dark" align="center" rowspan="5"><tt><input type="text" size="4" maxlength="4" style="font-family:monotype" name="code1"></tt><tr><td style="padding-left:1cm">Program should be comprised of compact and efficient code<td align="center" bgcolor="#efefef" class="dark"><td align="center" bgcolor="#efefef" class="dark"><tr><td style="padding-left:1cm">Awkward use of conditional jumps or loops<td align="center" bgcolor="#efefef" class="dark">-2<td align="center" bgcolor="#efefef" class="dark">0<tr><td style="padding-left:1cm">Extraneous use of registers and/or variables<td align="center" bgcolor="#efefef" class="dark">-3<td align="center" bgcolor="#efefef" class="dark">0<tr><td style="padding-left:1cm">Excessive coding<td align="center" bgcolor="#efefef" class="dark">-3<td align="center" bgcolor="#efefef" class="dark">0<tr bgcolor="#efefef" class="dark" valign="middle"><td><strong>Comments</strong><td><td><td bgcolor="#efefef" class="dark" align="center" rowspan="5"><tt><input type="text" size="4" maxlength="4" style="font-family:monotype" name="code2"></tt><tr><td style="padding-left:1cm">Program should have clear and precise comments<td align="center" bgcolor="#efefef" class="dark"><td align="center" bgcolor="#efefef" class="dark"><tr><td style="padding-left:1cm">Excessive "sportscaster" commenting<td align="center" bgcolor="#efefef" class="dark">-2<td align="center" bgcolor="#efefef" class="dark">0<tr><td style="padding-left:1cm">No Function Headers<td align="center" bgcolor="#efefef" class="dark">-2<td align="center" bgcolor="#efefef" class="dark">0<tr><td style="padding-left:1cm">Sparse and/or unclear comments<td align="center" bgcolor="#efefef" class="dark">-3<td align="center" bgcolor="#efefef" class="dark">0<tr bgcolor="#efefef" class="dark" valign="middle"><td><strong>Penalty/Bonus</strong><td><td><td bgcolor="#efefef" class="dark" align="center" rowspan="3"><tt><input type="text" size="4" maxlength="4" style="font-family:monotype" name="code3"></tt><tr><td style="padding-left:1cm">Before Thu Sep 13 5:00:00 pm: +2pt/weekday<td align="center" bgcolor="#efefef" class="dark">0<td align="center" bgcolor="#efefef" class="dark">6<tr><td style="padding-left:1cm">After Thu Sep 13 5:00:00 pm: -10pts/weekday<td align="center" bgcolor="#efefef" class="dark">-50<td align="center" bgcolor="#efefef" class="dark">0</table>
+
+<tr bgcolor="#efefef" class="dark">
+ <th>Source .asm: <input type="file" name="asmsource" size="15"></th>
+ <th><input type=submit name=.submit value="Submit MP">
+ <input type="hidden" name="mpnum" value="1">
+ <input type="hidden" name="filename" value="D:/wwwroots/courses/ece291/mpsource/fall2001/mp1/urman">
+ <input type="hidden" name="student" value="urman"></th>
+ 
+</td></tr></table>
+<table width="100%" class="dark" cellspacing="0" cellpadding="0">
+<tr><td><a href="/ece291/"><img src="/ece291/icon/go-back.gif" alt="" width="16" height="17" /> Return to ECE291 Home Page</a></td>
+<td align="right">Fall 2001</td></tr></table>
+
+</body></html>

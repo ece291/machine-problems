@@ -1,0 +1,566 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 5</title>
+</head>
+
+<body bgcolor=ffffff>
+
+<table width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Lockwood, Spring 1997</td></tr></table>
+<center><h1>Machine Problem 5: Network Tag<br> Part II (Network Routines)</h1>
+</center>
+
+
+<p>
+<center><table border=1 width=60%>
+ <tr><td align=right><b>Assigned</b></td>
+    <td>Thursday, April 22, 1997 </td></tr>
+ <tr><td align=right><b>Due Date</b></td>
+    <td>wednesday, May 7, 1997, 5pm</td></tr>
+   <tr><td align=right><b>Purpose: </b></td>
+    <td>NetBIOS & datagram communications 
+</td></tr>
+   <tr><td align=right><b>Points</b></td><td>50</td></tr>
+</table></center>
+
+<h2>Introduction</h2>
+In the first part of MP5, we developed procedures
+to read a bitmapped image from a file, store the data into memory,
+and display an image to the VGA screen.  
+For <i>part II</i> of MP5, we will complete the game of <i>Network Tag</i>
+by adding network play, joystick control, and game play algorithms.
+Network tag can be played with up 63 players simultaneously.  
+<p>
+We each represent ourself in the game with our unique bitmapped image. 
+When we enter the game, we transmit our 32x32, 16-color, BMP image
+to everyone else in the game within a HELLO message.  
+Upon receiving a HELLO message, other players
+store our image into a variable called <i>ImageArray</i> and note that we
+are active by updating a flag in the <i>Player</i> variable.
+Once every two seconds, we retransmit our HELLO message to reach new players 
+that may have just entered the game.
+<p>
+We control our movement via the joystick.  
+Each time we read our
+joystick, we update our position and transmit an UPDATE message to
+the other players in the game.  
+We learn of the positions
+of other players by listening to the network.  
+We each store information from other players in our local <i>Player</i>
+variable.
+Positions are specified as an offset on a mode-13 VGA screen.  
+Our movements are limited to within
+the perimeter of the 320x200-pixel screen.  
+<p>
+When the game first begins, one player may become <i>it</i> by pressing the 
+lower fire button on the joystick.  For the rest of the game, 
+<i>It</i>  is transferred by contact with another player.  
+when we become <i>it</i>, we cannot <i>tag back</i> 
+the player that just touched us.  Additional fields in the UPDATE message
+are used to control the <i>it</i> protocol.
+<p>
+We can leave the game at any time by pressing both buttons on the joystick.
+Just before we exit, we send a GOODBYE message to the other players in
+the game to let them know we are no longer active in the game.
+
+
+<h2>Network Protocol</h2>
+As described above, there are three
+types of messages are exhanged between players: HELLO, UPDATE, and GOODBYE.
+All messages begin with a byte that identifies the message type.
+The next byte of the message identifies the player that sent the message.
+The rest of the bytes contain the message data.
+The structure definitions for these messages are 
+given at the beginning MP5.ASM.  
+<p>
+Multicast Datagrams are used to transmit messages among players.
+All Messages are sent to a NetBIOS group called <i>ECE291MP5</i> are received
+by all players in the game.  When a player first joins they game, they
+are given the first available name between 
+<i>ECE291Player00</i> and <i>ECE291Player63</i>.  
+<p>
+To simplify the programming for NetBIOS, you have been given NETLIB.LIB --
+a library which provides function calls to send and receive datagrams.
+The NetLIB library calls are summarized below.
+Additional documentation about NetBIOS and Lockwood's NetLIB functions 
+can be found on our 
+<a href="http://www.ece.uiuc.edu/~ece291/class-resources/">ECE291 
+Class Resources</a> Web Page.
+<p>
+<blockquote><font size=-1><xmp>
+NetInit:    Initializes Network - Returns: Player num in AL
+SendPacket: Transmits data in TXBuffer - Inputs: AX = Length
+NetRelease: Release network resources 
+
+netpost : Procedure called when datagram arrives.
+          Called with AX = Length, BX = Pointer to RXBuffer
+          Must preserve all registers modified
+          Ends with RET (not IRET)
+
+TXBuffer: Transmit Buffer (1024 bytes) - Write your data here 
+RXBuffer: Receive Buffer  (1024 bytes) - Read from here !
+</xmp></font></blockquote>
+
+<h2>Important Variables</h2>
+
+To understand how network tag operates, consider 
+the information stored at each node.
+
+<ul>
+<li><b>Player:</b> 64-element array of PlayerType. <br>
+       Stores position and status of remote users.  <br>
+       Modified when packets arrive and used to redraw the screen.
+<li><b>ImageArray:</b> 64-element array of 1024-byte, uncompressed images.<br>
+       Holds local copy of remote user images.
+<li><b>MyNum</b>: My player number (as determined by NetINIT)
+<li><b>ItNum</b>: The number of the player that I think is it.
+<li><b>TagNum</b>: The number of the player that tagged me
+<li><b>MyPosition</b>: My location on the screen
+</ul>
+<h2>Problem Assignment </h2>
+To help you save time, I have given you the source code for the main 
+procedure.   This code controls the flow of the game and
+transmits packets to the other players in the game.  
+It is your job to first read and understand this code.
+You will then complete the program
+using your own routines from parts I and II of this MP.
+<p>
+You may cut & paste your graphic routines from Part I's 
+MP5GR.ASM into Part II's MP5.ASM.  
+Edit MP5.ASM to add your new procedures for 
+joystick control, data reception, and updating the screen.
+
+
+
+
+
+<h2>Network, Joystick, and Screen Routines</h2>
+<ul>
+<li><i>All routines should preserve the values of
+       any registers modified</i>
+<li><i>Use proper segments where needed</i><p>
+
+<li><font size=+2><b>JoyCalibrate</b></font>
+  <ul>
+  <li><b>Purpose:</b> Calibrate joystick. 
+  <li><b>Input: </b> Joystick status register
+  <li><b>Output: </b> Variables of your choosing
+  <li><b>Description:</b> 
+     This routine is called at the beginning of the program to calibrate
+     the position of the joystick and compensate for the variations 
+     in resistance typically found between different hardware devices.
+     Assume that the stick is in the middle position when the routine
+     is called.
+  </ul><p>
+
+<li><font size=+2><b>JoyStickMove</b></font>
+  <ul>
+  <li><b>Purpose:</b> Read and process commands from the joystick
+  <li><b>Variables Used: </b> Values set by JoyCalibrate 
+    <ul>
+    <li>MyPosition: Allow player to move up, down, left, or right <br>
+        (but not outside perimeter of the screen)
+    <li>ItNum/TagNum: Set ItNum=MyNum and TagNum=63 if button 0 pressed <br>
+        (allow me to become <i>it</i>)
+    <li>ExitFlag: Set ExitFlag=1 if both joystick buttons are pressed <Br>
+        (allow program to exit)
+    </ul>
+  </ul><p>
+
+<li><font size=+2><b>ReDrawScreen</b></font>
+  <ul>
+  <li><b>Purpose:</b> Redraw the screen with up to 63 players
+  <li><b>Array Variable Used: </b> Player
+  <li><b>Output: </b> Writes directly to screen
+  <li><b>Calls Functions: </b> DrawBox, DrawEmptyBox, DrawBMP
+  <li><b>Description</b>: 
+    Redraw each ACTIVE player on the screen at their current position.<br>
+    Outline the player with an empty box when they are <i>it</i>. <br>
+    If a player is DEPARTING, remove their image and set their staus
+    to INACTIVE.
+
+   </ul><p>
+
+<li><font size=+2><b>NetPost</b></font>
+  <ul>
+  <li><b>Purpose:</b> Process Incoming Datagrams 
+  <li><b>Array Variables Modified: </b> Player
+  <li><b>Output registers: </b> None! (processed within an interrupt)
+  <li><b>Calls Functions: </b> StoreBMP 
+  <li><b>Description</b>: The NetPost function is called by 
+        NetLIB whenever a datagram
+        arrives.  The actions taken depend on the message type.
+        <ul>
+        <li>HELLO: Set the player status to active
+            and store their image to the array.
+        <li>UPDATE: 
+          <ul>
+          <li>Update the player's current position. <br>
+          <li>If some other player is <i>it</i> AND that player 
+              overlapping me AND that player wasn't tagged by me, 
+               then I should become <i>it</i>.
+               (ItNum=MyNum, TagNum=PlayerNum). <br>
+          <li>If some other player is <i>it</i> AND that player 
+              is NOT overlapping me
+               then let him/her become <i>it</i>
+                (ItNum=PlayerNum). <br>
+          <li>If some other player is <i>it</i> AND that player 
+               was tagged by me, let him/her continue to be <i>it</i> 
+               then let him/her become <i>it</i>
+                (ItNum=PlayerNum). <br>
+           </ul>
+        <li>UPDATE: Set the player status to departing.
+              Let the ReDrawScreen take care of removing
+              the user from the screen.
+        </ul>
+
+  <li><b>Hints:</b>
+     <ul>
+     <li>You will receive messages from yourself
+     </ul>
+
+    </ul>
+  </ul><p>
+
+<hr>
+<h2>Points</h2>
+You will earn the following points for replacing each of the subroutines
+with your own code.
+
+<ul>
+<li>CalibrateJoy: 4 pts
+<li>JoyStickMove: 4 pts 
+<li>ReDrawScreen: 9 pts
+<li>NetPost: 9 pts 
+</ul>
+
+
+<h2>Preliminary Procedure </h2> 
+<ul>
+<li>Additional Files for Part II of MP5:
+    <ul>
+    <li><tt>MP5.EXE</tt>: Complete Library-built MP5 Program
+    <li><tt>MP5.ASM</tt>: Starting code for complete MP5
+    <li><tt>LIBMP5.LIB</tt>: Library of all MP5 Routines 
+    <li><tt>NETLIB.LIB</tt>: NetBIOS library routines (Free)
+    <li><tt>MACROS.INC</tt>: Useful macros for moving strings and bytes
+    <li><tt>Makefile</tt>: Updated for Part II
+    </ul>
+
+<li>You can obtain these files via one of the methods listed below:
+  <ul>
+  <li>In lab, copy all files from the MP5 directory to your directory 
+      with the following command:<br>
+      <tt>xcopy /s G:\ECE291\MP5\ F:\MP5</tt> <br>
+      <ul>
+      <li><i>Note:</i> If you have already started coding MP5GR.ASM, be 
+        sure NOT to write over your existing program!
+      <li><i>Note:</i> Drive letters have changed with the installation of
+         the new machines.  Your letters may vary.
+         If necessary, use Windows explorer to map the network drive
+         ECEUILNT\\PC_APPS to <tt>G:</tt></i>.
+      <li>All MP5 Files (both parts I and II) can be download as: 
+         <a href="mp5.zip">MP5.ZIP</a> 
+      </ul>
+  </ul>
+</ul>
+
+<h2>Clearifications and Erratica </h2> 
+<ul>
+  <li><i>Posted here and/or in newsgroup if necessary</i>
+</ul>
+
+<hr>
+<h2>MP5.ASM</h2>
+<font size=-2><xmp>
+        PAGE 75, 132
+        TITLE   MP5.ASM   your name
+
+Comment *
+        NETWORK TAG - Network Routines
+        ------------------------------
+        ECE291: Machine Problem 5-2
+        Prof. John W. Lockwood
+        University of Illinois, Dept. of Electrical & Computer Engineering
+        Spring 1997
+        Documentation: http://www.ece.uiuc.edu/~ece291/mp/mp5/mp5.html
+        Revision 1.0
+        *
+
+.MODEL COMPACT  ; Allow Multiple Segments
+.486            ; Enable use of 32-bit registers and 286/386/486 Registers
+
+OPTION NOOLDMACROS 
+
+; ===== Handy General-Purpose MACROS ======================================
+
+INCLUDE MACROS.INC
+
+;====== Bitmap structure definition =======================================
+
+BMPTYPE STRUC
+; --- BitMapFileHeader --- ; 14 bytes
+  BFType            DB 'BM' ; File Type
+  BFSize            DD   ?  ; File Size (in Bytes)
+  BFReserved1       DW   0  ; Reserved 
+  BFReserved2       DW   0  ;    "
+  BFOffBits         DD   ?  ; Offset to start of image data 
+; --- BitMapInfoHeader --- ; 40 bytes
+  BISize            DD   ?  ; Size of BitMapInfoHeader (28h = 40d)
+  BIWidth           DD   ?  ; # Pixel Rows 
+  BIHeight          DD   ?  ; # Pixel Columns
+  BIPlanes          DW   1  ;
+  BIBitCount        DW   ?  ; Log2(palette size) = 4 for 16-color image
+  BICompression     DD   0  ; RGB = 0 = Uncompressed 
+  BISizeImage       DD   ?  ; Size of Image (Bytes)
+  BIXPelsPerMeter   DD   ?  ;
+  BIYPelsPerMeter   DD   ?  ;
+  BIColorsUsed      DD   0  ; 0=All
+  BIColorsImportant DD   0  ;
+; --- Color Table --- ; 64 Bytes
+  RGBQuad           DB 16 dup ( 4 dup(?) ) ; Blue, Green, Red, Unused
+; --- Image Data Follows ; n Bytes
+  ImageData         DB 512 dup(0) ; Image data (bottom row first)
+BMPTYPE ENDS
+
+;====== Network Info =====================================================
+
+; ---- Network Player Information ---
+
+INACTIVE     EQU 0
+ACTIVE       EQU 1
+DEPARTING    EQU 2
+
+PlayerType STRUC
+  OldPosition  DW 320*100+160-16  ; Location specified as VGA MODE-13 Offset
+  CurPosition  DW 320*100+160-16  ;   (Start at center of the screen)
+  Status       DB INACTIVE        ; All Players Initially Inactive
+PlayerType ENDS
+
+; ---- Network Message Types & Formats ---
+
+HELLO   EQU 33
+UPDATE  EQU 21
+GOODBYE EQU 22
+
+GenericMsg STRUC          ; Generic Message Structure
+  MsgType   db ?          ; 1-byte packet type identifier (See types below)
+  PlayerNum db 63         ; Player that transmitted the message
+GenericMSG ENDS
+
+HelloMsg STRUC            ; Hello Message 
+  MsgType   db HELLO
+  PlayerNum db 63
+  Image     db 630 dup(?) ; Bitmapped image data (118+32*32/2 bytes)
+HelloMsg ENDS
+
+UpdateMsg STRUC           ; Update Message
+  MsgType   db UPDATE
+  PlayerNum db 63
+  Position  dw ?          ; My Current Position
+  It_Flag   db 0          ; 1 if It, 0 otherwise
+  Tagged_by db ?          ; Player number that tagged me
+UpdateMsg ENDS
+
+GoodByeMsg STRUC          ; GoodBye Message
+  MsgType db GOODBYE
+  PlayerNum db 63
+GoodByeMsg ENDS
+
+;====== Stack Segment =====================================================
+
+stkseg  segment stack                   ; *** STACK SEGMENT ***
+        db      64 dup ('STACK   ')
+stkseg  ends
+
+;====== BMP Segment =======================================================
+
+bmpseg  segment public                  ; *** BMP Segment ***
+  bmp bmptype < >
+bmpseg ends
+
+PUBLIC bmp
+
+;====== Image Segment ====================================================
+
+imageseg segment public                 ; *** IMAGE Segment ***
+  ImageArray db 32 dup( 512 dup(4,15), 512 dup(2,15) )
+  ; 64 Images * 1024 bytes : red/white , greeen/white Stripe pattern
+imageseg ends
+
+PUBLIC imagearray
+
+;====== Define code segment ===============================================
+
+cseg    segment public                  ; *** CODE SEGMENT ***
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== External procedures ===============================================
+
+; -- Lib291 (Free) --
+extrn   kbdin:near, binasc:near, dspmsg:near, dosxit:near
+
+; -- LibNet (Free) --
+extrn   NetInit:near, SendPacket:near, NetRelease:near, NetTest:Near
+extrn   TXBuffer:byte, RXBuffer:byte 
+
+; -- LibMP5gr --
+extrn LoadBMP      :near ; Comment out to use your own code
+extrn StoreBMP     :near ; Comment out to use your own code
+extrn DrawBMP      :near ; Comment out to use your own code
+extrn DrawBox      :near ; Comment out to use your own code
+extrn DrawEmptyBox :near ; Comment out to use your own code
+
+; -- LibMP5nt --
+extrn NetPostLib   :near ; Comment out to use your own code
+extrn JoyCalibrate :near ; Comment out to use your own code
+extrn JoyStickMove :near ; Comment out to use your own code
+extrn ReDrawScreen :near ; Comment out to use your own code
+
+extrn MP5Xit:near
+
+;====== Variables ========================================================
+
+MyNum  db 63  ; My Player Number
+PUBLIC MyNum
+
+ItNum  db 63  ; Who is it
+PUBLIC ItNum
+
+TagNum db 63  ; Who tagged me
+PUBLIC TagNum
+
+player PlayerType 64 dup(< >) ; Player Array
+PUBLIC player
+
+MyPosition dw 320*100+160-16  ; Start at middle of screen
+PUBLIC MyPosition
+
+ExitFLag db 0 ; 0=Play, 1=exit
+PUBLIC ExitFlag
+
+MyImage  db 'myimage.bmp',0  ; Null-terminated filename
+PUBLIC MyImage
+
+
+pbuf           db 7 dup(?)
+crlf           db CR,LF,'$'
+Num320         dw 320
+SizePlayerType db Sizeof Playertype
+
+;======= Graphic Routines (Part I - Cut & Paste mp5gr routines) ==========
+
+; Your code goes Here !
+
+;======= Network Routines (Part II ) =====================================
+
+; Your code also goes Here!
+
+; -- Callback function for incoming messages --
+
+netpost proc near
+        Call NetPostLib  ; Remove this line & replace with your own code
+
+        ; And the rest of your code goes here !
+
+        RET
+netpost endp
+
+public netpost
+
+; ====== MAIN Routine ====================================================
+
+HelloTime      dw 0
+UpdateTime     dw 0
+
+main proc far
+        mov     ax, cseg      ; Initialize DS register
+        mov     ds, ax
+
+        Call JoyCalibrate     ; Calibrate Joystick
+
+        GetTime
+        SUB AX,18*2           ; Retransmit timers for HelloMsg and UpdateMsg
+        MOV HelloTime, AX
+        MOV UpdateTime,AX
+
+        Call NetINIT          ; Initialize Network
+        Mov MyNum , AL
+
+        Mov DX,offset MyImage ; Load MyImage into BMP
+        Call LoadBMP
+
+        GMODE ; Begin graphics mode
+
+MainLoop:
+
+        GetTime
+        SUB AX,cs:HelloTime   ; Send Hello Message once per 2 seconds
+        CMP AX,18*2
+        JB NoHelloMessage
+
+        MOV    (HelloMsg PTR TXBuffer).MsgType ,   HELLO
+        MOVMB  (HelloMsg PTR TXBuffer).PlayerNum , MyNum
+        STRCPY (HelloMsg PTR TXBuffer).Image , BMP , 630
+
+        MOV AX,SizeOf HelloMsg
+        Call SendPacket
+
+        GetTime
+        Mov HelloTime,AX
+
+NoHelloMessage:
+
+        GetTime
+        SUB AX,UpdateTime
+        CMP AX,3              ; Send Update Message 6 times per second
+        JB NoUpdateMessage
+
+        Call JoyStickMove     ; Update MyPosition with Joystick position
+
+        MOV    (UpdateMsg PTR TXBuffer).MsgType,  UPDATE
+        MOVMB  (UpdateMsg PTR TXBuffer).PlayerNum, MyNum
+        MOVMW  (UpdateMsg PTR TXBuffer).Position, MyPosition
+        MOV AL,ItNum
+        .if MyNum==AL
+          MOV    (UpdateMsg PTR TXBuffer).It_Flag,   1
+        .else
+          MOV    (UpdateMsg PTR TXBuffer).It_Flag,   0
+        .endif
+        MOVMB (UpdateMsg PTR TXBuffer).Tagged_By, TagNum
+
+        MOV AX,SizeOf UpdateMsg
+        Call SendPacket
+
+        GetTime
+        Mov UpdateTime,AX
+
+NoUpdateMessage:
+
+        Call ReDrawScreen     ; Redraw the screen
+        CMP ExitFlag,0
+        JE  MainLoop
+
+        TMODE ; Return to text mode
+        PRINTMSG 'Sending Goodbye Message ...'
+        MOV    (GoodbyeMsg PTR TXBuffer).MsgType,  GOODBYE
+        MOVMB  (GoodbyeMsg PTR TXBuffer).PlayerNum, MyNum
+        MOV AX,SizeOf GoodbyeMsg
+        Call SendPacket
+
+MainDoneNet:
+        Call NetRelease
+        call mp5xit
+main endp
+
+cseg    ends
+        end main     
+
+</xmp>
+</font>
+
+</body>
+
+

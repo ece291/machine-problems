@@ -1,0 +1,445 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv=Content-Type content="text/html; charset=unicode"><%
+title = "ECE291 Machine Problem 2"
+subtitle = "Machine Problem 2"
+%>
+<!--#include file="headvb.asp"-->
+<META content="Microsoft FrontPage 4.0" name=GENERATOR></HEAD>
+<BODY>
+
+<h1 align="center">Machine Problem 2: Word Search</h1>
+
+<div align="center"><center>
+<table border=0 cellpadding=2 cellspacing=2 width="60%">
+  <tr><td align=right bgcolor="#efefef"><b>Assigned</b></td>
+    <td bgcolor="#efefef">Thursday, 2/7/2002</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Due Date</b></td>
+    <td bgcolor="#efefef">Wednesday, 2/20/2002</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Purpose</b></td>
+    <td bgcolor="#efefef">Use a complex algorithm to efficiently find words in
+      eight directions in a word table</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Points</b></td>
+    <td bgcolor="#efefef">75</td></tr>
+</table>
+</center></div>
+
+<span class="update"><strong>Updates:</strong></span><br>
+
+2/10 A new version of libmp2.lib is available that fixes the one character case
+with KMP, and the search word being terminated by a '$' in the word grid.
+<p><span class="update"><strong>Announcements:</strong></span><br>
+
+This is the final version of the write-up.</p>
+
+<h2>Problem Description</h2>
+
+<p>This MP models a word find using both a naive and intelligent string matching algorithm.  The user is asked to choose which algorithm and then enter the word to search for.  Then the word grid is redisplayed with all
+occurrences of the word clearly marked. Words can be found in horizontal, vertical, and diagonal directions both backwards and forwards.  Traversal of the word grid and implementation of the algorithms will comprise the heart of the MP.  Also you will get a chance to write the main function.&nbsp;
+The major components of this MP are the following things:</p>
+
+<ul>
+  <li><a href="http://courses.ece.uiuc.edu/ece291/mp/mp2/main_function.htm">Main Function</a></li>
+  <li><a href="http://courses.ece.uiuc.edu/ece291/mp/mp2/table_lookup.htm">Table Lookup</a></li>
+  <li><a href="http://courses.ece.uiuc.edu/ece291/mp/mp2/io.htm">Input/Output</a></li>
+  <li><a href="http://courses.ece.uiuc.edu/ece291/mp/mp2/string_matching.htm">String Matching</a></li>
+</ul>
+
+<h2>Subroutines</h2>
+
+<p>In this section there is a listing of the inputs, outputs, and
+summarized actions of each function you will need to write. The list of inputs
+and outputs only includes registers.&nbsp; Refer to
+the above information for more information
+on what is required.</p>
+
+<h3>MP2Main</h3>
+<strong>Inputs:</strong>
+ none
+<br><strong>Outputs: </strong>
+none
+<br><strong>Purpose: Runs the whole show; takes care of I/O, displays the
+failarray if necessary, and dispatches
+the correct algorithm on the right paths.</strong>
+<br><strong>Calls:</strong> DisplayMatrix, ReadWord, ComputeFail, , Dispatch,
+dspmsg, dspout, kbdin&nbsp;
+<br><strong>Uses</strong>: introMessage, funcOffset, failarray, matrix, matrixCopy,
+wordlen
+
+<h3>DisplayMatrix</h3>
+<strong>Inpu</strong><b>ts: </b>bx&nbsp; = offset of matrix or matrixCopy
+<br><strong>Outputs: </strong>
+none
+<br><strong>Purpose: Displays the word grid.</strong>
+<br><strong>Calls:</strong> dspout, optionally dspmsg&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<h3>Dispatch</h3>
+<strong>Inputs:</strong>
+ none
+<br><strong>Outputs: </strong>
+none
+  <br><strong>Purpose: Invoke the appropriate algorithm once for every direction
+from each border letter.</strong>
+<br><strong>Calls:</strong> [funcOffset]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br><b>Uses</b>: funcOffset, movement
+
+<h3>ReadWord</h3>
+<strong>Inputs:</strong> none
+<br><strong>Outputs:</strong> none
+<br><strong>Purpose: Put user input into the testword string while handling
+backspace and only accepting lower case letters.</strong>
+<br><strong>Calls:</strong> kbdin, dspout&nbsp;&nbsp;&nbsp;
+<br><b>Uses</b>: wordlen, testword
+
+<h3>UpdateCopy</h3>
+<p style="line-height: 100%">
+<strong>Inputs:</strong>
+  <br>bx = starting offset of word in matrix, i.e. byte[matrix+bx] is first
+letter of matched word<br>
+dx = amount that needs to be added to bx to get to the next char, i.e.
+matrix+bx+dx = address of second char<br>
+<strong>Outputs: </strong>
+none
+  <br><strong>Purpose: Copy the word from matrix to the corresponding location
+in matrixCopy</strong>
+<br><strong>Calls:</strong>
+ none&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br><b>Uses</b>: wordlen, matrix, matrixCopy
+
+<h3>Naive</h3>
+<strong>Inputs:</strong>
+  <br>bx = starting offset into matrix, i.e. byte[matrix+bx] is first character
+in search string<br>
+dx = amount that needs to be added to bx to get to the next char,
+i.e. matrix+bx+dx = address of second char<br>
+<strong>Outputs: </strong>none
+<br><strong>Purpose: Find all occurrences of the user's word in a particular
+sequence of chars from the matrix using the naive algorithm.</strong>
+<br><strong>Calls:</strong> UpdateCopy&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br><b>Uses</b>: matrix, testword
+
+<h3>KMP</h3>
+<strong>Inputs:</strong>
+  <br>bx = starting offset into matrix, i.e. byte[matrix+bx] is first character
+in search string<br>
+dx = amount that needs to be added to bx to get to the next char,
+i.e. matrix+bx+dx = address of second char<br>
+<strong>Outputs:</strong> none
+<br><strong>Purpose: Find all occurrences of the user's word in a particular
+sequence of chars from the matrix using the KMP algorithm.</strong>
+<br><strong>Calls:</strong> UpdateCopy&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br><b>Uses</b>: matrix, testword, failarray
+
+<h3>ComputeFail</h3>
+<strong>Inputs:</strong> none
+<br><strong>Outputs:</strong> none
+<br><strong>Purpose: Uses the ComputeOptFailure algorithm to find the failure
+array of user's word.</strong>
+<br><strong>Calls: </strong>none
+<br><b>Uses</b>: testword, failarray
+
+
+<H2>Hints</H2>
+<ul>
+
+  <li>The libmp2 file contains executable library functions 
+  for each of the routines that you need to implement. This allows you to run 
+  the program and understand how it works before you implement it. You can test 
+  your program by stepping through&nbsp;it and making sure the display and 
+  comparison functions work correctly. You will only receive credit, however, 
+  for the routines that you implement yourself. 
+
+  <li>When debugging your code in Turbo Debugger, you will 
+  find it helpful to use the memory window to show you the memory location of 
+  the file and strings. You can also use the watch window to keep track of 
+  variables in your code. 
+
+  <li>Run the program many times to get a good feel of 
+  it.&nbsp; Your final program with your code should resemble our version.&nbsp; 
+  Formatting aesthetics aren't as important as correctly operating code. 
+
+  <li>Do not forget to push and pop to avoid clobbering 
+  registers! 
+
+  <li>Push and Pop can also be used on memory, as long as 
+  you specify the size and it's word-sized or larger. You don't have to move it 
+  into a register first. (Yes, this does appear to break the two-memory access 
+  rule. Don't worry!) 
+
+  <li>Remember to include function headers for&nbsp;and 
+  write comments in each of your functions!&nbsp; Headers should give a general 
+  idea of what the function does and have a list of inputs, outputs, and called 
+  functions.&nbsp; Commenting should be specific enough to allow a function to 
+  be understood by just reading the comments.&nbsp; Commenting every line, 
+  however, is excessive and may cost you some points. 
+
+  <li>START EARLY! 
+
+  <li>Monitor the <A href="news:uiuc.class.ece291">newsgroup</a> for
+clarifications and help.</li>
+
+</ul>
+
+<h2>Procedure</h2>
+<ul>
+  <li>You will begin this MP with the following files:
+  <ul>
+    <li><tt>MP2.ASM</tt>: Program Framework
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled and
+    linked.
+    <li><tt>libmp2.lib</tt>: Library functions for MP2
+    <li><tt>lib291.lib</tt>: General-purpose library functions </li></ul>
+  <li>You may copy these files from the network drive to your home directory
+  with the following command: <br><tt>xcopy /s V:\ece291\mp2 W:\mp2</tt><br>or
+  download the files from this server as <A href="mp2.zip">mp2.zip</A>
+  <li>Add your code to <tt>MP2.ASM</tt>.
+  <li>Assemble and link your program by typing<br><tt>make</tt><br>This command
+  reads <em>Makefile</em> then invokes NASM and LINK to build an executable
+  program.
+  <li>Use Turbo Debugger (TD) to find and correct program errors.</li>
+</ul>
+
+<h2>Final Steps</h2>
+<ol>
+
+  <li>Demonstrate your MP2.EXE to a TA. You may be asked to 
+  recompile and demo the program. Your program must work with all given input. 
+
+  <li>Be prepared to answer questions about any aspect of 
+  the operation of your program. The TAs will not accept an MP if you cannot 
+  fully explain your code and your implementation. Delayed MPs will be subject 
+  to late penalties as described in the course syllabus (10% pts per day). 
+
+  <li>The TA will complete the code submission procedure.</li>
+
+</ol>
+
+<hr>
+
+<h2>MP2.ASM (program framework)</h2>
+
+<small><pre>
+; MP2 - Word Search 
+;  Your Name
+;  Today's Date
+;
+; , Spring 2002
+; Guest Author: Ajay Ladsaria 
+; University of Illinois, Urbana-Champaign
+; Dept. of Electrical and Computer Engineering
+;
+; Version 1.0
+
+	BITS	16
+
+;====== SECTION 1: Define constants =======================================
+
+; Define general constants
+    	CR      	</small><small>	EQU    	0Dh
+       	LF      	</small><small>	EQU     	0Ah
+	ESC		EQU	1Bh
+	SPACE		EQU	20h
+	BACKSPACE		EQU	08h
+
+	NUM_COLS	</small><small>	EQU	50
+	NUM_ROWS	</small><small>	EQU	15	
+	MAX_WORD_LEN	EQU	NUM_COLS
+
+	
+
+;====== SECTION 2: Declare external routines ==============================
+
+; Declare external library routines
+EXTERN kbdin, kbdine, dspmsg, ascbin, binasc, dosxit, dspout
+
+; Declare external mp2 lib routines
+EXTERN libMP2Main, libDisplayMatrix, libDispatch, libReadWord
+EXTERN libUpdateCopy, libNaive, libKMP, libComputeFail, mp2xit
+
+; Declare global routines and variables for mp2 lib
+GLOBAL MP2Main, DisplayMatrix, Dispatch, ReadWord, UpdateCopy
+GLOBAL Naive, KMP, ComputeFail
+GLOBAL funcOffset, failarray, testword, wordlen, return, matrix
+GLOBAL matrixCopy, introMessage
+      
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        resb      64*8
+stacktop:
+        resb      0                     ; work around NASM bug
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+
+funcOffset	dw	0		;store offset of correct func here
+failarray	resb	NUM_COLS	;store computed failarray here
+		db	'$'
+testword	resb	NUM_COLS	;store input here
+		db	'$'
+wordlen		db	0		;store length of input here
+return		db	CR, LF, '$'
+
+;use this lookup table to figure out the offset needed to traverse the
+;table in any of the eight directions
+movement		dw  -3 - NUM_COLS, -2 - NUM_COLS, -1 - NUM_COLS
+		dw  -1 		 ,  0 		,  1
+		dw   1 + NUM_COLS,  2 + NUM_COLS,  3 + NUM_COLS
+
+;this table represents the word array
+matrix		db  &quot;$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$&quot;
+	 	db  &quot;$helloiknowmagicabracadabrafiskawexstdsqwefkfasxwer$&quot;
+	 	db  &quot;$helloiknowmagicabracadabrafiskawexstdsqwefkfasxwer$&quot;
+	 	db  &quot;$helloiknowmagicabracadabrafiskawexstdsqwefkfasxwer$&quot;
+	 	db  &quot;$helloiknowmagicabracadabrafiskawexstdsqwefkfasxwer$&quot;
+	 	db  &quot;$Ishouldreallyrandomlygeneratethiswordarrayohwellss$&quot;
+	 	db  &quot;$helloiknowmagicabracadabrafiskawexstdsqwefkfasxwer$&quot;
+	 	db  &quot;$figureIwilljustwritesomerandomstuffdownerrtypesome$&quot;
+	 	db  &quot;$helloiknowmagicabracadabrafiskawexstdsqwefkfasxwer$&quot;
+	 	db  &quot;$Iwonderifanyonewillnoticethattheirareactualltypedr$&quot;
+	 	db  &quot;$helloiknowmagicabracadabrafiskawexstdsqwefkfasxwer$&quot;
+	 	db  &quot;$thisisamessedupgarbagelineyeahthatsitbooyatakethat$&quot;
+	 	db  &quot;$helloiknowmagicabracadabrafiskawexstdsqwefkfasxwer$&quot;
+	 	db  &quot;$jeezfifteenlinesthatsalotishouldjustpulloutsomeess$&quot;
+	 	db  &quot;$aylloiknowmagicabracadabrafiskawexstdsqwefkfasxwer$&quot;
+	 	db  &quot;$helloiknowmagicabracadabrafiskawexstdsqwefkfasxwer$&quot;
+		db  &quot;$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$&quot;
+
+;this table will hold any occurrences of the word that are found
+matrixCopy	db  &quot;$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$&quot;
+		db  &quot;$**************************************************$&quot;
+		db  &quot;$**************************************************$&quot;
+		db  &quot;$**************************************************$&quot;
+		db  &quot;$**************************************************$&quot;
+		db  &quot;$**************************************************$&quot;
+		db  &quot;$**************************************************$&quot;
+		db  &quot;$**************************************************$&quot;
+		db  &quot;$**************************************************$&quot;
+		db  &quot;$**************************************************$&quot;
+		db  &quot;$**************************************************$&quot;
+		db  &quot;$**************************************************$&quot;
+		db  &quot;$**************************************************$&quot;
+		db  &quot;$**************************************************$&quot;
+		db  &quot;$**************************************************$&quot;
+		db  &quot;$**************************************************$&quot;
+		db  &quot;$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$&quot;
+
+introMessage	db	CR, LF, &quot;Please choose an algorithm&quot;, CR, LF
+		db	&quot;1. AlmostBruteForce&quot;, CR, LF
+		db	&quot;2. KnuttMorrisPratt&quot;, CR, LF, '$'
+
+
+	
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        mov     ax, cs                  ; Initialize Default Segment register
+        mov     ds, ax  
+        mov     ax, stkseg              ; Initialize Stack Segment register
+        mov     ss, ax
+        mov     sp, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+MAIN:
+	call MP2Main
+	call mp2xit	
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;  MP2Main
+;	No Inputs/Outputs
+;	Calls: DisplayMatrix, ReadWord, ComputeFail, Dispatch 
+;		uses introMessage, funcOffset, failarray, matrix,
+;			matrixCopy, return
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+MP2Main:
+	call libMP2Main
+	ret
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;  DisplayMatrix
+;	Inputs: bx=offset of either matrix or matrixCopy
+;	Outputs: None
+;	Purpose:  Display a word matrix
+;		uses nothing
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+DisplayMatrix:
+	call libDisplayMatrix
+	ret
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;  Dispatch
+;	Inputs/Outputs: None
+;	Calls:	word[funcOffset]
+;		uses funcOffset, movement
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+Dispatch:
+	call libDispatch
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; ReadWord
+;	No Inputs/Outputs
+;		uses wordlen, testword
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+ReadWord:
+	call libReadWord
+	ret
+
+			
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;  UpdateCopy
+;	Inputs: bx=starting offset
+;		dx=amount that needs to be added to bx to get to nextchar
+;	Outputs: none
+;		uses wordlen, matrix, matrixCopy
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	
+UpdateCopy
+	call libUpdateCopy
+	ret
+
+
+	
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;  Naive 
+;	Inputs: bx=starting offset into matrix
+;		dx=amount that needs to be added to bx to get to nextchar
+;	Outputs: none
+;	Calls:  UpdateCopy
+;			uses matrix, testword
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+Naive:
+	call libNaive
+	ret
+	
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;  KMP
+;	Inputs: bx=starting offset into matrix
+;		dx=amount that needs to be added to bx to get to nextchar
+;	Outputs: none
+;	Calls:  UpdateCopy
+;			uses matrix, testword, failarray
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+KMP:
+	call libKMP
+	ret
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; ComputeFail
+;	No Inputs/Outputs
+;		uses testword, failarray
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ComputeFail:
+	call libComputeFail
+	ret
+
+</pre></small></BODY></HTML>

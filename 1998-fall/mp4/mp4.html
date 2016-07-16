@@ -1,0 +1,1089 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.05 [en] (Win95; I) [Netscape]">
+   <TITLE>MP4</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+&nbsp;
+<TABLE BORDER=0 CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TD ALIGN=LEFT WIDTH="33%">ECE291</TD>
+
+<TD ALIGN=CENTER WIDTH="34%">Computer Engineering II</TD>
+
+<TD ALIGN=RIGHT WIDTH="33%">Lockwood, Fall 1998</TD>
+</TR>
+</TABLE>
+
+<CENTER>
+<H1>
+Machine Problem 4: Z-Buffer</H1></CENTER>
+
+<CENTER><TABLE BORDER CELLPADDING=3 WIDTH="60%" >
+<TR>
+<TD ALIGN=RIGHT><B>Purpose</B></TD>
+
+<TD>Video graphics, Image data, Geometry, 3D-acceleration</TD>
+</TR>
+
+<TR>
+<TD ALIGN=RIGHT><B>Points</B></TD>
+
+<TD>50</TD>
+</TR>
+
+<TR>
+<TD ALIGN=RIGHT><B>Due Date</B></TD>
+<td>Wednesday 11/11/98  </TD>
+</TR>
+</TABLE></CENTER>
+
+<H2>Introduction</H2>
+
+In this machine problem, you will learn how a modern,
+accelerated video adapter renders 3-dimensional 
+graphics to the video display.  You will implement a software-based
+Z-buffer that renders polygons on the screen.  
+To avoid flicker, our code will perform double-buffering.  
+To display text, our code will also implement functions to
+quickly render fonts to the screen.  A screen capture of 
+our running program is shown below: <p>
+<img src="mp4.gif" width="650" height="458">
+<p>
+
+<h2>The Z-Buffer</h2>
+  The Z-buffer maps a 3-Dimensional point (x,y,z) in the world
+  to a 2-Dimensional point on the screen with a corresponding depth.
+  In the coordinate system of the Z-buffer, the location of the pixel
+  is specified by (x,y)  and the depth of the object is specified by z.
+<p>
+  For this MP, we will store the 2D image in the buffer (variable) called
+  <b>ScreenBuffer</b>.  ScreenBuffer holds
+  320x200=64,000 bytes of data and is contained in its own segment called
+  <b>SBSeg</b>.  Each byte in the ScreenBuffer corresponds to a palette
+  entry for a colored pixel.  The format of the data in
+  ScreenBuffer is identical to that stored in the VRAM of the VGA adapter.
+<p>
+  To access these segments in your code, you need to use the MASM
+  <b><tt>SEG</tt></b> keyword.  The <b><tt>SEG</tt></b> keyword allows
+  you to reference the values of a segment.  For example, suppose we
+  have this code:
+  <p>
+  <table cellpadding=0 border=1>
+  <tr><td><tt>
+  MySeg SEGMENT PUBLIC 'DATA1'<br>
+  &nbsp;&nbsp;Var1 DB<br>
+  &nbsp;&nbsp;Var2 DW<br>
+  MySeg ENDS<br>
+  .<br>
+  .<br>
+  .<br>
+  MOV AX, SEG Var1<br>
+  MOV ES, AX 
+  </tt></td></tr>
+  </table>
+  <p>
+  After the last two lines are executed, ES will contain the
+  segment that <tt>Var1</tt> is contained within, i.e., <tt>MySeg</tt>.
+<p>
+  The depths of pixels in the world are stored in a buffer (variable)
+  called <b>ZBuffer</b>.  ZBuffer also holds 320x200=64,000 bytes of
+  data and is contained in its own segment called <b>ZBSeg</b>.  Each
+  byte corresponds to an unsigned byte-sized value representing the
+  depth of the pixel.  A value of 0 represents a close pixel, while a
+  value of 255 represents a distant pixel.
+<p>
+  When we wish to draw a new point
+  (X<sub>n</sub>,Y<sub>n</sub>,Z<sub>n</sub>) in the Z-Buffer, we
+  compare the depth (Z<sub>n</sub>) of the pixel to the pixel already
+  in the buffer at location (X<sub>n</sub>,Y<sub>n</sub>).  If the
+  pixel is closer (i.e., in front of the pixel that is in the buffer),
+  we should draw the point, colored C<sub>n</sub>, in ScreenBuffer.
+  The the point is more distant than the value already in
+  ScreenBuffer, we should leave that element in ScreenBuffer
+  unchanged.
+
+<H2>Drawing Polygons</H2>
+
+  In 3D worlds, we typically use polygons as our most primitive
+  drawing object.  Polygons are specified by several points in 3D
+  space:
+
+<p><ul>
+  P<sub>1</sub>=(x<sub>1</sub>,y<sub>1</sub>,z<sub>1</sub>),<br>
+  P<sub>2</sub>=(x<sub>2</sub>,y<sub>2</sub>,z<sub>2</sub>),<br>
+  <ul>.</ul> <ul>.</ul> <ul>.</ul>
+  P<sub>n</sub>=(x<sub>n</sub>,y<sub>n</sub>,z<sub>n</sub>),<br>
+  </ul>
+
+<p>
+  and each of these points is connected by a line.  To render our
+  polygon in a 3D world, then, we need to calculate the precise values
+  of (x,y,z) along the boundary lines of the polygon.  In order to do
+  this, we need to first determine an algorithm for drawing a line
+  from (x<sub>1</sub>,y<sub>1</sub>) to (x<sub>2</sub>,y<sub>2</sub>).
+
+<p>
+  In order to compute the (x,y) coordinates for each point, P, along a
+  line, we must choose an indepedent variable.  If we choose y as the
+  independent variable, then our code will need to compute x as a
+  function of y for all points between the endpoints of the line.  For
+  the line connecting P<sub>1</sub> and P<sub>2</sub>, we can compute
+  each (x,y) point as x = x<sub>1</sub> +
+  (y-y<sub>1</sub>)*(x<sub>2</sub>-x<sub>1</sub>)/(y<sub>2</sub>-y<sub>1</sub>)
+  for each value of y between y<sub>1</sub> and y<sub>2</sub>.  The
+  following figure illustrates how this is done:
+<p>
+  <center><img src="pointslope.jpg" width="361" height="230"></center>
+<p>
+  Now that we know how to draw lines in a two-dimensional plane, we
+  can extend the notion to drawing lines in 3 dimensions.  For a line
+  between (x<sub>1</sub>,y<sub>1</sub>,z<sub>1</sub>) and
+  (x<sub>2</sub>,y<sub>2</sub>,z<sub>2</sub>), let us choose to make y
+  our independent variable.  We then need to calculate points for x
+  and z as per the above method.  Applying this technique for all the
+  boundary lines of our polygon gives us an algorithm for drawing an
+  unfilled polygon.
+
+<h2>Drawing Filled Triangles</h2>
+
+  The most primitive polygon that can be drawn is a triangle.  For
+  this MP, we will be drawing filled triangles.  Using the formula
+  described above, we can determine the (x,y,z) values along the
+  boundary lines of a triangle.  The method to determine the (x,y,z)
+  values for each point inside the triangle is not so obvious,
+  however.  We will now describe the algorithm to do this.
+
+<p>
+  For each value of y on the screen, a triangle will have two values
+  of x.  One will mark the left edge of the triangle, and the other
+  will mark the right.  If we have two arrays, each having as many
+  elements as there are y-values, i.e., 200, to mark the boundaries,
+  we could simply fill points in between the x-boundary values.
+  However, since we would wish to accurately render a depth for each
+  point in between the boundaries, we would also need to store a z
+  value for each boundary point.  Then, for each point on the
+  triangle's boundary, we would need to store an x-value and a
+  z-value.  You might like to keep track of these two x-values and two
+  z-values (one (X,Z) pair per edge of the triangle) using four
+  arrays.  We will refer to these arrays as <b>MinX</b> (left-edge
+  x-value), <b>ZMinX</b> (the Z value at the left-edge x point),
+  <b>MaxX</b> (right-edge x-value), <b>ZMaxX</b> (the Z value at the
+  right-edge x point).
+
+<p>
+  At the time we are computing the points along a line, we need to
+  determine if it is on the left edge or right edge of the triangle.
+  We use our MinX and MaxX structures to store the minimum and maximum
+  x-values for each value of Y.
+
+  Initially, set:
+  <p><tt>
+    MinX[Y]=MaxValue, <br>
+    ZMinX[Y]=MaxValue, <br>
+    MaxX[Y]=MinValue, <br>
+    ZMaxX[Y]=MinValue,
+  </tt><p>
+  for all values of Y that are visible on the screen.  For each value
+  of X that we compute, we can compute MinX[Y] and MaxX[Y] as:
+  <p><tt>
+     MinX[Y]=X if X < MinX[Y] <br>
+     MaxX[Y]=X if X > MaxX[Y].
+  </tt>
+
+<p>
+  Also, if we update the MinX table, we store the Z at that MinX, and
+  similarly, if we update the MaxX table, we store the Z at that MaxX.
+  The following figure might help to clarify how these data structures
+  are useful:
+  <p><center><img src="triangle.jpg" width="424" height="316"></center>
+<p>
+
+
+<H2>Procedures</H2>
+
+<UL>
+<LI>This assignment has several procedures.  As usual,
+you will receive credit by replacing each of the 
+procedures listed below with your own code.</LI>
+
+<LI>Experiment with the working code to gain a full understanding of 
+how the program works.  The library version of LIBMP4 contains fully
+functional versions of the routines.  Much of their functionality 
+can be seen by running the test function in <tt>main</tt>.
+
+
+<LI>All subroutines should be <I>modular</I>.  For this MP, we will
+be using C-style procedures.  To simplify coding, MASM provides 
+the <tt>INVOKE</tt> and the <tt>PROTO</tt> directives.  The 
+<tt>PROTO</tt> directive allows you to define a C-style function, and
+the <tt>INVOKE</tt> directive allows you to call a C-style function.
+For example, the following code would define a function MyFunc with
+word-size parameters Input1 and Input2:
+
+<p>
+<table border=1 cellpadding=0>
+<tr><td><font face="courier" size=-2>
+MyFunc PROTO near C, Input1:word, Input2:word<br>
+<br>
+Variable dw 9<br>
+<br>
+MyFunc PROC near C uses SI DI, Input1:word, Input2:word<br><br>
+  ..<br>
+
+        MOV     SI, Input1 ; Let MASM automatically compute Input1==[BP+4]<br>
+        MOV     DI, Input2 ; Let MASM automatically compute Input2==[BP+6]<br>
+        ..<br>
+        RET<br>
+MyFunc ENDP<br>
+<br>
+.<br>
+.<br>
+.<br>
+<br>
+MOV     BX, 5<br>
+<br>
+INVOKE MyFunc, BX, Variable <Br>
+.
+.
+.
+</font></td></tr>
+</table>
+<br>
+
+
+Notice that when defining our procedure, we use the <b><tt>uses</tt></b> clause
+to have MASM automatically save registers SI and DI for us.  This way,
+we do not need to push and pop registers to save them.  Effectively, MASM generates
+the following code:
+
+<p>
+<table border=1 cellpadding=0>
+<tr><td><font face="courier" size=-2>
+MyFunc PROTO near C, Input1:word, Input2:word<br>
+<br>
+Variable dw 9<br>
+<br>
+MyFunc PROC near<br>
+        PUSH    BP<br>
+        MOV     BP, SP<br>
+        <br>
+        PUSH    SI<br>
+        PUSH    DI<br>
+        <br>
+        MOV     SI, [BP+4]; Near procedures have 2 less bytes on stack <br>
+        MOV     DI, [BP+6]; Near procedures have 2 less bytes on stack<br>
+        .<br>
+        .<br>
+        .<br>
+        <br>
+        POP     DI<br>
+        POP     SI<br>
+        <br>
+        POP     BP<br>
+        RET     <br>
+MyFunc ENDP<br>
+<br>
+.<br>
+.<br>
+.<br>
+<br>
+MOV     BX, 5<br>
+<br>
+PUSH    Variable<br>
+PUSH    BX<br>
+CALL MyFunc
+.
+.
+.
+</font></td></tr>
+</table>
+<br>
+
+It is important that you not use register AX as an argument
+to a function.  This is because MASM uses AX to push some types of
+arguments to the stack, thereby overwriting any input you may have
+provided.  You can find more information about MASM directives using
+masm /h.
+
+<p>
+<LI><b><FONT SIZE=+2>InitBuf</FONT></b></LI>
+  <UL>
+  <LI><b>Purpose:</b> Initializes ScreenBuffer and ZBuffer 
+       to all black pixels at a depth of 255.
+
+  <LI><b>Inputs:</b> None.
+  <LI><b>Outputs:</b> Writes to <tt>ScreenBuffer</tt> and <tt>ZBuffer</tt>.
+  <LI><b>Notes:</b>
+     <UL>
+        <LI>Updates <tt>ScreenBuffer</tt> to contain all black pixels.
+        <li>Updates <tt>ZBuffer</TT> to contain all depths of 255.
+     </UL>
+
+  <li><b>Hints:</b>
+     <UL>
+     <li>Use the extra segment to access variables in a different segment.
+     <li>The color black is zero in the default ECE291 palette. 
+        (See Lecture 17 and Lecture 22 notes.)
+     </ul>
+  <LI><b>Points:</b> 5</LI>
+  </UL>
+<p>
+
+<LI><b><FONT SIZE=+2>DrawScreen</FONT></b></LI>
+  <UL>
+  <LI><b>Purpose:</b> Transfers the contents of ScreenBuffer to the Video RAM
+      on the VGA adapter.
+  <li><b>Inputs:</b> None.
+  <LI><b>Outputs:</b> Writes directly to Video RAM.
+  <LI><b>Reads Variables:</b> <TT>ScreenBuffer</tt>.
+  <li><b>Hints</b>
+     <UL>
+     <li>VIDSEG=0A000h.
+     <li>Use 32-bit string opcodes for speed.
+     </ul>
+  <LI><b>Points:</b> 5</LI>
+  </UL>
+<p>
+
+<LI><b><FONT SIZE=+2>DrawPoint</FONT></b></LI>
+  <UL>
+  <LI><b>Purpose:</b> Draws a point at coordinates (X,Y) on the video screen
+       with color Color.  The depth of the point will be Z.
+  <li><b>Inputs:</b> (X,Y,Z,Color) 
+  <li><b>Outputs:</b> Writes a color value to ScreenBuffer and a depth value to
+       ZBuffer.
+  <LI><b>Notes:</b> <tt>ZBuffer</tt> and <TT>ScreenBuffer</tt>.
+     <ul>
+        <li>Make sure to clip values so that the point fits within screen boundaries.
+     </ul>
+  <li><b>Hints:</b>
+     <UL>
+     <li>Review how points are drawn in a Z-Buffer from the description above.
+     <li>Use MASM's built-in support for C-style procedures. These are
+         described in the description above and in MASM's on-line help
+         under the topics of 'INVOKE' and 'PROTO'.
+     </ul>
+  <LI><b>Points:</b> 5</LI>
+  </UL>
+<p>
+
+<LI><b><FONT SIZE=+2>DrawRect</FONT></b></LI>
+  <UL>
+  <LI><b>Purpose:</b> Draws a rectangle with its upper-left corner at (X,Y),
+       depth Z, width W, height H, and color Color.
+  <li><b>Inputs:</b> (X,Y,Z,W,H,Color) 
+  <li><b>Outputs:</b> Writes points representing a rectangle to ScreenBuffer and
+       ZBuffer.
+  <li><b>Hints:</b>
+     <UL>
+     <li>You can use DrawPoint to draw a point at (X,Y,Z) with color Color.
+     </ul>
+  <LI><b>Points:</b> 5</LI>
+  </UL>
+
+<p>
+  <li><font size=+2><b>LoadPCX</b></font>
+  <ul>
+     <li><b>Purpose</b>: Loads and decodes a 320x200 PCX file into memory
+            and sets VGA Palette registers to those used by the image.
+     <li><b>Inputs:</b>
+       <ul>
+         <li>AX = Segment in memory where image content should be written.
+         <li>DX = Offset of a null-terminated string containing the filename.
+       </ul>
+     </li>
+     <li><b>Outputs:</b>
+     <ul>
+        <li>Fills destination (DestSeg:0) with image data.
+        <li>Fills VGA palette registers with image colors.
+        <li>Uses ScratchPad to hold compressed image data.
+     </ul>
+     </li>
+        <li><b>Notes:</b>
+        <ul>
+           <li>Map 8-bit RGB values to 6-bit RGB by dividing by four.
+           <li>Set VGA Palette using OUT commands to port 03C8h and 03C9h.
+        </ul>
+        </li>
+        <li><b>Hints:</b>
+        <ul>
+           <li>PCX files are run-length encoded images.
+           <li>Study and understand relevant example code in your lab manual!
+           <li>Use DOS File services to open and read the file.
+        </ul>
+        </li>
+     <li><b>Points</b>: 5</li>
+     </ul>
+  </li>
+<p>
+
+<LI><b><FONT SIZE=+2>DrawText</FONT></b></LI>
+  <UL>
+  <LI><b>Purpose:</b> Draws a text string with upper-left corner starting at (X,Y),
+       depth Z, and color Color.
+  <li><b>Inputs:</b> (X,Y,Z,W,H,Color), SI=string offset
+  <li><b>Outputs:</b> Writes points representing a rectangle to ScreenBuffer and
+       ZBuffer.
+  <LI><b>Notes:</b>
+     <ul>
+        <li>Reads a bitmap of a character from <tt>Fontmap</tt>.  Look
+            at the <tt>Letters.pcx</tt> file to see how these bitmaps
+            are arranged.  Any character that does not have a valid
+            bitmap should just be displayed as a filled 8x8 block.
+        <li>The text string that is provided as input is terminated with a '$'.
+        <li>The text string should appear transparent on top of other
+            pixels.
+        <li>Notice that the bitmaps use dark
+            blue pixels (palette entry 1) to mark each letter.  
+            The blue color should be replaced with Color.
+            Non-blue pixels represent invisible pixels and
+            should not be replaced in the final image.
+     </ul>
+  <li><b>Hints:</b>
+     <UL>
+     <li>Use the given lookup table to determine where the bitmaps are located.
+     </ul>
+  <li><b>Points:</b> 10
+  </UL>
+<p>
+
+<LI><b><FONT SIZE=+2>DrawTriangle</FONT></b></LI>
+  <UL>
+  <LI><b>Purpose:</b>Draws a triangle with depth gradation whose three
+      vertices are (X1,Y1,Z1), (X2,Y2,Z2), and (X3,Y3,Z3).  The
+      triangle should be filled with color Color.
+  <li><b>Inputs:</b> (X1, Y1, Z1, X2, Y2, Z2, X3, Y3, Z3, Color)
+  <li><b>Outputs:</b> Writes points representing a triangle to ScreenBuffer and
+       ZBuffer.
+  <LI><b>Notes</b>
+     <ul>
+        <li>Iterates along each line of the triangle and determines the X and
+            Z values along those lines.
+        <li>Stores the calculated (X,Z) values if they are lower/greater than
+            the current minimum/maximum values of X.
+        <li>Iterates from each minimum X to each maximum X in the triangle and
+            draws depth-graded pixels of color Color.
+     </ul>
+  <li><b>Hints:</b>
+     <UL>
+     <li>You might want to define additional procedures to aid you with
+         repetetive tasks.
+     <li>You can use the line-drawing formula to grade the depth, as well as
+         to determine the (X,Z) points along the triangle's boundary lines.
+     <li>Remember that you may need to initialize the minimum and maximum X
+         values and the Z values at those values of X.
+     <li>Watch out for divide-by-zero errors!
+     </ul>
+  <li><b>Points:</b> 15
+  </UL>
+<p>
+
+<li><b><font size=+2>Benchmark Performance</font></b>
+ 
+  <ul>
+  <li><b>Purpose:</b>
+  <ul>
+     <li>To determine the efficiency of your code, MP4 includes a benchmark.
+         In the later part of <tt>_main</tt>, a loop is given that calls
+         the <tt>TestZBuf</tt> function 100 times.  
+         When your program exits, the total time to run this code is printed.
+  </ul>
+
+  <li><b>Notes:</b>
+
+  <ul>
+  <li>One tick of the system timer corresponds to 1/18th of a second.
+  <li>The running time of the benchmark depends on the speed of the machine.  
+      (Code running on a 300MHz K6, for example, will complete faster
+       than the same code running on a 200MHz PPro).
+  <li>To normalize the results, you will compare the running time of
+      your routines vs. the library routines on the same machine.
+  </ul>
+  
+<li><b>Bonus Points</b>:
+  <ul>
+  <li>Bonus points for this MP will be awarded based on performance, not on submission
+      date.
+  <li>To earn bonus points, you must complete all procedures.
+  <li>To earn bonus points, your code must run at least as fast the library code.
+      A breakdown of points is as follows:
+     <ul>
+     <li>0 pts: Running time of your code is greater than or equal to running time
+         of library
+     <li>2 pts: Running time of your code is less than running time of library
+     <li>4 pts: Running time of your code completes in less than 90% of the
+         library code's running time
+     <li>5 pts: Running time of your code is fastest in the class 
+     </ul>
+  </ul>
+  </ul>
+      
+
+</UL>
+
+<H2>Preliminary Procedure</h2>
+<UL>
+<LI>
+Copy the empty MP4 program (<TT>MP4.ASM</TT>), 
+the libraries (<TT>libmp4.lib</TT> and <TT>lib291.lib</TT>),
+and the <TT>Makefile</TT> from the network drive to your home directory with
+the following command:</LI>
+
+<BR><TT>xcopy /S V:\ece291\mp4 W:\mp4</TT>
+<BR>Alternatively, from home, you can download the same files as 
+<A HREF="mp4.zip">mp4.zip</A>.
+
+<LI>As before, run <TT>NMake</TT> to build an executable program using the
+given ECE291 library functions.</LI>
+
+<LI>Use CodeView (<TT>CV</TT>) to debug and test your program. Because
+you only receive credit for procedures that function completely as specified,
+it is best to debug each routine individually.</LI>
+
+</UL>
+
+<H2>
+Revision History</H2>
+  
+<UL>
+<LI>Version 1.0: (11/2/98) - First code release</LI>
+<LI>Version 1.1: (11/4/98) 
+          <ul>
+          <li>Avoids infinite loop during benchmarking
+          <li>Library Procedure names prefixed with "lib" to fix link error.
+          </ul>
+<LI>Version 1.2: (11/8/98) 
+          <ul>
+          <li>Library functions no longer assume that
+              DrawPoint preserves BX,CX,DX
+          </ul>
+
+<BR><I>Monitor the newsgroup and this on-line section for revisions to
+the MP or to the writeup</I></UL>
+
+<H2>
+Final Steps</H2>
+
+<OL>
+<LI>
+Print a copy of the <A HREF="mp4grade.html">MP4
+grading sheet</A>.</LI>
+
+<LI>
+Demonstrate the first checkpoint of MP4.EXE to a TA or to the instructor.</LI>
+
+<UL>
+<LI>
+Be prepared to answer questions about any aspect of the operation of your
+program. The TAs will not accept an MP if you cannot fully explain all
+operations of your code.</LI>
+</UL>
+
+<LI>
+Demonstrate the second checkpoint of MP4.EXE to a TA or to the instructor.</LI>
+
+<UL>
+<LI>
+Be prepared to answer questions about any aspect of the operation of your
+program. The TAs will not accept an MP if you cannot fully explain all
+operations of your code.</LI>
+</UL>
+
+<LI>
+Handin in your program by running:</LI>
+
+<UL>
+<LI>
+<TT>A:\Handin </TT><I>YourWindowsLogin</I></LI>
+
+<LI>
+Print <tt>MP4.ASM</tt></LI>
+</UL>
+
+<LI>
+Staple the MP4 grading sheet to the front of your MP4.ASM file and give
+both to the same TA that approved your demonstration.</LI>
+</OL>
+
+<HR>
+<H2>MP4.ASM</H2>
+<font size=-1><pre> 
+
+TITLE ECE291:MP4-ZBuffer - Your Name - Date
+
+.MODEL LARGE   ; Allow multiple segments to be defined
+.486           ; Allow generation of code which requires an 80486 or better
+
+COMMENT % Z-Buffer
+
+          ECE291: Machine Problem 4
+          Prof. John W. Lockwood
+          University of Illinois
+          Dept. of Electrical & Computer Engineering
+          Fall 1998
+          
+          Ver. 1.1
+
+          Revision History:
+          1.0: - Initial release
+          1.1: - Avoids infinite loop during benchmarking
+               - Library Procedure names prefixed with "lib" to fix link error.
+        %
+
+
+
+;====== Constants =========================================================
+
+VIDSEG     EQU 0A000h      ; VGA Video Segment Adddress
+VIDTEXTSEG EQU 0B800h
+CR         EQU 13
+LF         EQU 10
+
+
+KeyPrompt MACRO            ; Optionally wait for user key press
+          Local KPEnd
+          cmp KeyWait,0    ; KeyWait=0 : No pause
+          JE KPEnd         ; KeyWait=1 : Wait for key press
+          call kbdin
+KPEnd:
+ENDM
+
+
+;====== Segments ==========================================================
+
+PUBLIC ScreenBuffer, ZBuffer, FontMap, Scratchpad
+PUBLIC LoadPCX
+
+SBSeg segment 'DATA1'
+    ScreenBuffer DB 65535 dup(?)
+SBSeg ENDS
+
+ZBSeg segment 'DATA2'
+    ZBuffer DB 65535 dup (?)
+ZBSeg ENDS
+
+FontSeg segment 'DATA3'
+    Fontmap DB 65535 dup (?)
+FontSeg ENDS
+
+ScrSeg segment 'DATA4' ; Used by LoadPCX
+    Scratchpad DB 65535 dup(?)
+ScrSeg ENDS
+        
+stkseg  segment stack                   ; *** STACK SEGMENT ***
+        db      128 dup ('STACK   ')     ; 128*8 = 1024 Bytes of Stack
+stkseg  ends
+
+;====== Function type declarations ========================================
+
+extrn kbdin:near                   ; LIB291 routines are always Free
+extrn SetStart:near                ; Start Routine
+extrn mp4xit:near                  ; Exit Routine
+
+extrn LibLoadPCX:near              ; Load PCX file
+
+LibModeGraph       PROTO near C    ; Switch video mode to graphics (Given)
+
+LibModeText        PROTO near C    ; Switch video mode to text (Given)
+
+LibInitBuf         PROTO near C    ; Initialize ZBuffer
+
+LibDrawScreen      PROTO near C    ; Transfer ZBuffer contents to VRAM
+
+LibDrawPoint       PROTO near C X:word, Y:word, Z:byte, Color:byte
+
+LibDrawText        PROTO near C X:word, Y:word, Z:byte,
+                                Color:byte
+
+LibDrawRect        PROTO near C X:word, Y:word, Z:byte,
+                                W:word, H:word,
+                                Color:byte
+
+LibDrawTriangle    PROTO near C X1:word, Y1:word, Z1:word,
+                                X2:word, Y2:word, Z2:word,
+                                X3:word, Y3:word, Z3:word,
+                                Color:byte
+
+;====== Begin Code/Data segment ==========================================
+cseg    segment public 'CODE'  
+        assume  cs:cseg, ds:cseg, es:nothing
+
+FontFile db      'letters.pcx',0   ; Filename of PCX file with font images
+
+
+; FontMap is a 320x200 PCX File containing 8x8 letters
+; ABCDEFGHIJKLMNOPQRSTUVWXYZ
+; abcdefghijklmnopqrstuvwxyz
+; 01234567890
+;
+; Letters is a 256-word lookup table that
+; maps each ASCII value to a location in FontMap
+; Our program need only map letters, digits, space, and period.
+
+Letters dw      32 dup ((320*16)+(8*11))
+        dw      (320*16)+(8*12) ; ' '
+        dw      13 dup ((320*16)+(8*11))
+        dw      (320*16)+(8*10) ; '.'
+        dw      (320*16)+(8*11)
+        dw      (320*16)+(8*0)  ; '0'
+        dw      (320*16)+(8*1)  ; '1'
+        dw      (320*16)+(8*2)  ; '2'
+        dw      (320*16)+(8*3)  ; '3'
+        dw      (320*16)+(8*4)  ; '4'
+        dw      (320*16)+(8*5)  ; '5'
+        dw      (320*16)+(8*6)  ; '6'
+        dw      (320*16)+(8*7)  ; '7'
+        dw      (320*16)+(8*8)  ; '8'
+        dw      (320*16)+(8*9)  ; '9'
+        dw      7 dup ((320*16)+(8*11))
+        dw      (320*0)+(8*0)   ; 'A'
+        dw      (320*0)+(8*1)   ; 'B'
+        dw      (320*0)+(8*2)   ; 'C'
+        dw      (320*0)+(8*3)   ; 'D'
+        dw      (320*0)+(8*4)   ; 'E'
+        dw      (320*0)+(8*5)   ; 'F'
+        dw      (320*0)+(8*6)   ; 'G'
+        dw      (320*0)+(8*7)   ; 'H'
+        dw      (320*0)+(8*8)   ; 'I'
+        dw      (320*0)+(8*9)   ; 'J'   
+        dw      (320*0)+(8*10)  ; 'K'
+        dw      (320*0)+(8*11)  ; 'L'
+        dw      (320*0)+(8*12)  ; 'M'
+        dw      (320*0)+(8*13)  ; 'N'
+        dw      (320*0)+(8*14)  ; 'O'
+        dw      (320*0)+(8*15)  ; 'P'
+        dw      (320*0)+(8*16)  ; 'Q'
+        dw      (320*0)+(8*17)  ; 'R'
+        dw      (320*0)+(8*18)  ; 'S'
+        dw      (320*0)+(8*19)  ; 'T'
+        dw      (320*0)+(8*20)  ; 'U'
+        dw      (320*0)+(8*21)  ; 'V'
+        dw      (320*0)+(8*22)  ; 'W'
+        dw      (320*0)+(8*23)  ; 'X'
+        dw      (320*0)+(8*24)  ; 'Y'
+        dw      (320*0)+(8*25)  ; 'Z'
+        dw      6 dup ((320*16)+(8*11))
+        dw      (320*8)+(8*0)   ; 'a'
+        dw      (320*8)+(8*1)   ; 'b'
+        dw      (320*8)+(8*2)   ; 'c'
+        dw      (320*8)+(8*3)   ; 'd'
+        dw      (320*8)+(8*4)   ; 'e'
+        dw      (320*8)+(8*5)   ; 'f'
+        dw      (320*8)+(8*6)   ; 'g'
+        dw      (320*8)+(8*7)   ; 'h'
+        dw      (320*8)+(8*8)   ; 'i'
+        dw      (320*8)+(8*9)   ; 'j'   
+        dw      (320*8)+(8*10)  ; 'k'
+        dw      (320*8)+(8*11)  ; 'l'
+        dw      (320*8)+(8*12)  ; 'm'
+        dw      (320*8)+(8*13)  ; 'n'
+        dw      (320*8)+(8*14)  ; 'o'
+        dw      (320*8)+(8*15)  ; 'p'
+        dw      (320*8)+(8*16)  ; 'q'
+        dw      (320*8)+(8*17)  ; 'r'
+        dw      (320*8)+(8*18)  ; 's'
+        dw      (320*8)+(8*19)  ; 't'
+        dw      (320*8)+(8*20)  ; 'u'
+        dw      (320*8)+(8*21)  ; 'v'
+        dw      (320*8)+(8*22)  ; 'w'
+        dw      (320*8)+(8*23)  ; 'x'
+        dw      (320*8)+(8*24)  ; 'y'
+        dw      (320*8)+(8*25)  ; 'z'
+        dw      132 dup ((320*16)+(8*12))
+
+KeyWait dw 0 ; Control variable for KeyPrompt MACRO
+BCount  dw ? ; Benchmark iteration Counter 
+
+public fontfile, letters
+
+;====== Procedures ==========================================
+
+;
+; Procedures
+;
+
+;;;
+;;; ModeGraph
+;;;     Switches to 320x200x256 VGA.
+;;; 
+
+ModeGraph proc near C uses ax
+     mov     ax, 0013h
+     int     10h          ; VBIOS call to switch into 
+     ret                  ; Mode 13h 320x200, 8-bit color
+ModeGraph endp
+
+;;; 
+;;; ModeText
+;;;     Switches to 80x50 text mode.
+;;;
+
+ModeText proc near C uses ax bx
+     mov     ax, 1202h
+     mov     bl, 30h
+     int     10h          ; vBIOS call to switch into
+     mov     ax, 3        ; text-mode video w/50 lines
+     int     10h
+     mov     ax, 1112h
+     mov     bl, 0
+     int     10h
+     ret
+ModeText endp
+
+;;;
+;;; LoadPCX
+;;;     Loads (decompresses) a .PCX image into a specified segment.
+;;;
+;;; INPUTS
+;;;     AX = offset of segment to write into
+;;;     DX = offset of string to filename to read from
+;;;
+;;; NOTES
+;;;     See lab manual!
+
+LoadPCX proc near
+        call LibLoadPCX ; Replace this line with your own code!
+        ret
+LoadPCX endp
+
+;;;
+;;; InitBuf
+;;;     Initializes the ScreenBuffer and the ZBuffer to Black pixels of
+;;;     depth 255.
+;;;
+
+InitBuf proc near C
+        Invoke LibInitBuf ; Replace this line with your own code!
+        ret
+InitBuf endp
+
+;;;
+;;; DrawScreen
+;;;     Blasts ScreenBuffer onto the video page.
+;;;
+
+DrawScreen proc near C
+        Invoke LibDrawScreen ; Replace this line with your own code!
+        ret
+DrawScreen endp
+
+;;;
+;;; DrawPoint
+;;;      Draws a point at (x,y,z) with a given color.
+;;;
+
+DrawPoint proc near C X:word, Y:word, Z:byte, Color:byte
+        Invoke LibDrawPoint, X,Y,Z,Color ; Replace this line with your own code!
+        ret
+DrawPoint endp
+
+;;;
+;;; DrawRect
+;;;     Draws a rectangle whose upper left corner is (x,y,z)
+;;;     with width W, height H, and a specified color.
+;;; 
+        
+DrawRect proc near C X:word, Y:word, Z:byte, W:word, H:word, Color:byte
+        Invoke LibDrawRect, X,Y,Z,W,H,Color ; Replace this line with your own code!
+        ret
+DrawRect endp
+
+;;;
+;;; DrawText
+;;;     Draws a text string at (x,y,z) with the specified color.
+;;;
+;;; INPUTS
+;;;     SI = pointer (offset) to string.
+;;;
+
+DrawText proc near C X:word, Y:word, Z:byte, Color:byte
+        Invoke LibDrawText, X,Y,Z,Color ; Replace this line with your own code!
+        ret
+DrawText endp
+
+;;;
+;;; DrawTriangle
+;;;     Draws a triangle with depth gradation, given three points and a solid
+;;;     fill color.
+;;;
+
+DrawTriangle PROC near C  X1:word, Y1:word, Z1:word,
+                          X2:word, Y2:word, Z2:word,
+                          X3:word, Y3:word, Z3:word, Color:byte
+
+        Invoke LibDrawTriangle, X1,Y1,Z1, X2,Y2,Z2, X3,Y3,Z3, Color
+              ; Replace line above with your own code!
+        ret
+DrawTriangle endp
+
+;====== Test code ==========================================
+
+;;;
+;;; TestZBuf
+;;;     Exercises functionality of the ZBuf
+
+String1     db      'ECE291','$'
+String2     db      'ZBuffer','$'      ; Strings used in TestZBuf
+String3     db      'MP4','$'
+String4     db      'Fall 98','$'
+String5     db      'Lockwood','$'
+String6     db      'Welcome to a 3D world.','$'
+StringBench db      'Benchmarking Code ...','$'
+
+; public String1, String2, String3, String4, String5
+
+TestZBuf proc near
+
+
+        ; Draw a rectangle
+        invoke  DrawRect, 20, 20, 30, 60, 50, 12   ; first bright red box
+        invoke  DrawScreen
+        KeyPrompt
+
+        ; Test Z-Buffering
+        invoke  DrawRect, 40, 30, 20, 60, 60, 9    ; bright blue box
+        invoke  DrawRect, 30, 40, 10, 40, 40, 10   ; bright green box
+        invoke  DrawScreen                         ; refresh display
+        invoke  DrawRect, 180, 10, 250, 66, 60, 1  ; dim blue box
+        KeyPrompt
+
+        ; Test screen clipping (pixels off the screen should NOT be drawn!)
+        invoke  DrawRect, -10, -10, 255, 15, 15, 1 ; upper left corner  (blue)
+        invoke  DrawRect, 315, -10, 255, 15, 15, 2 ; upper right corner (green)
+        invoke  DrawRect, 315, 195, 255, 15, 15, 4 ; lower right corner (red)
+        invoke  DrawRect, -10, 195, 255, 15, 15, 8 ; lower left corner  (white)
+        invoke  DrawScreen
+        KeyPrompt
+
+        ; Load font segment
+        mov     ax, SEG FontSeg
+        mov     dx, offset FontFile
+        call    LoadPCX                       ; This should change the palette
+        KeyPrompt
+
+        ; Test DrawText
+        mov     si, offset String1           ; bright red 'ECE291'
+        invoke  DrawText, 180, 20, 0, 12
+        mov     si, offset String2           ; bright blue 'ZBuffer"
+        invoke  DrawText, 180, 30, 10, 9
+        mov     si, offset String3           ; bright green 'MP4'
+        invoke  DrawText, 180, 40, 30, 10
+        mov     si, offset String4           ; bright white 'Fall 98'
+        invoke  DrawText, 180, 50, 20, 15
+        mov     si, offset String5           ; bright white 'Lockwood'
+        invoke  DrawText, 180, 60, 20, 15
+        mov     si, offset String6           ; bright yellow 'Welcome' message
+        invoke  DrawText, 5, 180, 40, 14
+
+        invoke  DrawScreen
+        KeyPrompt
+
+        invoke  DrawRect, 170, 40, 25, 66, 38, 24 ; gray box that covers 'MP4'
+        invoke  DrawScreen                        ; but leaves 'Fall 98' visible
+        KeyPrompt
+
+        invoke  DrawTriangle, 5, 105, 0,         ; little red triangle
+                              5, 106, 0,
+                              6, 106, 0, 12
+        invoke  DrawTriangle, 16, 116, 0,        ; little green triangle
+                              16, 115, 0,
+                              15, 115, 0, 10
+        invoke  DrawTriangle, 26, 125, 0,        ; little blue triangle
+                              26, 126, 0,
+                              25, 126, 0, 9
+        invoke  DrawTriangle, 35, 136, 0,        ; little white triangle
+                              36, 135, 0,
+                              35, 135, 0, 15
+
+        invoke  DrawScreen
+        KeyPrompt
+
+        invoke  DrawTriangle, 30, 120, 0,    ; this yellow triangle is
+                              40, 130, 0,    ; degenerate, so it looks like
+                              50, 140, 0, 14 ; a diagonal yellow line
+
+        invoke  DrawTriangle, 50, 110, 20,    ; red obtuse triangle
+                              70, 130, 20,
+                              100, 130, 20, 12
+
+        invoke  DrawTriangle, 105, 110, 50,   ; green right isoceles triangle
+                              105, 130, 50,
+                              145, 130, 50, 10
+
+        invoke  DrawTriangle, 160, 110, 80,   ; blue isoceles triangle
+                              150, 130, 80,
+                              170, 130, 25, 9
+
+        invoke  DrawRect, 60, 135, 150, 110, 30, 12 ; red rectangle beneath
+        invoke  DrawScreen                          ; the three triangles
+        KeyPrompt
+
+        invoke  DrawTriangle, 60, 140, 0,       ; white scalene triangle should
+                              147, 100, 100,    ; intersect the red rectangle
+                              173, 170, 200, 15
+        invoke  DrawScreen
+        KeyPrompt
+        
+        invoke  DrawTriangle, 180, 100, 0,     ; dark red triangle that makes
+                              180, 190, 0,     ; the left side of 3D maze
+                              240, 145, 255, 4
+        invoke  DrawTriangle, 180, 100, 0,     ; dark blue triangle that makes
+                              300, 100, 0,     ; the top of 3D maze
+                              240, 145, 255, 1
+        invoke  DrawTriangle, 300, 100, 0,     ; dark red triangle that makes
+                              300, 190, 0,     ; the right side of 3D maze
+                              240, 145, 255, 4
+        invoke  DrawTriangle, 300, 190, 0,     ; dark gray triangle that makes
+                              180, 190, 0,     ; the left side of 3D maze
+                              240, 145, 255, 24
+        invoke  DrawRect, 220, 130, 100, 40, 30, 12 ; bright red rectangle
+        invoke  DrawScreen                          ; illustrating far distance
+        KeyPrompt
+
+        invoke  DrawRect, 200, 115, 75, 80, 60, 12 ; bright red rectangle
+        invoke  DrawScreen                         ; illustrating near distance
+        KeyPrompt
+        ret
+
+TestZBuf endp
+
+;====== MAIN ==========================================
+
+_main PROC FAR
+        mov     ax,cseg     ; Set default segment equal to code segment
+        mov     ds,ax
+        mov     ax,VidSeg   ; Initalize extra segment for Video graphics
+        mov     es,ax
+
+        invoke  ModeGraph   ; Switch VGA into grahics mode
+        invoke  InitBuf     ; Initialize ZBuffer 
+
+        mov     KeyWait,1   ; Have KeyPrompt pause for keystroke been routines
+        call    TestZBuf    ; Test functionality of Z-Buffer
+
+
+        invoke  InitBuf     ; Initialize ZBuffer
+        mov     BCount,100  ; Benchmark performance of code            
+
+        mov     si, offset StringBench     ; Display Benchmark Start Message
+        invoke  DrawText, 0, 0, 0, 12      ; (Red text at top-left of screen)
+
+        mov     KeyWait,0
+        call    SetStart    ; Optimize your code to reduce running time!
+BLoop:  call    TestZBuf   
+
+        dec     BCount
+        jnz     BLoop
+
+        invoke  ModeText    ; Return to text-mode video
+        call    mp4xit
+_main ENDP
+
+cseg    ends
+        end    _main
+</pre></font>
+</BODY>
+</HTML>
+

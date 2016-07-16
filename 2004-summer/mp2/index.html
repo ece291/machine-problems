@@ -1,0 +1,342 @@
+<%
+title = "ECE 291 - MP2"
+subtitle = "MP2"
+%>
+
+<!--#include file="headvb.asp"-->
+
+
+
+
+<h1 align="center">Machine Problem 2: Sorting Algorithm Analysis</h1>
+<div align="center"><center>
+
+<table border=1 width=545>
+  <tr>
+    <td align=right width="78">Assigned</td>
+    <td width="451">Thursday, June 24, 2004</td>
+  </tr>
+  <tr>
+    <td align="right" width="78">Due Date</td>
+    <td width="451">Friday, July 2, 2004</td>
+  </tr>
+  <tr>
+    <td align="right" width="78">Purpose</td>
+    <td Roman" width="451">User Input, C-style Procedures, Sorting
+      Algorithms</td>
+  </tr>
+  <tr>
+    <td align="right" width="78">Points</font></td>
+    <td width="451">80</td>
+  </tr>
+</table>
+</center></div>
+
+
+<h2>Problem Description</h2>
+
+<p align="center"><img border="0" src="mp2.jpg" width="669" height="494"></p>
+
+<p>Your program will be:
+<ul>
+<li>Obtaining user input and storing the input in a 
+buffer<li>Parsing the string of numbers into an array 
+<li>Sorting the array with two different&nbsp; 
+and analyzing their performance</ul>
+
+
+
+<h2>Obtaining User Input</h2>
+<p>User input will be obtained from the keyboard.&nbsp; As the user types a 
+string of numbers, you should store the string to a buffer.&nbsp; Your program 
+should also allow the user to use the backspace key if he or she mistypes a 
+character in the string.&nbsp; In this situation, the cursor should be moved to 
+the previous location on the screen, and the last character in the buffer should 
+be allowed to be overwritten by a new value.</p>
+
+<h2>Parsing User Input</h2>
+<p>Once you've written the input string to the buffer, you need to parse it into an
+array of numbers.&nbsp; This is much easier as it seems, thanks to the library ascbin function.&nbsp; Take a look at the lab manual to see how it works - it
+will save you a great deal of time.&nbsp; You should traverse the entire input string, pulling out one number at a time, converting it from ascii to
+binary, and  storing the number into the array whose pointer is passed in to
+the ParseInput function.&nbsp; Keep track of how many numbers you parse.&nbsp;
+Remember that the input string is '$' terminated, so stop when you reach a
+'$'.&nbsp; The array can hold up to 25 numbers, so if there are more numbers in
+the input string than 25, you should not add the extra ones to the array.&nbsp;
+If ascbin returns an error code (dl is nonzero), the ParseInput function should
+return -1 to indicate there was an error in parsing the input; otherwise, you
+should return the length of the array (how many numbers you successfully
+parsed).</p>
+
+
+
+<h2><a href="sorting.html">Sorting Algorithms</a></h2>
+
+<h2>Development Log and Cover Memo</h2>
+<p>As you work on the MP, you will keep a simple MP development 
+log. The log will document your design decisions, development plan, and 
+debugging experiences, including the time you spent on different parts of the 
+machine problem. The log may be kept in any form. In general, whenever you work 
+on a machine problem, briefly record the starting time, significant design 
+decisions, progress in coding and testing, bugs you discovered, and the ending 
+time. Do <i>not</i> record simple syntax errors detected by NASM at assembly 
+time; these are not considered to be bugs.</p>
+<p>Then, you will submit a cover memo of 200 to 400 words (up to one page, 
+single spaced). The cover memo should answer the following questions, based on 
+the information that you record in your MP development log. </p>
+<ul>
+  <li>How much time did you spend on the design, coding, and testing of each 
+  part or subroutine? </li>
+  <li>What kinds of defects (bugs) did you find during the development of the 
+  program? When did you discover these defects (during code review or during 
+  testing)? How did you find them? </li>
+  <li>What you would do differently for the next MP? </li>
+</ul>
+<p>Type your cover memo into a plain text file in your MP2 directory.</p>
+
+<h2>Hints</h2>
+<ul>
+<li>The LIBMP2 file contains executable library functions for each of the
+routines that you need to implement.  
+This allows you to run the program and understand how it works before you implement it.  You can test your program with any combinations of your own
+code and library functions.  You will only receive credit, however, for
+the routines that you implement yourself.</li><p>
+
+<li>When debugging your code in TD, you will find it helpful to use
+the memory window to show you the memory location of the file and strings.
+You can also use the watch window to keep track of variables in your code.</li><p>
+
+<li>Do not assume that the file starts at memory location 0.</li><p>
+
+<li>You may define new variables as needed.</li><p>
+
+<li>Be very careful if you call another procedure not to destroy registers
+that the calling procedure uses.</li><p>
+
+<li>You need to preserve register values in all of the procedures you
+  write.&nbsp; To do this, push all the registers you use in the procedure at
+  the beginning of the procedure.&nbsp; Then, pop them all in reverse order at
+  the end of the procedure (right before you ret).</li><p>
+
+<li>You need to create function headers for each of the functions you
+  write.&nbsp; Function headers should include the name of the function, the
+  list of inputs to the function, the list of the outputs, and any functions
+  that the function calls.&nbsp; You will lose points if you do not do this!</li><p>
+
+<li>START EARLY!</li><p>
+
+
+<li>Monitor the <a href="http://my.ece.uiuc.edu/webboard/select.asp?bid={38D8D827-70BA-4FB6-A186-3C9AD02FC672}">
+webboard</a> for clarifications and help.<p>
+
+</ul>
+
+<h2>Procedures</h2>
+
+<p>This assignment has six procedures. You will receive credit by replacing
+each of these six procedures listed below with your own code. </p>
+
+
+<p>Each of the procedures you will write in this MP is C-style.&nbsp; Thus, the 
+inputs to the procedures (if any) are passed on the
+stack.&nbsp; Inputs with asterisks (*) indicate pointers, and inputs without 
+asterisks indicate actual values.&nbsp; If the procedure returns a value, the value will be returned in AL 
+or AX.&nbsp; Also, the general purpose registers other than SI and DI may be
+overwritten (you do not have to preserve their values). </p>
+
+
+<p>The size of the inputs, as well as the size of the return value, are included
+in each procedure definition.&nbsp; If a procedure does not have any inputs, <b>void</b>
+will be present in the parentheses.&nbsp; Similarly, if the function does not
+return a value, it will be declared as <b>void</b> before the name of the
+function. </p>
+
+
+<h3>word<b> GetInput(word *BufferPtr)</b></h3>
+
+
+<ul>
+<li>Obtains input from the user and stores to buffer in memory</li>
+<li>Inputs:
+  <ul>
+    <li>BufferPtr - Pointer to buffer in memory</li>
+  </ul>
+<li>Outputs:&nbsp; Buffer filled with&nbsp;input data</li>
+<li>Returns: Non-zero if the user presses ESC to exit the program, 0 otherwise</li>
+<li>Calls: kbdin, dspout</li>
+<li>Notes:
+  <ul>
+    <li>The buffer has a maximum size of 75 bytes - make sure that you do not exceed the buffer
+      length</li>
+    <li>Terminate the input loop when the user presses either the ESC key or the ENTER 
+    key.&nbsp; Set the appropriate return value, and if the user pressed the 
+    ENTER key, also add a '$' to the end of the buffer.</li>
+    <li>You should correctly handle backspacing.&nbsp; If the user hits
+      backspace, you the cursor should move back to the previous spot, and the
+      character at that spot should be removed on the screen.&nbsp; The current
+      position in the buffer must also be updated.&nbsp; If you are at the
+      beginning of the buffer and a backspace key is received, you should not
+      process it.</li>
+  </ul>
+<li>Points: 15</li>
+ </ul><h3><b>word ParseInput(word *BufferPtr, word *ArrayPtr)</b> </h3>
+
+
+<ul>
+<li>Parses the buffer and stores&nbsp;numbers in buffer to an array in memory</li>
+<li>Inputs:
+  <ul>
+    <li>BufferPtr - Pointer to buffer in memory</li>
+    <li>ArrayPtr - Pointer to array in memory</li>
+  </ul>
+<li>Outputs:&nbsp; Array contains&nbsp;numbers stored in buffer</li>
+<li>Returns:
+  <ul>
+    <li>-1 if there is an error in parsing the buffer, length of the array 
+    (number of integers parsed from the buffer) otherwise</li>
+  </ul>
+</li>
+<li>Calls: ascbin</li>
+<li>Notes:
+  <ul>
+    <li>The buffer is terminated with a '$'</li>
+    <li>Read the lab manual on how ascbin works - it will make your life <b>much</b>
+      easier</li>
+    <li>The array can hold up to 25 integers - if you encounter more than 25 in
+      the buffer, do not add the extra ones to the array</li>
+  </ul>
+<li>Points: 15</li>
+ </ul><h3><b>void PrintArray(word *ArrayPtr, word ArrayLength)</b> </h3>
+
+
+<ul>
+<li>Displays an array in memory to the screen</li>
+<li>Inputs:&nbsp;&nbsp;
+  <ul>
+    <li>ArrayPtr - Pointer to an array in memory</li>
+    <li>ArrayLength - Length of the array</li>
+  </ul>
+<li>Outputs:&nbsp; Displays array to screen</li>
+<li>Returns: None</li>
+<li>Calls: binasc, dspmsg, dspout</li>
+<li>Notes:
+  <ul>
+    <li>Separate each number in the array by a space and move the cursor to the
+      next line when completed</li>
+    <li>Use binasc to obtain an ASCII representation of each number in the
+      array.&nbsp; Also use the binascBuf buffer when calling binasc and
+      displaying the number to the screen.</li>
+    <li>Each cell in the arrays you will be displaying is one word in size, <b>not</b>
+      one byte</li>
+  </ul>
+<li>Points: 10</li>
+ </ul><h3><b>word Partition(word *ArrayPtr, word First, word Last)</b> </h3>
+
+
+<ul>
+<li>Partitions an array in memory</li>
+<li>Inputs:
+  <ul>
+    <li>ArrayPtr - Pointer to an array in memory</li>
+    <li>First - Index number of the array where you want to start partitioning</li>
+    <li>Last - Index number of the array where you want to stop
+      partitioning&nbsp;</li>
+  </ul>
+<li>Outputs:&nbsp; Array is correctly partitioned</li>
+<li>Returns: The index number of the pivot element</li>
+<li>Calls: None</li>
+<li>Notes:
+  <ul>
+    <li>The Partition pseudocode has been provided to you</li>
+    <li>Each cell in the arrays you will be partitioning is one word in size, <b>not</b>
+      one byte</li>
+  </ul>
+<li>Points: 20</li>
+ </ul><h3><b>void QuickSort(word *ArrayPtr, word First, word Last)</b> </h3>
+
+
+<ul>
+<li>Sorts an array in memory with the QuickSort algorithm</li>
+<li>Inputs:&nbsp;&nbsp;
+  <ul>
+    <li>ArrayPtr - Pointer to an array in memory</li>
+    <li>First - Index number of the array where you want to start sorting</li>
+    <li>Last - Index number of the array where you want to stop sorting</li>
+  </ul>
+<li>Outputs:&nbsp; CompareCount, SwapCount</li>
+<li>Returns: None</li>
+<li>Calls: Partition, QuickSort</li>
+<li>Notes:
+  <ul>
+    <li>The QuickSort pseudocode has been provided to you</li>
+    <li>Each cell in the array is one word in size, <b>not</b>
+      one byte</li>
+    <li>Keep track of comparisons and swaps with CompareCount and SwapCount,
+      respectively</li>
+    <li>When you call Partition and QuickSort, remember to push the arguments
+      onto the stack in reverse order</li>
+  </ul>
+<li>Points: 10</li>
+ </ul><h3><b>void BubbleSort(word *ArrayPtr, word ArrayLength)</b> </h3>
+
+
+<ul>
+<li>Sorts an array in memory with the BubbleSort algorithm</li>
+<li>Inputs:&nbsp;&nbsp;
+  <ul>
+    <li>ArrayPtr - Pointer to an array in memory</li>
+    <li>ArrayLength - Length of the array</li>
+  </ul>
+<li>Outputs:&nbsp; CompareCount, SwapCount</li>
+<li>Returns: None</li>
+<li>Calls: None</li>
+<li>Notes:
+  <ul>
+    <li>The BubbleSort pseudocode has been provided to you</li>
+    <li>Keep track of comparisons and swaps with CompareCount and SwapCount,
+      respectively</li>
+    <li>Each cell in the array is one word in size, <b>not</b>
+      one byte</li>
+  </ul>
+<li>Points: 10</li>
+ </ul>
+
+<h2>Procedure</h2>
+<ul>
+<li>You will begin this MP with the following files:
+    <ul>
+    <li><tt>MP2.ASM</tt>: Program Framework
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled
+        and linked.</li>
+    <li><tt>LIBMP2.LIB</tt>: Library functions for MP2</li>
+    <li><tt>LIB291.LIB</tt>: General-purpose library functions</li>
+    </ul>
+<li>You may copy these files from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s V:\ece291\mp2 W:\mp2</tt><br>
+    or download the files from this server as <a href="mp2.zip">mp2.zip</a> 
+</li>
+<li>Add your code to <tt>MP2.ASM</tt>.
+<li>Assemble and link your program by typing<tt> make.</tt>&nbsp; This command reads
+  the Makefile then invokes NASM and TLINK to build 
+    an executable program.  
+<li>Use TD debugger to find and correct program errors.
+</ul>
+
+<h2>Final Steps</h2>
+
+<ol>
+  <li>Demonstrate your MP2.EXE to a TA or to the instructor.&nbsp; The TA or
+    instructor will verify that your program produces the correct output. </li>
+  <li>Be prepared to answer questions about any aspect of the operation of
+   your program. The TAs will not accept an MP if you cannot fully explain
+   the operation of your code and details of your implementation. Delayed
+   MPs will be subject to late penalties as described in the course
+   syllabus (10pts/day).</li>
+  <li>The TA will handin your MP online.
+</ol>
+
+<hr>
+
+<h2 align="left"><a href="mp2.asm">MP2.ASM (program framework)</a></h2>
+

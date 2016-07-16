@@ -1,0 +1,589 @@
+<html>
+
+<head>
+<title>ECE 291</title>
+</head>
+
+<body bgcolor="#FFFFFF">
+<div align="center"><center>
+
+<table border="0" width="100%" cellspacing="0" cellpadding="0">
+  <tr>
+    <td width="33%" align="left">ECE 291</td>
+    <td width="33%" align="center">Computer Engineering II</td>
+    <td width="33%" align="right">Lockwood, Spring 1998</td>
+  </tr>
+</table>
+</center></div>
+
+<h1 align="center">Machine Problem 1</h1>
+<div align="center"><center>
+
+<table border=1 width=60%>
+  <tr>
+    <td align=right>Assigned</td>
+    <td>Thursday 1/29/98</td>
+  </tr>
+  <tr>
+    <td align="right">Due Date</td>
+    <td>Tuesday 2/10/98</td>
+  </tr>
+  <tr>
+    <td align="right">Purpose</td>
+    <td Roman">Loops, Array manipulation</td>
+  </tr>
+  <tr>
+    <td align="right">Points</font></td>
+    <td>50</td>
+  </tr>
+</table>
+</center></div>
+
+<h2>Introduction</h2>
+
+<p>If you have ever used an computer image editing program such as Corel Draw or
+PhotoShop, then you are probably familiar with basic graphics editing features. In this
+machine problem, you will be given the opportunity to write your own image manipulation program
+for ASCII graphics.  Your editing program will support the following features: 
+printing images to the screen,
+flipping image horizontally, transposing images, rotating images, and cropping images.  </p>
+
+<p>
+ASCII art are images represented only with ASCII characters.
+A number of images are included with this machine problem.  A collection of 
+ASCII artwork can be found on-line at: <a
+href="http://www.yahoo.com/Arts/Visual_Arts/Computer_Generated/ASCII_Art/">http://www.yahoo.com/Arts/Visual_Arts/Computer_Generated/ASCII_Art/</a>.  Feel free to modify existing artwork files, import artwork from the web, 
+or create your own original images.  A sample image (20x20)
+is shown below:
+
+<p><center><table border=1><tr><td><font size=-1><pre>   _,---,,,_     
+ (         ))     
+(            )   
+(            )    
+(_(_((((     )   
+ (    , \    )    
+ |   /   )   )
+ |\ /    (   )
+ (.(.)    S  )
+  /_       \ )
+ /__)   ^   \/
+   /____/    |
+  )______    |
+         \   |
+       __-\__|-__
+      (          )
+      |_|ECE291|_|
+      | |      | |</pre></font></td></tr></table></center> </p>
+
+
+<h2>Description</h2>
+
+<p>The ASCII art will be entered through an INCLUDE file. Include files are read into the
+source at assemble time.The include file contains two variables: asciisize and asciidata.
+All images are square, and may have any image size between 1 and 20.  
+A another sample include file is shown below:</p>
+
+<p><center><table border=1>
+<tr><th>small291.dat</th></tr><tr><td><pre>; ASCIIArt for mp1, Spring98
+; (Must be a square drawing)
+
+asciisize dw 5
+
+asciidata db '12345'
+          db '6789A'
+          db 'BCDEF'
+          db 'GHIJK'
+          db 'LMNOP'</pre> </td></tr> </table></center></p>
+
+
+<p>Images for this MP will be stored in an array.  Simply put, an array is a series of contiguous
+memory locations that can be addressed via an integer index. What this means is, once you
+find the beginning of an array, you can address any member of the array by adding its
+position relative to the beginning of the array.&nbsp; The ascii image is stored in a
+large array called <tt>asciidata</tt>, in row major format. Take, for example, an image
+of size 5. (<tt>asciisize</tt> = 5). This means our image is a 5 x 5 square. Because an
+ascii character is one byte, this image takes 25 bytes of memory. The top left corner is
+array index 0, while the bottom corner is array index 24. Here is a visual picture of the
+array :</p>
+<div align="center"><center>
+
+<table border="1" cellspacing="1">
+  <tr>
+    <td>Index 0</td>
+    <td>Index 1</td>
+    <td>Index 2</td>
+    <td>Index 3</td>
+    <td>Index 4</td>
+  </tr>
+  <tr>
+    <td>Index 5</td>
+    <td>Index 6</td>
+    <td>Index 7</td>
+    <td>Index 8</td>
+    <td>Index 9</td>
+  </tr>
+  <tr>
+    <td>Index 10</td>
+    <td>Index 11</td>
+    <td>Index 12</td>
+    <td>Index 13</td>
+    <td>Index 14</td>
+  </tr>
+  <tr>
+    <td>Index 15</td>
+    <td>Index 16</td>
+    <td>Index 17</td>
+    <td>Index 18</td>
+    <td>Index 19</td>
+  </tr>
+  <tr>
+    <td>Index 20</td>
+    <td>Index 21</td>
+    <td>Index 22</td>
+    <td>Index 23</td>
+    <td>Index 24 </td>
+  </tr>
+
+</table>
+</center></div>
+
+<p>Now, if you wanted to set the 2nd row, 3rd column to be the ascii character 'z', you
+would find that its index value is 7.  To move L into it you could use the command:</p>
+
+<p align="center"><tt>mov&nbsp; byte ptr [offset asciidata + 7], 'z'</tt></p>
+or (equivalently),
+<p align="center"><tt>mov&nbsp; asciidata[7],'z'</tt></p>
+
+<p align="left">For more information on arrays, see <a
+href="http://webster.ucr.edu/Page_asm/ArtofAssembly/CH05/CH05-2.html#HEADING2-55">http://webster.ucr.edu/Page_asm/ArtofAssembly/CH05/CH05-2.html#HEADING2-55</a></p>
+
+<h2>Commands</h2>
+<p>All commands for this program are entered on the command line.  A summary of the command set is shown below:</p>
+
+<p>
+<center><table border="1" cellspacing="1">
+  <tr>
+    <td align="center"><strong>Command Line Options</strong></td>
+  </tr>
+  <tr>
+    <td><pre>Usage: MP1 htrpc#
+  p = print ascii picture
+  h = horizontal flip
+  t = transpose
+  r = rotate 90 degrees clockwise
+  c# = crop, # = number of &quot;pixels&quot; (0-9)</pre>
+    </td>
+  </tr>
+</table>
+</center></p>
+
+
+<p>The array can be printed by using
+the 'p' command.  
+This will call the PrintArt routine to
+dump the contents of the <tt>asciidata</tt> on to the screen.
+To flip the array horizontally then see the result, you would
+run: <tt>MP1 hp</tt>  (note that all commands are entered in lower case). You can put as many
+commands on a line as you wish - each command is run sequentially. If you wanted to crop
+by 3, print to the screen, then flip horizontally, you would type <tt>MP1 c3php</tt>.
+You will not be responsible for implementing the
+command line parsing, that code is given to you. Instead, you are responsible for
+writing each of the five main functions - print art, flip horizontal, transpose, rotate and crop. These
+functions will be directly manipulating the <tt>asciidata</tt> arrays. 
+</p>
+
+<p>Results from running each of the commands on a 5x5 array are shown below:<p>
+
+<p>
+<center><table border=1>
+  <tr>
+     <th>Orig.<br>Input</th>
+     <th>Flip<br>Horiz.</th>
+     <th>Trans-<br>pose</th>
+     <th>Rotate</th>
+     <th>Crop 1</th> 
+  </tr><tr>
+ <td><font size=+1><pre> 12345 
+ 6789A
+ BCDEF
+ GHIJK
+ LMNOP</pre></font>
+</td><td><font size=+1><pre> 54321 
+ A9876
+ FEDCB
+ KJIHG
+ PONML</pre></font>
+ </td><td><font size=+1><pre> 16BGL 
+ 27CHM
+ 38DIN
+ 49EJO
+ 5AFKP</pre></font>
+ </td><td><font size=+1><pre> LGB61 
+ MHC72
+ NID83
+ OJE94
+ PKFA5</pre></font>
+ </td><td><font size=+1><pre>   
+  789  
+  CDE 
+  HIJ 
+ </td></pre></font>
+  </tr>
+  <tr>
+     <td><tt>MP1 p</tt>
+     <td><tt>MP1 hp</tt>
+     <td><tt>MP1 tp</tt>
+     <td><tt>MP1 rp</tt>
+     <td><tt>MP1 c1p</tt> 
+  </tr>
+</table>
+</center></p>
+
+<h2>Hints</h2>
+<ul>
+<li>The LIBMP1 file contains executable library functions for each of the routines that you
+need to implement.  
+This allows you to run the program and understand how it works before you 
+implment it.  You can test your program with any combinations of your own code and 
+library functions.  You will only receive credit, however, for the routines that you 
+implement yourself. <p>
+
+<li>When debugging your code, you will find it helpful to use the memory window to show you
+the memory location of the asciidata. You can then watch your code to manipulate the data
+as you step through it.<p>
+
+<li>Do not hardcode the arraysize or assume that the array starts at memory location 0.
+Your code should work for any size image with a height=width between 1-20. 
+Further, you always access the location of the image data relative to the offset of <tt>asciidata</tt>.
+<p>
+
+<li>START EARLY!  This is the first MP that requires you to write your own program.
+Composition is much mork difficult than comprehension.  <p>
+
+<li>Monitor the <a href="news:uiuc.class.ece291">newsgroup</a> for clarifications and help.</p>
+</ul>
+
+<h2>Procedures</h2>
+
+<p>This assignment has five procedures. You will receive credit by replacing each of these
+five procedures list below with your own code. 
+
+<ul>
+  <li><big><strong>PrintArt</strong></big><ul>
+      <li><strong>Purpose: </strong>This draws the ascii art piece onto the screen.</li>
+      <li><strong>Inputs:</strong><ul>
+          <li><tt>asciisize</tt> = width and height </li>
+          <li><tt>asciidata = array of data</tt></li>
+        </ul>
+      </li>
+      <li><strong>Output:</strong> Screen</li>
+      <li><strong>Hints:</strong><ul>
+          <li>Avoid repetitive code by using loops to iterate through the rows.</li>
+          <li>There are free library functions you can use... such as DSPMSG, DSPOUT (see lab manual).</li>
+          <li>Every screen line MUST end with a carriage return and line feed.</li>
+        </ul>
+      </li>
+      <li><strong>Points: </strong>10</li>
+    </ul>
+  </li>
+</ul>
+
+<ul>
+  <li><strong><big>FlipHorizontal</big></strong><ul>
+      <li><strong>Purpose: </strong>Flip the image Horizontally.</li>
+      <li><strong>Inputs:</strong> <ul>
+          <li><tt>asciisize</tt> = width and height</li>
+          <li><tt>asciidata</tt> = array of data</li>
+        </ul>
+      </li>
+      <li><strong>Output: </strong>modifies <tt>asciidata</tt> array</li>
+      <li><strong>Points: </strong>10</li>
+    </ul>
+  </li>
+</ul>
+
+<ul>
+  <li><big><strong>Tranpose</strong></big><ul>
+      <li><strong>Purpose: </strong>For all <strong>(i,j)</strong> of the image, <strong>(i,j)</strong>
+        -&gt;<strong>(j,i)</strong></li>
+      <li><strong>Inputs:</strong> <ul>
+          <li><tt>asciisize</tt> = width and height </li>
+          <li><tt>asciidata</tt> = array of data</li>
+        </ul>
+      </li>
+      <li><strong>Output: </strong>modifies <tt>asciidata</tt> array</li>
+      <li><strong>Hints: </strong>Writing your own subroutines may cut down on your coding!</li>
+      <li><strong>Points: </strong>10</li>
+    </ul>
+  </li>
+</ul>
+
+<ul>
+  <li><big><strong>Rotate</strong></big><ul>
+      <li><strong>Purpose: </strong>Rotates the image 90 degrees clockwise.</li>
+      <li><strong>Input: </strong><ul>
+          <li><tt>asciisize</tt> = width and height of asciidata</li>
+          <li>asciidata = array of data</li>
+        </ul>
+      </li>
+      <li><strong>Output: </strong>modifies <tt>asciidata</tt> array</li>
+      <li><strong>Hint 1: </strong>You may call other procedures that are used in this program. </li>
+      <li><strong>Points: </strong>10</li>
+    </ul>
+  </li>
+</ul>
+
+<ul>
+  <li><big><strong>CropIt</strong></big><ul>
+      <li><strong>Purpose: </strong>Crops the image equally on the top, bottom, left and right.</li>
+      <li><strong>Inputs: </strong><ul>
+          <li><tt>asciisize</tt> width and height of asciidata </li>
+          <li><tt>CropFactor</tt> = number of characters to crop (0-9)</li>
+          <li>asciidata = array of data</li>
+        </ul>
+      </li>
+      <li><strong>Output: </strong>modifies <tt>asciidata</tt> array</li>
+      <li><strong>Hint 1: </strong>In MASM, you can convert an ascii character to binary by
+        enclosing it in single quotes. (for example, space is ' ')</li>
+      <li><strong>Points: </strong>10</li>
+    </ul>
+  </li>
+</ul>
+<h2>Preliminary Procedure</h2>
+
+<ul>
+  <li>Copy the empty MP1 program (<tt>MP1.ASM)</tt>), example ascii art (<tt>*.dta</tt>
+    libraries (<tt>libmp1.lib</tt> and <tt>lib291.lib</tt>), and <tt>Makefile</tt>
+    from the network drive to your home directory with the following command: <br>
+    <tt>xcopy /s I:\ece291\mp1 F:\mp1</tt><br>
+    Alternatively, from home you can download the same files as <a href="mp1.zip">mp1.zip</a>.
+  </li>
+  <li>As with MP0, run <tt>NMake</tt> to build an executable program using the given ECE291
+    library functions. </li>
+  <li>As with MP0, use a text editor to modify the program. As given, the program uses LIBMP1
+    routines to implement all functionality. To receive full credit for the assignment, you
+    will need to implement each of the subroutines described above with your own code. </li>
+  <li>As with MP0, use CodeView (<tt>CV</tt>) to debug and test your program. Because
+    you only receive credit for procedures that functions entirely as specified
+    (and with all possible types of input), it is best to debug each routine individually.  
+    You not earn <i>any</i> points by coding only part of a subroutine.
+  <li>By modifying a few comments, you can mix and match usage of your own code and Library
+    routines. You may notice that the LIBMP1 routines contain extraneous and difficult-to-read
+    code. They are not meant to be easily unassembled! </li>
+</ul>
+
+<h2>Final Steps</h2>
+
+<ol>
+  <li>Print a copy of the MP1 grading report (MP1GR) double-check that your program 
+      is ready for demonstration.
+  <li>Demonstrate your MP1.EXE to a TA or to the instructor. You will then be asked to recompile
+    and demonstrate MP1 with different ascii art files. Your program must work with all given
+    input. </li>
+  <li>Be prepared to answer questions about any aspect of the operation of your program. The
+    TAs will not accept an MP if you cannot fully explain the operation of your code
+    and details of your implementation. Delayed MPs will be subject to late penalties.</li>
+  <li>Print MP1.ASM 
+  <li>Take your printout and disk with MP1 to the same TA which approved your demonstration.
+    Staple the grading sheet to the front of the MP1.ASM prinout.  Be sure that your name is appears
+    in your code and on the grading sheet.
+</ol>
+
+<hr>
+
+<h2>MP1.ASM (program framework)</h2>
+
+<font size=-1><pre>
+        PAGE 75, 132
+        TITLE AsciiShop - Your Name - Current Date
+
+COMMENT %
+        AsciiShop
+        --------------------
+        ECE291: MP1
+        Prof. John W. Lockwood
+        Unversity of Illinois, Dept. of Electrical & Computer Engineering
+        Assistant Guest Authors: Carlos Manzanedo, Neil Kumar
+        Spring 1998
+        Revision 1.0
+        %
+
+;====== Constants =========================================================
+
+CR      EQU 13
+LF      EQU 10
+
+;====== Externals =========================================================
+
+; -- LIB291 Routines (free) --
+
+  extrn binasc:near  ; From lib291.lib (You can use these functions freely)
+  extrn dspout:near  ; See your lab manual for a full description
+  extrn dspmsg:near  ; of each function
+
+; -- LIBMP1 Routines (replace these with your own code) --
+
+  extrn PrintArt:near       
+  extrn FlipHorizontal:near  ; Comment out each line as you   
+  extrn TransPose:near       ; write the function
+  extrn Rotate:near        
+  extrn CropIt:near        
+
+  extrn mp1xit:near  ; Terminates Program      
+
+;====== Stack Segment =====================================================
+stkseg  segment stack
+        db 64 dup ('STACK   ')
+stkseg  ends
+
+;====== Code/Data segment =================================================
+cseg    segment public 'CODE' 
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== Variables =========================================================
+
+; The INCLUDE directive inserts the contents of the file into your program.
+; In this file, two variables are defined: asciisize and asciidata.
+; Choose your test case by un-commenting one of the lines below:
+
+;INCLUDE hextest.dat    ; Tiny (4x4) Array, great for testing
+;INCLUDE small291.dat   ; Small (5x5) Array, as shown in MP writeup
+;INCLUDE beavis.dat     ; Large (20x20) ASCII Art Image
+INCLUDE ece291.dat     ; Large (20x20) ECE291 test array
+
+
+ErrorMessage  db      'Syntax Error',CR,LF
+              db      'Usage: MP1 phtrc#',CR,LF
+              db      '  p = print ascii picture',CR,LF
+              db      '  h = horizontal flip',CR,LF
+              db      '  t = transpose',CR,LF
+              db      '  r = rotate 90 degrees clockwise',CR,LF
+              db      '  c# = crop, # = number of "pixels" (0-9)',CR,LF,'$'
+
+crlf db CR,LF,'$'  ; Carriage Return / Line Feed String
+
+CommandLinePos dw ?
+CommandLineLength dw ?
+CropFactor db ?
+
+PUBLIC CropFactor     ; Variables must be accessible by LIBMP1
+PUBLIC Asciidata
+PUBLIC Asciisize
+
+; ======== Your Code ======================================================
+
+; -- Write the code for your subroutines below --
+; To use your own code,
+; comment out the 'extrn' routine from above and
+; uncomment your procedure declaration
+                    
+;PrintArt Proc near       ; Print the ascii drawing
+        ; Your code Goes here!
+        ret
+;PrintArt ENDP
+
+;FlipHorizontal Proc NEAR ; Flip the asciidata array horizontally
+        ; Your code Goes here!
+        ret
+;FlipHorizontal ENDP
+
+;Transpose proc Near      ; Transpose the asciidata array
+        ; Your code Goes here!
+        ret
+;Transpose ENDP
+
+;Rotate proc near         ; Rotate the asciidata array by 90 degrees
+        ; Your code Goes here!
+        ret
+;Rotate endp
+
+;CropIt Proc NEAR         ; Crop the aray
+        ; Your code Goes here!
+        ret
+;CropIt ENDP
+
+
+;====== Main procedure ====================================================
+
+main    proc    far
+
+        ; The Main body of the program parses the command
+        ; line and invokes each subroutine.  You are given this code.
+
+        mov  ax, ds  ; Command line arguments are read from the PSP
+        mov  es, ax  ; (Brey p.380 and Figure Appendix-A5 has details)
+                     
+        mov  ax, cseg
+        mov  ds, ax  ; set DS=CS
+
+        xor  ax, ax                         
+        mov  al, byte ptr es:[80h]          ; Read Command Line Length
+        mov  CommandLineLength, ax
+        cmp  CommandLineLength, 1           ; Terminate for no commands
+        jbe  CommandLineError
+
+        mov  CommandLinePos, 1              ; Skip first space
+MainLoop:
+        mov  si, CommandLinePos
+        cmp  si, CommandLineLength
+        jae  DoneCommandLine   
+        cmp  byte ptr es:[si+81h], 'r'      ; Check for rotate
+        jne  NotRotate
+        Call Rotate
+        inc  CommandLinePos
+        jmp  MainLoop
+NotRotate:                                  ; Check for crop
+        cmp  byte ptr es:[si+81h], 'c'
+        jne  NotCrop
+
+        mov  bl, byte ptr es:[si+81h+1]     ; Get cropfactor
+        sub  bl, '0'                        ; Convert ascii digit -> number
+        cmp  bl, 9
+        ja   CommandLineError               ; Rangecheck for (0..9)
+        mov  CropFactor, bl
+        call CropIt
+        add  CommandLinePos,2
+        jmp  MainLoop
+NotCrop:
+        cmp  byte ptr es:[si+81h], 'h'      ; Check for horizontal flip
+        jne  NotHoriz
+        call FlipHorizontal
+        inc  CommandLinePos
+        jmp  MainLoop
+NotHoriz:
+        cmp  byte ptr es:[si+81h], 't'      ; Check for transpose
+        jne  NotTrans
+        inc  CommandLinePos
+        call Transpose
+        jmp  MainLoop
+NotTrans:
+        cmp  byte ptr es:[si+81h], 'p'      ; Check for printart
+        jne  NotPrint
+        Call PrintArt
+        mov  dx,offset crlf                 ; Print a blank line
+        call dspmsg
+        inc  CommandLinePos
+        jmp  MainLoop
+NotPrint:
+        cmp  byte ptr es:[si+81h], ' '      ; Ignore spaces
+        jne  NotSpace
+        inc  CommandLinePos
+        jmp  MainLoop
+NotSpace:
+        jne  CommandLineError               ; If not command, must be error
+
+DoneCommandLine:                            ; Normal termination
+        call mp1xit
+
+CommandLineError:
+        mov   dx, offset ErrorMessage       ; Print Error message and quit
+        call  dspmsg                   
+        call  mp1xit
+
+main    endp
+
+cseg    ends
+        end     main
+</pre></font>
+</body>
+</html>

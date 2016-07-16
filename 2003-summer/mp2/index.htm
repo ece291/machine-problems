@@ -1,0 +1,526 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<%
+title = "ECE291 Machine Problem 2"
+subtitle = "Machine Problem 2"
+%>
+<!--#include file="headvb.asp"--></HEAD>
+<BODY>
+<TABLE border=0 cellPadding=7 cellSpacing=1 width="100%">
+  <TBODY>
+  <TR>
+    <TD vAlign=top>
+      <H1 align=center>Machine Problem 2: Encryption, Decryption, and the Serial 
+      Port</H1>
+      <p align=center><span style="background-color: #FFFF00">TWO CHANGES WERE 
+      MADE TO THE WRITE UP ON SUNDAY 5-29-03.<br>
+      FOR THE PRIME FUNCTION, THE RETURN VALUE WAS CHANGED FROM 'NON-ZERO'&nbsp; 
+      TO '1'<br>
+&nbsp;FOR THE KEYS FUNCTION,&nbsp; THE DESCRIPTION WAS MODIFIED TO MAKE IT MORE 
+      CLEAR</span></p>
+      <p align=center><span style="background-color: #FFFF00">ANOTHER CHANGE WAS 
+      MADE TO THE WRITE UP ON TUESDAY 5-02-03.<br>
+      THE SEND FUNCTION SHOULD SEND A '$' NOT A ZERO WHEN IT REACHES THE END OF 
+      THE STRING</span></p>
+      <DIV align=center>
+      <CENTER>
+      <TABLE border=1 width=513>
+        <TBODY>
+        <TR>
+          <TD align=right width=64>Assigned</TD>
+          <TD width=433>Thursday, June 25, 2003</TD></TR>
+        <TR>
+          <TD align=right width=64>Due Date</TD>
+          <TD width=433>Thursday, July 3, 2003</TD></TR>
+        <TR>
+          <TD align=right width=64>Purpose</TD>
+          <TD width=433 Roman?>To design and implement subroutines, passing 
+          arguments in registers and in memory. To use arithmetic instructions 
+          in numeric computations. And to initialize and send/receive data 
+          through serial port.</TD></TR>
+        <TR>
+          <TD align=right width=64>Points</FONT></TD>
+          <TD width=433>80</TD></TR></TBODY></TABLE></CENTER></DIV>
+          
+<BLOCKQUOTE>
+The subroutine is the greatest invention since sliced bread.
+<I>-- M. C. Loui</I><BR>
+I often quote myself. It adds spice to my conversations.
+<I>-- G. B. Shaw</I><BR>
+</BLOCKQUOTE>
+
+<P>You will write a program MP2 that reads in a string of characters from the 
+keyboard and sends out an encrypted form of the string through the serial port. 
+The program also will poll the serial port for an encrypted message and print 
+out the decrypted message</P>
+
+<P>Files for MP2 are on the <tt>V:</tt> drive in the directory <tt>V:\ece291\mp2</tt>. 
+In this directory are the program framework <tt>mp2.asm</tt> and a running 
+version of the program <tt>mp2lab.exe</tt>. Lab versions of subroutines are in <tt>
+libmp2.lib</tt>, which contains all subroutines of LIB291 plus libGetStr, 
+libKeys, libPrime, and libEncDec, libInitSerial, libSend,libRecv. You will use 
+mp2xit instead of dosxit. Some testing data are in the file <tt>test2.in</tt>. 
+You should start by copying these files to your home directory with the 
+following command: <BR>
+<TT>xcopy /s V:\ece291\mp2 W:\mp2</TT><BR>
+You may download the files from the server as 
+<A href="http://courses.engr.illinois.edu/ece291/mp/mp2/mp2.zip">mp2.zip</A>  </P>
+
+<P>Reading: Lab Notes -- Chapter 12 (Serial Communication) of the lab notes</P>
+
+<H2>Program Specification</H2>
+
+<p>The program accepts four commands: K, S, R, and X.</p>
+<table>
+<tr> 
+<td> K s t </td>
+<td> <b>Change keys</b> to s and t, which are positive numbers</td></tr>
+<tr>
+<td> S <i>string</i></td>
+<td> <b>Send</b>: using the current keys, encrypt string and send it through 
+serial port</td></tr>
+<tr>
+<td>R</td>
+<td> <b>Receive</b>: Wait for string from serial port and decrypt string.</td></tr>
+<tr>
+<td>X </td> 
+<td> <b>Exit</b> and return to DOS</td></tr>
+</table>
+<pre><img border="0" src="send.gif" width="669" height="338"></pre>
+
+<pre><img border="0" src="recv.gif" width="669" height="338">
+</pre>
+
+<h2>Program Organization</h2>
+
+<P>In this machine problem, the main procedure is provided for you; however, you 
+must write the code to replace the library subroutines. You will replace these 
+subroutines from the libmp2 library by deleting the statements that call the 
+libmp2 subroutine and by adding your own code. Each subroutine that you write 
+should match the output of the library subroutine exactly.</P>
+
+<P>This assignment has seven subroutines. You will receive credit by replacing 
+each of these subroutines listed below with your own code. Document each 
+subroutine with a header. In the Lab Notes, standards for headers appear on page 
+4, and examples of subroutines on pages 28-33 and 82-85.
+</P>
+      <TABLE border=1 height="1523">
+        <TBODY>
+        <TR vAlign=top>
+          <TD height="266"><B><FONT size=+1>GetStr</FONT></B></TD>
+          <TD height="266">
+            <UL>
+              <LI>Accepts an input string of at most STRLEN characters from the 
+              keyboard 
+              <LI>Input: 
+              <UL>
+                <LI>BX = offset of buffer used to store the 
+                string 
+                <LI>STRLEN =&nbsp; maximum number of characters the buffer can 
+                hold</LI>
+                </UL>
+              <LI>Outputs: 
+              <UL>
+                <LI>None</LI></UL>
+              <LI>Calls: kbdin, dspout, dspmsg 
+              <LI> 
+GetStr sends the prompt character ':' to the screen and reads in a character 
+string from the keyboard with kbdin. GetStr echoes each character as it is typed 
+in by calling dspout. When the user presses the Enter (carriage return) key, 
+GetStr appends a '$' to mark the end of the string, echoes a carriage return and 
+line feed on the screen, and returns via a RET instruction. When the user 
+presses the Backspace key, GetStr echoes the backspace to move the cursor back 
+one position. Then GetStr sends a single space ' ' to the screen to erase the 
+last character, and GetStr sends the backspace character to the screen again to 
+move the cursor back to the intended position. GetStr prevents the user from 
+backspacing past the prompt character. The character string is stored in STRLEN 
+consecutive bytes in memory, including one byte for '$'. GetStr prevents the 
+user from typing more than STRLEN-1 characters. To use the input data in <tt>
+test2.in</tt>, GetStr must also reject line feed (LF) characters.
+              </LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD height="171"><B><FONT size=+1>Prime</FONT></B></TD>
+          <TD height="171">
+            <UL>
+              <LI>Determines whether an input number x is prime 
+              <LI>Input: 
+              <UL>
+                <LI>AX = Input number x, assumes x &gt;= 2</LI></UL>
+              <LI>Output: 
+              <UL>
+                <LI>CL = <span style="background-color: #FFFF00">1 if x is prime</span>, 0 if number is not prime</LI></UL>
+              <LI>Calls: none 
+              <LI>Prime tries every number from 2 to x-1 as a possible divisor. 
+              As an alternative, you may stop the process and declare x to be a 
+              prime when the trial divisor is greater than the square root of x. 
+              (Hint: compare the trial divisor with the quotient.) </LI></UL></TD>
+        <TR vAlign=top>
+          <TD height="20"><font size="+1"><b>InitSerial </b></font></TD>
+          <TD height="20">
+            <UL>
+              <LI>Initializes serial port<LI>Input: 
+              <ul>
+                <li>COMBASE - base address serial port 
+                <li>BAUDRATE - divisor used to set data transmission rate of 
+                serial port</li></ul>
+              <LI>Outputs:
+              <LI>Calls:&nbsp; None<li> 
+Set both the high and low byte of the 
+              Divisor Latch using BAUDRATE.&nbsp; For Example, if BAUDRATE was 
+              0180h you would set the high byte of the divisor latch to 01h and 
+              the low byte of the divisor latch to 80h. 
+              <li> 
+Use 8 info bits, 1 stop bit, no parity 
+              bit, no stuck parity (clear bit 5 of Serial Line Control 
+Register), and no long space (clear bit 6 of Serial Line Control Register). 
+              <li> 
+Disable all interrupts by clearing the Serial Interrupt Enable Register, and 
+clearing the OUT2 bit of the Modem Control Register.</li></UL></TD>
+        <TR vAlign=top>
+          <TD height="266"><font size="+1"><b>Recv</b></font></TD>
+          <TD height="266">
+            <UL>
+              <LI>Reads characters from serial port until it receives a '$' or 
+              buffer is full<LI>Input: 
+              <ul>
+                <li>BX = offset of buffer to store input 
+                from serial port into the buffer 
+                <li>STRLEN = maximum number of characters 
+                the buffer can hold 
+                <li>COMBASE - base address serial port 
+                <li>Serial port input</li></ul>
+              <LI>Outputs: 
+              <UL>
+                <LI> Buffer filled with characters from 
+                serial port.&nbsp; Buffer needs to be terminated by '$'</LI></UL>
+              <LI>Calls:&nbsp; None<li> 
+Waits for new character from serial port 
+              <li> 
+Once new character arrives, read it from 
+              the serial port and write it to the buffer. 
+              <li> 
+Always put a '$' at the end of the 
+              buffer. 
+              <li> 
+Don't attempt to read a character from serial port if the buffer is already 
+full.&nbsp;
+              
+              </li></UL></TD></TR>
+        <TR vAlign=top>
+          <TD height="190"><font size="+1"><b>Send</b></font></TD>
+          <TD height="190">
+            <ul>
+              <li>Writes character from buffer to serial 
+              port, send<span style="background-color: #FFFF00"> '$' </span>when string is complete 
+              <LI>Input: 
+              <ul>
+                <li>BX = offset to '$'-terminated string to 
+                send over serial port 
+                <li>COMBASE - base address serial port</li></ul>
+              <LI>Outputs: 
+              <UL>
+                <LI> Serial port output</LI></UL>
+              <LI>Calls:&nbsp; None<li> 
+Waits until serial port is ready before 
+              sending character. 
+              <li> 
+Send a <span style="background-color: #FFFF00">'$' </span>to denote the end of the 
+              transmission. 
+              </ul>
+          </TD></TR>
+        <TR vAlign=top>
+          <TD height="247"><B><FONT size=+1>Keys</FONT></B></TD>
+          <TD height="247">
+            <UL>
+              <LI>Determines whether the new keys proposed by the user are 
+              legitimate 
+              <LI>Input: 
+              <ul>
+                <li>BX = offset of character string with two numbers s and t 
+                separated by a space  
+                </li></ul>
+              <LI>Outputs: 
+              <UL>
+                <LI> K1 = first number s 
+                <li> K2 = second number t 
+                <li> InvK1 = multiplicative inverse of s modulo t </li></UL>
+              <LI>Calls: ascbin, binasc, dspmsg, Prime 
+              <li> 
+Keys calls ascbin twice to convert the keys s and t to binary. Also, Keys checks 
+that the keys are valid: s and t must be positive numbers, t must be a prime 
+number greater than 26, and s must have a <a href="mod_inverse.htm">multiplicative inverse modulo t</a>. If 
+one of these conditions is not met, or if ascbin reports a conversion error, 
+then Keys types out the message 'Invalid Keys' and returns. If all conditions 
+are met, then Keys computes and prints out the value
+<span style="background-color: #FFFF00">of&nbsp; InvK1</span>.&nbsp; To compute 
+InvK1, Keys tries every value among 1, 2, ..., t-1.</li></UL></TD></TR>
+        <TR vAlign=top>
+          <TD height="321"><B><FONT size=+1>EncDec</FONT></B></TD>
+          <TD height="321">
+            <UL>
+              <LI>Performs both encryption and decryption. 
+              <LI>Inputs: 
+              <UL>
+                <LI>BX = offset of string to be encrypted or decrypted, ends 
+                with '$' 
+                <LI>word [K2] = prime number used for encryption and decryption<li>
+                CX = multiplier m, with m = K1 to encrypt and m = InvK1 to 
+                decrypt</li></UL>
+              <LI>Outputs: 
+              <UL>
+                <LI>Writes encrypted/decrypted characters back to string.</LI></UL>
+              <LI>      
+First EncDec inspects each character c in the input string. If c is not an 
+upper-case alphabetic letter, then EncDec skips past c.&nbsp; If c is an 
+upper-case letter, then EncDec performs the following algorithm: <br>
+<pre>z := c - 40h            (Now 1 &lt;= z &lt;=   26)            
+
+REPEAT 
+z  : = (m * z) mod K2 
+UNTIL z &lt; = 26
+
+d := z + 40h            (Convert to ASCII) 
+write back d to string
+</pre>
+</LI></UL></TD></TR>
+</TBODY></TABLE>
+<H2>Friendly Advice</H2>
+<UL>
+<LI>The libmp2.lib file contains executable library subroutines for each of the 
+routines that you need to implement. The library subroutines you to run the 
+program and understand how it works before you implement it. You can test your 
+program with any combinations of your own code and library subroutines. You will 
+receive credit only for the subroutines that you implement yourself. 
+        
+<LI>You may define new memory variables as needed. Variables associated with a 
+subroutine should be declared between the header and the first instruction of 
+the subroutine. 
+        
+<li>Each subroutine should save and restore any registers that it uses, except 
+for registers that deliver subroutine outputs. The caller may use registers 
+without outputs and expect them to remain unchanged. 
+<li>You can find a list of prime numbers in the Resources section of the ECE 291 
+Web site at 
+<a href="http://courses.engr.illinois.edu/ece291/resources/primes.html">
+http://courses.engr.illinois.edu/ece291/resources/primes.html</a>
+<LI>Monitor the webboard for clarifications and help. 
+        
+<LI>START EARLY!</LI>
+</UL>
+
+<h2>Demonstration, Documentation, and Grading</h2>
+<p>Demonstrate your program to an ECE 291 staff member. He will ask you to use 
+Turbo Debugger and Keys to compute the multiplicative inverse of a number.</p>
+<p>As in MP1, keep an MP development log. When you complete your program, 
+analyze the MP development log and write a cover memo, which you should submit 
+with the program after the demonstration. The cover memo should address the 
+following questions:
+<UL>
+<LI>How much time did you spend on each subroutine, from planning and design 
+through final debugging? 
+        
+<LI>What kinds of defects (bugs) did you find during the development of the 
+program? When did you discover these defects (during code review or during 
+testing)? How did you find them? 
+        
+<LI>What did you learn about design, coding, testing, and debugging in this MP? 
+        
+<LI>What went well in your work on this MP? What did not? 
+        
+<LI>What you would do differently for the next MP? 
+        
+<LI>If you did the optional debugging exercises, then please comment on the 
+usefulness of those exercises.</LI>
+</UL>
+<p>Your program will be graded according to the clarity of your design and the 
+quality of your documentation.</p>
+
+       <HR>
+
+      <H2>mp2.asm (program framework)</H2>
+      <pre>; MP2 - Encryption, Decryption, and the Serial Port
+;  Your Name
+;  Today's Date
+;
+; Josh Potts, Summer 2003
+; Author: Michael Loui - September 7 2002
+; Modifications: Derek King - June 25 2003
+; University of Illinois, Urbana-Champaign
+; Dept. of Electrical and Computer Engineering
+;
+; Version 1.1</pre>
+      <pre>         BITS    16</pre>
+      <pre>;====== SECTION 1: Define constants =======================================
+</pre>
+      <pre>	CR      EQU     0Dh
+	LF      EQU     0Ah
+	BS      EQU     08h
+	SPACE   EQU     20h
+	STRLEN	EQU     60	; Maximum length of input string, including '$'
+	COMBASE	EQU	03f8h	; Base address for serial port
+	BAUDRATE EQU	000ch	; Divisor use to set baudrate</pre>
+      <pre>;====== SECTION 2: Declare external procedures ============================</pre>
+      <pre>EXTERN  ascbin, binasc, kbdin, dspout, dspmsg, dosxit
+</pre>
+      <pre>GLOBAL Prompt, NotCmd, NewLine, HdMsg, XitMsg, InvMsg, RecvMsg, DecMsg, InvKeys
+GLOBAL K1, K2, InvK1, String, NumBuf
+GLOBAL Prime, STRLEN
+EXTERN libSend, libRecv, libEncDec, libGetStr, libPrime, libKeys, libInitSerial, mp2xit</pre>
+      <pre>;====== SECTION 3: Define stack segment ===================================</pre>
+      <pre>SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+         RESB      64*8
+stacktop:
+         RESB    0                       ; NASM bug workaround</pre>
+      <pre>;====== SECTION 4: Define code segment ====================================</pre>
+      <pre>SEGMENT code                            ; *** CODE SEGMENT ***</pre>
+      <pre>;====== SECTION 5: Declare variables for main procedure ===================
+</pre>
+      <pre>Prompt  DB      CR,LF,':','$'
+NotCmd  DB      CR,LF,'Not a command',CR,LF,'$'
+NewLine DB	CR,LF,'$'
+HdMsg   DB      CR,LF,'This is MP2LAB','$'
+XitMsg  DB      CR,LF,'MP2: Exit to DOS','$'
+InvMsg	DB	CR,LF,'The new inverse key is ','$'
+RecvMsg DB	CR,LF,'Recieved encrypted message',CR,LF,'$'
+SendMsg DB	CR,LF,'Sending encrypted message',CR,LF,'$'
+DecMsg	DB	CR,LF,'Decrypted message',CR,LF,'$'
+InvKeys DB      CR,LF,'Invalid keys',CR,LF,'$'</pre>
+      <pre>K1      DW      1                       ; First key
+K2      DW      29                      ; Second key
+InvK1   DW      1                       ; Multiplicative inverse of K1 mod K2
+String  RESB    STRLEN                  ; Input string from user
+NumBuf	RESB	7			; Space to store binary to String conversion</pre>
+      <pre>;You may declare additional variables here</pre>
+      <pre>;====== SECTION 6: Program initialization =================================</pre>
+      <pre>..start:
+         mov     AX, CS                  ; Initialize Default Segment register
+         mov     DS, AX
+         mov     AX, stkseg              ; Initialize Stack Segment register
+         mov     SS, AX
+         mov     SP, stacktop            ; Initialize Stack Pointer register</pre>
+      <pre>;====== SECTION 7: Main procedure =========================================</pre>
+      <pre>main:
+	call InitSerial</pre>
+      <pre>	mov     dx, HdMsg               ; Display header message
+	call	dspmsg</pre>
+      <pre>.TopLoop:
+	mov     bx, String              ; Get input string from user
+	call    GetStr</pre>
+      <pre>; Check for commands
+	cmp BYTE [bx], 'K'	
+	je .DoKeys
+	cmp BYTE [bx], 'X'
+	je .mpExit
+	cmp byte [bx], 'S'
+	je .DoSend
+	cmp byte [bx], 'R'
+	je .DoRecv
+        mov dx, NotCmd		; First char is not a command
+        call dspmsg
+	jmp .TopLoop</pre>
+      <pre>.DoSend				;Send command - first encrypt message with K1
+	inc bx			;	then send message through serial port
+	mov cx, [K1]		
+	call EncDec
+	mov dx, SendMsg
+	call dspmsg
+	mov dx, bx
+	call dspmsg
+	mov dx, NewLine
+	call dspmsg
+	call Send
+	jmp .TopLoop</pre>
+      <pre>.DoRecv				;Recv command - first poll serial port for message
+	call Recv		;	then decrypt the message
+	mov dx, RecvMsg
+	call dspmsg
+	mov dx, bx
+	call dspmsg
+	mov dx, NewLine
+	mov cx, [InvK1]
+	call EncDec
+	mov dx, DecMsg
+	call dspmsg
+	mov dx, bx
+	call dspmsg
+	mov dx, NewLine
+	jmp .TopLoop
+ </pre>
+      <pre>.DoKeys:                     	; Keys command
+	inc bx           	; Increment BX past 'K'
+	call Keys		
+	jmp .TopLoop</pre>
+      <pre>.mpExit:
+	mov DX, XitMsg              ; Type out exit message
+	call dspmsg
+	call mp2xit                  ; Exit to DOS
+
+</pre>
+      <pre>; Subroutine GetStr
+;
+;       Inputs:  
+;	Outputs: 
+;       Calls:</pre>
+      <pre>GetStr:
+	call libGetStr
+	ret
+</pre>
+      <pre>; Subroutine Prime
+;
+;       Inputs:  
+;	Outputs: 
+;       Calls:</pre>
+      <pre>Prime:
+	call libPrime
+	ret
+
+</pre>
+      <pre>; Subroutine Keys
+;
+;       Inputs:  
+;	Outputs: 
+;       Calls:</pre>
+      <pre>Keys:
+	call libKeys
+	ret
+</pre>
+      <pre>; Subroutine EncDec
+;
+;       Inputs:  
+;	Outputs: 
+;       Calls:</pre>
+      <pre>EncDec:
+	call libEncDec
+	ret
+</pre>
+      <pre>; Subroutine InitSerial
+; 
+;       Inputs  none
+;	Outputs none
+;       Calls   none
+InitSerial:
+	call libInitSerial
+	ret
+</pre>
+      <pre>; Subroutine Recv
+;
+;       Inputs:  
+;	Outputs: 
+;       Calls:	
+Recv
+	call libRecv
+	ret
+</pre>
+      <pre>; Subroutine Send
+;
+;       Inputs:  
+;	Outputs: 
+;       Calls:	
+Send
+	call libSend
+	ret</pre>
+
+      <p>&nbsp;</p><FONT size=-1>
+      <PRE></PRE></FONT></TD></TR></TBODY></TABLE>
+</BODY>
+</HTML>

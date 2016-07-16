@@ -1,0 +1,862 @@
+<%
+title = "ECE 291 - MP3"
+subtitle = "MP3"
+%>
+<!--#include file="headvb.asp"-->
+<h1 align="center">Machine Problem 3: Doomsday Countdown</h1>
+<div align="center">
+	<center>
+		<table width="513" border="1">
+			<tr>
+				<td align="right" width="64">Assigned</td>
+				<td width="433">Thursday, 7/07/03</td>
+			</tr>
+			<tr>
+				<td align="right" width="64">Due Date</td>
+				<td width="433">Thursday, 7/17/03</td>
+			</tr>
+			<tr>
+				<td align="right" width="64">Purpose</td>
+				<td width="433" Roman>Install and write timer and keyboard interrupts.&nbsp; 
+					Implement and use queues.&nbsp; Blit with text mode video</td>
+			</tr>
+			<tr>
+				<td align="right" width="64">Points</FONT></td>
+				<td width="433">85</td>
+			</tr>
+		</table>
+	</center>
+	<CENTER>&nbsp;</CENTER>
+	<CENTER>
+		<DT><FONT size="4"><STRONG>"Y2K, we're not familiar with that. However in regard to the 
+					"Millennium Bug"---not to worry my friend, we are prepared to spray 
+					everywhere."</STRONG></FONT>
+			<DD>One of the comments made at 
+		<!-- A HREF="http://www.duh-2000.com/" --> http://www.duh-2000.com/<!-- /A -->
+	</CENTER>
+	</DD></div>
+<h2>Updates - Oopps our bad...</h2>
+<h2><font size="3"><span style="FONT-WEIGHT: 400; BACKGROUND-COLOR: #ff00ff">
+Changed port 21h to port 20h in KbdISR</span></font></h2>
+<p><span style="background-color: #FF00FF">&nbsp;</span><span style="background-color: #FF00FF">DrawMsg 
+should&nbsp; use address in DX not </span>
+<span style="background-color: #FF00FF">StringBuffer</span><span style="background-color: #FF00FF"> 
+directly</span></p>
+<p><span style="background-color: #FF00FF">Fixed unclear description of 
+RestoreISR</span></p>
+<p><span style="background-color: #FF00FF">Blit should copy 5x5 image to video 
+memory not 5x6</span></p>
+<p><span style="background-color: #FF00FF">If you prefer, you can use INT 21h to 
+install and restore your ISR's.&nbsp; See InstallISR and RemoveISR for more 
+details</span></p>
+<p><span style="background-color: #FF00FF">The notes for DisplayString have been 
+updated to make them clear</span></p>
+<p><span style="background-color: #FF00FF">In DisplayTime changed 9 hours to 99 
+hours</span></p>
+<h2>Introduction</h2>
+<p><span style="BACKGROUND-COLOR: #ffff00">Timing is of the essence. Imagine what it would be like if 
+during your final exam, you had absolutely no idea what time you have left... 
+</span></p>
+<P><SPAN style="BACKGROUND-COLOR: #ffff00">and what better way than to be able to produce a countdown 
+clock of your own to use during the ece291 final exam?</SPAN></P>
+<P><SPAN style="BACKGROUND-COLOR: #ffff00">You will therefore be asked to design 
+an mp that mimics the countdown clock of doom.</SPAN></P>
+<P></P>
+<h2>Problem Description</h2>
+<p>Your program is required to:
+	<UL>
+		<li>
+		Install and uninstall a timer and keyboard ISR
+		<li>
+		Code a keyboard ISR
+		<li>
+			Blit images to text mode video
+		</li>
+	</UL>
+<P>Reading : Chapter 10 and 11 (I/O Devices and Graphics)</P>
+<H2>Program Specification</H2>
+<P>The program accepts four commands: r, s, p, and ESC.</P>
+<P>
+	<TABLE id="Table2">
+		<TR>
+			<TD>r&nbsp;</TD>
+			<TD><STRONG>Resume: </STRONG>resume countdown</TD>
+		</TR>
+		<TR>
+			<TD>s&nbsp;<I>HH.MM.SS</I></TD>
+			<TD><B>Set</B>: Set a new countdown time</TD>
+		</TR>
+		<TR>
+			<TD>p</TD>
+			<TD><B>Pause</B>: pauses the countdown</TD>
+		</TR>
+		<TR>
+			<TD>ESC</TD>
+			<TD><B>Exit</B> and return to DOS</TD>
+		</TR>
+	</TABLE>
+</P>
+<P><IMG alt="" src="mp3.gif" width="652" height="338"></P>
+<P><IMG alt="" src="mp3a.gif" width="652" height="338"></P>
+<H2>MP3 Program Assignment</H2>
+<p>In this machine problem, the main procedure is provided for you; however, you 
+	must write the code to replace the library procedures. You will replace these 
+	procedures from the LIBMP3 library by commenting out the statements calling the 
+	library procedure and adding your code. Each procedure that you write should 
+	match the output of the library code exactly. Each of the function calls and 
+	their functionality is described below in the <b>Procedures</b> section. The 
+	best way to get a feel for the program is to run it to see how it is supposed 
+	to operate. You can also edit the test file to see how various changes will 
+	affect the program execution.</p>
+<p>The program can be run by typing <tt>mp3</tt> at the command prompt.
+</p>
+<h2>Hints</h2>
+<UL>
+	<li>
+		The LIBMP3 file contains executable library functions for each of the routines 
+		that you need to implement. This allows you to run the program and understand 
+		how it works before you implement it. You can test your program with any 
+		combinations of your own code and library functions. You will only receive 
+		credit, however, for the routines that you implement yourself.
+		<p></p>
+	<li>
+		When debugging your code in TD, you will find it helpful to use the memory 
+		window to show you the memory location of the file and strings. You can also 
+		use the watch window to keep track of variables in your code.</li></UL>
+<P>&nbsp;</P>
+<UL>
+	<li>
+		Do not assume that the file starts at memory location 0.
+		<p></p>
+	<li>
+		You may define new variables as needed.
+		<p></p>
+	<li>
+		Be very careful if you call another procedure not to destroy registers that the 
+		calling procedure uses.</li></UL>
+<p>
+	<UL>
+		<li>
+			<span style="BACKGROUND-COLOR: #ffff00">START EARLY!</span>
+			There are a total of&nbsp;10 functions you have to write, including the main 
+			function. Time, you see,&nbsp;IS of the essence.&nbsp;You will be writing the 
+			main function in this MP, points will be awarded accordingly as to how you 
+			separate your functions.</li></UL>
+<P>&nbsp;</P>
+<UL>
+	<li>
+		You need to preserve register values in all of the procedures you write.&nbsp; 
+		To do this, push all the registers you use in the procedure at the beginning of 
+		the procedure.&nbsp; Then, pop them all in reverse order at the end of the 
+		procedure (right before you ret).</li></UL>
+<P>&nbsp;</P>
+<UL>
+	<li>
+		You need to create function headers for each of the functions you write.&nbsp; 
+		Function headers should include the name of the function, the list of inputs to 
+		the function, the list of the outputs, and any functions that the function 
+		calls.&nbsp; You will lose points if you do not do this!</li></UL>
+<P>&nbsp;</P>
+<UL>
+	<li>
+		We provided you with a library timer ISR. Take a look at the code, it may make 
+		writing the keyboard ISR much more simple.</li></UL>
+<P>&nbsp;</P>
+<UL>
+	<li>
+		Monitor the <a href="http://my.ece.uiuc.edu/secure/webboard.asp">webboard</a> for 
+		clarifications and help.</li></UL>
+<h2>Procedures</h2>
+<p>This assignment has four procedures. You will receive credit by replacing each 
+	of these four procedures listed below with your own code.
+</p>
+<table id="Table1" border="1">
+	<tr>
+		<td vAlign="center"><font size="+1"><b>InitVideo</b></font></td>
+		<td>
+			<ul>
+				<li>
+				Initialize mode 03h text mode video.
+				<li>
+				Inputs:
+				<li>
+				Outputs:
+				<li>
+					Calls:
+					<span style="BACKGROUND-COLOR: #ffff00">int 10h</span>
+				<li>
+					Notes:
+					<ul>
+						<li>
+						Set screen to 03h video mode
+						<li>
+						Clear screen (scrolling the screen can accomplish this for you),
+                        <span style="background-color: #FF00FF">(so can setting 
+                        the video mode -- you don't need need to worry about 
+                        matching the ugly background color)</span><li>
+						Hide cursor (moving the cursor off the screen will suffice)
+						<li>
+							Section 11.3 (page 113) of the lab manual has information on setting the video 
+							mode
+						</li>
+					</ul>
+				<li>
+					Points: 10</li>
+			</ul>
+		</td>
+	</tr>
+	<tr vAlign="top">
+		<td vAlign="center"><font size="+1"><b>InstallISR</b></font></td>
+		<td>
+			<ul>
+				<li>
+				Saves the old interrupt service routines and installs the modified timer and 
+				keyboard service routines.
+				<li>
+				Inputs: cs, TmrISR, KbdISR, Interrupt vector table
+				<li>
+				Outputs: Interrupt Vector Table, SavKSeg,&nbsp; SavKOff,&nbsp; SavTSeg, SavTOff 
+				= addresses of old interrupt vector segments and offsets
+				<li>
+				Calls: None
+				<li>
+					Notes:
+					<ul>
+						<li>
+							<span style="background-color: #FF00FF">There are 
+                            two ways to install the interrupts, accessing the 
+                            interrupt vector table directly, or using </span>
+                            <span style="background-color: #FF00FF">INT</span><span style="background-color: #FF00FF"> 
+                            21h to do some of the work for you.&nbsp; Using
+                            </span><span style="background-color: #FF00FF">INT</span><span style="background-color: #FF00FF"> 
+                            21h was the method covered in class.&nbsp; Feel free 
+                            to use either method or any combination of both for 
+                            the MP.&nbsp; </span>
+						<li>
+							Use 1Ch for the timer interrupt and 9 for the 
+                            keyboard interrupt<li>
+							Remember you
+							<span style="BACKGROUND-COLOR: #ffff00">MUST</span>
+						disable interrupts while changing&nbsp; the interrupt vector table.
+                            <span style="background-color: #FF00FF">(only 
+                            applies if you are accessing the interrupt table 
+                            directly.)</span><li>
+						You must use the ports to set the timing of the timer interrupt
+						<LI>
+							Set interval of the timer interrupt 10msec. Use 
+                            timer 0. Use Timer Mode 3,&nbsp; You must write the 
+                            timer controller ports to do this</LI>
+						<LI>
+							&nbsp;for you. See section 10.3 (p 104) in the lab manual about this.
+						</LI>
+					</ul>
+				<li>
+					Points: 10</li>
+			</ul>
+		</td>
+	</tr>
+	<TR>
+		<td vAlign="center"><font size="+1"><b>RestoreISR</b></font></td>
+		<td>
+			<ul>
+				<li>
+				<span style="background-color: #FF00FF">Restores the old 
+                keyboard and timer interrupt service routines. </span>&nbsp;
+				<li>
+				Inputs: SavKSeg,&nbsp; SavKOff,&nbsp; SavTSeg, SavTOff = addresses of old 
+				interrupt vector segments and offsets
+				<li>
+				Outputs: Interrupt Vector Table
+				<li>
+				Calls: None
+				<li>
+					Notes:
+					<ul>
+						<li>
+							<span style="background-color: #FF00FF">There are 
+                            two ways to install the interrupts, accessing the 
+                            interrupt vector table directly, or using </span>
+                            <span style="background-color: #FF00FF">INT</span><span style="background-color: #FF00FF"> 
+                            21h to do some of the work for you.&nbsp; Using
+                            </span><span style="background-color: #FF00FF">INT</span><span style="background-color: #FF00FF"> 
+                            21h was the method covered in class.&nbsp; Feel free 
+                            to use either method or any combination of both for 
+                            the MP.&nbsp; </span>
+						</li>
+						<li>
+							Remember you
+							<span style="BACKGROUND-COLOR: #ffff00">MUST</span>
+						disable interrupts while changing&nbsp; the interrupt vector table.
+                            <span style="background-color: #FF00FF">(only 
+                            applies if you are accessing the interrupt table 
+                            directly.)</span></li>
+					</ul>
+				<li>
+					Points: 5</li>
+			</ul>
+		</td>
+	<tr vAlign="top">
+		<td vAlign="center"><b><font size="+1">Blit&nbsp;&nbsp;</font></b></td>
+		<td>
+			<ul>
+				<li>
+				Copy image of <span style="background-color: #FF00FF">5x5</span> character from memory to the screen.
+				<li>
+					Inputs:
+					<ul>
+						<li>
+						DL = character to blit to screen (0-9, for the numbers 0-9,&nbsp; 10 for ':')<li>
+						DH = attribute to blit character with
+						<li>
+						AL = row that top of image should begin on (numbering starts from row 0)
+						<li>
+							AH = column that left of image should begin on (numbering starts from col 0)</li></ul>
+				<li>
+					Outputs:
+					<ul>
+						<li>
+							Writes to memory mapped video</li></ul>
+				<li>
+				Calls: None
+				<li>
+					Notes:
+					<ul>
+						<li>
+						Warning: PUSHA and POPA do NOT push/pop the ES register
+						<li>
+							Must write characters to screen using memory mapped video, <STRONG>
+								<span style="BACKGROUND-COLOR: #ffff00">DO NOT</span>
+								use any INT 10h function to draw to the screen</STRONG>
+						<li>
+						Look at section 11.1 (109+) in the lab manual for information on directly 
+						writing memory.<li>
+						Use the lookup table (CharTable) to get the addresses of the images to be drawn 
+						to the screen.
+						<li>
+							If you want to see where the characters are defined look to the file 
+							CharTable.inc</li>
+					</ul>
+				<li>
+					Points: 10</li>
+			</ul>
+			<p>&nbsp;</p>
+		</td>
+	</tr>
+	<tr>
+		<td vAlign="center"><font size="+1"><b>GetStr</b></font></td>
+		<td>
+			<UL>
+				<li>
+				Get user input and writes it to a buffer.
+				<li>
+					Inputs:
+					<ul>
+						<li>
+						InputChar = ASCII value of keyboard input.
+						<li>
+						InputReady = 1 if there is InputChar contains a new character, 0 otherwise 
+						(from KbdISR)
+						<li>
+						CharCount = used to keep track of the number of character that are in the 
+						buffer.
+						<li>
+							STRLEN = the number of bytes StringBuffer can hold.</li>
+					</ul>
+				<LI>
+					Outputs:
+					<UL>
+						<LI>
+						InputReady = resets InputReady to 0 upon completion of GetStr
+						<LI>
+						CharCount =&nbsp;used to keep track of the number of character that are in the 
+						buffer.
+						<LI>
+						StringBuffer = buffer to store input to.
+						<LI>
+							AX&nbsp; = appropriate action to take.</LI></UL>
+				<LI>
+				Calls: None
+				<LI>
+					Notes:
+					<UL>
+						<LI>
+							Works like GetStr from mp2, except
+							<UL>
+								<li>
+								it gets keyboard input from 1 byte queue InputChar. (assuming there is one)<li>
+									it does not wait for enter (CR) to be pressed before returning</li></UL>
+						<li>
+						Checks for available input (use InputReady to determine this), if no new input, 
+						set AX=0 and exit GetStr.
+						<LI>
+						If there is available input Adds input from InputChar to the string in 
+						StringBuffer, increments CharCount, and sets InputReady back to 0.
+						<LI>
+							Before returning, always terminate string in StringBuffer with '$', 
+							and&nbsp;reset InputReady to 0, and set the following:
+							<UL>
+								<li>
+								If the ESC key is 
+								pressed,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return 
+								AX=3.
+								<LI>
+								If enter (CR) 
+								pressed,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+								reset CharCount to 0 and return AX=2
+								<li>
+								If there&nbsp;is a change&nbsp;to the string,&nbsp;&nbsp;return AX=1.
+								<LI>
+									If no 
+									input,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+									return AX=0.&nbsp;</LI></UL>
+						<li>
+							Remember not to write more characters to the StringBuffer than it can hold 
+							(this includes the '$' at the end of the string )</li>
+					</UL>
+				<li>
+					Points: 10</li>
+			</UL>
+			<p>&nbsp;</p>
+		</td>
+	</tr>
+	<tr>
+		<td vAlign="center"><font size="+1"><b>KbdISR</b></font></td>
+		<td>
+			<ul>
+				<li>
+				Interrupt service routine to handle keyboard interrupt events
+				<li>
+					Inputs:
+					<ul>
+						<li>
+							Keyboard port</li></ul>
+				<li>
+					Outputs:
+					<ul>
+						<li>
+						InputChar = ASCII value of keyboard input.
+						<li>
+							InputReady = set to 1 to denote there is InputChar contains a new character</li>
+					</ul>
+				<li>
+				Calls:
+				<li>
+					Notes:
+					<ul>
+						<li>
+						Read scancode from keyboard port
+						<li>
+						Ignore key release events
+						<li>
+						Convert scancode to ASCII using qwerty lookup table
+						<li>
+						Put new character in InputChar
+						<li>
+						Set InputReady to 1<li>
+							Acknowledge PIC (<span style="BACKGROUND-COLOR: #ff00ff">port 20h</span>)
+						<li>
+						Remember that the DS is undefined when your interrupt service routine gets 
+						triggered
+						<li>
+							Section 10.1.2 of the lab manual has sample code that may be helpful take take 
+							a look at</li>
+					</ul>
+				<li>
+					Points: 10
+				</li>
+			</ul>
+			<p>&nbsp;</p>
+		</td>
+	</tr>
+	<TR>
+		<TD vAlign="center"><FONT size="5"><FONT size="+1"><STRONG>DrawMsg</STRONG></FONT></FONT></TD>
+		<TD>
+			<UL>
+				<LI>
+				Echoes the String in StringBuffer and draw it to the first line of the screen.
+				<LI>
+					Inputs:
+					<UL>
+						<LI>
+							<span style="background-color: #FF00FF">DX - address 
+                            to buffer that contains '$'-terminated string</span></LI></UL>
+				<LI>
+					Outputs:
+					<UL>
+						<LI>
+							None</LI></UL>
+				<LI>
+				Calls:
+				<LI>
+					Notes:
+					<UL>
+						<LI>
+							Writes to video memory directly to echo the input characters instead of using 
+							dspout, (use <STRONG>white </STRONG>text on a <STRONG>blue </STRONG>
+						background)
+						<LI>
+							Writes onto <STRONG>the top line of the screen.</STRONG>
+						<LI>
+							Use memory mapped video.<strong> Do not use int 10h function.</strong>
+						<LI>
+							When DrawMsg encounters a '$' character, prints out underscores&nbsp; i.e. 
+							&nbsp;'_' from that position to the end of the top line</LI></UL>
+				<LI>
+					Points: 10</LI></UL>
+		</TD>
+	</TR>
+	<TR>
+		<TD vAlign="center"><STRONG><FONT size="4">RestoreVideo</FONT></STRONG></TD>
+		<TD>
+			<UL>
+				<LI>
+				Moves Cursor back to top left corner of the Screen.
+				<LI>
+					Notes:
+					<UL>
+						<LI>
+							Usually causes an error when exiting the program if 
+                            you do not move the cursor back on the screen.</UL>
+				<LI>
+					Points: 5</LI></UL>
+		</TD>
+	</TR>
+	<tr>
+		<td vAlign="center"><font size="+1"><STRONG>DisplayTime</STRONG></font></td>
+		<td>
+			<ul>
+				<li>
+				Procedure to convert and display time.<li>
+					Inputs:
+					<ul>
+						<li>
+						Sec = number of seconds remaining on clock
+						<li>
+						Min = number of minutes remaining on clock
+						<li>
+							Hour = number of hours remain on clock (assume there can't be more than 
+                            <span style="background-color: #FF00FF">99</span> hours 
+							on clock</li></ul>
+				<li>
+					Outputs:
+					<ul>
+						<li>
+						&nbsp;</li>
+					</ul>
+				<li>
+				Calls: Blit, binasc (optional)
+				<li>
+					Notes:
+					<ul>
+						<li>
+						<span style="background-color: #FF00FF">Uses Hour, Min,&nbsp; 
+                        and Sec to display the time in the </span>
+                        <span style="background-color: #FF00FF">HH:MM:SS</span><span style="background-color: #FF00FF"> 
+                        format.</span><li>
+						Print out the number time by using Blit to display each number to the screen
+						<li>
+							For Blit use different attributes for the characters,
+							<ul>
+								<li>
+								make the hours (HH) light red on a green background. Position The first Hour 
+								Digit to begin at Row 10 and Col 20
+								<li>
+								make the minutes (MM) light blue on a red background
+								<li>
+								make the seconds (SS) white on a magenta background
+								<li>
+									make the both colons (:) yellow on a black background
+								</li>
+							</ul>
+						</li>
+					</ul>
+				<li>
+					Points: 10
+				</li>
+			</ul>
+			<p>&nbsp;</p>
+		</td>
+	</tr>
+	<tr vAlign="top">
+		<td vAlign="center"><font size="+1"><b>Main</b></font></td>
+		<td>
+			<UL>
+				<li>
+				Decodes user input to set, pause, resume, and clear timer.&nbsp; Uses TickCount 
+				to measure time.
+				<li>
+				Inputs: TickCount, input from GetStr
+				<li>
+				Outputs: PauseClock
+				<li>
+					Calls: <STRONG>GetStr, DisplayTime, DrawMsg, InitVideo, InstallISR, RestoreISR , 
+						RestoreVideo</STRONG>
+				<LI>
+					Notes:
+					<UL>
+						<li>
+						Call InitVideo and InstallISR at the beginning of main
+						<LI>
+							Continuously loop checking if changes need to made to the time or for new user 
+							input&nbsp;
+							<UL>
+								<li>
+									<P>Use GetStr to handle user input</P>
+								<LI>
+									<P>if AX gets 3, exits the program, calling <STRONG>RestoreISR </STRONG>and <STRONG>RestoreVideo.</STRONG></P>
+								<LI>
+									<P>when AX gets 1:</P>
+									<UL>
+										<LI>
+											<P>call&nbsp;<STRONG>DrawMsg</STRONG> to display it to the screen.
+											</P>
+										</LI>
+									</UL>
+								<LI>
+									<P>when AX gets 2, checks to see if command received was p, r or s</P>
+									<UL>
+										<LI>
+											<P>For s :</P>
+											<UL>
+												<LI>
+													<P>checks receives timing input in the format&nbsp;&nbsp;:&nbsp;<STRONG><FONT size="5">HH.MM.SS</FONT></STRONG></P>
+												<LI>
+													<P>
+														Needs to accept&nbsp; input in the form of <STRONG><FONT size="5">HH.MM.SS</FONT></STRONG>&nbsp; 
+														and set Hour, Min, and Sec.
+													</P>
+												<LI>
+												Make sure Hour is between 0 and 99, Min is between 0 and 59, and Sec is between 
+												0 and 59.
+												<li>
+												Don't change the time if any of the parameters are invalid. Display invalid 
+												message.
+												<li>
+													Calls <STRONG>DisplayTime </STRONG>to show the new time.
+												</li>
+											</UL>
+										<LI>
+											For p :
+											<UL>
+												<LI>
+													&nbsp;Sets the PauseClock to 1 to stop TickCount</LI></UL>
+										<LI>
+											For r :
+											<UL>
+												<LI>
+													Sets the PauseClock to 0 to resume TickCount</LI></UL>
+										</LI>
+									</UL>
+								<LI>
+									When TickCount is greater than 100.
+									<UL>
+										<LI>
+											Subtract 100 from TickCount (don't just set TickCount to 0)
+											<UL>
+												<LI>
+												Decrement clock if there is any remaining time.
+												<LI>
+													Calls <STRONG>DisplayTime </STRONG>to show&nbsp;the updated time
+												</LI>
+											</UL>
+										</LI>
+									</UL>
+								</LI>
+							</UL>
+						<LI>
+							Points: 10</LI>
+					</UL>
+				</LI>
+			</UL>
+		</td>
+	</tr>
+</table>
+<h2>Procedure</h2>
+<ul>
+	<li>
+		You will begin this MP with the following files:
+		<ul>
+			<li>
+				<tt>MP3.ASM</tt>: Program Framework
+			<li>
+				<tt>Makefile</tt>: Specifies how and when programs are assembled and 
+			linked.
+			<li>
+				<tt>LIBMP3.LIB</tt>: Library functions for MP3
+			<li>
+				<tt>LIB291.LIB</tt>: General-purpose library functions
+			</li>
+		</ul>
+	<li>
+		You may copy these files from the network drive to your home directory with the 
+		following command:
+		<br>
+		<tt>xcopy /s V:\ece291\mp3 W:\mp3</tt><br>
+		or download the files from this server as <a href="mp3.zip">mp3.zip</a>
+	<li>
+		Add your code to <tt>MP3.ASM</tt>.
+	<li>
+		Assemble and link your program by typing<tt> make.</tt>&nbsp; This command 
+	reads the Makefile then invokes NASM and TLINK to build an executable program.
+	<li>
+		Use TD debugger to find and correct program errors.
+	</li>
+</ul>
+<h2>Final Steps</h2>
+<ol>
+	<li>
+	Demonstrate your MP3.EXE to a TA or to the instructor.&nbsp; The TA or 
+	instructor will verify that your program produces the correct output.
+	<li>
+	Be prepared to answer questions about any aspect of the operation of your 
+	program. The TAs will not accept an MP if you cannot fully explain the 
+	operation of your code and details of your implementation. Delayed MPs will be 
+	subject to late penalties as described in the course syllabus (10pts/day).
+	<li>
+		The TA will handin your MP online.
+	</li>
+</ol>
+<hr>
+<h2>MP1.ASM (program framework)</h2>
+<pre>;MP3 -Doomsday Down Counter
+;  Your Name
+;  Today's Date
+;
+; Josh Potts, Summer 2003
+; Author: Derek King - July 7 2003
+; University of Illinois, Urbana-Champaign
+; Dept. of Electrical and Computer Engineering
+;
+; Version 1.0</pre>
+<pre>        BITS    16</pre>
+<pre>;====== SECTION 1: Define constants =======================================</pre>
+<pre>        CR      EQU     0Dh             ; Carriage return
+        LF      EQU     0Ah             ; Line feed
+        BS      EQU     08h             ; Backspace
+        KVEC    EQU     0024h           ; Location of Keyboard Vector
+        TVEC    EQU     0070h           ; Location of User Timer Vector
+        ROWS    EQU     25              ; Number of rows on screen
+        COLS    EQU     80              ; Number of columns on screen</pre>
+<pre>	STRLEN		EQU	16		; Capacity of input string
+        </pre>
+<pre>;====== SECTION 2: Declare external procedures ============================</pre>
+<pre>EXTERN  ascbin, binasc, kbdin, dspout, dspmsg, mp3xit
+EXTERN  libMain, libInstallISR, libRestoreISR, libInitVideo, libDrawString
+EXTERN	libTmrISR, libKbdISR, libGetStr, libDrawMsg
+EXTERN  libBlit, libDisplayTime, libRestoreVideo
+GLOBAL	Main, InstallISR, RestoreISR, InitVideo, DrawString
+GLOBAL	TmrISR, KbdISR, GetStr, DrawMsg
+GLOBAL	Blit, DisplayTime, RestoreVideo	
+GLOBAL  SavKOff, SavKSeg, SavTOff, SavTSeg, TickCount, PauseClock, Qwerty
+GLOBAL	CharCount, StringBuffer, MP3Msg, ErrMsg, CmdMsg, CharTable, Hour, Min, Sec
+GLOBAL	InputChar, InputReady</pre>
+<pre>;====== SECTION 3: Define stack segment ===================================</pre>
+<pre>SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        RESB    64*8
+stacktop:
+        RESB    0                       ; NASM bug workaround </pre>
+<pre>;====== SECTION 4: Define code segment ====================================</pre>
+<pre>SEGMENT code                            ; *** CODE SEGMENT ***</pre>
+<pre>;====== SECTION 5: Declare variables for main procedure ===================
+MP3Msg		db 'MP3 Doomsday Downcounter - Summer 2003','$'
+ErrMsg		db 'Input parameter error, input must be in the form HH.MM.SS','$'
+CmdMsg		db 'Not a valid command','$'</pre>
+<pre>Hour		DB	3	;number of hours remaining 
+Min		DB	0	;number of minutes remaining
+Sec		DB	0	;number of seconds remaining
+TickCount	DW	0	;
+PauseClock	DB	0	;Pause flag = 0 not paused, 1 paused
+	</pre>
+<pre>CharCount	DW	0	; Number of characters in the input buffer
+StringBuffer	RESB	STRLEN	; Buffer to store user input</pre>
+<pre>SavTSeg		RESW	1	;storage for addresses of
+SavTOff		RESW	1	;old interrupt vectors
+SavKSeg		RESW	1
+SavKOff		RESW	1</pre>
+<pre>InputChar	RESB	1	;ASCII value of input from keyboard
+InputReady	DB	0	;Set to 1 if there is new input, 0 otherwise</pre>
+<pre>%include "CharTable.inc" 	;ASCII characters used to blit to the screen
+	</pre>
+<pre>; You may declare additional variables here</pre>
+<pre>;====== SECTION 6: Program initialization =================================</pre>
+<pre>..start:
+        MOV     AX, CS                  ; Initialize Default Segment register
+        MOV     DS, AX  
+        MOV     AX, stkseg              ; Initialize Stack Segment register
+        MOV     SS, AX
+        MOV     SP, stacktop            ; Initialize Stack Pointer register</pre>
+<pre>;====== SECTION 7: Your subroutines =======================================</pre>
+<pre>Main:
+	call libMain
+	call mp3xit</pre>
+<pre>GetStr:
+	call libGetStr
+	ret</pre>
+<pre>DrawMsg:	
+	call libDrawMsg
+	ret
+		</pre>
+<pre>Blit:
+	call libBlit
+	ret
+		</pre>
+<pre>DisplayTime:
+	call libDisplayTime
+	ret
+	</pre>
+<pre>InstallISR:
+	call libInstallISR
+	ret</pre>
+<pre>RestoreISR:
+	call libRestoreISR
+	ret</pre>
+<pre>InitVideo:
+	call libInitVideo
+	ret</pre>
+<pre>RestoreVideo:
+	call libRestoreVideo
+	ret
+	</pre>
+<pre>TmrISR:
+	;if clock is not paused increment tick count
+	cmp byte [cs:PauseClock], 0
+	jne .done
+	inc word [cs:TickCount]
+.done
+	iret
+</pre>
+<pre>KbdISR:
+	jmp libKbdISR
+	        
+</pre>
+<pre>;Bellow is a lookup table for a qwerty layout for a keyboard</pre>
+<pre>LSHIFT	equ	6
+RSHIFT	equ	7
+BKSP	equ	8
+ENTR	equ	13
+ESC	equ	27
+DEL	equ	10
+HOME	equ	11
+UP	equ	24
+PGUP	equ	12
+LEFT	equ	27
+RIGHT	equ	26
+END	equ	14
+DOWN	equ	25
+PGDN	equ	15
+INS	equ	16
+SPACE	equ	17</pre>
+<pre>Qwerty:
+	db	0	; filler
+	db	ESC,'1','2','3','4','5','6','7','8','9','0','-','=',BKSP
+	db	0, 'q','w','e','r','t','y','u','i','o','p','[',']',ENTR
+	db	0,'a','s','d','f','g','h','j','k','l',';',"'","`"
+	db	LSHIFT,'\','z','x','c','v','b','n','m',",",'.','/',RSHIFT,'*'
+	db	0, ' ', 0, 200,201,202,203,204,205,206,207,208,209 ; F1-F10
+	db	0,0	; numlock, scroll lock
+	db	HOME, UP, PGUP, '-'
+	db	LEFT, 0, RIGHT, '+'
+	db	END, DOWN, PGDN, INS
+	db	DEL, 0; sysrq
+</pre>
+<pre>&nbsp;</pre>

@@ -1,0 +1,521 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 4</title>
+</head>
+
+<body bgcolor=ffffff>
+
+<table width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Lockwood, Spring 1997</td></tr></table>
+<center><h1>Machine Problem 4: Lunar Lander </h1></center>
+
+
+<p>
+<center><table border=1 width=60%>
+ <tr><td align=right><b>Assigned</b></td>
+    <td>Tuesday March 18, 1997 </td></tr>
+ <tr><td align=right><b>Due Date</b></td>
+    <td>Tuesday April 8, 1997, 5pm</td></tr>
+   <tr><td align=right><b>Purpose: </b></td>
+    <td>Interrupts & Real-time systems
+</td></tr>
+   <tr><td align=right><b>Points</b></td><td>50</td></tr>
+</table></center>
+
+<p>
+<!-- <img src="../../icon/construct.gif"> This page is under construction</a>
+-->
+<p>
+<h2>Introduction</h2>
+Mankind first visited the moon in 1969.  The lunar lander 
+was the vehicle that travelled from orbit to the
+surface of the moon.  
+<p>
+A lunar lander is controlled by rocket engines.
+Rocket engines produce a constant force in the opposite direction that
+they are fired.  The main truster points in the downward direction 
+and is used to counteract the force of gravity.  Side thusters 
+control movement in the horizontal direction.
+<p>
+The goal of this machine problem is gently land your craft
+on the surface of the moon.  
+Your lander will be damaged or destroyed if you descend too fast.
+The craft will also be destroyed if you attemped to land 
+on a surface other than the landing pad. 
+You will find yourself lost in space if you stray too far away from 
+the destination.  Finally, you will lose control of the thrusters if
+you run out of fuel.  
+<p>
+For more information about the real lunar landings, see the references below:
+<ul>
+<li>A brief history of NASA's lunar landing missions is summarized in
+<a href="http://www.dfrc.nasa.gov/History/Publications/SP-4303/ch7-5.html">
+On the Frontier</a>.
+<li>Documentation of the Apollo 11 mission 
+  (complete with AVI video clips) has been written by:
+  <a href="http://btpdx1.phy.uni-bayreuth.de/solar/apo11.htm">Eric M. Jones</a>
+</ul>
+
+
+<hr>
+
+<h2>Implementation</h2>
+
+A screen dump of the working library-based version of the program 
+that you are to write is shown
+below.  The gauges on the left show altitude, velocities, position, and
+fuel.   The window on the right shows the position of the craft as it
+approaches the surface of the moon.  The small landing pad appears at 
+the lower-left corner of the main
+of the window.  The screen is drawn using 
+extended ASCII characters on a text-mode video screen.
+<p>
+<center><img src="lunar.gif" width="640" height="301"></center>
+<p>
+Interrupts are used to read the keyboard and perform 
+real-time calculations at periodic intervals.  
+The left, right, and downward arrow keys
+are used to control the operations of the thrusters.
+By reading scan codes directly
+from the keyboard, the program is able to 
+decode simultaneous keypresses.  
+A Thurster operates at full capacity while the button
+is pressed.
+<p>
+The timer is used to periodically
+compute new values of acceleration, velocity, and position.  
+The function which performs these calculations 
+is chained onto the default 
+system timer interrupt vector and called 18 times a second.
+<p>
+<h2>Physical Equations</h2>
+The program tracks the acceleration, velocity, and position of the
+lunar lander along both the horizontal and vertical directions.
+The lunar lander has a mass of 1000kg.  
+The main thruster (T) provides a force of 5000 Newtons. 
+Firing the main thruster results in an acceleration of 
+5 m/s^2 in the upward direction.  
+The left and right side-thrusters (TL and TR) can each produce 
+a force of 2000 Newtons.
+At all times, the lunar gravitational field
+accelerates the lander downward at a rate of
+3 meters per second squared (m/s^2).  The net motion of the lander
+can be determined by summing the forces.
+<p>
+Recall that acceleration (A) is the time derivative of
+velocity (V) and that position (X) is the time derivative of velocity (V).
+For this problem, it is convienient to calculate the piece-wise integral
+of acceleration to obtain velocity and the piece-wise integral of
+velocity to calculate the position.  Using V<sub>i-1</sub> as the
+previous velocity and X<sub>i-1</sub> as the previous postion, 
+new values of A, V, and X can be calculated at each instant of time
+as shown below:
+<blockquote>
+A<sub>i</sub> = <i>Sum of forces / Mass</i><br>
+V<sub>i</sub> = V<sub>i-1</sub> + A<sub>i</sub> * dt <br>
+X <sub>i</sub>= X<sub>i-1</sub> + V<sub>i</sub> * dt 
+</blockquote>
+
+<h2>Numeric Representation</h2>
+By carefully choosing units for time and position, integer
+arithmetic can be used to internally
+calculate acceleration, velocity, and position.  
+Because the default PC timer interval is 1/18 second,
+it is convienient to measure time (dt) in units of 1/18 sec.  
+To express acceleration in standard units of m/s^2, distance is
+measured in units of 1/18^2=1/324 of a meter.  Using these conventions,
+therefore, velocity is measured in units of 1/18 m/s.
+
+<h2>Data Display</h2>
+Gauges and graphics are used to display information to the user.
+Division is used to display position and velocity
+in standard units of m and m/s.  For the diagram of the
+lunar lander on the low-resolution text-mode screen, each horizontal
+column represents 2 meters and each vertical position represents
+4 meters.
+
+<hr>
+
+<h2>Procedures</h2>
+You begin this problem with a set of working, modular procedures 
+that together implement the function of the program.  You will earn points by 
+writing your own code to implement these procedures.  You are strongly
+encouraged to experiment with the library-based <tt>mp4.exe</tt>  
+to better understand how the program operates.
+
+<ul>
+<li><font size=+2><b>InstTime</b></font><p>
+  <ul>
+  <li><b>Purpose:</b> Install the timer interrupt
+  <li><b>Description</b>:<br>
+    This routines should chain the procedure <i>MyTimeInt</i> into
+    list of functions called by IRQ 0.  It should preserve a pointer
+    to the original timer vector for use by <i>MyTimeInt</i> and 
+    <i>DeInstallTime</i>. 
+  <li><b>Notes</b>:<br>
+    The library function always installs the library-based
+    <i>MyTimeInt</i> routine.
+  </ul>
+<p>
+<xmp>
+
+</xmp>
+
+<li><font size=+2><b>MyTimeInt</b></font><p>
+  <ul>
+  <li><b>Purpose:</b> Calculate new acceleration, velocity, position, time,
+     and fuel values every 1/18th of a second.
+  <li><b>Description</b>:<br>
+     <ul>
+     <li>As described above, velocity and acceleration are computed as 
+         piece-wise integrals.  This routine performs these calculations
+         on the periodic interval of the default timer (1/18 of a second).
+         The program reads modifieds the variables: <br>
+         <tt>x, v_x, a_x, y, v_y, a_y, G, T, TL, </tt> and <tt> TR </tt><Br>
+         <i>(see variable section of given mp4.asm)</i>.
+     <li><tt>Time</tt> should be incremented each time the procedure is called.
+     <li><tt>Fuel</tt> should be decreased by the amount of thrust that
+     each thruster is exerting.   If <tt>fuel</tt> runs out, <tt>T, TL, TR</tt>
+     should be reset to zero.
+     <li><tt>ExitFlag</tt> should be set to <tt>1</tt> if the ship
+     touches the ground (y < 0) or gets lost in space (i.e., moves 
+     outside the edges of the window on the screen).
+    </ul>
+  <li><b>Notes</b>:<br>
+    <ul>
+    <li>Remember that this is an interrupt service rotuine.  Be sure
+    to save all registers  and exit with IRET. 
+    <li>Review the on-line lecture notes, especially
+      <a href="/~ece291/lecture/l14.html">Lecture 14</a> and
+      <a href="/~ece291/lecture/l15.html">Lecture 15</a>.
+    </ul/>
+  </ul>
+<p>
+<xmp>
+
+</xmp>
+<li><font size=+2><b>DeInstallTime</b></font><p>
+  <ul>
+  <li><b>Purpose</b>: Restore original timer vector 
+  <li><b>Description:</b> <br>
+    This routine should be called just before you exit your program.
+    It should restore the default vector for IRQ0.
+  </ul>
+   <p>
+
+<li><font size=+2><b>InstKey</b></font><p>
+  <ul>
+  <li><b>Purpose</b>: Install a new keyboard handler.
+  <li><b>Description:</b> <br>
+     This function should replace (not chain) the 
+     the default keyboard interrupt vector with
+     the function <i>MyKeyInt</i>. 
+     It should preserve a pointer
+     to the original keyboard vector for use by 
+    <i>DeInstallKey</i>. 
+  </ul>
+  <p>
+
+<li><font size=+2><b>MyKeyInt</b></font><p>
+  <ul>
+  <li><b>Purpose:</b> Read scan codes from the keyboard
+  <li><b>Description:</b><br>
+    This function replaces the default keyboard vector
+    and is used for the duration of the program.  The routine
+    should respond to the escape key and to the left, right, and down
+    arrow buttons.  
+      When the following keys are pressed, the following actions should occur:
+    <ul>
+      <li>ESC: Set <tt>ExitFlag=1</tt>.  
+      <li>Left Arrow: Set <tt>TR=2</tt> <i>(Need right thrust to go left)</i>
+      <li>Right Arrow: Set <tt>TL=2</tt> <i>(Need left thrust to go right)</i>
+      <li>Down Arrow: Set <tt>T=5</tt> 
+    </ul>
+  <li><b>Notes</b>:<br>
+    Remember that this is an interrupt service rotuine.  Be sure
+    to save all registers  and exit with IRET. 
+    The keyboard interface is documented in the lab manual (pagees 80-81),
+    in the textbook, and on-line in the PC-GPE as 
+    <a href="/~ece291/class-resources/gpe/keyboard.txt.html">
+     keyboard.txt.html</a> 
+  </ul>
+<p>
+
+<li><font size=+2><b>DeInstallKey</b></font><p>
+  <ul>
+  <li><b>Purpose</b>: Restore original keyboard vector 
+  <li><b>Description:</b> <br>
+    This routine should be called just before you exit your program.
+    It should restore the default vector for IRQ1.
+  </ul>
+   <p>
+
+
+<li><font size=+2><b>DrawScreen</b></font><p>
+  <ul>
+  <li><b>Purpose:</b> Draw the static portion of the graphic screen 
+  <li><b>Description:</b><br>
+     This routine should draw all the static text, boxes, and graphics on the
+     screen that do not change as the lunar lander program runs.
+  <li><b>Notes</b>:<br>
+     <ul>
+     <li>You may find many parts of your MP3 code useful for this routine.
+     <li>You will want to create modular components to avoid coding
+         repetitive operations.
+     <li>The landing pad appears in the middle of the screen at X=0
+     <li>You are encouraged and welcome to exercise artistic freedom
+       in the implementation of your screen.  At minimum, however,
+       you must support the features of the library function.
+    </ul>
+  </ul>
+<p>
+<li><font size=+2><b>ReDrawScreen</b></font><p>
+  <ul>
+  <li><b>Purpose:</b>Redraw dynamic portions of graphics screen 
+  <li><b>Description:</b><br>
+      This routine redraws the portions of the screen that change
+      as the lunar lander moves.   
+  <li><b>Notes</b>:<br>
+      <ul>
+     <li>The values displayed are contained within the variables:
+      <tt>x, v_x, a_x, y, v_y, a_y, init_fuel, and fuel</tt>.
+      <li>Recall that numbers should be displayed in units of
+          m and m/s (not m/324 and m/s/18).
+      <li>Display thrust if <tt>T, TR, and/or TL</tt> are non-zero.
+      <li>For the windowed display, horizontal columns represent 2 m and
+          vertical rows represent 4 m.
+      </ul>
+   </ul>
+<p>
+<li><font size=+2><b>FinalScreen</b></font><p>
+  <ul>
+  <li><b>Purpose:</b>Prints the messages shown at the end of the program.
+  <li><b>Description:</b><br>
+    To land successfully, the lander must:
+      <ul>
+      <li>Hit the pad within 4 m
+      <li>Avoid straying off the screen
+      <li>Have a slow vertical velocity.  Specifically:
+
+           <ul>
+          <li>0 - 3 m/s: Perfect Landing
+          <li>3 - 6 m/s: Slight Damage
+          <li>6 - 9 m/s: Severe Damage 
+          <li>9+ m/s: Crash!       
+           </ul> 
+      </ul>
+    After accessing the status of the landing, the program should
+    display the flight time and amount of fuel used.
+  <li><b>Notes</b>:<br>
+      <ul>
+     <li>Print flight time in seconds, not s/18.
+     <li>Again, artistic freedom is encouraged as long as your
+         program has at least the same features.  Sounds effects
+         and/or an animation could easily earn that ever-so-sought-after
+         <i>Gold star of programming excellence</i>!
+     </ul>
+  </ul>
+<p>
+<xmp>
+
+</xmp>
+<li><font size=+2><b>Main</b></font><p>
+  <ul>
+  <li><b>Purpose:</b>Main body of the program 
+  <li><b>Description:</b><br>
+     Once you understand the purpose of the routines above,
+     Replace <i>MainLIB</i> with code that
+      <ul>
+      <li>Draws the original screen
+      <li>Installs the timer and keyboard interrupts
+      <li>Redraws the screen while <i>ExitFlag=0</i>
+      <li>Prints the Final screen
+      <li>Deinstalls the timer and keyboard interrupts
+      </ul>
+   </ul>
+
+</ul>
+<hr>
+<h2>Points</h2>
+You earn points by replacing each subroutine with your own code.
+Your score will be proportional to the percentage of the code that
+your write yourself.  The breakdown in points is given below.  Your
+routine MUST perform all functions of the subroutine to receive credit.
+If the same code is submitted by multiple authors, each author will
+receive <i>1/n</i> points, where  <i>n</i> is equal to the number of
+MPs with the same algorithms.  
+<p>
+You are urged to test each routine as you write it.  It is nearly
+impossible to debug a program if there are errors in the routines 
+that it calls.  Note that library routines always call other library
+routines.  You need to call your routines directly to verify their
+functionality.
+<p>
+<ul>
+<li>InstTime: 2 pts
+<li>MyTimeInt: 10 pts
+<li>DeInstallTime: 1 pts
+<li>InstKey: 2 pts
+<li>MyKeyInt: 10 pts
+<li>DeInstallKey: 1 pts
+<li>DrawScreen: 8 pts.
+<li>ReDrawScreen: 7 pts.
+<li>FinalScreen: 4 pts.
+<li>Main: 5 pts.
+<li><i>Bonus</i>: [extra 5 pts]  <Br>
+   Add an AutoSolve routine to guide the lander to 
+   the pad using minimal fuel.  The routine
+   should work regardless where the lander is initially located.
+   This code can read any variable but should only write to
+   <tt>T, TL, TR</tt>.
+  
+</ul>
+<hr>
+<h2>Preliminary Procedure </h2> 
+<ul>
+<li>You will begin MP4 with the following files:
+    <ul>
+    <li><tt>MP4.EXE</tt>: The fully functional program using library functions
+    <li><tt>MP4.ASM</tt>: Program Framework
+    <li><tt>LIBMP4.LIB</tt>: Working versions of all routines
+    <li><tt>LIB291.LIB</tt>: Useful (and free) routines 
+    <li><tt>Makefile</tt>
+    </ul>
+
+<li>You can obtain these files via one of the methods listed below:
+  <ul>
+  <li>In lab, copy all files to your directory with the following command:<br>
+      <tt>xcopy /s E:\ECE291\MP4\ F:\MP4</tt>
+  <li>Alternatively, 
+      download all files as: <a href="mp4.zip">MP4.ZIP</a> (Ver 1.1a)
+  </ul>
+</ul>
+
+<xmp>
+
+</xmp>
+<h2>Clearifications and Erratica </h2> 
+<ul>
+  <li>Version 1.1a of libmp4.lib fixes random crashes <Br>
+    <ul>
+    <li>All new downloads (both from the web and from the lab)
+        include this new library.
+    <li>If you have already downloaded version 1.0; Type: <br>
+        <tt>copy e:\ece291\mp4\libmp4.lib f:\mp4</tt> <Br>
+        to update your library.  After typing <tt>nmake</tt>, your
+        executable will be up-to-date.
+     </ul> 
+
+</ul>
+
+<hr>
+<h2>MP4.ASM</h2>
+<font size=-1><xmp>
+        PAGE 75, 132
+        TITLE Lunar_Lander - John Lockwood - 3/97
+
+COMMENT %
+        LUNAR LANDER
+        -------------------
+        ECE291: Machine Problem 4
+        Prof. John W. Lockwood
+        Unversity of Illinois, Dept. of Electrical & Computer Engineering
+        Spring 1997
+        Documentation: http://www.ece.uiuc.edu/~ece291/mp/mp4/mp4.html
+        Revision 1.0
+        %
+
+;====== Constants =========================================================
+VIDTXTSEG EQU 0B800h  ; VGA Video Segment Adddress (Text Mode)
+
+;====== Externals =========================================================
+; -- LIB291 Routines (Free) ---
+extrn dspmsg:near, binasc:near, kbdin:near
+
+; -- LIBMP4 Routines (You need to write these)
+extern InstTime:near      ; Remove this line to use your own code
+extern MyTimeInt:near     ; Remove this line to use your own code
+extern DeInstallTime:near ; Remove this line to use your own code
+extern InstKey:near       ; Remove this line to use your own code
+extern MyKeyInt:near      ; Remove this line to use your own code
+extern DeInstallKey:near  ; Remove this line to use your own code
+extern DrawScreen:near    ; Remove this line to use your own code
+extern ReDrawScreen:near  ; Remove this line to use your own code
+extern FinalScreen:near   ; Remove this line to use your own code
+extern MainLIB:near       ; Remove this line to use your own code
+
+extern mp4xit:near    
+
+;====== Stack ============================================================
+stkseg  segment stack
+        db 64 dup ('STACK   ')
+stkseg  ends
+           
+;====== Begin Code/Data segment ==========================================
+cseg    segment public  
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== Variables ========================================================
+
+        x   dw 0      ; Horizontal Position     (1/324 m)
+        v_x dw 18     ; Horizontal Velocity     (1/18 m/s)
+        a_x dw 0      ; Horizontal Acceleration (m/s^2)
+                                               
+        y   dw 60*324 ; Vertical Position       (1/324 m)
+        v_y dw 0      ; Vertical Velocity       (1/18 m/s)
+        a_y dw 0      ; Vertical Acceleration   (m/s^s)
+
+        G   dw  3 ; Gravity        (m/s^2)
+        T   dw  0 ; Main Thruster  (m/s^2)
+        TL  dw  0 ; Left Thruster  (m/s^2)
+        TR  dw  0 ; Right Thruster (m/s^2)
+
+        Time dw 0 ; Flight Time (1/18 sec)
+
+        Fuel_Init dw 2000 ; Initial Amount of Fuel (Full Tank)
+        fuel dw ?
+
+        ExitFlag db 0  ; 0=Run, 1=Exit - Set by keyboard Interrupt handler
+
+PUBLIC x,v_x,a_x,y,v_y,a_y,G,T,TL,TR   ; Variables available to LIBMP4
+PUBLIC Time,Fuel_Init,fuel,ExitFLag
+
+;====== Procedures  =======================================================
+
+        ; --------------------------------------
+        ; Your subroutines go here
+        ; --------------------------------------
+
+;====== SECTION 6: Main procedure =========================================
+
+main    proc    far
+        mov     ax, cseg ; Initialize DS=CS 
+        mov     ds, ax
+
+        mov ax,0B800h    ; Load ES with video Segment 
+        mov es,ax
+
+        mov AX,2         ; Set 80x25 Text Mode
+        int 10h
+
+        MOV AX,Fuel_Init ; Initialize Fuel with full tank
+        MOV Fuel,AX
+
+        ; --------------------------------------
+        CALL MainLib  ; Your MAIN goes here 
+        ; --------------------------------------
+
+        Call mp4xit
+main    endp
+
+cseg    ends
+        end     main
+
+</xmp>
+</font>
+
+</body>
+
+

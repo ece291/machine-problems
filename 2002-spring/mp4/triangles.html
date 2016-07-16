@@ -1,0 +1,135 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>Drawing Filled Triangles</title>
+</head>
+
+<body>
+
+<h1>Drawing Filled Triangles by Drawing Lines (and lots of them)</h1>
+<p>You'll be drawing filled triangles in this MP using a modified version of a
+3D Bresenham's line algorithm.</p>
+<h2>Bresenham Variable Structure</h2>
+<p>This structure holds the variables to be used in running Bresenham's line
+algorithm between to points.&nbsp; A description of each field is given below.</p>
+<pre>x               = current x position on line
+y               = current y position on line
+z               = current z position on line
+dx              = number of pixels in x-direction
+dy              = number of pixels in y-direction
+dz              = number of pixels in z-direction
+xdiaginc        = the amount to add to x when error1 &gt;= 0
+xnodiaginc      = the amount to add to x when error1 &lt; 0
+ydiaginc        = the amount to add to y when error1 &gt;= 0 
+ynodiaginc      = the amount to add to y when error1 &lt; 0
+zdiaginc        = the amount to add to y when error2 &gt;= 0
+error1          = error at each point of the algorithm for x,y directions
+error1diaginc   = the amount to add to error1 when error1 &gt;= 0
+error1nodiaginc = the amount to add to error1 when error1 &lt; 0
+error2          = error at each point of the algorithm for z direction
+error2diaginc   = the amount to add to error2 when error2 &gt;= 0
+error2nodiaginc = the amount to add to error2 when error2 &lt; 0
+length          = number of pixels to draw</pre>
+<p>Now we need to give these fields some values.&nbsp; Here's the pseudocode to
+do so:</p>
+<pre>procedure CreateBresenham3D(PointA, PointB)
+begin 
+ dx = abs(PointB.x - PointA.x) 
+ dy = abs(PointB.y - PointA.y)
+ dz = abs(PointB.z - PointA.z)</pre>
+<pre> if dx &gt;= dy then 
+  begin 
+   error1 = (2 * dy) - dx
+   error1diaginc = 2 * (dy - dx)
+   error1nodiaginc = 2 * dy
+   error2 = (2 * dz) - dx
+   error2diaginc = 2 * (dz - dx)
+   error2nodiaginc = 2 * dz
+   xdiaginc = sign(PointB.x - PointA.x)
+   xnodiaginc = sign(PointB.x - PointA.x)
+   ydiaginc = 0
+   ynodiaginc = sign(PointB.y - PointA.y)
+   length = dx + 1
+  end 
+ else 
+  begin 
+   error1 = (2 * dx) - dy
+   error1diaginc = 2 * (dx - dy)
+   error1nodiaginc = 2 * dx
+   error2 = (2 * dz) - dy
+   error2diaginc = 2 * (dz - dy)
+   error2nodiaginc = 2 * dz
+   xdiaginc = sign(PointB.x - PointA.x)
+   xnodiaginc = 0
+   ydiaginc = sign(PointB.y - PointA.y)
+   ynodiaginc = sign(PointB.y - PointA.y)
+   length = dy + 1
+  end</pre>
+<pre> x = PointA.x;
+ y = PointA.y;
+ z = PointA.z;
+end</pre>
+<p>Lucky for you, I've spared you from writing this function!&nbsp; It's about
+150 lines or so, and <b>very annoying</b> to write, especially at 2 AM when the <b>add</b>
+looks like <b>mov</b>.&nbsp; Yes this happened to me.&nbsp; Yes I spent over an
+hour debugging it.&nbsp; You can thank me anytime.</p>
+<h2>Drawing Lines</h2>
+<p>After setting up the Bresenham variable structure above, we can run the
+algorithm to draw a line between the two points.&nbsp; For <i>length</i> pixels,
+draw the pixel at the current (x,y,z) location, and then calculate the location
+of the next pixel.&nbsp; Enter more pseudocode:</p>
+<pre>procedure CalcNextPoint(BresStruc) 
+begin 
+ if BresStruc.error1 &lt; 0 then
+  begin 
+   BresStruc.x += BresStruc.xnodiaginc;
+   BresStruc.y += BresStruc.ynodiaginc;
+   BresStruc.error1 += BresStruc.error1nodiaginc;
+  end
+ else
+  begin
+   BresStruc.error1 += error1diaginc;
+   BresStruc.x += BresStruc.xdiaginc;
+   BresStruc.y += BresStruc.ydiaginc;
+  end
+ end
+ 
+ if BresStruc.error2 &lt; 0 then
+  begin 
+   BresStruc.error2 += BresStruc.error2nodiaginc;
+  end
+ else
+  begin
+   BresStruc.error2 += error2diaginc;
+   BresStruc.z += BresStruc.zdiaginc;
+  end
+ end
+end</pre>
+<h2>Drawing Triangles</h2>
+<p>Now that you can draw lines, drawing unfilled triangles shouldn't be much
+harder.&nbsp; Just draw three lines to connect the three points.&nbsp; Drawing
+filled triangles is a little bit more involved.&nbsp; To do this, we'll be using
+Bresenham's line algorithm again.&nbsp; To fill the triangle, take two of its
+three points and <b>follow the line</b> between them.&nbsp; For each point along
+that line, we're going to <b>draw a line</b> to the third point of the
+triangle.&nbsp; This code should look similar to your DrawLine() code.</p>
+<p>But wait!&nbsp; This method doesn't work perfectly - there will be some
+pixels in the triangle that do not get filled in.&nbsp; To fix this, replicate
+the code for drawing a filled triangle three times, and switch the order of the
+points as follows:</p>
+<ol>
+  <li>Follow line from A to B, draw lines to C</li>
+  <li>Follow line from C to A, draw lines to B</li>
+  <li>Follow line from B to C, draw lines to A</li>
+</ol>
+<p>This will ensure that all the pixels in the triangle will get filled.&nbsp;
+Yes this isn't the best way to go about filling a triangle, but after spending
+the time getting this to work, I wasn't about to investigate an entirely new
+method.</p>
+
+</body>
+
+</html>

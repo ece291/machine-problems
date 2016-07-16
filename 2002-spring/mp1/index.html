@@ -1,0 +1,609 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD>
+<META http-equiv=Content-Type content="text/html; charset=unicode"><% title = "ECE291 Machine Problem 1"
+subtitle = "Machine Problem 1"
+%>
+<!--#include file="headvb.asp"-->
+<META content="Microsoft FrontPage 4.0" name=GENERATOR></HEAD>
+<BODY>
+
+
+<h1 align="center">Machine Problem 1: ECE Fodder TMode</h1>
+
+<div align="center"><center>
+<table border=0 cellpadding=2 cellspacing=2 width="60%">
+  <tr><td align=right bgcolor="#efefef"><b>Assigned</b></td>  
+    <td bgcolor="#efefef">Some time ago.</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Due Date</b></td>  
+    <td bgcolor="#efefef">It's too late now.</td></tr>
+  <tr><td align=right bgcolor="#efefef"><b>Purpose</b> </td>  
+    <td bgcolor="#efefef">Simple equation execution.  Use input strings.  Manipulate
+      bits.&nbsp; Complex loops.</td></tr>
+  <TR>
+    <TD align=right bgColor=#efefef><STRONG>Points</STRONG> </TD>
+    <TD bgColor=#efefef>75</TD></TR> 
+  <tr><td align=right bgcolor="#efefef"><b>Solution</b>  </td>  
+    <td bgcolor="#efefef">&nbsp;</td></tr>
+</table>
+</center></div>
+<H2>Introduction</H2>
+<p>Hey remember the 80's?&nbsp; Back in the days with those old 486 and 386
+computers and DOS?&nbsp; In those days, we played this addicting game called
+Scorched Earth or Cannon Fodder.&nbsp; There two tanks shooting at
+each other where you would have to set the angle and power of your shots.&nbsp;
+We have a more simplified version of it all in text mode (no pretty graphics).</p>
+<p>
+<CENTER><IMG src="backg.jpg" align=center width="668" height="331"></CENTER>
+</p>
+<H2> &nbsp;</H2>
+<H2>Problem Description</H2>
+<P>There are two main parts to this MP.&nbsp; You first have the score
+manipulation and the player manipulation which works in conjunction with each
+other.&nbsp;&nbsp;</P>
+<P>PLAYER MANIPULATION<br>
+All your player information is stored in activeplayer, player1, player2, and player3.&nbsp;
+Here are what the bits correspond to for the word.</P>
+<UL>
+  <LI>
+  <DIV>activeplayer variable contains which player is currently active</DIV>
+  <LI>
+  <DIV>player1, player2, player3 contain player scores</DIV>
+</UL>
+<P>The activeplayer will be first set to zero.&nbsp; You must remember to not
+save a score to anyone until you've created a character.&nbsp; If you first
+select New Player, you want to change activeplayer to 1.&nbsp; Selecting New
+Player again, you want to change the activeplayer to 2 so you know to save your
+score to player 2's score.&nbsp; Soon you will get to player3, and this point
+you just want to go circularly around i.e. if activeplayer is currently 3 you
+want to set the next activeplayer to 1.<br>
+Don't forget to clear the score of the new player you are creating.</P>
+<P>CANNON SHOOTING<br>
+For these functions especially _FodderShoot, you are going to need to manipulate
+a few equations.&nbsp; To start off there are a few assumptions you need to
+make.</P>
+<UL>
+  <LI>
+  <DIV>Cannon angle = 30 degrees :&nbsp; cos(30) = .9 : sin(30) = 1/2</DIV>
+  <LI>
+  <DIV>Gravity = 10 meters/second^2</DIV>
+  <LI>
+  <DIV>Your cannon and target are on a flat plane</DIV>
+</UL>
+<P>I've done some calculations for you already and have come up with this
+equation:&nbsp; [(Velocity_initial - (1/10)*Velocity_initial)]*Velocity_initial/gravity<br>
+<b>IMPORTANT:</b> Don't forget when you divide a number by 10 without using
+floating point you want to round it up if need be.&nbsp; Look at the remainder
+and use this to round up or down.</P>
+<P>The functions you will be writing will display 
+information to the screen, interpret&nbsp;keyboard input, and&nbsp;manipulate
+bits.&nbsp; The program's main loop (which is provided and you 
+need not write) repeatedly shows the main menu and calls appropriate functions 
+as necessary.&nbsp;&nbsp;</P>
+<H2>&nbsp;</H2>
+<H2>MP 1 Program Assignment</H2>
+<P>Your job in this assignment will be to provide rewrites of certain 
+precompiled library routines described below. A working MP will be provided for 
+you to get a feel for the program, as well as an .ASM file with calls to the 
+pre-written library routines. You should go through the routines one by one, 
+replacing these calls with your own code.</P>
+<P>The program can be run by typing <TT>mp1</TT> at the command prompt. </P>
+<P>&nbsp;</P>
+<H2>Brief Intro to PUSH and POP</H2>
+<UL>
+  <LI>Pushing and poping are stack operations and will be 
+  covered later in lecture. 
+  <P></P>
+  <LI>Pushing a register will record onto the stack&nbsp;a copy of the register's data, while poping to 
+  a register removes the <U>last</U> 
+  added data to the register. 
+  <P></P>
+  <LI>        Since 
+  returning from a function uses the stack, every push must be matched with a pop, 
+  and the order of the registers for pushing will be the reverse of 
+  that used for popping. 
+  <P></P>
+  <LI>Pushing and popping is, among other things,&nbsp;used to ensure that a called 
+  function doesn't scramble registers that&nbsp;the calling function uses.
+  <P></P>
+  <LI>You should <U>not</U> push and pop a register that will contain information 
+  that's supposed to be returned to the calling function.&nbsp; Doing so will 
+  prevent the data from being transferred.
+  <P></P>
+  <LI>Precocious students will examine <a href="http://courses.ece.uiuc.edu/ece291/lecture/lecture5.htm"> Lecture 5</a> or <a href="http://courses.ece.uiuc.edu/ece291/lecture/lockwood/l7.html">Lockwood's lecture</a> for 
+  thorough details.</LI></UL>
+<H2>&nbsp;</H2>
+<H2>Hints</H2>
+<UL>
+  <LI>  The LIBMP1 file contains executable library functions for each 
+  of the routines that you need to implement. This allows you to run the 
+  program and understand how it works before you implement it. You can test your 
+  program by stepping through&nbsp;it and making sure the display and comparison functions 
+  work correctly. You will only receive credit, however, for the routines that 
+  you implement yourself. 
+  <P></P>
+  <LI>When debugging your code in Turbo Debugger, you will find it helpful to 
+  use the memory window to show you the memory location of the file and strings. 
+  You can also use the watch window to keep track of variables in your code.
+  <P></P>
+  <LI>Run the program many times to get a good feel of it.&nbsp; Your final program with your 
+  code should resemble our version.&nbsp; Formatting aesthetics aren't as important as correctly operating code.
+  <P> </P>
+  <LI>Do not forget to push and pop to avoid clobbering 
+  registers!
+  <P></P>
+  <LI>Remember to include function headers for&nbsp;and write 
+  comments in each of your functions!&nbsp; Headers should give a general idea 
+  of what the function does and have a list of inputs, outputs, and called 
+  functions.&nbsp; Commenting should be specific enough to allow a function to 
+  be understood by just reading the comments.&nbsp; Commenting every line, however, is 
+  excessive and may cost you some points. 
+  <P></P>
+  <LI>START EARLY!
+  <P></P>
+  <LI>Monitor the <A href="news:uiuc.class.ece291">newsgroup</A> for 
+  clarifications and help.
+  <P></P></LI></UL>
+<H2>&nbsp;</H2>
+<H2>Subroutines</H2>
+<P>  This assignment has&nbsp;eight procedures. You will receive credit by replacing 
+each of these&nbsp;eight procedures listed below with your own code. Assume these function 
+call library routines such as dspmsg as needed.</P>
+<TABLE border=1 id=TABLE1 width="934">
+  
+  <TR>
+    <TD width="315"><strong><font size="4">FodderStat</font></strong></TD>
+    <TD width="603">
+      <UL>
+        <LI>
+          <p style="line-height: 100%">Checks the round number and sees if you
+          need to quit or not 
+        <LI>
+          <p style="line-height: 100%">It checks to see if you had a hit or not
+          (don't forget your shots hit +/- 20 meters)
+        <li>
+          <p style="line-height: 100%">If you have a hit, then you set your
+          playhit byte and increment your playscore byte</li>
+        <li>If playscore is greater than or equal to 3 then you must set your playwin flag
+          to 1</li>
+      </UL>
+      <p>&nbsp;</p>
+      <UL>
+        <li>Calls: NONE</li>
+        <li>Inputs: [round], [rand], [distshot]</li>
+        <LI><P>Outputs: [playhit], [playscore], [playwin], [quit]</P>
+      </UL></TD></TR>
+  <TR>
+    <TD width="315"><strong><font size="4">FodderSet</font></strong></TD>
+    <TD width="603">
+      <UL>
+        <li>Use Rand function to find a random number and store it into rand
+          (max random number = 255)</li>
+        <LI>Display the correct messages onto the screen for option 1 in main
+          menu
+        <li>You want to also call Readline to read in the velocity and then
+          FodderShoot to see if the shot made it or not</li>
+        <LI>You also need to display to screen the distance your shot hit and
+          its corresponding messages 
+        <P></P>
+        <LI>Calls: _Rand, binasc, dspmsg, _ReadLine, _FodderShoot
+        <li>Inputs: randommsg, velocmsg, buffer, dist2msg, [distshot]</li>
+        <li>Outputs: (to screen)</li>
+      </UL></TD></TR>
+  
+  <TR>
+    <TD width="315"><strong><font size="4">FodderShoot</font></strong></TD>
+    <TD width="603"><UL>
+      <LI>Calculates the distance the shot hit (from equation) and stores to
+        distshot 
+      <LI>Refer to top for more information</UL> 
+      <P></P>
+      <UL>
+      <li>Calls: NONE</li>
+      <li>Inputs: [velocity]</li>
+      <li>Outputs: [distshot]</li>
+      </UL></TD></TR>
+  <td width="315">
+  <UL></UL>
+  <TR>
+    <TD width="315"><strong><font size="4">Rand</font></strong></TD>
+    <TD width="603">
+    <UL>
+      <LI>Random Number generator&nbsp; 
+      <LI>Code from Justin Quek and Chris Jones 
+      <LI> YOU DO NOT NEED TO WRITE THIS FUNCTION 
+      <P></P>
+      <LI>Inputs: cx = upper bound of random number
+      <li>Outputs: ax = (0, rand - 1)</li>
+    </UL></TD></TR>
+  <td width="315">
+  <UL></UL>
+  <td width="315">
+  <UL></UL>
+  <TR>
+    <TD width="315"><strong><font size="4">ReadLine</font></strong></TD>
+    <TD width="603">
+      <UL>
+      <LI>  Reads in the user typing and saves result into [velocity]
+      <li>Only take numbers and return key as inputs and only allow up to TWO
+        digits</li>
+        <li>Don't forget to ECHO the letter the user typed in to the screen</li>
+      <li>You can make use of minbuff to store what the user types in</li>
+      <LI>  You can also use ascbin to conver it to binary to move into
+        [velocity]
+      </UL>
+      <p>&nbsp;</p>
+      <UL>
+      <li>Calls: dspout, kbdin, ascbin</li>
+      <li>Inputs: from keyboard,&nbsp;</li>
+        <LI>Outputs: [velocity], to screen, [minbuff]
+      </UL></TD></TR>
+  <td width="315">
+  <UL></UL>
+  <TR>
+    <TD width="315"><strong><font size="4">NewPlay</font></strong></TD>
+    <TD width="603">
+      <UL>
+      <li>Creates a new player and sets the activeplayer flag</li>
+      <li>Clears out the new players old score</li>
+        <LI>Look at top for more information</UL>
+      <p>&nbsp;</p>
+      <UL>
+      <li>Calls: NONE</li>
+      <li>Inputs: [activeplayer]</li>
+        <LI>Outputs: [player1], [player2], [player3], [activeplayer]
+      <li>Returns: bx = 1, 2, or 3 if Player1-3 Created</li>
+      </UL></TD></TR>
+  <td width="315">
+  <UL></UL>
+  <tr>
+    <TD width="315"><strong><font size="4">DispChar</font></strong></TD>
+    <TD width="603">
+      <UL>
+      <li>Helper function to NewPlay</li>
+      <li>Displays message depending on what NewPlay returns</li>
+      </UL>
+      <p>&nbsp;</p>
+      <UL>
+        <LI>
+        <DIV>Calls: dspmsg</DIV>
+        <LI>
+        <DIV>Inputs: bx=player# created, create1, create2, create3</DIV>
+        <LI>
+        <DIV>Outputs: to screen</DIV>
+      </UL></TD>
+  </tr>
+  <tr>
+    <TD width="315"><strong><font size="4">PlayerStats</font></strong></TD>
+    <TD width="603">
+      <UL>
+      <LI>Checks to see if your player won&nbsp;
+        <LI>If he won, then you want to update the ACTIVE player's score</UL>
+      <UL>
+        <LI>
+        <DIV>Calls: NONE</DIV>
+        <LI>
+        <DIV>Inputs: [playwin], [activeplayer]</DIV>
+        <LI>
+        <DIV>Outputs: [player1],[ player2],[ player3]</DIV>
+      </UL></TD>
+  </tr>
+  <tr>
+    <TD width="315"><STRONG><FONT size=4>DisplayPlayerStats</FONT></STRONG></TD>
+    <TD width="603">
+      <UL>
+      <li>Displays the players points for all three characters and the
+        corresponding menus</li>
+        <LI>Don't forget to use dspout to add spaces</UL>
+      <p>&nbsp;</p>
+      <UL>
+        <LI>
+        <DIV>Calls: dspout, dspmsg</DIV>
+        <LI>
+        <DIV>Inputs: playstat1, [player1], playstat2, [player2], playstat3,
+          [player3]&nbsp;</DIV>
+        <LI>
+        <DIV>Outputs: to screen</DIV>
+      </UL></TD>
+  </tr>
+  <TR>
+    <TD width="315">&nbsp;</TD>
+    <TD width="603">
+      &nbsp;</TD></TR>
+  <td width="315">&nbsp;</TABLE>
+<H2>Procedure</H2>
+<UL>
+  <LI>You will begin this MP with the following files: 
+  <UL>
+    <LI><TT>MP1.ASM</TT>: Program Framework 
+    <LI><TT>Makefile</TT>: Specifies how and when programs are assembled and 
+    linked. 
+    <LI><TT>LIBMP1.LIB</TT>: Library functions for MP1 
+    <LI><TT>LIB291.LIB</TT>: General-purpose library functions </LI></UL>
+  <LI>You may copy these files from the network drive to your home directory 
+  with the following command: <BR><TT>xcopy /s V:\ece291\mp1 W:\mp1</TT> 
+  <LI>Add your code to <TT>MP1.ASM</TT>. 
+  <LI>Assemble and link your program by typing<BR><TT>make</TT><BR>This command 
+  reads <I>Makefile</I> then invokes NASM and LINK to build an executable 
+  program. 
+  <LI>Use Turbo Debugger (TB) to find and correct program 
+  errors.</LI></UL>
+<H2>Final Steps</H2>
+<P>1. Demonstrate your MP1.EXE to a TA. You may be asked to recompile and demo 
+the program. Your program must work with all given input.</P>
+<P>2. Be prepared to answer questions about any aspect of the operation of your program. 
+The TAs will not accept an MP if you cannot fully explain your code and your 
+implementation. Delayed MPs will be subject to late penalties as described in 
+the course syllabus (10% pts per day).</P>
+<P>3. The TA will complete the code submission procedure.</P>
+<HR>
+
+<H2>MP1.ASM (program framework)</H2>
+<pre><font size="1">; MP1 - Your Name - Today's Date
+;
+;
+; Spring 2002
+; Guest Author: David Du
+; University of Illinois, Urbana-Champaign
+; Dept. of Electrical and Computer Engineering
+;
+; Version 1.0
+
+	BITS	16
+
+;====== SECTION 1: Define constants =======================================
+
+        CR          EQU 0Dh
+        LF          EQU 0Ah
+        BEL         EQU 07h
+        MAX_ENTRIES EQU 10
+
+;====== SECTION 2: Declare external procedures ============================
+
+; These are functions from lib291
+EXTERN  kbdine, dspout, dspmsg, dosxit,ascbin,binasc, kbdin
+EXTERN _libDisplayPlayerStats,_libPlayerStats, _libDispChar, _libNewPlay, _libReadLine,&nbsp;
+EXTERN _libFodderShoot, _libFodderSet, _libFodderStat, mp1xit
+
+GLOBAL _DisplayPlayerStats,_PlayerStats, _DispChar, _NewPlay, _ReadLine,&nbsp;
+GLOBAL _FodderShoot, _FodderSet, _FodderStat, _Rand
+GLOBAL seed, dot, Title, velocmsg, playcray, dist2msg, distshot, player1, player2, player3, cplay
+GLOBAL rand, minbuff, velocity, minbuffsize, randommsg, buffer, round, quit, playscore, playwin
+GLOBAL playwinmsg, playlosemsg, playhit, playmissmsg, playhitmsg, create1, create2, create3
+GLOBAL playstat1, playstat2, playstat3, activeplayer
+
+; You will be writing your own versions of these functions
+
+; The _lib functions need these to work properly
+
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        resb      64*8
+stacktop:
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+	seed		dw	3	; for random number purposes
+	dot		db	'.'
+	Title		db	CR, LF, CR, LF, 'ECE Fodder TMode'
+			db	CR, LF, '=================='
+			db	CR, LF, 'Choose Your Path: '
+			db	CR, LF, '1) Cannon Fodder  '
+			db	CR, LF, '2) New Player     '
+			db	CR, LF, '3) Player Score   '
+			db	CR, LF, '4) Quit (Why?)	   '
+			db	CR, LF, '=================='
+			db	CR, LF, ': $'
+	velocmsg	db	CR, LF, 'Velocity @ 30 degrees (m/s): $'
+	playcray	db	CR, LF, 'Created player $'
+	dist2msg	db	CR, LF, 'Your bomb hit +/- 20 meters: $'
+	distshot	dw	0
+	player1		db	0	;scores for players&nbsp;
+	player2		db	0
+	player3		db	0
+	cplay		db	0
+	rand		db	50	;Random number aka Target Distance&nbsp;
+	minbuff		db	0	;three numbers plus return key&nbsp;
+			db	0	;should only need this much&nbsp;
+			db	0
+	velocity	dw	0	;velocity that you shot at&nbsp;
+	minbuffsize	db	0
+	randommsg	db	CR, LF, CR, LF, 'Target distance (meters): $'
+	buffer		resb	7	;misc buffer could be used for binasc&nbsp;
+	round		db	0	;the round you're at&nbsp;
+	quit		db	0	;0 means no quit.. 1 is to quit&nbsp;
+	playscore	db	0	;Holds player score&nbsp;
+	playwin		db	0	;1 if player has won&nbsp;
+	playwinmsg	db	CR, LF, CR, LF, 'You win!$'
+	playlosemsg	db	CR, LF, CR, LF, 'You lose!$'
+	playhit		db	0	;1 if player has hit the target&nbsp;
+	playmissmsg	db	CR, LF, 'My grandma has better aim!$'
+	playhitmsg	db	CR, LF, 'We have a hit!$'
+	create1		db	CR, LF, CR, LF, 'Player 1 Created$'
+	create2		db	CR, LF, CR, LF, 'Player 2 Created$'
+	create3		db	CR, LF, CR, LF, 'Player 3 Created$'
+	playstat1	db	CR, LF, CR, LF, '=================='
+			db	CR, LF, 'Player #  | Score '
+			db	CR, LF, CR, LF, ' Player1      $'
+	playstat2	db	CR, LF, ' Player2      $'
+	playstat3	db	CR, LF, ' Player3      $'
+	activeplayer	db	0	;has active player number&nbsp;
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        mov     ax, cs                  ; Initialize Default Segment register
+        mov     ds, ax&nbsp;
+        mov     ax, stkseg              ; Initialize Stack Segment register
+        mov     ss, ax
+        mov     sp, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+MAIN:
+
+.MainLoop
+	mov	byte[playwin], 0
+	mov	byte[playscore], 0
+	mov	byte[quit], 0
+	mov	byte[round], 0
+	mov	dx, Title
+	call	dspmsg
+	call	kbdine
+	cmp	al, '4'
+	je	.End
+	cmp	al, '2'
+	je	.New
+	cmp	al, '3'
+	je	.DisplayPlayer
+	cmp	al, '1'
+	je	.FSet
+	jmp	.MainLoop
+.DisplayPlayer
+	call	_DisplayPlayerStats
+	jmp	.MainLoop
+.FSet
+	mov	byte[playhit], 0
+	inc	byte[round]
+	call	_FodderSet
+	call	_FodderStat
+	mov	dx, playhitmsg
+	cmp	byte[playhit], 1
+	je	.SkipMe2
+	mov	dx, playmissmsg
+.SkipMe2
+	call	dspmsg
+	push	ax
+	call	kbdin
+	pop	ax
+	cmp	byte[quit], 1
+	jne	.FSet
+	call	_PlayerStats
+	mov	dx, playwinmsg
+	cmp	byte[playwin], 0
+	jne	.SkipMe
+	mov	dx, playlosemsg
+.SkipMe
+	call	dspmsg
+	push	ax
+	call	kbdin
+	pop	ax
+	jmp	.MainLoop
+.New
+	call	_NewPlay
+	call	_DispChar
+	jmp	.MainLoop
+.End
+	call	_DisplayPlayerStats
+	mov	dl, CR
+	call	dspout
+	mov	dl, LF
+	call	dspout
+	call	mp1xit
+
+;================================================
+; FodderStat
+_FodderStat
+	call	_libFodderStat
+	ret
+
+
+;=====================================================
+; FodderSet
+_FodderSet
+	call	_libFodderSet
+	ret
+
+
+;===============================================
+; FodderShoot
+_FodderShoot
+	call	_libFodderShoot
+	ret
+
+
+;======================================
+; Random Number Genetarator
+; Code from Justin Quek and Chris Jones
+; cx = upper bound
+; ax = (0, rand - 1)
+;======================================
+
+_Rand
+
+; Save registers to stack
+;       push    ax
+        push    bx
+        push    cx
+        push    dx
+
+; Initializations
+        mov     ax, word [seed]
+        mov     bx, 16807
+
+; X(k+1) = [a * X(k) + c] % m
+;  X(0) = 3, a = 16807, m = 32767, c = 15031
+        mul     bx
+        add     ax, 15031
+        adc     dx, 0
+        mov     bx, 7fffh
+        div     bx
+        mov     ax, dx
+        mov     word [seed], dx
+
+; Put our random number within given range
+        xor     dx, dx
+        div     cx
+        mov     ax, dx
+
+; Restore registers from stack
+        pop     dx
+        pop     cx
+        pop     bx
+;       pop     ax
+
+        ret
+
+
+;==============================================
+;_ReadLine&nbsp;
+_ReadLine
+	call	_libReadLine
+	ret
+
+
+
+;==============================================
+;_NewPlay&nbsp;
+_NewPlay
+	call	_libNewPlay
+	ret
+
+
+
+;==============================================
+;_DispChar&nbsp;
+_DispChar
+	call	_libDispChar
+	ret
+
+
+
+;===========================
+; _PlayerStats
+_PlayerStats
+	call	_libPlayerStats
+	ret
+
+
+
+;===========================
+; _DisplayPlayerStats
+_DisplayPlayerStats
+	call	_libDisplayPlayerStats
+	ret
+</font></pre>
+</BODY></HTML>

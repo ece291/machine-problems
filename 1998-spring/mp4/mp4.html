@@ -1,0 +1,1576 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="Microsoft FrontPage Express 2.0">
+<title>ECE291 Machine Problem 4</title>
+</head>
+
+<body bgcolor="#FFFFFF">
+
+<p>&nbsp; </p>
+
+<table border="0" cellpadding="3" width="100%">
+    <tr>
+        <td width="33%">ECE291</td>
+        <td align="center" width="34%">Computer Engineering II</td>
+        <td align="right" width="33%">Lockwood, Spring 1998</td>
+    </tr>
+</table>
+
+<h1 align="center">Machine Problem 4: Everitt 3-D</h1>
+
+<p align="center">&nbsp; </p>
+<div align="center"><center>
+
+<table border="1" cellpadding="3" width="60%">
+    <tr>
+        <td align="right"><b>Due Date</b></td>
+        <td>Friday 4/3/98</td>
+    </tr>
+    <tr>
+        <td align="right"><b>Purpose</b></td>
+        <td>VGA Graphics, Interrupts, C/ASM Interface</td>
+    </tr>
+    <tr>
+        <td align="right"><font size="3"><b>Points</b></font></td>
+        <td>65</td>
+    </tr>
+</table>
+</center></div>
+
+<p>&nbsp;<!--
+
+<p><img src="../../icon/construct.gif">This MP is under construction <p>
+
+--> </p>
+
+<h2>Introduction</h2>
+
+<p align="left">In 1991, Apogee released Wolfenstein 3-D, a game
+designed by a relatively little known game company named id
+software. It revolutionized the gaming industry and made id one
+of the most popular game companies in the world. The Computer
+Gaming World Hall of Fame recognizes it as helping to shape the
+overall direction of the computer gaming industry today.
+Wolfenstein 3-D brought something new to computer games that
+hadn't been seen previously: a 3-D environment with detailed
+graphics and addictive gameplay. Over 250,000 copies of
+Wolfenstein 3-D have been sold worldwide, and millions of
+shareware copies have been played. In this MP, we are going to
+create our own version of Wolfenstein 3-D called Everitt
+3-D.&nbsp; Four screenshots from this MP are shown below. </p>
+
+<p>
+<center>
+<table border=0  cellpadding=10>
+<tr><td><img src="screen1.gif" width=320></td>
+    <td><img src="screen2.gif" width=320></td></tr>
+<tr><td><img src="screen3.gif" width=320></td>
+    <td><img src="screen4.gif" width=320></td></tr></table>
+</center>
+
+<p>
+<br>
+<br>
+<h2>The Ray Caster</h2>
+
+<p align="left">The 3D game engine works by sending out a ray to
+search for objects, such as walls, which are in the line of sight
+of the player. The part of the object hit by the ray corresponds
+to a vertical image slice centered about the middle of the
+screen.&nbsp; The sides of the screen represent the objects seen
+in the peripheral vision of the player.&nbsp; In Everitt 3-D, as
+in Wolfenstein 3-D, walls are represented by large square blocks.
+Each wall block, or cell, contains 64 player positions along each
+side. Figure 1 shows the top view of a simple game map. The black
+squares represent cells. The player is positioned at (<i>Player_X,
+Player_Y</i>) and is facing in the direction of the arrow. Rays
+are cast out to find the distance from a wall cell to the viewer.
+One ray is cast for each column on the screen. Since we will be
+operating in 320X200 graphics mode for this MP, 320 rays are
+needed to fill the screen. These rays are divided evenly through
+a 60° viewing range, from 30° less than the viewing angle to
+30° more than the viewing angle. This range is shown in red on
+the figure. When a wall cell has been intersected, the distance
+from the viewer to this intersection is calculated. </p>
+
+<p align="center"><img src="viewrng.jpg" width="640" height="400"
+nosave> &nbsp; </p>
+
+<h2>Finding the Walls</h2>
+
+<p align="left">A few initial calculations are needed to find an
+intersection with a cell wall.&nbsp; First, the direction of the
+view angle is checked to see what quadrant the ray will be
+casting in, as shown in Figure 2. This tells the ray caster, the
+direction in which to look for wall cells as the ray is cast. For
+example, in Quadrant 1, all intersections will be with cells
+either above or to the right of the viewer. As with the cartesian
+coordinate system, a <i>view_angle</i> of 0 represents a ray cast
+out along the positive x-axis with the value of <i>view_angle</i>
+increasing as you proceed in a counter-clockwise direction.&nbsp;
+The initial value of <i>xi, </i>shown in the figure below<i>,</i>
+is the x-position of the first horizontal grid line crossed.
+Similarly, the initial <i>yi</i> is the y-position of the first
+vertical grid line that is crossed. </p>
+
+<p align="center"><img src="intersection.jpg" width="460"
+height="347"> </p>
+
+<p align="left">Since the ray caster needs to check in both the x
+direction and the y direction for intersections with a cell wall,
+the calculations are simplified if two rays are cast in the same
+direction. One, the <i>yray</i>, checks all intersections with a
+wall cell along a horizontal grid line, such as cell A in the
+figure. The y-position of the grid line and <i>xi</i> are used to
+calculate the distance of a possible wall cell intersection from
+the viewer. Subsequent <i>xi</i>'s are calculated at each
+horizontal grid line by adding a constant value, <i>xstep</i>, to
+<i>xi</i>. <i>Xstep</i> represents the increase in <i>xi </i>at
+the angle of the current ray for each 64 steps in y, or the
+distance between grid lines. If an intersection is not found at
+the current grid intersection, meaning the cell in question
+contains a zero, then the ray continues to be cast out until an
+intersection is found by this or the <i>xray</i>. </p>
+
+<p>The other ray that is cast, the <i>xray,</i> operates in a
+very similar manner as the <i>yray</i>, with the only differences
+being that instead of checking for intersections along the
+horizontal grid lines, here there are checked along the vertical
+grid lines. Also, a <i>ystep</i> value is now used to update <i>yi</i>
+to calculate the intersections of&nbsp; a vertical grid line with
+the <i>yray</i>. </p>
+
+<p>The code for the ray caster has been written for you.&nbsp;
+You may find coding your portion of the MP easier, however, if
+you understand how the ray caster works and what it is doing. </p>
+
+<h2><font size="5">The World Array</font></h2>
+
+<p><font size="3">The world is represented as an array of
+cells.&nbsp; Each cell has the same texture on all four
+sides.&nbsp; For this MP, the world contains 16 types of
+cells.&nbsp; A cell type of 0 represents an open space, while
+1-15 represent cells covered with different textures..&nbsp; We
+will use one byte for each wall cell.&nbsp;&nbsp; The texture
+number is located in the lower four bits.&nbsp; Additional
+information about the cell, such as door status data,&nbsp; is
+located in the upper four bits.&nbsp; These upper bits should be
+ignored when you write <i>WorldValue</i> procedure.</font> </p>
+
+<p><font size="3">In addition, the array is not arranged the way
+you may think it is. Byte 0 in the array does not contain block
+(0,0). The world array has been arranged such that the lower left
+corner, as it appears in the include file, represents the (0,0)
+wall cell position. Therefore, byte 0 in the array ends up
+containing block (0, <i>WorldSize </i>- 1) . This&nbsp; makes
+creation of the map much easier since the map directions in the
+array are intuitive: Right represents a <i>view_angle </i>of 0</font>°,
+Up represents 90° , Left represents 180° , Down represents
+270° .&nbsp;&nbsp;<font size="3"> If the zero position of the
+array was used to represent block (0,0), the map would have been
+upside down in the include file.&nbsp; The height and width of
+the array is determined by the variable <i>WorldSize.</i></font> </p>
+
+<p>A procedure, <i>CheckDoor</i>, has been defined for you to
+detect whether or not you can pass through a particular wall
+cell.&nbsp; It has been defined as a C type procedure and takes
+three arguments, the X and Y position of the block in the world
+array and the <i>function,</i> the check that needs to be
+performed.&nbsp; If <i>function</i> = 0, the block if checked to
+see if it is a door.&nbsp; For now, you will not need to use this
+check in your code.&nbsp; If <i>function</i> = 1, the block is
+checked to see if you can walk through it.&nbsp; You should use
+this check when writing <i>ProcessMovement</i>.&nbsp; The check
+result is returned in ax, 1 if the check is positive, 0 if
+not.&nbsp; If you are able to walk through the cell, ax=1 after
+calling <i>CheckDoor</i>, treat it as if it were a null cell. </p>
+
+<h2><font size="5">Displaying the results</font></h2>
+
+<p align="left"><font size="3">In order to display a 3-D
+representation of the 2-dimensional map, we need to draw one
+vertical strip for each ray that was cast.&nbsp; The map array
+contains values that indicate what texture should be on the wall
+cell. These map values correspond to the textures in the
+Background Segment as shown in Figure 3 below.&nbsp; This texture
+value is indicated by <i>TexNum.</i> You will need to note here,
+however, that while the map may organize the textures from 1 to
+15, it would be much easier to calculate the current texture if
+the numbers started from 0.&nbsp; This is why the value passed
+in, <i>TexNum, </i>always one less than the map texture
+value.&nbsp; The strip that is to be drawn, <i>StripNum</i>, is
+found by calculating the following: (intersection point mod
+64).&nbsp; This value is 0 at the far left of the texture and 63
+at the far right.</font></p>
+
+<p align="center"><img src="DrawStrip.jpg" width="640"
+height="231"> &nbsp; </p>
+
+<h2>Scaling the Strips</h2>
+
+<p><font size="3">To represent textures at different distances,
+they must be scaled.&nbsp; You need to scale the texture from its
+original height of 64 to the final height as indicated by <i>Scale.&nbsp;
+C</i></font>lipping is needed when the strip height is greater
+than 200.&nbsp; Strip scaling involves resampling of pixels. It
+is easy to reduce the size of a strip by 50%, (just plot one
+pixel for every other pixel in the original strip). Likewise, it
+is easy to magnify an image by 300% (plot three duplicate pixels
+for every pixel in the source).&nbsp; The hard part is working
+with scaling factors such as 144% and 295%.&nbsp; Providing
+support for these scaling factors is what makes the scaling
+algorithm interesting. </p>
+
+<p>You will first need to calculate your scale factor since what
+is provided, <i>Scale</i>, will only give you the final height of
+the strip.&nbsp; The original height of a texture is 64.&nbsp;
+The whole part of the scaling factor, (the multiple number of
+times that each pixel of the original strip must always be
+displayed in the final strip), can be found by (<i>Scale</i> /
+64). The remaining part of the scale factor, (the fraction of
+pixels that are to be displayed each time), can be found by (<i>Scale
+</i>mod 64).&nbsp; This fractional portion is what allows you to
+display strips at all heights.&nbsp; As with Bresenham's
+algorithm, as we plot each pixel, we can compute a sum of this
+fractional portion. When it reaches the width of a pixel, we
+should plot an extra pixel and then subtract a full pixel width
+from it. Think about what value the pixel width would need to be
+based on the values given here. <br>
+&nbsp; </p>
+
+<h2>Moving Around</h2>
+
+<p align="center"><img src="movement.jpg" width="331"
+height="247"> </p>
+
+<p align="left">Moving straight ahead in our 3-D world is not as
+simple as you may think.&nbsp; In order for you to maintain a
+consistent travel distance at varying viewing angles, you need to
+calculate your<i> Delta_X </i>and <i>Delta_Y </i>values based on
+the value of <i>view_angle.</i>&nbsp; You are really just trying
+to calculate the sides of a right triangle, as shown in Figure
+4.&nbsp; Some basic trigonometry is obviously all that's required
+to calculate these delta values correctly.&nbsp; The travel
+distance is dependent only on the state of the Left Shift
+key.&nbsp; If it is down, you will want to travel a farther
+distance than if it was up. </p>
+
+<h2>Image Data</h2>
+
+<p>It would be tedious to define images using assembly code. It
+is much more convenient to create an image using a standard image
+editor (such as PhotoPaint) and save the results in a file. Our
+program then need only load this data when it executes. 
+The conents of the Everitt textures are shown below:<p>
+<center><img src="textures.gif" width="320" height="200"></center>
+<p>
+
+<p>For this MP, we will write the <i>LoadPCX</i> routine to open
+and read a .PCX file; run-length decode it; then save the
+uncompressed data in a memory segment. DOS file services
+(software interrupts) are described in the lab manual and in your
+textbook. (You will need to open a file, point a register to the
+scratch segment, and issue the read command). Details of the PCX
+image format were discussed in class in <a
+href="../../lecture/l22.html">Lecture 22</a>. </p>
+
+<h2>Video Graphics</h2>
+
+<p>In order to reduce the screen flicker when we draw to the
+screen we will use double-buffering. After an entire image has
+been created, it will be quickly transferred directly to the
+screen by the <i>ShowScreenBuffer</i> routine. Because of double
+buffering, you will not see this image while it is being changed.
+</p>
+
+<p>To hold all the graphics for this MP, the following segments
+have been defined: </p>
+
+<ul>
+    <li><i>SBSeg&nbsp;&nbsp;&nbsp; </i>: A double-buffered
+        &quot;virtual&quot; screen that holds Screen Buffer.</li>
+    <li><i>BGSeg&nbsp;&nbsp; </i>: Contains the wall textures in
+        Background.</li>
+    <li><i>FGSeg&nbsp;&nbsp; </i>: Contains the Player/Object
+        images in Foreground(not needed until MP5).</li>
+    <li><i>ScrSeg&nbsp;&nbsp; </i>: A temporary buffer used to
+        hold PCX image data during decoding in ScratchPad.</li>
+    <li><i>TextSeg </i>: Contains the text used to display the
+        frame rate and in MP5</li>
+</ul>
+
+<p>A few steps are required to draw to the video screen. First,
+we call <i>ray_caster</i> to draw the strips to represent the
+walls. Once an entire image has been created, <i>ShowScreenBuffer</i>
+is called to blast the data from ScreenBuffer to the VGA's video
+RAM (at <tt>A0000h</tt>). Before <i>ShowScreenBuffer </i>exits,
+you must make sure to clear the ScreenBuffer so that no trace of
+the previous image remains. </p>
+
+<h2>Keyboard Control</h2>
+
+<p>This MP uses the keyboard to control movement.
+To recognize keys that are pressed
+simultaneously, we need to replace the default keyboard handler
+with our own code. Your <i>InstKey</i> routine is called to
+install a new handler into the vector table. The <i>DeInstallKey</i>
+routine is used to remove it (and restore the DOS default
+routine). </p>
+
+<p>Key presses affect special keyboard variables that 
+we have define for this MP.<i> </i>When
+a key is down, the appropriate keyboard variable is set to one.
+When the key is released, the same variable is then set back to
+zero. The topic of interrupts was discussed in great detail
+during the <a href="../../lecture/l14.html">Lecture 14</a> class
+period. We discussed the operation of the keyboard controller
+during <a href="../../lecture/l16.html">Lecture 16</a> </p>
+
+<h2>Look-Up Tables</h2>
+
+<p>In order to optimize the execution speed of the ray caster,
+the following look-up tables have been created: </p>
+
+<p>&nbsp;&nbsp;&nbsp; <i>tan_table&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</i>&nbsp;&nbsp;&nbsp;
+: tangent <br>
+&nbsp;&nbsp;&nbsp; <i>inv_tan_table</i>&nbsp;&nbsp;&nbsp;&nbsp; :
+inverse tangent <br>
+&nbsp;&nbsp;&nbsp;<i> y_step</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>&nbsp;</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+: the change in y if the change in x is 64<i> </i>at the current <i>view_angle</i>.
+<br>
+&nbsp;&nbsp;&nbsp; <i>x_step</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+: the change in x if the change in y is 64 at the current <i>view_angle</i>.
+<br>
+&nbsp;&nbsp;&nbsp; <i>inv_cos_table</i>&nbsp;&nbsp;&nbsp;&nbsp; :
+inverse cosine <br>
+&nbsp;&nbsp;&nbsp; <i>inv_sin_table</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+: inverse sine <br>
+&nbsp;&nbsp;&nbsp; <i>correction_table </i>: corrects the
+&quot;polar coordinates&quot; error in the ray caster. </p>
+
+<p>You may want to use one or more of these tables in your
+code.&nbsp; You will need to remember that the value of <i>view_angle</i>
+is really just an offset to each of these tables.&nbsp;
+Otherwise, you will need to do some conversion to get the <i>view_angle</i>
+into radians.&nbsp; The tables also only hold floating point
+values, so you will need to use the FPU to make use of them. <br>
+&nbsp; </p>
+
+<h2>C-Style Procedures</h2>
+
+<p>Several routines in this MP should be implemented so that they
+can be called from C. As discussed in <a
+href="../../lecture/l10.html">Lecture 10</a>, this involves
+making FAR procedure calls, pushing arguments to the stack, and
+using BP to access the arguments passed to a procedure. Recall
+that C expects variables to be preceded by an underscore.&nbsp;
+MASM provides a C-style procedure declaration that makes writing
+these types of procedure less difficult. </p>
+
+<h2>Test Cases</h2>
+
+<p>To help you debug your program, there are a number of ways to
+run subsets of the code. </p>
+
+<ul>
+    <li>MP4 0: Keyboard interrupt test.</li>
+    <li>MP4 1: LoadPCX/ShowScreenBuffer test.</li>
+    <li>MP4 2: Tests your DrawStrip routine. Push ESC when you
+        see the texture you want to check.&nbsp; The texture is
+        displayed using our DrawStrip.&nbsp; Press ESC again and
+        your DrawStrip procedure is called to display the same
+        texture.&nbsp; They should look identical.</li>
+    <li>MP4 3: Frame rate test.&nbsp; Press F2 to display the
+        frame rate.</li>
+    <li>MP4: Allows you to run through the map.</li>
+</ul>
+
+<p>&nbsp; </p>
+
+<h2><font size="5">Defined Variable</font></h2>
+
+<p>Some variables and constants have been defined for you, but
+you may need to define your own to successfully complete this MP.
+</p>
+
+<p><b>Constants:</b> <br>
+Use these instead of hard coded values. <br>
+&nbsp;&nbsp;&nbsp; <i>SLOWTURN</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+: Amount to change <i>view_angle </i>by to turn slowly. <br>
+&nbsp;&nbsp;&nbsp; <i>FASTTURN&nbsp;</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+: Amount to change <i>view_angle </i>by to turn quickly. <br>
+&nbsp;&nbsp;&nbsp; <i>MOVESLOW&nbsp;&nbsp;&nbsp;&nbsp; </i>:
+Travel distance for a slow move. <br>
+&nbsp;&nbsp;&nbsp; <i>MOVEFAST</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+: Travel distance for a fast move. <br>
+&nbsp;&nbsp;&nbsp; <i>WALLBUFFER </i>: The closest you can get to
+any wall. </p>
+
+<p><b>Variables:</b> <br>
+<b>&nbsp;&nbsp;&nbsp; </b><i>MapLoc&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</i>: The location, in memory, of the current map. <br>
+&nbsp;&nbsp;&nbsp; <i>WorldSize</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+: The size of the current map. <br>
+&nbsp;&nbsp;&nbsp; <i>Player_X&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</i>: The X-Position of the player. <br>
+&nbsp;&nbsp;&nbsp; <i>Player_Y</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+: The Y-Position of the player. <br>
+&nbsp;&nbsp;&nbsp; <i>view_angle</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+: The direction in which the player is looking. <br>
+&nbsp;&nbsp;&nbsp; <i>Delta_X&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</i>: Floating point value for the change in the player's
+X-Position after a move. <br>
+&nbsp;&nbsp;&nbsp; <i>Delta_Y&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</i>: Floating point value for the change in the player's
+Y-Position after a move. </p>
+
+<p><b>Map Data Variables:</b> <br>
+Included in Map#.dat: <br>
+&nbsp;&nbsp;&nbsp; <i>World#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</i>: Holds the map array. <br>
+&nbsp;&nbsp;&nbsp; <i>PCX#</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+: The filename of the PCX file that holds the textures. <br>
+&nbsp;&nbsp;&nbsp; <i>STARTX#</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+: The starting X-Position of the player. <br>
+&nbsp;&nbsp;&nbsp; <i>STARTY#</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+: The starting Y-Position of the player. <br>
+&nbsp;&nbsp;&nbsp; <i>STARTANG#&nbsp;&nbsp;&nbsp; </i>: The
+players initial <i>view_angle.</i> <br>
+<i>&nbsp;&nbsp;&nbsp; WORLD#SIZE </i>: The height and width of
+the map array. </p>
+
+<h2>Procedures</h2>
+
+<ul>
+    <li>You will receive credit for this assignment by replacing
+        each procedures listed below with your own code.</li>
+    <li>Experiment with the working code to gain a full
+        understanding of how the programs works.</li>
+    <li>Your program should exactly match the functionality of
+        the library subroutines.</li>
+    <li>All subroutines should be <i>modular</i>. They should use
+        the stack to <i>preserve</i> the value of any registers
+        they may modify</li>
+</ul>
+
+<p>&nbsp; </p>
+
+<ul>
+    <li><font size="4"><b>LoadPCX</b></font><ul>
+            <li><b>Purpose</b>: Loads and decodes a 320x200 PCX
+                file into memory and sets VGA Palette registers
+                to those used by the image.</li>
+            <li><b>Inputs:</b><ul>
+                    <li>ax = Destination segment address.</li>
+                    <li>dx = pointer to a null-terminated string
+                        containing the filename</li>
+                </ul>
+            </li>
+            <li><b>Outputs:</b><ul>
+                    <li>Fills destination (DestSeg:0) with image
+                        data.</li>
+                    <li>Fills VGA palette registers with image
+                        colors</li>
+                    <li>Uses ScratchPad to hold compressed image
+                        data</li>
+                </ul>
+            </li>
+            <li><b>Notes:</b><ul>
+                    <li>Map 8-bit RGB values to 6-bit RGB by
+                        dividing by four.</li>
+                    <li>Set VGA Palette using OUT commands to
+                        port 03C8h and 03C9h</li>
+                </ul>
+            </li>
+            <li><b>Hints:</b><ul>
+                    <li>PCX files are run-length encoded images.</li>
+                    <li>Study and understand relevant example
+                        code in your lab manual!</li>
+                    <li>Use DOS File services to open and read
+                        the file</li>
+                </ul>
+            </li>
+            <li><b>Points</b>: 5</li>
+        </ul>
+    </li>
+</ul>
+
+<p>&nbsp; </p>
+
+<ul>
+    <li><font size="4"><b>InstKey / MyKeyInt / DeInstallKey</b></font><ul>
+            <li><b>Purpose:</b> Replace default keyboard
+                interrupt routine.</li>
+            <li><b>Inputs:</b><ul>
+                    <li>Button presses.</li>
+                </ul>
+            </li>
+            <li><b>Outputs:</b><ul>
+                    <li><i>_ExitFlag</i> set to 1 when Esc is
+                        pressed.</li>
+                    <li><i>TURN_RIGHT </i>is set to 1 when Right
+                        Arrow is pressed, 0 when released.</li>
+                    <li><i>TURN_LEFT</i> is set to 1 when Left
+                        Arrow is press, 0 when released.</li>
+                    <li><i>GO_FORWARD </i>is set to 1 when Up
+                        Arrow is pressed, 0 when released.</li>
+                    <li><i>GO_BACK</i> is set to 1 when Down
+                        Arrow is pressed, 0 when released.</li>
+                    <li><i>SPEEDUP </i>is set to 1 when
+                        &quot;Z&quot; is pressed, 0 when
+                        released.</li>
+                    <li><i>FIRE</i> is set to 1 when Left Ctrl is
+                        pressed, 0 when released.</li>
+                    <li><i>STRAFE</i> is set to 1 when Left Alt
+                        is pressed, 0 when released.</li>
+                    <li><i>SHOWFR</i> changes state when F2 is
+                        pressed. (1 to 0 or 0 to 1)</li>
+                </ul>
+            </li>
+            <li><b>Note:</b><ul>
+                    <li>Check your lab manual for details about
+                        the scan codes.</li>
+                    <li>Some keyboard controllers give
+                        non-standard scan codes.</li>
+                    <li>You will get a &quot;Gold Star for
+                        programming excellence&quot; if you get
+                        Left Shift to act as the &quot;Run&quot;
+                        key. (Because of scan code problems, it's
+                        not as simple as you might think.)</li>
+                </ul>
+            </li>
+            <li><b>Points: </b>10 (<b>Install+Process+Deinstall</b>)</li>
+        </ul>
+    </li>
+</ul>
+
+<p>&nbsp; </p>
+
+<ul>
+    <li><font size="4"><b>SetUpGameData</b></font><ul>
+            <li><b>Purpose: </b>Initialize the values given in
+                the include file for the specified map.</li>
+            <li><b>Inputs:</b><ul>
+                    <li><i>DataSet </i>: Indicates which include
+                        file contains the map data you want.</li>
+                </ul>
+            </li>
+            <li><b>Outputs:</b><ul>
+                    <li>Required to modify the following:<ul>
+                            <li><i>Player_X</i></li>
+                            <li><i>Player_Y</i></li>
+                            <li><i>view_angle</i></li>
+                            <li><i>MapLoc</i></li>
+                            <li><i>WorldSize</i></li>
+                            <li>Load the PCX file containing the
+                                textures for this map into <i>BGSeg</i>
+                                using LoadPCX.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+            <li><b>Notes:</b><ul>
+                    <li>The initial settings for the first data
+                        set has been provided.&nbsp; (This data
+                        set does not require all specified
+                        outputs.)</li>
+                    <li>You may need to initialize more variables
+                        depending on your implementation.</li>
+                    <li>Check the specifications given above for
+                        the include files.</li>
+			  <li>You might want to work on this procedure
+			      last.  The library code uses variables not
+                        listed here.  You are free to choose you own
+                        variables to use in your procedures and
+                        initialize them here.</li> 
+                </ul>
+            </li>
+            <li><b>Points: </b>5</li>
+        </ul>
+    </li>
+</ul>
+
+<p>&nbsp; </p>
+
+<ul>
+    <li><font size="4"><b>ShowScreenBuffer</b></font><ul>
+            <li><b>Purpose:</b> Move 320x200 pixels of screen
+                data from ScreenBuffer to the screen. Then it
+                clears the ScreenBuffer.</li>
+            <li><b>Inputs:</b><ul>
+                    <li>ScreenBuffer</li>
+                </ul>
+            </li>
+            <li><b>Outputs:</b><ul>
+                    <li>Writes directly to the screen..</li>
+                    <li>Clears the ScreenBuffer.</li>
+                </ul>
+            </li>
+            <li><b>Notes:</b><ul>
+                    <li>Use string opcodes to transfer data.</li>
+                    <li>Use 32-bit registers for optimal
+                        efficiency.</li>
+                </ul>
+            </li>
+            <li><b>Points: </b>5</li>
+        </ul>
+    </li>
+</ul>
+
+<p>&nbsp; </p>
+
+<ul>
+    <li><font size="4"><b>WorldValue</b></font><ul>
+            <li><b>Purpose</b>: Finds the texture number of the
+                cell at (<i>BlockX, BlockY</i>)</li>
+            <li><b>Inputs:</b><ul>
+                    <li><i>BlockX</i>&nbsp; : The X-location of
+                        the cell in the array</li>
+                    <li><i>BlockY</i>&nbsp; : The Y-Location of
+                        the cell in the array</li>
+                </ul>
+            </li>
+            <li><b>Outputs:</b><ul>
+                    <li>ax = the value found at that location</li>
+                </ul>
+            </li>
+            <li><b>Notes:</b><ul>
+                    <li>Read the section above for information on
+                        how the world array is organized.</li>
+                    <li><i>Remember!</i> Position 0 in the array
+                        does not hold block (0,0).</li>
+                    <li>There is one wall cell per byte.</li>
+                    <li>Discard the upper four bits of each byte.</li>
+                </ul>
+            </li>
+            <li><b>Points: </b>5</li>
+        </ul>
+    </li>
+</ul>
+
+<p>&nbsp; </p>
+
+<ul>
+    <li><font size="4"><b>DrawStrip</b></font><ul>
+            <li><b>Purpose</b>: Draws a texture strip scaled to
+                the right length in the correct column.</li>
+            <li><b>Inputs:</b><ul>
+                    <li><i>Scale&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        </i>: The height of the strip to be
+                        drawn.</li>
+                    <li><i>X&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        </i>: The X-Position where the strip is
+                        to be drawn.</li>
+                    <li><i>StripNum</i>&nbsp;&nbsp; : The
+                        location of the strip in the texture (0
+                        is the leftmost strip in the texture).</li>
+                    <li><i>TexNum</i>&nbsp;&nbsp;&nbsp;&nbsp; :
+                        The texture to take the strip from (0 is
+                        the upper left texture, 14 is the lower
+                        right texture)</li>
+                    <li><i>TexSeg</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        : The segment that holds the textures.</li>
+                </ul>
+            </li>
+            <li><b>Outputs:</b><ul>
+                    <li>Places a texture strip into the
+                        ScreenBuffer</li>
+                </ul>
+            </li>
+            <li><b>Notes:</b><ul>
+                    <li>Recall that the TextSeg is organized as
+                        an array of 3 rows by 5 columns for a
+                        total of 15 total texture images.</li>
+                    <li>Make sure you clip the top and bottom of
+                        the strip.</li>
+                    <li>To simplify clipping at the top and
+                        bottom of the screen, you might want to
+                        consider drawing the strip starting at
+                        the center line (Y=100) and going out.</li>
+                </ul>
+            </li>
+            <li><b>Points</b>: 10</li>
+        </ul>
+    </li>
+</ul>
+
+<p>&nbsp; </p>
+
+<ul>
+    <li><font size="4"><b>Calculate Movement</b></font><ul>
+            <li><b>Purpose</b>: Calculates the <i>Delta_X</i> and
+                <i>Delta_Y</i> values that are needed in order to
+                move.  Also changes <i>view_angle</i> to turn.</li>
+            <li><b>Inputs:</b><ul>
+                    <li>The keyboard variables.</li>
+                </ul>
+            </li>
+            <li><b>Outputs:</b><ul>
+                    <li><i>Delta_X </i>, <i>Delta_Y</i>, and <i>view_angle</i></li>
+                </ul>
+            </li>
+            <li><b>Notes:</b><ul>
+                    <li>The following criteria must be met:<ul>
+                            <li>Shift in combination with any
+                                button performs a fast move. No
+                                shift, slow moves.</li>
+                            <li>Left Alt in combination with the
+                                Left Arrow or Right Arrow causes
+                                you to strafe. (move straight
+                                horizontally left or right)</li>
+                            <li>Change <i>view_angle</i> first,
+                                then calculate your deltas off of
+                                this new heading.</li>
+                        </ul>
+                    </li>
+                    <li>Use the FPU.</li>
+                    <li>Make sure you are always moving at the
+                        same speed, no matter what <i>view_angle</i>
+                        is.</li>
+                    <li>The values necessary for the movement
+                        calculations are provided by the movement
+                        constants defined above.</li>
+                    <li>You must provide support for any key
+                        combination.&nbsp; Check the action of
+                        various combinations in the library code.</li>
+                    <li><i>Important! </i>You must leave the FPU
+                        stack in the same state that you found
+                        it.</li>
+                </ul>
+            </li>
+            <li><b>Points</b>: 10</li>
+        </ul>
+    </li>
+</ul>
+
+<p>&nbsp; </p>
+
+<ul>
+    <li><font size="4"><b>ProcessMovement</b></font><ul>
+            <li><b>Purpose</b>: To check <i>Delta_X</i> and <i>Delta_Y</i>
+                to see if they were valid moves.</li>
+            <li><b>Inputs:</b><ul>
+                    <li><i>Delta_X</i> and <i>Delta_Y</i></li>
+                </ul>
+            </li>
+            <li><b>Outputs:</b><ul>
+                    <li>Modifies <i>Player_X</i> and <i>Player_Y</i>
+                        if the move was valid.</li>
+                </ul>
+            </li>
+            <li><b>Notes:</b><ul>
+                    <li>This procedure should perform the bounds
+                        checking so that you don't walk through
+                        walls.</li>
+                    <li>You should always make sure you remain a
+                        distance of <i>WALLBUFFER</i> away from
+                        all walls.</li>
+                    <li>You can simplify bounds checking by
+                        looking at the values of <i>Delta_X</i>
+                        and <i>Delta_Y</i> and acting
+                        accordingly.</li>
+                    <li>A call to <i>CheckDoor</i> will tell you
+                        if the wall cell should block you or not.
+                        (<i>Function</i> = 1)</li>
+                    <li>You must allow wall sliding. (Don't
+                        disregard the other delta if one causes
+                        an invalid move.</li>
+                    <li>If a move runs you into a wall, allow the
+                        move up to (WallPosition - <i>WALLBUFFER</i>).&nbsp;
+                        This way, you will be exactly <i>WALLBUFFER</i>
+                        units away from the wall if you run into
+                        it.</li>
+                </ul>
+            </li>
+            <li><b>Points</b>: 10</li>
+        </ul>
+    </li>
+</ul>
+
+<p>&nbsp; </p>
+
+<ul>
+    <li><font size="4"><b>Performance</b></font><ul>
+            <li><b>Purpose:</b> You are encouraged to write
+                efficient code.</li>
+            <li>The frame rate of the spinning ECE291 logo gives
+                a good indication of the overall speed of your
+                code.</li>
+            <li>Running <font face="Courier New,Courier">MP4 3 </font><font
+                face="Times New Roman,Times">and pressing F2 will
+                display your frame rate.</font></li>
+        </ul>
+        <ul>
+            <li><b>Points:</b><ul>
+                    <li>10% or more faster than crippled library
+                        code: 5 points.</li>
+                    <li>As fast as library code: 4 points</li>
+                    <li>Within 90% as fast as library code: 3
+                        point.</li>
+                    <li>Within 50% as fast as library code: 2
+                        point</li>
+                    <li>Within 10% as fast as library code: 1
+                        point</li>
+                    <li>Incomplete or non-functional routine: 0
+                        points</li>
+                </ul>
+            </li>
+        </ul>
+    </li>
+</ul>
+
+<h2>Preliminary Procedure</h2>
+
+<ul>
+    <li>Copy the empty MP4 program (MP4.ASM), libraries
+        (libmp4.lib, lib291.lib), and Makefile from the network
+        drive to yourhome directory with the following command:<font
+        face="Courier New,Courier"><br>
+        xcopy /s I:\ece291\mp4 F:\mp4</font> <br>
+        Alternatively, from home, you can download the same files
+        as <a href="mp4.zip">mp4.zip</a>. </li>
+    <li>As with previous MPs, run NMake to build an executable
+        program using the given ECE291 library functions.</li>
+    <li>As with previous MPs, use a text editor to modify the
+        program. As given, the program uses LIBMP4 routines to
+        implement all functionality. To receive full credit for
+        the assignment, you will need to implement each of the
+        subroutines described above with your own code.</li>
+    <li>As with previous MPs, use CodeView (CV) to debug and test
+        your program. Because you only receive credit for
+        procedures that function completely as specified, it is
+        best to debug each routine individually.&nbsp; By
+        modifying a few comments, you can mix and match usage of
+        your own code and Library routines. You may notice that
+        the LIBMP4 routines contain extraneous and
+        difficult-to-read code. They are not meant to be
+        unassembled!</li>
+</ul>
+
+<p>&nbsp; </p>
+
+<h2>Final Steps</h2>
+
+<p>&nbsp; 1.Print a copy of the MP4 grading sheet. <br>
+&nbsp; 2.Demonstrate the MP4 test cases to a TA or to the
+instructor. </p>
+
+<ul>
+    <li>Be prepared to answer questions about any aspect of the
+        operation of your program. The TAs will not accept an MP
+        if you cannot fully explain all operations of your code.</li>
+</ul>
+
+<p>&nbsp; 3.Handin in your program by running: <br>
+&nbsp;&nbsp;&nbsp; A:\Handin YourWindowsLogin <br>
+&nbsp; 4.Print MP4.ASM <br>
+&nbsp;&nbsp;&nbsp; Staple the MP4 grading sheet to the front of
+your MP4.ASM file and give both to the same TA that approved your
+demonstration. &nbsp; </p>
+
+<p>&nbsp;</p>
+
+<hr>
+
+<p>&nbsp; </p>
+
+<h2>MP4.ASM (program framework)</h2>
+<font size=-2><xmp>
+        PAGE 75, 132
+        TITLE ECE291 MP4 - Your Name - Today's Date
+
+.MODEL LARGE
+.486
+
+COMMENT %
+        ECE291 MP4 : Everitt 3D
+        -----------------------
+        Prof. John W. Lockwood
+        Unversity of Illinois, Dept. of Electrical & Computer Engineering
+        Spring 1998
+        Documentation: 
+        Revision 1.0 Beta 4
+
+        Guest Author: Mike Carter
+        %
+
+;====== Constants =========================================================
+
+VIDSEG     EQU 0A000h    ; VGA Video Segment Adddress
+VIDTEXTSEG EQU 0B800h
+CR         EQU 13
+LF         EQU 10
+
+; Table representations of various angles.
+DEGREE_2   EQU 10
+DEGREE_4   EQU 20
+DEGREE_0   EQU 0
+DEGREE_90  EQU 480
+DEGREE_180 EQU 960
+DEGREE_270 EQU 1440
+DEGREE_360 EQU 1920
+
+; The closest you can get to a wall.
+WALLBUFFER EQU 20
+
+; Movement constants
+SLOWTURN   EQU DEGREE_2
+FASTTURN   EQU DEGREE_4
+MOVESLOW   EQU 3
+MOVEFAST   EQU 6
+
+;Palette Registers
+COLOR_MASK        EQU 03C6h ; bit mask register
+COLOR_REGISTER_RD EQU 03C7h ; set read index at this I/O
+COLOR_REGISTER_WR EQU 03C8h ; set the write index at this I/O
+COLOR_DATA        EQU 03C9h ; the R/W data is here
+
+         
+
+;====== Externals =========================================================
+; -- LIB291 Routines (Free) ---
+
+extrn rsave:near, rrest:near, dspout:near, dspmsg:near
+extrn binasc:near, kbdin:near
+
+;====== Segments Used ==================================================
+
+SBSeg segment PUBLIC 'DATA1'
+    ScreenBuffer DB 65535 dup(?)
+SBSeg ENDS
+
+BGSeg segment PUBLIC 'DATA2'    ; Wall Textures
+    Background DB 65535 dup(?)
+BGSeg ENDS
+
+FGSeg segment PUBLIC 'DATA3'    ; Player/Object Images
+    Foreground DB 65535 dup(?)
+FGSeg ENDS
+
+ScrSeg segment PUBLIC 'DATA4'   ; Used by LoadPCX
+    Scratchpad DB 65535 dup(?)
+ScrSeg ENDS
+
+TextSeg segment PUBLIC 'DATA5'  ; Holds the letters and numbers
+    Text       DB 65535 dup(?)
+TextSeg ENDS
+
+; -------- LIBMP4 Functions -----------
+
+SetUpGameData     PROTO far C DataSet:word
+InstKey           PROTO far C 
+DeInstallKey      PROTO far C 
+ShowScreenBuffer  PROTO far C 
+WorldValue        PROTO far C BlockX:word, BlockY:word
+DrawStrip         PROTO far C Scale:word, X:word, StripNum:word, TexNum:word, TexSeg:word
+CalculateMovement PROTO far C 
+ProcessMovement   PROTO far C
+LoadPCX           PROTO near
+
+;====== Begin Code/Data segment ==========================================
+cseg    segment public 'CODE'  
+        assume  cs:cseg, ds:cseg, es:nothing
+
+;====== Variables ========================================================
+
+; General Program Variables
+CRLF         db CR, LF, '$'
+pbuf         db 7 dup(?)
+TextPic      db 'grphx/Letters.PCX', 0 ; Path & Filename of Letter images
+KeyPic       db 'grphx/Keys.PCX', 0    ; Path & Filename of Keys
+TestPic      db 'grphx/Test.PCX', 0    ; Path & Filename of LoadPCX test image
+
+_BackGrnd    dw BGSeg   ; Value of Background Segment
+MapLoc       dw 0       ; Offset to current map array
+WorldSize    dw 0       ; Size of the current map
+
+; Player Position variables.
+_Player_Y    dw 0       
+_Player_X    dw 0
+_view_angle  dw 0
+Delta_X      dd 0  ; Floating-point values for the change 
+Delta_Y      dd 0  ; in the player's position.
+
+; Keyboard Interrupt Variables
+TURN_RIGHT   db 0 ; Right Arrow (1 = Button is down, 0 = Button is up)
+TURN_LEFT    db 0 ; Left Arrow
+GO_FORWARD   db 0 ; Up Arrow
+GO_BACK      db 0 ; Down Arrow 
+SPEEDUP      db 0 ; Left Shift
+FIRE         db 0 ; Left Ctrl
+STRAFE       db 0 ; Left Alt
+_ExitFlag    db 0 ; Set to 1 when time to exit  (ESC)
+SHOWFR       db 0 ; Show Frame Rate (FR) option (Set by F2)
+
+
+
+; Trig tables for ray caster.
+; Actual values computed in C program exactly once at startup
+_tan_table        REAL4 1921 dup(?)  ; tangent tables used to compute initial
+_inv_tan_table    REAL4 1921 dup(?)  ;intersections with ray
+_y_step           REAL4 1921 dup(?)  ; x and y steps, used to find intersections
+_x_step           REAL4 1921 dup(?)  ; after initial one is found
+_inv_cos_table    REAL4 1921 dup(?)  ; used to compute distances by calculating
+_inv_sin_table    REAL4 1921 dup(?)
+_correction_table REAL4 1921 dup(?)  ; used to cancel out fishbowl effect
+
+; Maps to include
+Include Map1.dat
+Include Map2.dat
+;Include Map3.dat  ; For future expansion, should you want to
+                   ; use this a basis for a final project.
+
+; Allow certain variables to be seen by C and external library functions
+
+PUBLIC _tan_table, _inv_tan_table, _y_step, _x_step
+PUBLIC _correction_table, _inv_cos_table, _inv_sin_table
+PUBLIC _ExitFlag, _Player_X, _Player_Y, _view_angle, _BackGrnd
+PUBLIC ScreenBuffer, Background, ForeGround, Scratchpad, Text
+
+PUBLIC TextPic, KeyPic
+PUBLIC WorldSize, MapLoc
+
+PUBLIC TURN_RIGHT, TURN_LEFT, GO_FORWARD, GO_BACK
+PUBLIC SPEEDUP, FIRE, STRAFE, SHOWFR
+PUBLIC DELTA_X, DELTA_Y
+
+; ======== Given Procedures ==========================================
+
+ModeGraph proc far C PUBLIC  ; Switch to Graphics Mode
+     mov     ax, 0013h
+     int     10h
+     ret
+ModeGraph endp
+
+ModeText proc far C PUBLIC   ; Switch to Text Mode
+     mov     ax, 1202h
+     mov     bl, 30h
+     int     10h
+     mov     ax, 3
+     int     10h
+     mov     ax, 1112h
+     mov     bl, 0
+     int     10h
+     ret
+ModeText endp
+
+; Tests your LoadPCX and _ShowScreenBuffer
+; Used when "mp4 1" is typed.
+TestLoadPCX proc far C PUBLIC
+                push    ax
+                push    dx
+                mov     ax, SBSeg
+                mov     dx, offset TestPic
+                call    LoadPCX
+                pop     dx
+                pop     ax
+                ret
+TestLoadPCX endp                                
+
+; **********************************************************************
+; *************** Procedures that you must write ***********************
+; **********************************************************************
+
+; LoadPCX proc near
+;
+; LoadPCX endp
+
+
+; MyKeyInt proc near
+;
+; MyKeyInt endp
+
+
+_SetUpGameData proc far C PUBLIC DataSet:word
+
+  Invoke SetUpGameData, DataSet ; Comment this line to implement your own code.
+
+;    (Code for set1 is given to help get you started)
+;               ...
+;               mov     ax, TextSeg  ; Load Text for Frame Rate display
+;               lea     dx, TEXTPIC  ; Your code for loading other image
+;               call    LoadPCX      ; data will be similar...
+;              
+;               mov     ax, BGSeg
+;               lea     dx, PCX1     ; Load Background (Wall Textures)
+;               call    LoadPCX
+;               ...
+;
+; Set1:         ; Set Up Initial Location
+;               mov     _Player_X, STARTX1
+;               mov     _Player_Y, STARTY1
+;               mov     _view_angle, STARTANG1
+;               mov     MapLoc, offset World1
+;               mov     WorldSize, WORLD1SIZE
+;               ...
+;               Add your code for the Dataset=2 or more here
+;                
+;               ; For map#.dat (# = DataSet)             
+  ret
+_SetUpGameData endp
+
+_InstKey proc far C PUBLIC
+  Invoke InstKey ; Comment this line to implement your own code
+  ret
+_InstKey endp
+
+_DeInstallKey proc far C PUBLIC
+  Invoke DeInstallKey ; Comment this line to implement your own code
+  ret
+_DeInstallKey endp
+
+_ShowScreenBuffer proc far C PUBLIC
+  Invoke ShowScreenBuffer ; Comment this line to implement your own code
+  ret
+_ShowScreenBuffer endp 
+
+_WorldValue proc far C PUBLIC BlockX:word, BlockY:word
+  Invoke WorldValue, BlockX, BlockY
+  ; Comment above line to implement your own code
+  ret
+_WorldValue endp
+
+_DrawStrip proc far C PUBLIC Scale:word, X:word, StripNum:word, TexNum:word, TexSeg:word
+  Invoke DrawStrip, Scale, X, StripNum, TexNum, TexSeg
+  ; Comment above line to implement your own code
+  ret
+_DrawStrip endp
+
+_CalculateMovement proc far C PUBLIC
+  Invoke CalculateMovement ; Comment this line to implement your own code
+  ret
+_CalculateMovement endp
+
+_ProcessMovement proc far C PUBLIC
+  Invoke ProcessMovement  ; Comment this line to implement your own code
+  ret
+_ProcessMovement endp
+
+cseg    ends
+        end </xmp></font>
+
+<h2>MAIN.C (Given code)</h2>
+<font size=-2><xmp>
+//  ECE291 MP4 : Everitt 3D
+//  -----------------------
+//  Prof. John W. Lockwood
+//  Unversity of Illinois
+//  Dept. of Electrical & Computer Engineering
+//  Spring 1998
+//  Guest Author: Mike Carter
+//  Revision 1.0 Beta 4
+//
+//  Main.c performs the following functions.
+//    * Generation of the floating point lookup tables
+//    * Ray casting (i.e., finding intersections with blocks)
+//    * Main Loop (invokes your MP4.ASM subroutines)
+
+
+#include <math.h>
+#include "main.h"
+
+// ********** Build Floating point Lookup Tables **********
+//
+// Avoids slow calculation of FPU transcendental functions (SIN/COS/TAN)
+//
+
+void Build_Tables(void) 
+{
+
+  int ang;
+  float rad_angle;
+
+  for (ang=ANGLE_0; ang<=ANGLE_360; ang++)
+  {
+     rad_angle = (3.272e-4) + ang * 2*3.141592654/ANGLE_360;
+     tan_table[ang]     = tan(rad_angle);
+     inv_tan_table[ang] = 1/tan_table[ang];
+     
+     // For our use, tangent has the incorrect signs in all quadrants except 1, so
+     // the signs of each quadrant are fixed manualle since the tangent is
+     // equivalent to the slope of a line and if the tangent is wrong
+     // then the ray that is case will be wrong
+ 
+     if (ang>=ANGLE_0 && ang<ANGLE_180)
+        y_step[ang]        = fabs(tan_table[ang]     * CELL_Y_SIZE);
+     else
+        y_step[ang]        = -fabs(tan_table[ang]    * CELL_Y_SIZE);
+   
+     if (ang>=ANGLE_90 && ang<ANGLE_270)
+        x_step[ang]        =-fabs(inv_tan_table[ang] * CELL_X_SIZE);
+     else
+        x_step[ang]        =fabs(inv_tan_table[ang]  * CELL_X_SIZE);
+  
+     // create the sin and cosine tables to compute distances
+
+     inv_cos_table[ang] = 1/cos(rad_angle);
+     inv_sin_table[ang] = 1/sin(rad_angle);
+
+  }
+  // Create view correction table.  There is a cosine wave modulated on top of
+  // the view distance as a side effect of casting from a fixed point.
+  // to cancel this effect out, we multiple by the inverse of the cosine
+  // and the result is the proper scale.  Without this we would see a
+  // fishbowl effect, which might be desired in some cases?
+
+  for (ang=-ANGLE_30; ang<=ANGLE_30; ang++)
+  {
+     rad_angle = (3.272e-4) + ang * 2*3.141592654/ANGLE_360;
+     correction_table[ang+ANGLE_30] = 1/cos(rad_angle);
+  }
+}   
+
+
+// ********** Ray_Caster **********
+
+void Ray_Caster(long x,long y,long view_angle)
+{
+
+int   stripnumx, stripnumy, x_hit_type, y_hit_type;
+
+int   xray=0,      // tracks progress of a ray looking for Y interesctions
+      yray=0,      // tracks progress of a ray looking for X interesctions
+      next_y_cell, // used to figure out the quadrant of the ray
+      next_x_cell,
+      cell_x,      // the current cell that the ray is in
+      cell_y,
+      x_bound,     // the next vertical and horizontal intersection point
+      y_bound,
+      x_delta,     // the amount needed to move to get to the next cell
+      y_delta,     // position
+      ray,         // the current ray being cast 0-320
+      casting=2,   // tracks progress of the X and Y component of the ray     
+      top_bot,     // Above or below block
+      left_right,  // Left or right of block
+      scale; 
+      
+float xi,           // used to track the x and y intersections
+      yi,
+      dist_x,       // Distance of strips from player...
+      dist_y;
+       
+
+// initialization :
+// compute starting angle from player.  Field of view is 60 degrees, so
+// subtract half of that current view angle
+
+if ( (view_angle-=ANGLE_30) < 0)
+   view_angle=ANGLE_360 + view_angle;
+
+// loop through all 320 rays
+for (ray=0; ray<320; ray++)
+    {
+        dist_y = 0;
+        dist_x = 0;
+
+    // compute first x intersection
+    // need to know which half plane we are casting from relative to Y axis
+
+    if (view_angle >= ANGLE_0 && view_angle < ANGLE_180)
+       {
+        y_bound = (CELL_Y_SIZE + (y & 0xffc0));
+        y_delta = CELL_Y_SIZE;
+        xi = inv_tan_table[view_angle] * (y_bound - y) + x;
+        next_y_cell = 0;
+        top_bot = 0;
+       } 
+    else
+       {
+        y_bound = (int)(y & 0xffc0);
+        y_delta = -CELL_Y_SIZE;
+        xi = inv_tan_table[view_angle] * (y_bound - y) + x;
+        next_y_cell = -1;
+        top_bot = 63;
+       } 
+
+    // compute first y intersection
+    // need to know which half plane we are casting from relative to X axis
+
+    if (view_angle < ANGLE_90 || view_angle >= ANGLE_270)
+       {
+        x_bound = (int)(CELL_X_SIZE + (x & 0xffc0));
+        x_delta = CELL_X_SIZE;
+        yi = tan_table[view_angle] * (x_bound - x) + y;
+        next_x_cell = 0;
+        left_right = 63;
+       } 
+    else
+       {
+        x_bound = (int)(x & 0xffc0);
+        x_delta = -CELL_X_SIZE;
+        yi = tan_table[view_angle] * (x_bound - x) + y;
+        next_x_cell = -1;
+        left_right = 0;
+       } 
+
+    casting       = 2;                // two rays to cast simultaneously
+    xray=yray     = 0;                // reset intersection flags
+
+
+    while(casting)
+         {
+
+         // continue casting each ray in parallel
+
+         if (xray!=INTERSECTION_FOUND)
+            {
+
+               // compute current map position to inspect
+               cell_x = ( (x_bound+next_x_cell) >> CELL_X_SIZE_FP);
+               cell_y = (int)yi;
+               cell_y>>=CELL_Y_SIZE_FP;
+
+               // test if there is a block where the current x ray is intersecting
+               if ((x_hit_type = _WorldValue(cell_x, cell_y ))!=0)
+               {
+                  // Check for a door.      
+                  if ( CheckDoor( cell_x,cell_y, 0 ) )
+                    if ( CheckDoor( cell_x, (int)(yi+=y_step[view_angle]/2.0) >> CELL_Y_SIZE_FP, 0 ) ) 
+                       if ((stripnumx = ((int)yi & 0x003f) ) < 64)
+                       {
+                          dist_x = (yi - y) * inv_sin_table[view_angle];
+                          xray = INTERSECTION_FOUND;
+                          casting--;
+                       } 
+                       else
+                       {
+                          yi+=y_step[view_angle]/2.0;
+                          x_bound+=x_delta;
+                       }
+                    else      
+                    {
+                       dist_x = 1e+8;
+                       xray = INTERSECTION_FOUND;
+                       casting--;
+                    }
+                  else
+                  {
+                     // compute distance
+                     dist_x  = (yi - y) * inv_sin_table[view_angle];
+                     stripnumx = abs(left_right - ((int)yi & 0x003f));
+                     xray = INTERSECTION_FOUND;
+                     casting--;
+                  }  
+               } 
+               else
+               {
+                  if (yray == INTERSECTION_FOUND && (yi - y) * inv_sin_table[view_angle] > dist_y)
+                  {
+                     // There's no point in continuing
+                     dist_x = 1e+8;
+                     xray = INTERSECTION_FOUND;
+                     casting--;
+                  }
+                  else
+                  {
+                  // compute next Y intercept
+                  yi += y_step[view_angle];
+                  x_bound += x_delta;
+                  } 
+               }
+            } 
+ 
+         // Check for a Y intersection
+         if (yray!=INTERSECTION_FOUND)
+            {      
+               // compute current map position to inspect
+               cell_x = (int)xi;
+               cell_x>>=CELL_X_SIZE_FP;
+               cell_y = ( (y_bound + next_y_cell) >> CELL_Y_SIZE_FP);
+
+               // test if there is a block where the current y ray is intersecting
+               if ((y_hit_type = _WorldValue( (int) cell_x, (int) cell_y ))!=0 )
+               {
+                  // Check for a door.      
+                  if ( CheckDoor( cell_x, cell_y, 0 ) )
+                    if ( CheckDoor( (int)(xi+=x_step[view_angle]/2.0) >> CELL_X_SIZE_FP, cell_y, 0 ) )
+                       if ( (stripnumy = ((int)xi & 0x003f)) < 64 )
+                       {   
+                          dist_y = (xi - x) * inv_cos_table[view_angle];
+                          yray = INTERSECTION_FOUND;
+                          casting--;
+                       }
+                       else
+                       {
+                          xi+=x_step[view_angle]/2.0;
+                          y_bound+=y_delta;
+                       }
+                    else         
+                    {                     
+                       dist_y = 1e+8;
+                       yray = INTERSECTION_FOUND;
+                       casting--;
+                    }
+                  else
+                  {                      
+                     // compute distance
+                     dist_y  = (xi - x) * inv_cos_table[view_angle];
+                     stripnumy = abs(top_bot - ((int)xi & 0x003f)); 
+                     yray = INTERSECTION_FOUND;
+                     casting--;
+                  }
+               } 
+               else
+               {
+                  if (xray == INTERSECTION_FOUND && (xi - x) * inv_cos_table[view_angle] > dist_x)
+                  { 
+                     // There's no point in continuing
+                     dist_y = 1e+8;
+                     yray = INTERSECTION_FOUND;
+                     casting--;
+                  }
+                  else
+                  {  
+                     // compute next X intercept
+                     xi += x_step[view_angle];
+                     y_bound += y_delta;
+                  } 
+               } 
+            }
+         }  
+
+
+    // Check to see which intersection was closer and draw it.
+      if (dist_x < dist_y)
+      {
+       // compute actual scale and multiply by view filter so that spherical
+       // distortion is cancelled
+         scale = (int)(correction_table[ray]*15000/(1e-10 + dist_x));               
+         _DrawStrip( scale, (int) (319 - ray), stripnumx, (x_hit_type - 1), BackGrnd);
+
+      }
+      else
+      {
+       // compute actual scale and multiply by view filter so that spherical
+       // distortion is cancelled
+         scale = (int)(correction_table[ray]*15000/(1e-10 + dist_y));               
+         _DrawStrip( scale, (int) (319 - ray), stripnumy, (y_hit_type - 1), BackGrnd);
+      }
+
+      // Check to see if angle need to wrap-around
+      if (++view_angle>=ANGLE_360)
+       view_angle=0; 
+   } 
+} 
+
+main (int argc, char* argv[])
+{
+    int StartX, StartY, Strp, LookAngle, i, j=0;
+    
+    _InstKey();
+    ModeGraph();
+    Build_Tables();
+    
+    if (argc == 1)
+    {
+       // Map #1 (Map2.dat)
+       _SetUpGameData(2);    
+       while (!ExitFlag)
+       {
+           Ray_Caster( Player_X, Player_Y, view_angle );
+           _CalculateMovement();
+           _ProcessMovement();
+           DisplayFrameRate(30);
+           _ShowScreenBuffer();
+       }
+       ExitFlag = 0;
+       
+       // Feel free to add you own maps here...
+    }
+    else
+    
+       switch (argv[1][0])
+       {
+          case '0': //Keyboard Tester
+             SetUpKeyTester();
+             while (!ExitFlag)
+             {
+                KeyTester();
+                _ShowScreenBuffer();
+             }
+             break;
+       
+          case '1': // Test LoadPCX
+             TestLoadPCX();
+             _ShowScreenBuffer();
+             while(!ExitFlag){}
+             break;
+          
+          case '2': // DrawStrip tester
+             _SetUpGameData(2);
+             while(!ExitFlag)
+             {
+                for (i=-64; i<64;i++)
+                {
+                   if (ExitFlag) break;
+                   for (LookAngle = 0; LookAngle < ANGLE_180; LookAngle++)
+                   {
+                      StartX = 160 + 100/inv_cos_table[LookAngle];
+                      StartY = 200/inv_sin_table[LookAngle];
+                      if ((Strp = (int)((StartX-60)/3.125 + i)) < 64 && Strp > 0)
+                         DrawStrip ( StartY, StartX, Strp, j, BackGrnd);  
+                   }
+                   _ShowScreenBuffer();
+                }
+                if (!ExitFlag && j++ > 7) j=0;
+                for (i=64; i>-64;i--)
+                {
+                   if (ExitFlag) break;
+                   for (LookAngle = 0; LookAngle < ANGLE_180; LookAngle++)
+                   {
+                      StartX = 160 + 100/inv_cos_table[LookAngle];
+                      StartY = 200/inv_sin_table[LookAngle];
+                      if ((Strp = (int)((StartX-60)/3.125 + i)) < 64 && Strp > 0)
+                         DrawStrip ( StartY, StartX, Strp, j, BackGrnd);  
+                   }
+                   _ShowScreenBuffer();
+                }
+                if (!ExitFlag && j++ > 7) j=0;
+             }
+             ExitFlag = 0;
+             for (i=0; i<128; i++)
+             { 
+                DrawStrip ( 128, 96+i, i/2, j, BackGrnd );
+             }
+             StripTesterDisp(0);
+             _ShowScreenBuffer();
+             while(!ExitFlag){};
+             ExitFlag = 0;
+             for (i=0; i<128; i++)
+             { 
+                DrawStrip ( 128, 96+i, i/2, j, BackGrnd );
+             }
+             StripTesterDisp(1);
+             _ShowScreenBuffer();
+             while(!ExitFlag){};   
+             break;
+          
+          case '3': // Rotating Logo (Map1.dat)
+             _SetUpGameData(1);
+             StartX = Player_X;
+             StartY = Player_Y;   
+             while (!ExitFlag)
+             {
+                if (view_angle >= ANGLE_360)
+                   view_angle -= ANGLE_360;
+                LookAngle = view_angle - ANGLE_180;
+                if  (LookAngle <= ANGLE_0)
+                   LookAngle += ANGLE_360;
+                Player_X = StartX + 650/inv_cos_table[view_angle];
+                Player_Y = StartY + 650/inv_sin_table[view_angle]; 
+                Ray_Caster( Player_X, Player_Y, LookAngle );
+                DisplayFrameRate();
+                _ShowScreenBuffer();
+                view_angle+=ANGLE_1;
+             }
+             break;
+          }
+    _DeInstallKey();
+    mp4xit();
+} </xmp></font>
+
+</body>
+</html>

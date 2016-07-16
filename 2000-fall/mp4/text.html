@@ -1,0 +1,83 @@
+<html>
+<head>
+<title>Drawing Strings of Text</title>
+<style type="text/css"><!--
+body{ background:white; color:black; }
+P{ text-indent: -0.5em; margin-left: 3em; }
+H1{ margin-left: 0em; clear: right; }
+H2{ margin-left: 1em; clear: right; }
+H3{ margin-left: 2em; clear: right; }
+pre{ margin-left: 3em; clear: both; }
+ol,ul{ margin-left: 5em; }
+sub{ font-style: italic; }
+.eqn { margin-left: 5em; font-family: times; }
+.decl{ font-weight: bold; }
+.int{ color: maroon; }
+.intv{ color: blue; }
+.func{ color: red; }
+.float{ color: maroon; }
+.floatv{ color: purple; }
+.keyw{ color: green; font-weight: bold; }
+.comment{ color: green; font-style: italic; }
+.innerul{ margin-left: 1em; }
+@media print {
+ //.noprint{ display:none; }
+}
+@media screen {
+ //.print{ display: none;}
+}
+--></style>
+</head>
+<body>
+<!--
+<h1 class="print">Muhahaha...</h1>
+<big class="print" style="font-size:xx-large; font-style: italic;">
+This document has been rendered <strong>unprintable</strong>.</big>
+-->
+
+<h1>Drawing Strings of Text</h1>
+
+<p>Drawing a string of text is straightforward.  We do it by calling the
+DrawChar function for each character as it is typed and having DrawChar put the
+output in an overlay buffer.  We then AlphaBlit this buffer to the screen.</p>
+
+<h2>Format of font.png</h2>
+<p>Font.png is an image with 128 characters in it.  It doesn't include a
+lot of the control characters, though, so if you start typing them you
+will see something that looks like spaces.</p>
+
+<p>Each character is 16*16 pixels at 4 bytes per pixel.  They are lined
+up such that for a given ascii value, you can merely shift it left to
+account for 16 pixels * 4 bytes per pixel to find its upper-left corner.
+For example, 'A' (41h) is located at the 10h * 41h'th pixel.  Its
+address is 41h shifted left by 6: 1040h</p>
+
+<p>The font has 128 characters, so it is 128*16 = 2048 pixels wide.
+Keep this in mind as you're copying rows out of the image.</p>
+
+<h2>Differently Colored Text</h2>
+<p>The font.png image has something else special about it: it contains
+an antialiased font that can be turned any color with ease.  How?  You
+might be able to guess the answer with all this talk of alpha:
+the characters are represented not by the color channels in each pixel but
+rather by the alpha channel.  The color channels in font.png are all 0.</p>
+
+<p>Since we're using AlphaBlit to actually draw the text on the screen, we can
+easily change the color of the text simply by changing the color channels for
+every pixel of each character to the color we want the text to be, and the
+magic of AlphaBlit will do the rest for us!</p>
+
+<p>So how should we change only the color channels of each 32-bit value to the
+right color, while leaving the alpha channel untouched?  Probably the easiest
+way, since the color channels in the original font are 0, is to OR in the color
+value with the value loaded from font.png.</p>
+
+<p>You can use either MMX to do this 2 pixels at a time or regular instructions
+to do one pixel at a time.  I recommend you use MMX, as it will help you
+prepare for writing the much more complex MMX code in AlphaBlit</p>
+
+<p>When writing DrawChar(), make sure you don't modify the original font image.
+Read from it, merge in the color channels, and write the result to the
+destination buffer.</p>
+
+</body>

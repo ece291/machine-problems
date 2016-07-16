@@ -1,0 +1,35 @@
+
+----------------------- MP2 Menu ---------------------
+ enter:    (T)ext message   (C)oded hex message
+ display:  (A)SCII message  (H)ex encoding
+ generate: (K)eys           (P)ublic key
+ coding:   (E)ncrypt        (D)ecrypt
+--------- [ESC] = (Q)uit -- redisplay (M)enu ---------
+
+>Enter text for the buffer
+ECE291 IS GREAT
+
+>Here is the buffer in HEX
+45 43 45 32 39 31 20 49 53 20 47 52 45 41 54 
+
+>Encrypting the buffer...
+
+>Here is the buffer in HEX
+54 21 54 0A 1C 36 8F 7F 34 8F 33 4E 54 8C 59 
+
+>Decrypting the buffer...
+
+>Here is the buffer in HEX
+45 43 45 32 39 31 20 49 53 20 47 52 45 41 54 
+
+>Here is the buffer in ASCII
+ECE291 IS GREAT
+
+>
+
+LIBMP2 Ver 1.1 Calls: 
+ -PrintBuffer     
+ -ReadBuffer      
+ -CodeBuffer      
+ -ExpModN         
+

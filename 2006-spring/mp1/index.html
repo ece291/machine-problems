@@ -1,0 +1,593 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!-- saved from url=(0052)http://courses.engr.illinois.edu/ece390/mp/mp0/index.html -->
+<HTML xmlns="http://www.w3.org/1999/xhtml"><HEAD><TITLE>ECE390 Machine Problem 1</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=windows-1252"><LINK 
+href="/ece390/ece390.css" type=text/css rel=stylesheet></HEAD>
+<BODY>
+<TABLE class=header cellSpacing=0 cellPadding=0 width="100%">
+  <TBODY>
+  <TR>
+    <TD class=half vAlign=top align=left>
+      <P><A href="http://courses.engr.illinois.edu/ece390"><IMG 
+      src="/ece390/icon/ece390.jpg"></A><BR><B>  Computer 
+      Engineering II</B><BR><B>  <SPAN class=red>Machine Problem 
+      0</SPAN></B></P></TD>
+    <TD class=half vAlign=center align=right>
+      <TABLE class=maxheight cellSpacing=1 cellPadding=0 width="100%" 
+        border=0><TBODY>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/schedule.html">Schedule</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/labsched.html">Lab 
+            schedule</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/hw.asp">Homework</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/books/labmanual/">Lab 
+            Manual</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/mp.asp">Machine 
+            Problems</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/resources">Resources</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/mp/mp0/fp">Final 
+            Project</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/user/photos">Photos</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/grades">Gradebook</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/feedback.asp">Feedback</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/syllabus.html">Syllabus</A>  </TD>
+          <TD>  <A 
+            href="http://courses.engr.illinois.edu/ece390/archive">Archives</A></TD></TR>
+        <TR>
+          <TD class=dark align=right><A 
+            href="http://courses.engr.illinois.edu/ece390/lecture">Lectures</A>  </TD>
+          <TD class=dark>  <A 
+            href="http://courses.engr.illinois.edu/ece390/resources/turbo.zip">Download 
+            NASM</A></TD></TR>
+        <TR>
+          <TD align=right><A 
+            href="http://courses.engr.illinois.edu/ece390">Home</A>  </TD>
+          <TD>  <A 
+            href="https://courses.engr.illinois.edu/ece390/admin">Restricted 
+            access</A></TD></TR></TBODY></TABLE></TD></TR>
+  <TR>
+    <TD class=spacer colSpan=2><IMG height=8 alt="" src="" 
+  width=100></TD></TR></TBODY></TABLE>
+<TABLE cellSpacing=1 cellPadding=7 width="100%" border=0>
+ 	<TBODY>
+  		<TR>
+    <TD vAlign=top>
+      	<CENTER>
+		<h1>Machine Problem 1: Hangman</h1><br>
+		<TABLE cellSpacing=2 cellPadding=2 width="60%" border=0>
+				<TBODY>
+				<TR>
+					<TD align=right bgColor=#efefef><B>Assigned</B></TD>
+					<TD bgColor=#efefef>Thursday, January 26, 2006</TD></TR>
+				<TR>
+					<TD align=right bgColor=#efefef><B>Due Date</B></TD>
+					<TD bgColor=#efefef>Wednesday, February 8, 2006, 5:00 P.M.</TD></TR>
+				<TR>
+					<TD align=right bgColor=#efefef><B>Purpose</B> </TD>
+					<TD bgColor=#efefef>Learn to write assembly code. Use loops and branching. Perform basic string operations.</TD>
+				</TR>
+				<TR>
+					<TD align=right bgColor=#efefef><B>Points</B> </TD>
+					<TD bgColor=#efefef>60</TD>
+				 </TR>
+			</TBODY>
+		</TABLE>
+		</CENTER>
+      <H2>Introduction</H2>
+	  Hangman is a simple word-guessing game. Implementing a basic hangman game in assembly will introduce 
+	  you to the basics of writing assembly code, as well as preparing you to write more complicated programs 
+	  in later MPs. A full listing of the program and a Makefile are given at the end of this assignment. Electronic 
+	  copies of the program are available in the lab or on-line as 
+	  <A href="http://courses.engr.illinois.edu/ece390/mp/mp1/mp1.zip">mp1.zip</A>. 
+      
+	  <H2>Problem Description</H2>
+	  	In Hangman, the user is presented with an unknown word, consisting of all underscore ('_') characters. 
+		The object of the game is to guess every letter in the word. However, each time the user guesses a 
+		letter that is not in the word, part of the hangman is drawn to the gallows. If the entire hangman is drawn 
+		to the gallows (head, left arm, right arm, left leg, and right leg), the user loses and the hangman is hung. 
+		If the user can guess all of the letters in the word while making fewer than 5 wrong guesses, the user wins.<br>
+		<br>
+		In our implementation of Hangman, there are a few key issues and variables: 
+      <UL>
+			<LI><B>Strings</B><br>In assembly, strings are just a series of bytes of ASCII characters. The lib291 
+			string-display function, dspmsg, uses a '$' character to mark the end of a string. For example, the string 
+			'ECE390$' would be a seven-byte string - one byte each for 'E', 'C', 'E', '3', '9', '0', and the end-of-string 
+			character '$'.
+			
+			<LI>The <i>WordSpace</i> and <i>TheWord</i> variables<br>
+			<i>TheWord</i> is a string variable storing the word that the user is trying to guess. For simplicity, it is a static variable - 
+			the word will not change each time you run the program. If you want to use a different word than the default, you may 
+			change the word in your source .asm file, but make sure to keep it under 20 characters. <i>WordSpace</i> is a 20-byte string 
+			for you to store your 'word-in-progress'. In the Init function, you should set up <i>WordSpace</i> to have as many underscore 
+			characters as <i>TheWord</i> has letters. As the user correctly guesses letters, these letters will replace the underscores in <i>WordSpace</i>.
+			
+            <LI>The <i>UsedLetters</i> array<br>
+			To keep track of which letters have already been guessed, we will use a 26-byte array called <i>UsedLetters</i>. Each byte-sized 
+			element of this array corresponds to a letter in the alphabet - element 0 corresponds to 'a', 1 corresponds to 'b', and so on. Each 
+			byte acts as a flag: if the byte corresponding to a letter has a 0, that letter has not been guessed. If the byte has a 1, that letter 
+			has been used.
+		</UL>
+		
+		<H2>Screen Dump</H2>
+		The following screen capture depicts ECE291 Hangman during game play:<br>
+		<center><img src="hangman.png" width="668" height="547" border="0"></center>
+		
+		<H2>MP1 Program Assignment</H2>
+		There are seven subroutines in this machine problem: MAIN, Init, Processchar, DisplayWord, DisplayUsed, CheckWinner, and DisplayGallows. 
+		Subroutines MAIN and DisplayGallows have been provided for you. Your will complete all other subroutines by replacing the CALL statments 
+		in mp1.asm with your own code. Each subroutine should match the output of the library code exactly. Each of the subroutines and their 
+		functionality is described below in the <b>Subroutines</b> section. The best way to get a feel for the program is to run mp1 to see how it operates. 
+		The program can be run by typing mp1 at the command prompt.<br>
+		<br>
+		Your program is required to:
+		<ol>
+		   <li>Process each character that the user guesses appropriately</li>
+		   <li>Display the word-in-progress and list of already-guessed letters correctly</li>
+		   <li>Determine whether the user has won or lost</li>
+		   <li>Run efficiently. Points will be deducted for inefficient algorithms and/or excessive coding.</li>
+		</ol>		
+		
+		<H2>Brief Intro to PUSH and POP</H2>
+		<ul>
+    		<li>Pushing and poping are stack operations and will be covered later in lecture.</li>
+			<li>PUSHA will record onto the stack a copy of the data in all of the CPU's registers. POPA removes the data from the stack and copies it back to the registers.</li>
+			<li>Pushing and popping is, among other things, used to ensure that a called function doesn't scramble registers that the calling function uses.</li>
+    		<li>You can push and pop individual registers with instructions like push ax and pop cx. PUSHA and POPA save all of the registers to the stack. Pushing and 
+			popping individual registers is the preferred method of saving/restoring register data when calling a function. PUSHA and POPA are used here for simplicity.</li>
+		</ul>
+
+		<H2>Hints</H2>
+		<ul>
+			<li>The LIBMP1 file contains executable library functions for each of the subroutines that you need to implement. This allows you to run the program and 
+			understand how it works before you implement it. You can test your program with any combinations of your own code and library functions. You will only receive 
+			credit, however, for the subroutines that you implement yourself.</li>
+			<li>The DisplayGallows function has been written for you. You can use it as a model to see how to write and comment your own assembly functions.</li>
+			<li>Check out <a href="http://courses.engr.illinois.edu/ece390/books/labmanual/libraries.html">Chapter 9</a> in your lab manual for descriptions and documentation for the lib291 functions dspout and dspmsg. These functions are used for 
+			displaying a character and a string to the screen, respectively.</li>
+			<li>You may define new variables as needed.</li>
+			<li>START EARLY! This is the first MP that requires you to write your own program. Composition is much more difficult than comprehension.</li>
+			<li>Monitor the <a href="http://my.ece.uiuc.edu/error.asp?url=/webboard/select.asp&qs=bid=%7b38D8D827-70BA-4FB6-A186-3C9AD02FC672%7d">Web Board</a> for clarifications and help.</li>
+		</ul>
+
+		<H2>Subroutines</H2>
+		In this assignment, you will need to complete five procedures. You will receive credit by replacing each of these five procedures listed below with your own code.<br>
+		<br>
+		Document your functions with descriptive function headers.  Look in your lab book for examples or ask a TA.  YOU WILL LOSE POINTS IF YOU DON'T WRITE CLEAR, CONCISE FUNCTION HEADERS!!!!<br>
+		<table border="1" cellspacing="2" cellpadding="2" width="100%">
+			<tr>
+				<td align="center" valign="top"><b>Init</b></td>
+				<td align="left" valign="top"> 
+					<ul>
+						<li>Sets up the <i>WordSpace</i> variable to have as many underscores as <i>TheWord</i> has letters.</li>
+						<li>Inputs:</li>
+							  <ul>
+									<li>The <i>WordSpace</i> and <i>TheWord</i> variables</li>
+							  </ul>
+						<li>Outputs:</li>
+							  <ul>
+							  <li><i>WordSpace</i> is set up properly</li>
+							  </ul>
+						<li>Calls: None</li>
+						<li>Note: Remember that all strings should end with the '$' character.</li>
+					</ul>
+				</td>
+			</tr>
+				
+			<tr>
+				<td align="center" valign="top"><b>ProcessChar</b></td>
+				<td align="left" valign="top"> 
+					<ul>
+						<li>Checks the character that the user has guessed to see if it matches any letters in <i>TheWord</i>, and takes the appropriate action.</li>
+						<li>Inputs:</li>
+							  <ul>
+								  <li>AL = Character that the user has just guessed</li>
+								  <li>The <i>WordSpace</i> and <i>TheWord</i> variables</li>
+								  <li>The <i>UsedLetters</i> array</li>
+								  <li>The <i>NumIncorrect</i> variable</li>
+							  </ul>
+						<li>Outputs:</li>
+							  <ul>
+								  <li>The correct element in <i>UsedLetters</i> is marked as 'used'</li>
+								  <li><i>WordSpace</i> is updated if the character matches</li>
+								  <li><i>NumIncorrect</i> is updated appropriately if the character doesn't match.</li>
+							  </ul>
+						<li>Calls: DSPMSG, DSPOUT</li>
+						<li>Notes: ProcessChar should first check to see if the character in AL is in the range 'a' through 'z'. If it is not, output an error message and return. 
+						If it is within that range, check to see if that letter has already been guessed by checking the appropriate entry in <i>UsedLetters</i>. If it has been used, 
+						display the character on the screen, output an error message and return. If the letter hasn't been used, update <i>UsedLetters</i> array, scan through each 
+						character in <i>TheWord</i> and check for matching characters. If any characters match, copy them to the corresponding place in <i>WordSpace</i>. If no 
+						characters match, update <i>NumIncorrect</i> appropriately.</li>
+						<li>Hint: Either the "register relative" or "base plus index" addressing modes are useful in this function. Review your online lecture notes for more information on memory addressing.</li>
+					</ul>
+				</td>
+			</tr>
+				
+			<tr>
+				<td align="center" valign="top"><b>DisplayWord</b></td>
+				<td align="left" valign="top"> 
+					<ul>
+						<li>Displays the word-in-progress</li>
+						<li>Inputs:</li>
+								<ul>
+									<li>The <i>WordSpace</i> variable</li>
+							  </ul>
+						<li>Outputs:</li>
+								<ul>
+                                    <li>The word-in-progress is displayed to the screen with a space between each character</li>
+                                </ul>
+                        <li>Calls: DSPOUT, DSPMSG</li>
+						<li>Note: If you're unclear on what to display, run the program or take a look at the screenshot to see exactly how to display the word.</li>
+					</ul>
+				</td>
+			</tr>
+			
+			<tr>
+				<td align="center" valign="top"><b>DisplayUsed</b></td>
+				<td align="left" valign="top"> 
+					<ul>
+						<li>Displays a list of already-guessed letters</li>
+						<li>Inputs:</li>
+								<ul>
+									<li>The <i>UsedLetters</i> array</li>
+							  </ul>
+						<li>Outputs:</li>
+							  <ul>
+									<li>Displays used letters</li>
+							  </ul>
+						<li>Calls: DSPOUT, DSPMSG</li>
+						<li>Notes: Loop through the <i>UsedLetters</i> array looking for 1's. If/when you find a 1, display the corresponding character.</li>
+					</ul>
+				</td>
+			</tr>	
+	
+			<tr>
+				<td align="center" valign="top"><b>CheckWinner</b></td>
+				<td align="left" valign="top"> 
+					<ul>
+						<li>Determines if the user has won or lost.</li>
+						<li>Inputs:</li>
+								<ul>
+									<li>The <i>NumIncorrect</i> variable</li>
+									<li>The <i>WordSpace</i> variable</li>
+							  </ul>
+						<li>Outputs:</li>
+								<ul>
+									<li>Sets the Status variable to 1 if the user has won, -1 if the user has lost, or 0 if the user hasn't won or lost (i.e. the user should keep playing).</li>
+								</ul>
+						<li>Calls: None</li>
+						<li>Notes: First, check <i>NumIncorrect</i>. Then, scan <i>WordSpace</i> looking for underscore characters.</li>
+					</ul>
+				</td>
+			</tr>
+		</table>
+
+		<H2>Procedure</H2>
+		<ul>
+			<li>You will begin this MP with the following files:
+				<ul>
+				  <li>MP1.ASM: Program Framework</li>
+				  <li>Makefile: Specifies how and when programs are assembled and linked.</li>
+				  <li>LIBMP1.LIB: Library functions for MP1</li>
+				  <li>LIB291.LIB: General-purpose library functions</li>
+				</ul>
+			</li>
+			<li>You may copy these files from the network drive to your home directory with the following command:<br>
+			  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>xcopy /s V:\ece390\mp1 W:\mp1</i><br>
+			  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;or download the files from this server as <a href="mp1.zip">mp1.zip</a>
+			</li>
+			<li>Add your code to MP1.ASM.</li>
+			<li>Assemble and link your program by typing<br>
+			  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<i>make</i><br>
+			  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;This command reads Makefile then invokes NASM and TLINK to build an executable program.
+			</li>
+			<li>Use Turbo Debugger (TD) to find and correct program errors.</li>
+			<li>Verify your program operation by playing the game and checking all cases.</li>
+		</ul>
+		
+		
+		<H2>Final Steps</H2>
+		<ol>
+		   <li>Prepare a cover memo addressing the following questions:
+				<ul>
+				  <li>How much time did you spend on each subroutine, from planning and design through final debugging?</li>
+				  <li>What kinds of defects (bugs) did you find during the development of the program? When did you discover these defects (during code review or during testing)? How did you find them?</li>
+				  <li>What did you learn about design, coding, testing, and debugging in this MP?</li>
+				  <li>What went well in your work on this MP? What did not?</li>
+				  <li>What you would do differently for the next MP?</li>
+				</ul>
+			</li>
+		   <li>Demonstrate your MP1.EXE to a TA or to the instructor.  The TA or instructor will verify that your program works as intended.</li>
+		   <li>Be prepared to answer questions about any aspect of the operation of your program. The TAs will not accept an MP if you cannot fully explain the operation of your code and details of your implementation. Delayed MPs will be subject to late penalties as described in the course syllabus (10%/day).</li>
+		   <li>The TA will handin your MP and cover memo online.</li>
+		</ol>
+
+      <HR>
+
+      <H2>mp1.asm</H2>
+<pre>
+<font color="#ff0000">; MP1 - ECE390 Hangman</font>
+<font color="#ff0000">; Your Name</font>
+<font color="#ff0000">;</font>
+<font color="#ff0000">; Spring 2006</font>
+<font color="#ff0000">; University of Illinois, Urbana-Champaign</font>
+<font color="#ff0000">; Dept. of Electrical and Computer Engineering</font>
+<font color="#ff0000">;</font>
+<font color="#ff0000">; Version 1.0</font>
+
+    <font color="#804040">BITS</font>    <font color="#ff00ff">16</font>
+
+<font color="#ff0000">;====== SECTION 1: Define constants =======================================</font>
+
+        <font color="#0000ff">CR</font>              <font color="#804040">EQU</font>     <font color="#ff00ff">0Dh</font>
+        <font color="#0000ff">LF</font>              <font color="#804040">EQU</font>     <font color="#ff00ff">0Ah</font>
+        <font color="#0000ff">ESC</font>             <font color="#804040">EQU</font>     <font color="#ff00ff">01Bh</font>
+        <font color="#0000ff">SPACE</font>           <font color="#804040">EQU</font>     <font color="#ff00ff">020h</font>
+        <font color="#0000ff">HEAD</font>            <font color="#804040">EQU</font>     <font color="#ff00ff">04Fh</font>
+        <font color="#0000ff">LEFTLIMB</font>        <font color="#804040">EQU</font>     <font color="#ff00ff">02Fh</font>
+        <font color="#0000ff">RIGHTLIMB</font>       <font color="#804040">EQU</font>     <font color="#ff00ff">05Ch</font>
+        <font color="#0000ff">ASCII_a</font>         <font color="#804040">EQU</font>     <font color="#ff00ff">061h</font>
+
+<font color="#ff0000">;====== SECTION 2: Declare external routines ==============================</font>
+
+<font color="#ff0000">; Declare external library routines</font>
+<font color="#0000ff">EXTERN</font> <font color="#0000ff">kbdine</font>, <font color="#0000ff">dspout</font>, <font color="#0000ff">dspmsg</font>, <font color="#0000ff">dosxit</font>
+<font color="#0000ff">EXTERN</font> <font color="#0000ff">libInit</font>, <font color="#0000ff">libProcessChar</font>, <font color="#0000ff">libDisplayWord</font>, <font color="#0000ff">libDisplayUsed</font>
+<font color="#0000ff">EXTERN</font> <font color="#0000ff">libDisplayGallows</font>, <font color="#0000ff">libCheckWinner</font>, <font color="#0000ff">mp1xit</font>
+
+<font color="#ff0000">; Declare local routines</font>
+<font color="#0000ff">GLOBAL</font> <font color="#0000ff">Init</font>, <font color="#0000ff">ProcessChar</font>, <font color="#0000ff">DisplayWord</font>, <font color="#0000ff">DisplayUsed</font>
+<font color="#0000ff">GLOBAL</font> <font color="#0000ff">DisplayGallows</font>, <font color="#0000ff">CheckWinner</font>
+
+<font color="#ff0000">; Make program variables global</font>
+<font color="#0000ff">GLOBAL</font> <font color="#0000ff">CRLFString</font>, <font color="#0000ff">WelcomeString</font>, <font color="#0000ff">PromptString</font>, <font color="#0000ff">NotValidString</font>, <font color="#0000ff">UsedString</font>
+<font color="#0000ff">GLOBAL</font> <font color="#0000ff">WinString</font>, <font color="#0000ff">LoseString</font>, <font color="#0000ff">AlreadyUsed</font>, <font color="#0000ff">AlreadyUsedEnd</font>
+<font color="#0000ff">GLOBAL</font> <font color="#0000ff">GallowsTop</font>, <font color="#0000ff">GallowsSide</font>, <font color="#0000ff">GallowsBottom</font>
+<font color="#0000ff">GLOBAL</font> <font color="#0000ff">NumIncorrect</font>, <font color="#0000ff">TheWord</font>, <font color="#0000ff">UsedLetters</font>, <font color="#0000ff">WordSpace</font>, <font color="#0000ff">Status</font>
+
+
+<font color="#ff0000">;====== SECTION 3: Define stack segment ===================================</font>
+
+<font color="#804040">SEGMENT</font> <font color="#0000ff">stkseg</font> <font color="#0000ff">STACK</font>                    <font color="#ff0000">; *** STACK SEGMENT ***</font>
+        <font color="#0000ff">resb</font>      <font color="#ff00ff">64</font>*<font color="#ff00ff">8</font>
+<font color="#0000ff">stacktop</font>:
+        <font color="#0000ff">resb</font>      <font color="#ff00ff">0</font>                     <font color="#ff0000">; work around NASM bug</font>
+
+<font color="#ff0000">;====== SECTION 4: Define code segment ====================================</font>
+
+<font color="#804040">SEGMENT</font> <font color="#0000ff">code</font>                            <font color="#ff0000">; *** CODE SEGMENT ***</font>
+
+<font color="#ff0000">;====== SECTION 5: Declare variables for main procedure ===================</font>
+<font color="#ff0000">; Some useful strings</font>
+<font color="#0000ff">CRLFString</font>      <font color="#0000ff">db</font>   <font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'$'</font>
+<font color="#0000ff">WelcomeString</font>   <font color="#0000ff">db</font>   <font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'Welcome to ECE390 Hangman!'</font>,<font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'$'</font>
+<font color="#0000ff">PromptString</font>    <font color="#0000ff">db</font>   <font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'Enter a letter: '</font>,<font color="#ff00ff">'$'</font>
+<font color="#0000ff">NotValidString</font>  <font color="#0000ff">db</font>   <font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'That is not a valid letter.'</font>,<font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'$'</font>
+<font color="#0000ff">UsedString</font>      <font color="#0000ff">db</font>   <font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'Used letters: '</font>,<font color="#ff00ff">'$'</font>
+<font color="#0000ff">WinString</font>       <font color="#0000ff">db</font>   <font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'You Win!!!'</font>,<font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'$'</font>
+<font color="#0000ff">LoseString</font>      <font color="#0000ff">db</font>   <font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'You Lose :('</font>,<font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'$'</font>
+<font color="#0000ff">AlreadyUsed</font>     <font color="#0000ff">db</font>   <font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'You have already used the letter '</font>,<font color="#ff00ff">027H</font>,<font color="#ff00ff">'$'</font>
+<font color="#0000ff">AlreadyUsedEnd</font>  <font color="#0000ff">db</font>   <font color="#ff00ff">027h</font>,<font color="#ff00ff">'.'</font>,<font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'$'</font>
+
+<font color="#ff0000">; Strings to draw the hangman</font>
+<font color="#0000ff">GallowsTop</font>      <font color="#0000ff">db</font>   <font color="#ff00ff">'------'</font>,<font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>
+                <font color="#0000ff">db</font>   <font color="#ff00ff">'|    |'</font>,<font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'$'</font>
+<font color="#0000ff">GallowsSide</font>     <font color="#0000ff">db</font>   <font color="#ff00ff">'|   '</font>,<font color="#ff00ff">'$'</font>
+<font color="#0000ff">GallowsBottom</font>   <font color="#0000ff">db</font>   <font color="#ff00ff">'|'</font>,<font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>
+                <font color="#0000ff">db</font>   <font color="#ff00ff">'-'</font>,<font color="#0000ff">CR</font>,<font color="#0000ff">LF</font>,<font color="#ff00ff">'$'</font>
+
+<font color="#ff0000">; NumIncorrect keeps track of how many incorrect guesses the user has made</font>
+<font color="#0000ff">NumIncorrect</font>    <font color="#0000ff">db</font>   <font color="#ff00ff">0</font>
+
+<font color="#ff0000">; TheWord is the word the user is trying to guess</font>
+<font color="#0000ff">TheWord</font>         <font color="#0000ff">db</font>   <font color="#ff00ff">'frequency'</font>,<font color="#ff00ff">'$'</font>
+
+<font color="#0000ff">UsedLetters</font>     <font color="#804040">times</font> <font color="#ff00ff">26</font> <font color="#0000ff">db</font> <font color="#ff00ff">0</font>
+<font color="#0000ff">WordSpace</font>       <font color="#804040">times</font> <font color="#ff00ff">20</font> <font color="#0000ff">db</font> <font color="#ff00ff">'$'</font>
+
+<font color="#0000ff">Status</font>          <font color="#0000ff">db</font>   <font color="#ff00ff">0</font>
+
+
+<font color="#ff0000">;====== SECTION 6: Program initialization =================================</font>
+
+<font color="#804040">..start</font>:
+        <font color="#804040">mov</font>     ax, cs                  <font color="#ff0000">; Initialize Default Segment register</font>
+        <font color="#804040">mov</font>     ds, ax
+        <font color="#804040">mov</font>     ax, <font color="#0000ff">stkseg</font>              <font color="#ff0000">; Initialize Stack Segment register</font>
+        <font color="#804040">mov</font>     ss, ax
+        <font color="#804040">mov</font>     sp, <font color="#0000ff">stacktop</font>            <font color="#ff0000">; Initialize Stack Pointer register</font>
+
+<font color="#ff0000">;====== SECTION 7: Main procedure =========================================</font>
+
+<font color="#0000ff">MAIN</font>:
+    <font color="#804040">mov</font>     dx, <font color="#0000ff">WelcomeString</font>       <font color="#ff0000">; Display welcome message</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspmsg</font>
+
+    <font color="#804040">call</font>    <font color="#0000ff">Init</font>                    <font color="#ff0000">; Set up the WordSpace variable</font>
+
+<font color="#0000ff">.InputLoop</font>:
+    <font color="#804040">call</font>    <font color="#0000ff">DisplayGallows</font>          <font color="#ff0000">; Draw the hangman</font>
+
+    <font color="#804040">call</font>    <font color="#0000ff">DisplayUsed</font>             <font color="#ff0000">; Display used letters</font>
+    <font color="#804040">call</font>    <font color="#0000ff">DisplayWord</font>             <font color="#ff0000">; Display the word in progress</font>
+
+    <font color="#804040">mov</font>     dx, <font color="#0000ff">PromptString</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspmsg</font>
+    <font color="#804040">call</font>    <font color="#0000ff">kbdine</font>                  <font color="#ff0000">; Input a character from the keyboard</font>
+                                        <font color="#ff0000">; into al</font>
+
+    <font color="#804040">mov</font>     dx,<font color="#0000ff">CRLFString</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspmsg</font>
+
+    <font color="#804040">cmp</font>     al,<font color="#0000ff">ESC</font>                  <font color="#ff0000">; If it's an ESC character,</font>
+    <font color="#804040">je</font>      <font color="#0000ff">.End</font>                    <font color="#ff0000">; exit immediately</font>
+
+    <font color="#804040">call</font>    <font color="#0000ff">ProcessChar</font>
+
+    <font color="#804040">call</font>    <font color="#0000ff">CheckWinner</font>
+
+    <font color="#804040">cmp</font>     <font color="#0000ff">byte</font>[<font color="#0000ff">Status</font>],<font color="#ff00ff">0</font>
+    <font color="#804040">js</font>      <font color="#0000ff">.Lose</font>                   <font color="#ff0000">; js = jump sign.  If Status is signed,</font>
+                                        <font color="#ff0000">; e.g. a negative number, the user has lost</font>
+    <font color="#804040">je</font>      <font color="#0000ff">.InputLoop</font>              <font color="#ff0000">; If Status is equal to zero, keep playing</font>
+
+<font color="#0000ff">.Win</font>                                    <font color="#ff0000">; If Status is neither -1 nor 0,</font>
+    <font color="#804040">call</font>    <font color="#0000ff">DisplayGallows</font>      <font color="#ff0000">; we assume it must be 1, so the user has won</font>
+    <font color="#804040">call</font>    <font color="#0000ff">DisplayUsed</font>
+    <font color="#804040">call</font>    <font color="#0000ff">DisplayWord</font>
+
+    <font color="#804040">mov</font>     dx,<font color="#0000ff">WinString</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspmsg</font>
+    <font color="#804040">jmp</font>     <font color="#0000ff">.End</font>
+
+<font color="#0000ff">.Lose</font>
+    <font color="#804040">call</font>    <font color="#0000ff">DisplayGallows</font>
+    <font color="#804040">call</font>    <font color="#0000ff">DisplayUsed</font>
+    <font color="#804040">call</font>    <font color="#0000ff">DisplayWord</font>
+
+    <font color="#804040">mov</font>     dx,<font color="#0000ff">LoseString</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspmsg</font>
+<font color="#0000ff">.End</font>
+
+    <font color="#804040">call</font>    <font color="#0000ff">mp1xit</font>
+
+<font color="#ff0000">;====== SECTION 8: Your subroutines =======================================</font>
+
+<font color="#ff0000">;====== Init ==============================================================</font>
+<font color="#0000ff">Init</font>:
+    <font color="#804040">call</font>    <font color="#0000ff">libInit</font>             <font color="#ff0000">; call to library function Init</font>
+                                <font color="#ff0000">; comment out call to library and add your code </font>
+    <font color="#804040">ret</font>
+
+<font color="#ff0000">;====== ProcessChar =======================================================</font>
+<font color="#0000ff">ProcessChar</font>:
+    <font color="#804040">call</font>    <font color="#0000ff">libProcessChar</font>
+    <font color="#804040">ret</font>
+
+<font color="#ff0000">;====== DisplayWord =======================================================</font>
+<font color="#0000ff">DisplayWord</font>:
+    <font color="#804040">call</font>    <font color="#0000ff">libDisplayWord</font>
+    <font color="#804040">ret</font>
+
+<font color="#ff0000">;====== DisplayUsed =======================================================</font>
+<font color="#0000ff">DisplayUsed</font>:
+    <font color="#804040">call</font>    <font color="#0000ff">libDisplayUsed</font>
+    <font color="#804040">ret</font>
+
+<font color="#ff0000">;====== CheckWinner =======================================================</font>
+<font color="#0000ff">CheckWinner</font>:
+    <font color="#804040">call</font>    <font color="#0000ff">libCheckWinner</font>
+    <font color="#804040">ret</font>
+
+<font color="#ff0000">;====== DisplayGallows ====================================================</font>
+<font color="#ff0000">; PURPOSE: Draws the hangman to the screen</font>
+<font color="#ff0000">; INPUTS:  The NumIncorrect variable</font>
+<font color="#ff0000">; OUTPUTS: The hangman is drawn correctly, according to how many wrong</font>
+<font color="#ff0000">;          guesses the user has made</font>
+<font color="#ff0000">;==========================================================================</font>
+<font color="#0000ff">DisplayGallows</font>:
+    <font color="#804040">pusha</font>                   <font color="#ff0000">; Save all register values to the stack, since</font>
+                            <font color="#ff0000">; we change some of their values in this function</font>
+
+    <font color="#804040">mov</font>     dx,<font color="#0000ff">GallowsTop</font>       <font color="#ff0000">; Display the top of the gallows</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspmsg</font>              <font color="#ff0000">; dspmsg takes the address of a string in dx</font>
+    <font color="#804040">mov</font>     dx,<font color="#0000ff">GallowsSide</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspmsg</font>
+
+    <font color="#804040">cmp</font>     <font color="#0000ff">byte</font>[<font color="#0000ff">NumIncorrect</font>],<font color="#ff00ff">1</font>        <font color="#ff0000">; If there are one or more incorrect</font>
+    <font color="#804040">jb</font>      <font color="#0000ff">.NoHead</font>                     <font color="#ff0000">; guesses, we draw the head</font>
+                                        <font color="#ff0000">; jb = jump below</font>
+    <font color="#804040">mov</font>     dl,<font color="#0000ff">SPACE</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspout</font>              <font color="#ff0000">; dspout takes the ASCII character to output in dl</font>
+    <font color="#804040">mov</font>     dl,<font color="#0000ff">HEAD</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspout</font>
+<font color="#0000ff">.NoHead</font>
+    <font color="#804040">mov</font>     dx,<font color="#0000ff">CRLFString</font>       <font color="#ff0000">; CRLFString puts us at the beginning</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspmsg</font>              <font color="#ff0000">; of a new line</font>
+
+    <font color="#804040">mov</font>     dx,<font color="#0000ff">GallowsSide</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspmsg</font>
+
+    <font color="#804040">cmp</font>     <font color="#0000ff">byte</font>[<font color="#0000ff">NumIncorrect</font>],<font color="#ff00ff">2</font>    <font color="#ff0000">; If there are two or more incorrect</font>
+    <font color="#804040">jb</font>      <font color="#0000ff">.NoLeftArm</font>              <font color="#ff0000">; guesses, we draw the left arm</font>
+    <font color="#804040">mov</font>     dl,<font color="#0000ff">LEFTLIMB</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspout</font>
+    <font color="#804040">mov</font>     dl,<font color="#0000ff">SPACE</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspout</font>
+
+<font color="#0000ff">.NoLeftArm</font>
+    <font color="#804040">cmp</font>     <font color="#0000ff">byte</font>[<font color="#0000ff">NumIncorrect</font>],<font color="#ff00ff">3</font>    <font color="#ff0000">; Three or more incorrect guesses,</font>
+    <font color="#804040">jb</font>      <font color="#0000ff">.NoRightArm</font>             <font color="#ff0000">; draw the right arm</font>
+    <font color="#804040">mov</font>     dl,<font color="#0000ff">RIGHTLIMB</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspout</font>
+
+<font color="#0000ff">.NoRightArm</font>
+    <font color="#804040">mov</font>     dx,<font color="#0000ff">CRLFString</font>           <font color="#ff0000">; New line</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspmsg</font>
+    <font color="#804040">mov</font>     dx,<font color="#0000ff">GallowsSide</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspmsg</font>
+
+    <font color="#804040">cmp</font>     <font color="#0000ff">byte</font>[<font color="#0000ff">NumIncorrect</font>],<font color="#ff00ff">4</font>        <font color="#ff0000">; Four or more, draw the left leg</font>
+    <font color="#804040">jb</font>      <font color="#0000ff">.NoLeftLeg</font>
+    <font color="#804040">mov</font>     dl,<font color="#0000ff">LEFTLIMB</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspout</font>
+    <font color="#804040">mov</font>     dl,<font color="#0000ff">SPACE</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspout</font>
+
+<font color="#0000ff">.NoLeftLeg</font>
+    <font color="#804040">cmp</font>     <font color="#0000ff">byte</font>[<font color="#0000ff">NumIncorrect</font>],<font color="#ff00ff">5</font>        <font color="#ff0000">; Five or more, draw the right leg</font>
+    <font color="#804040">jb</font>      <font color="#0000ff">.Done</font>
+    <font color="#804040">mov</font>     dl,<font color="#0000ff">RIGHTLIMB</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspout</font>
+
+<font color="#0000ff">.Done</font>
+    <font color="#804040">mov</font>     dx,<font color="#0000ff">CRLFString</font>           <font color="#ff0000">; Draw the bottom of the gallows</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspmsg</font>
+    <font color="#804040">mov</font>     dx,<font color="#0000ff">GallowsBottom</font>
+    <font color="#804040">call</font>    <font color="#0000ff">dspmsg</font>
+
+    <font color="#804040">popa</font>                    <font color="#ff0000">; Restore register values from the stack</font>
+    <font color="#804040">ret</font>
+</pre>     
+
+      <HR>
+
+      <H2>Makefile</H2>
+<pre>
+
+<font color="#0000ff">MPNAME</font>=mp1
+
+<font color="#0000ff">all:</font> <font color="#0000ff">$(MPNAME)</font>.exe
+
+<font color="#0000ff">clean: </font>
+<font color="#ff00ff">    rm -f </font><font color="#0000ff">$(MPNAME)</font><font color="#ff00ff">.exe </font><font color="#0000ff">$(MPNAME)</font><font color="#ff00ff">.obj </font><font color="#0000ff">$(MPNAME)</font><font color="#ff00ff">.lst </font><font color="#0000ff">$(MPNAME)</font><font color="#ff00ff">.map</font>
+
+<font color="#0000ff">%.exe:</font> <font color="#0000ff">%</font>.obj
+<font color="#ff00ff">    tlink /c /v </font><font color="#0000ff">$&lt;</font><font color="#ff00ff">, </font><font color="#0000ff">$*</font><font color="#ff00ff">.exe, </font><font color="#0000ff">$*</font><font color="#ff00ff">.map, libmp1.lib lib291.lib</font>
+
+<font color="#0000ff">%.obj:</font> <font color="#0000ff">%</font>.asm
+<font color="#ff00ff">    nasm -g -f obj -o </font><font color="#0000ff">$*</font><font color="#ff00ff">.obj </font><font color="#0000ff">$&lt;</font><font color="#ff00ff"> -l </font><font color="#0000ff">$*</font><font color="#ff00ff">.lst</font>
+
+</pre>
+      
+      </TD></TR></TBODY></TABLE>
+<TABLE class=dark cellSpacing=0 cellPadding=0 width="100%">
+  <TBODY>
+  <TR>
+    <TD><A href="http://courses.engr.illinois.edu/ece390/"><IMG src="/ece390/icon/go-back.gif"> Return to ECE390 Home Page</A></TD>
+    <TD align=right>Spring 2006</TD></TR></TBODY></TABLE></BODY></HTML>

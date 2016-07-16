@@ -1,0 +1,1410 @@
+<html>
+
+<head>
+
+<title>Machine Problem 4: eCHAT</title>
+
+<style>
+<!--
+
+body   {font-family: arial, helvetica, sans-serif;
+        font-size: 10pt;
+       }
+
+td     {font-family: arial, helvetica, sans-serif;
+        font-size: 10pt;
+       }
+
+th     {font-family: arial, helvetica, sans-serif;
+        font-size: 10pt;
+       }
+
+ul     {font-family: arial, helvetica, sans-serif;
+        font-size: 10pt;
+       }
+
+ol     {font-family: arial, helvetica, sans-serif;
+        font-size: 10pt;
+       }
+
+a      {font-family: arial, helvetica, sans-serif;
+        font-size: 10pt;
+        text-decoration: none;
+       }
+
+//-->
+</style>
+
+</head>
+
+<body bgcolor = #ffffff text = #000000>
+
+<table cellpadding = 0 cellspacing = 0 width = 100% border = 0>
+
+<tr>
+  <td align = left   width = 33%>ECE291</td>
+  <td align = center width = 34%>Computer Engineering II</td>
+  <td align = right  width = 33%>Potts, Summer 2000</td>
+</tr>
+
+</table>
+
+<h1 align = center>Machine Problem 4: eCHAT</h1>
+
+<div align = center>
+<table border = 1 width = 60%>
+
+<tr>
+  <td align = right width = 20% nowrap>Assigned :</td>
+  <td>: July 20, 2000</td>
+</tr>
+
+<tr>
+  <td align = right>Due Date :</td>
+  <td>: July 25, 2000</td>
+</tr>
+
+<tr>
+  <td align = right>Purpose :</td>
+  <td nowrap>: 640x480x256 VESA Graphics, BitMaP File Format, Data Structures and Networking</td>
+</tr>
+
+<tr>
+  <td align = right>Points :</td>
+  <td>: 25 + 5 (BONUS)</td>
+</tr>
+
+</table>
+</div>
+
+<h2>Introduction</h2>
+
+<p>
+For MP4, we will implement an IRC style chat program using multicast datagrams. 
+Our program will allow up to 32 users to simultaneously chat on our channel.
+We shall take advantage of the 640x480 VESA video mode for a larger screen resolution and make C-style procedure calls.
+You are required to do any 25 points worth of functions out of 75 points to receive full credit with one BONUS question that can earn you +5 points
+
+<h2>Welcome to 640x480x256 VESA</h2>
+
+<p>
+Click here to read more on <a href="http://www.ece.uiuc.edu/ece291/lecture/l17.html#High Resolution">High Resolution (SVGA and VESA)</a>
+
+<p>
+You will need to call this function quite often : Set/Get Active Display Bank (INT 10h)<br><br>
+
+<pre>
+Function : 0x05  
+Input    : AX = 0x4F05
+           BH = 0 (Set bank) or 1 (Get bank) 
+           BL = 0 (Window A) or 1 (Window B)
+           DX = Bank number (zero is the first bank)
+Ouput    : AX = VBE Return Status  
+</pre>
+
+<h2>Network Protocol</h2>
+
+<p>
+As described above, there are three types of messages that are exhanged between players: <tt>LOGIN</tt>, <tt>DATA</tt>, and <tt>LOGOUT</tt>.
+All messages begin with a byte that identifies the message type.
+The next byte of the message identifies the user that sent the message.
+The rest of the bytes contain the message data.
+The structure definitions for these messages are given at the beginning MP4.ASM.
+Multicast datagrams are used to transmit messages among users.
+All messages are sent to a NetBIOS group called <tt>ECE291 CHAT</tt> and received by all everyone in the room.
+When a player first joins they game, they are given the first available name between <tt>ECE291 CHAT 00</tt> and <tt>ECE291 CHART 31</tt>
+
+<p>
+To simplify the programming for NetBIOS, you have been given <tt>NETLIB.LIB</tt> - a library which provides function calls to send and receive datagrams.
+The NetLIB library calls are summarized below.
+Additional documentation about NetBIOS and Lockwood's NetLIB functions can be found on the <a href = "http://www.ece.uiuc.edu/ece291/class-resources/class-resources.html">ECE291 Class Resources</a> Web Page
+
+<p>
+<pre>
+NetInit    : Initializes Network - Returns: Player num in AL
+SendPacket : Transmits data in TXBuffer - Inputs: AX = Length
+NetRelease : Release network resources 
+
+NetPost    : Procedure called when datagram arrives
+             Called with AX = Length, BX = Pointer to RXBuffer
+             Must preserve all registers modified
+             Ends with RET (not IRET)
+
+TXBuffer   : Transmit Buffer (1024 bytes) - Write your data here 
+RXBuffer   : Receive Buffer  (1024 bytes) - Read from here !
+</pre>
+
+<h2>C-style Procedures</h2>
+
+<p>
+For this MP, we will be using C-style procedures.
+To simplify coding, MASM provides the INVOKE and the PROTO directives.
+The PROTO directive allows you to define a C-style function, and the INVOKE directive allows you to call a C-style function.
+For example, the following code would define a function <tt>myFunc</tt> with word-size parameters <tt>Input1</tt> and <tt>Input2</tt>:<br>
+
+<p>
+<table border = 1 cellPadding = 0>
+<tr>
+  <td><pre>
+
+MyFunc PROTO near C, Input1:word, Input2:word
+
+Variable dw 9
+
+MyFunc PROC near C uses si di, Input1:word, Input2:word
+
+        ...
+
+        mov si, Input1 ; Let MASM automatically compute Input1 => ss:[bp + 4]
+        mov di, Input2 ; Let MASM automatically compute Input2 => ss:[bp + 6]
+
+        ...
+
+        ret
+
+MyFunc ENDP
+
+.
+.
+.
+
+mov     bx, 5
+
+INVOKE  MyFunc, bx, Variable
+
+...</pre></td>
+</tr>
+</table>
+
+<p>
+Notice that when defining our procedure, we use the <tt>uses</tt> clause to have MASM automatically save registers <tt>SI</tt> and <tt>DI</tt> for us.
+This way, we do not need to push and pop registers to save them.
+Effectively, MASM generates the following code: 
+
+<p>
+<table border = 1 cellPadding = 0>
+<tr>
+  <td><pre>
+
+MyFunc PROTO near C, Input1:word, Input2:word
+
+Variable dw 9
+
+MyFunc PROC NEAR
+
+        push    bp
+        mov     bp, sp
+
+        push    si
+        push    di
+
+        mov     si, ss:[bp + 4]; Near procedures have 2 less bytes on stack  
+        mov     di, ss:[bp + 6]; Near procedures have 2 less bytes on stack  
+
+        ...
+
+        pop     di
+        pop     si
+
+        pop     bp
+
+        ret
+
+MyFunc ENDP
+
+.
+.
+.
+
+mov     bx, 5
+
+push    Variable
+push    bx
+call    MyFunc
+
+...</pre></td>
+</tr>
+</table>
+
+<p>
+It is important that you not use register <tt>AX</tt> as an argument to a function. 
+This is because MASM uses <tt>AX</tt> to push some types of arguments to the stack, thereby overwriting any input you may have provided.
+You can find more information about MASM directives using <tt>masm /h</tt> 
+
+<p>
+Debugging may be attempted with CodeView, but be forewarned that it is difficult.
+CodeView needs to be told that the graphics mode is switched.
+Use the command line <tt>CV /50 /S MP4</tt> for this MP
+
+<h2>Subroutines</h2>
+
+You will implement the following procedures:
+
+<h4>GetNickname</h4>
+
+<ul>
+
+<b>Purpose</b>
+
+  <ul>
+    <li>To accept a valid nickname from the user</li>
+  </ul>
+
+<b>Inputs</b>
+
+  <ul>
+    <li>None</li>
+  </ul>
+
+<b>Output</b>
+
+  <ul>
+    <li><tt>my_nick</tt> holds the user nickname</li>
+    <li><tt>Carry Flag</tt> is set if the user pressed the <tt>ESCKEY</tt></li>
+    <li>On the Screen</li>
+  </ul>
+
+<b>Calls</b>
+
+  <ul>
+    <li><tt>DspMsg</tt></li>
+    <li><tt>DspOut</tt></li>
+    <li><tt>KbdIn</tt></li>
+  </ul>
+
+<b>Notes</b>
+
+  <ul>
+    <li>Display the <tt>nick_string</tt> message</li>
+    <li>Repeatedly call <tt>kbdin</tt> until a <tt>CR</tt> or an <tt>ESCKEY</tt></li>
+    <li>Valid characters are <tt>A</tt> to <tt>Z</tt>, <tt>a</tt> to <tt>z</tt>, <tt>0</tt> to <tt>9</tt>, <tt>_</tt>, <tt>+</tt> and <tt>@</tt></li>
+    <li>Beep for invalid characters or if the <tt>CR</tt> was pressed before the minimum of <tt>5</tt> valid characters or <tt>8</tt> character maximum was reached</li>
+    <li>Handle the <tt>BS</tt> carefully</li>
+    <li>Do not forget to append the <tt>NULL</tt> character to the string before returning</li>
+  </ul>
+
+<b>Points</b>
+
+  <ul>
+    <li><font color = red>+10 points</font></li>
+  </ul>
+
+</ul>
+
+<h4>SetVideoMode</h4>
+
+<ul>
+
+<b>Purpose</b>
+
+  <ul>
+    <li>Switch to 640x480x256 VESA Video Mode</li>
+  </ul>
+
+<b>Inputs</b>
+
+  <ul>
+    <li>None</li>
+  </ul>
+
+<b>Output</b>
+
+  <ul>
+    <li><tt>Carry Flag</tt> is set in case of error</li>
+  </ul>
+
+<b>Calls</b>
+
+  <ul>
+    <li><tt>DspMsg</tt> (in case of error)</li>
+  </ul>
+
+<b>Notes</b>
+
+  <ul>
+    <li>This function should be straight forward</li>
+  </ul>
+
+<b>Points</b>
+
+  <ul>
+    <li><font color = red>+2 points</font></li>
+  </ul>
+
+</ul>
+
+<h4>ResetVideoMode</h4>
+
+<ul>
+
+<b>Purpose</b>
+
+  <ul>
+    <li>Switch to 80x25 Text Video Mode</li>
+  </ul>
+
+<b>Inputs</b>
+
+  <ul>
+    <li>None</li>
+  </ul>
+
+<b>Output</b>
+
+  <ul>
+    <li>None</li>
+  </ul>
+
+<b>Calls</b>
+
+  <ul>
+    <li>None</li>
+  </ul>
+
+<b>Notes</b>
+
+  <ul>
+    <li>This function should be straight forward</li>
+  </ul>
+
+<b>Points</b>
+
+  <ul>
+    <li><font color = red>+2 points</font></li>
+  </ul>
+
+</ul>
+
+<h4>LoadFontMap</h4>
+
+<ul>
+
+<b>Purpose</b>
+
+  <ul>
+    <li>Load the <tt>FontMap</tt> from the file to the <tt>fontseg</tt></li>
+  </ul>
+
+<b>Inputs</b>
+
+  <ul>
+    <li><tt>fontmap</tt> points to a <tt>NULL</tt> terminated string holding the file name</li>
+  </ul>
+
+<b>Output</b>
+
+  <ul>
+    <li><tt>fontseg</tt> holds the <tt>FontMap</tt></li>    
+  </ul>
+
+<b>Calls</b>
+
+  <ul>
+    <li>None</li>
+  </ul>
+
+<b>Notes</b>
+
+  <ul>
+    <li>Make sure you ignore the BitMaP Header</li>
+    <li>Use "<tt>SizeOf BMPHeader</tt>" instead of counting bytes</li>
+    <li>Use DOS interrupt calls to <tt>OPEN</tt>, <tt>READ</tt> and <tt>CLOSE</tt> the file</li>
+  </ul>
+
+<b>Points</b>
+
+  <ul>
+    <li><font color = red>+5 points</font></li>
+  </ul>
+
+</ul>
+
+<h4>LoadPalette</h4>
+
+<ul>
+
+<b>Purpose</b>
+
+  <ul>
+    <li>To load the Video Palette</li>
+  </ul>
+
+<b>Inputs</b>
+
+  <ul>
+    <li><tt>file_handle</tt> holds the file handle to the wallpaper</li>
+  </ul>
+
+<b>Output</b>
+
+  <ul>
+    <li>Screen Palette</li>
+  </ul>
+
+<b>Calls</b>
+
+  <ul>
+    <li>None</li>
+  </ul>
+
+<b>Notes</b>
+
+  <ul>
+    <li>Use <tt>bitmapHeader</tt> to temporarily store the BMP File Header</li>
+    <li>Use "<tt>SizeOf BMPHeader</tt>" instead of counting bytes</li>
+    <li>Load the palette via port <tt>3c9h</tt></li>
+    <li>Refer to the lab manual for sample code</li>
+  </ul>
+
+<b>Points</b>
+
+  <ul>
+    <li><font color = red>+3 points</font></li>
+  </ul>
+
+</ul>
+
+<h4>DrawCursor</h4>
+
+<ul>
+
+<b>Purpose</b>
+
+  <ul>
+    <li>To update the cursor every <tt>FOUR</tt> ticks</li>
+  </ul>
+
+<b>Inputs</b>
+
+  <ul>
+    <li><tt>BX</tt> is an index into <tt>text_string</tt></li>
+    <li><tt>cursor</tt> holds the current shape of the cursor</li>
+    <li><tt>blnk</tt> stores the number of ticks since the last check</li>
+  </ul>
+
+<b>Output</b>
+
+  <ul>
+    <li><tt>cursor</tt> alternates between <tt>CLEAR</tt> and <tt>BLOCK</tt></li>
+  </ul>
+
+<b>Calls</b>
+
+  <ul>
+    <li><tt>DrawChar</tt></li>
+  </ul>
+
+<b>Notes</b>
+
+  <ul>
+    <li>Initialize the bank number to <tt>FOUR</tt></li>
+    <li>Use the <tt>MAIN</tt> function as a guide to using <tt>blnk</tt></li>
+    <li>The XOR function can be very helpful over a bunch of comparisions</li>
+    <li>You will not need to worry about switching banks</li>
+  </ul>
+
+<b>Points</b>
+
+  <ul>
+    <li><font color = red>+3 points</font></li>
+  </ul>
+
+</ul>
+
+<h4>TypeText</h4>
+
+<ul>
+
+<b>Purpose</b>
+
+  <ul>
+    <li>To update the text box whenever the user hits a key</li>
+  </ul>
+
+<b>Inputs</b>
+
+  <ul>
+    <li><tt>AL</tt> holds the ASCII value of the character that was pressed</li>
+    <li><tt>BX</tt> is an index into <tt>text_string</tt></li>
+  </ul>
+
+<b>Output</b>
+
+  <ul>
+    <li><tt>BX</tt> is updated to point to the next free location in <tt>text_string</tt></li>
+    <li>On <tt>CR</tt>, a <tt>DATA</tt> message is sent over the network and the text box is cleared</li>
+  </ul>
+
+<b>Calls</b>
+
+  <ul>
+    <li><tt>DrawChar</tt></li>
+    <li><tt>SendPacket</tt></li>
+  </ul>
+
+<b>Notes</b>
+
+  <ul>
+    <li>Initialize the bank number to <tt>FOUR</tt></li>
+    <li>Do not accept more than <tt>TYPE_LEN</tt> characters and use <tt>MSG_COLOR</tt> and <tt>TYPE_POS</tt></li>
+    <li>If the key is a <tt>BS</tt>, handle it properly, making sure <tt>BX</tt> does not drop below <tt>ZERO</tt></li>
+    <li>Do not forget to append the <tt>NULL</tt> character to the string before sending it and reseting <tt>BX</tt></li>
+    <li>You will not need to worry about switching banks</li>
+  </ul>
+
+<b>Points</b>
+
+  <ul>
+    <li><font color = red>+10 points</font></li>
+  </ul>
+
+</ul>
+
+<h4>DrawPanel</h4>
+
+<ul>
+
+<b>Purpose</b>
+
+  <ul>
+    <li>To update the user panel whenever users arrive or leave</li>
+  </ul>
+
+<b>Inputs</b>
+
+  <ul>
+    <li><tt>user_flag</tt> determines the whether someone arrived or left</li>
+    <li><tt>user_list</tt> holds a list of users connected to the network</li>
+  </ul>
+
+<b>Output</b>
+
+  <ul>
+    <li><tt>user_flag</tt> is to indicate that the user panel has been updated</li>
+  </ul>
+
+<b>Calls</b>
+
+  <ul>
+    <li><tt>DrawText</tt></li>
+  </ul>
+
+<b>Notes</b>
+
+  <ul>
+    <li>Initialize the bank number to <tt>ZERO</tt></li>
+    <li>Starting at <tt>USER_POS</tt> clear out the user panel using <tt>blnk_nick</tt></li>
+    <li>Display all <tt>32</tt> entries ignoring those that are <tt>INVALID</tt></li>
+    <li>Display the nicknames such that your own nickname is of a different color from the others, using <tt>my_num</tt></li>
+    <li>Use the constants <tt>NCK_COLOR</tt> and <tt>SLF_COLOR</tt></li>
+    <li>Don't forget to re-initialize the bank number to <tt>ONE</tt> after clearing the panel</li>
+    <li>Use <tt>TEXT_SPC</tt> to space out the nicknames</li>
+    <li>Be careful when incrementing your indices, remembering to switch banks if needed</li>
+  </ul>
+
+<b>Points</b>
+
+  <ul>
+    <li><font color = red>+10 points</font></li>
+  </ul>
+
+</ul>
+
+<h4>DrawWindow</h4>
+
+<ul>
+
+<b>Purpose</b>
+
+  <ul>
+    <li>To update the message window whenever new messages arrive</li>
+  </ul>
+
+<b>Inputs</b>
+
+  <ul>
+    <li><tt>user_flag</tt> determines the whether a new message arrived</li>
+    <li><tt>mesg_indx</tt> points to the oldest message (or the next free slot)</li>
+    <li><tt>mesg_list</tt> holds the messages to be displayed</li>
+  </ul>
+
+<b>Output</b>
+
+  <ul>
+    <li><tt>user_flag</tt> is to indicate that the message window has been updated</li>
+  </ul>
+
+<b>Calls</b>
+
+  <ul>
+    <li><tt>DrawText</tt></li>
+    <li><tt>DrawChar</tt></li>
+  </ul>
+
+<b>Notes</b>
+
+  <ul>
+    <li>Initialize the bank number to <tt>ZERO</tt></li>
+    <li>Starting at <tt>MESG_POS</tt> clear out the message window using <tt>blnk_string</tt></li>
+    <li>Starting from <tt>mesg_indx</tt>, display all <tt>32</tt> entries ignoring those that are <tt>INVALID</tt></li>
+    <li>Display the nicknames such that your own nickname is of a different color from the others, using <tt>my_num</tt></li>
+    <li>Use the constants <tt>NCK_COLOR</tt>, <tt>SEP_COLOR</tt>, <tt>SLF_COLOR</tt> and <tt>MSG_COLOR</tt></li>
+    <li>Don't forget to re-initialize the bank number to <tt>ONE</tt> after clearing the window</li>
+    <li>Use <tt>TEXT_SPC</tt> to space out the messages</li>
+    <li>Be careful when incrementing your indices, remembering to switch banks if needed</li>
+  </ul>
+
+<b>Points</b>
+
+  <ul>
+    <li><font color = red>+10 points</font></li>
+  </ul>
+
+</ul>
+
+<h4>DrawText</h4>
+
+<ul>
+
+<b>Purpose</b>
+
+  <ul>
+    <li>Draws a <tt>NULL</tt> terminated string on the screen at the given location in the given color</li>
+  </ul>
+
+<b>Inputs</b>
+
+  <ul>
+    <li><tt>Text</tt> points to the string to be drawn</li>
+    <li><tt>Color</tt> holds the palette entry for the color in which the string is to be drawn</li>
+    <li><tt>Target</tt> holds the offset in the current segment where the string is to be drawn</li>
+    <li><tt>DX</tt> holds the current bank number</li>
+  </ul>
+
+<b>Output</b>
+
+  <ul>
+    <li>None</li>
+  </ul>
+
+<b>Calls</b>
+
+  <ul>
+    <li><tt>DrawChar</tt></li>
+  </ul>
+
+<b>Notes</b>
+
+  <ul>
+    <li>Run through the entire string until you reach the NULL, calling <tt>DrawChar</tt> for each character</li>
+    <li>Be careful when incrementing your indices, remembering to switch banks if needed</li>
+  </ul>
+
+<b>Points</b>
+
+  <ul>
+    <li><font color = red>+5 points</font></li>
+  </ul>
+
+</ul>
+
+<h4>DrawChar</h4>
+
+<ul>
+
+<b>Purpose</b>
+
+  <ul>
+    <li>Draws the given character on the screen at the given location in the given color</li>
+  </ul>
+
+<b>Inputs</b>
+
+  <ul>
+    <li><tt>Char</tt> holds the ASCII value of the character to be drawn</li>
+    <li><tt>Color</tt> holds the palette entry for the color in which the character is to be drawn</li>
+    <li><tt>Target</tt> holds the offset in the current segment where the character is to be drawn</li>
+    <li><tt>DX</tt> holds the current bank number</li>
+  </ul>
+
+<b>Output</b>
+
+  <ul>
+    <li>On the Screen</li>
+  </ul>
+
+<b>Calls</b>
+
+  <ul>
+    <li>None</li>
+  </ul>
+
+<b>Notes</b>
+
+  <ul>
+    <li>The FontMap is in <tt>fontseg</tt> and is 2048x8 pixels</li>
+    <li>The Screen maps to <tt>VID_SEG</tt></li>
+    <li>Each character is 8x8 pixels</li>
+    <li>For every pixel making up the character (in the FontMap) that has value <tt>DEFAULT</tt>, write <tt>Color</tt> to the display else write <tt>BGROUND</tt></li>
+    <li>Be careful when incrementing your indices, remembering to switch banks if needed</li>
+    <li>Make sure you switch back to the original bank before returning</li>
+  </ul>
+
+<b>Points</b>
+
+  <ul>
+    <li><font color = red>+10 points</font></li>
+  </ul>
+
+</ul>
+
+<h4>NetPost</h4>
+
+<ul>
+
+<b>Purpose</b>
+
+  <ul>
+    <li>Process Incoming Datagrams</li>
+  </ul>
+
+<b>Inputs</b>
+
+  <ul>
+    <li><tt>AX</tt> holds the length of message</li>
+    <li><tt>BX</tt> points to the receive buffer</li>
+  </ul>
+
+<b>Output</b>
+
+  <ul>
+    <li><tt>user_list</tt> is updated for <tt>LOGIN</tt> and <tt>LOGOUT</tt> messages</li>
+    <li><tt>mesg_list</tt> is updated with a new entry</li>
+    <li><tt>mesg_indx</tt> is updated to point to the next entry in <tt>mesg_list</tt></li>
+    <li><tt>user_flag</tt> is set to either <tt>LMSG</tt> or <tt>DMSG</tt></li>
+  </ul>
+
+<b>Calls</b>
+
+  <ul>
+    <li>None</li>
+  </ul>
+
+<b>Notes</b>
+
+  <ul>
+    <li>All packets have <tt>msgType</tt> and <tt>userNum</tt></li>
+    <li>Make sure <tt>userNum</tt> is between <tt>0</tt> and <tt>31</tt></li>
+    <li>Ignore all repeating <tt>LOGIN</tt> messages</li>
+    <li>Do NOT receive <tt>DATA</tt> messages from users before receiving their <tt>LOGIN</tt> messages</li>
+    <li>You will receive messages from yourself</li>
+  </ul>
+
+<b>Points</b>
+
+  <ul>
+    <li><font color = red>+5 points</font></li>
+  </ul>
+
+</ul>
+
+<h4><font color = red>BONUS QUESTION</font></h4>
+
+<h4>DrawBackground</h4>
+
+<ul>
+
+<b>Purpose</b>
+
+  <ul>
+    <li>Load the wallpaper on to the screen</li>
+  </ul>
+
+<b>Inputs</b>
+
+  <ul>
+    <li><tt>background</tt> points to a <tt>NULL</tt> terminated string holding the file name</li>
+  </ul>
+
+<b>Output</b>
+
+  <ul>
+    <li><tt>file_handle</tt> stores the file handle to the background</li>
+    <li>On the Screen</li>
+  </ul>
+
+<b>Calls</b>
+
+  <ul>
+    <li><tt>LoadPalette</tt></li>
+  </ul>
+
+<b>Notes</b>
+
+  <ul>
+    <li>The Video segment is at <tt>VID_SEG</tt></li>
+    <li>Remember our screen has dimensions 640 pixels by 480 pixels</li>
+    <li>Use DOS interrupt calls to <tt>OPEN</tt>, <tt>READ</tt> and <tt>CLOSE</tt> the file</li>
+    <li>Initialize the bank number to <tt>FOUR</tt></li>
+    <li>Because BitMaP files are stored left to right - bottom to top, use <tt>WALL_POS</tt> which is the bottom left corner of the screen</li>
+    <li>You can safely load <tt>128</tt> consecutive bytes from the file without worrying about a bank switch</li>
+    <li>Be careful when incrementing your indices, remembering to switch banks if needed</li>
+  </ul>
+
+<b>Points</b>
+
+  <ul>
+    <li><font color = red>+5 points</font></li>
+  </ul>
+
+</ul>
+
+<h2>Procedure</h2>
+
+<ul>
+  <li>Copy the skeleton code (mp4.asm), libraries (libmp4.lib, lib291.lib, netlib.lib), graphics (bground.bmp, font.bmp), macros.inc and makefile from the network drive to your home directory with the following command:</li>
+  <br><tt>xcopy /s V:\ece291\mp4 W:\mp4</tt><br>
+  or download the same files from the web as <a href = "mp4.zip">mp4.zip</a>
+
+  <li>As with the other MP's, run <tt>nmake</tt> to build an executable program using the given MP4 library functions</li>
+
+  <li>To receive full credit for the assignment, you need to implement each of the subroutines described above with your own code.
+      As given, the MP4.ASM file will run the library versions of those subroutines</li>
+
+  <li>As with the other MP's, use CodeView to debug your program</li>
+</ul>
+
+<h2>Final Steps</h2>
+
+<ol>
+  <li>Print a copy of the <a href = "mp4grade.html">MP4 Grading Report</a>.
+      Double-check that your program is ready for demonstration.
+      Print a copy of MP4.ASM (use GreenPrint32 to print at 4 pages/side)</li>
+ 
+  <li>Demonstrate MP4.EXE to a TA or to the instructor. 
+      Your program must match the LIB Output. 
+      Once approved, you are ready to turn in your program</li>
+
+  <li>Be prepared to answer questions about any aspect of the operation of your program.
+      The TAs will not accept an MP if you cannot fully explain the operation of your code and details of your implementation. 
+      Delayed MPs will be subject to late penalties as described in the course syllabus (10pts/day)</li>
+
+  <li>The TA will then upload a copy of your code on to the web server</li>
+
+  <li>Take your printouts to the same TA who approved your demonstration.
+      Staple the grading sheet to the front of the MP4.ASM printout. 
+      Be sure that your name appears in your code and on the grading sheet</li>
+</ol>
+
+<hr>
+
+<h3>MP4.ASM (Program Framework)</h3>
+
+<font size = -1><pre>
+PAGE    70, 140
+TITLE   MP4 - [eCHAT] - Your Name - Today's Date -
+
+.MODEL LARGE                                                    ; Allow multiple segments
+.486                                                            ; Enable use of 32-bit and 286/386/486 registers
+
+OPTION NOOLDMACROS 
+
+INCLUDE MACROS.INC
+
+COMMENT *
+        In this MP, you will simulate an
+        Internet Relay Chat on NETBIOS
+
+        ECE291 - Machine Problem 4
+        Professor Josh Potts
+        Guest Author - Karan Mehra
+        University of Illinois at Urbana Champaign
+        Dept. of Electrical & Computer Engineering
+        Summer 2000
+
+        Ver 1.0
+        *
+
+;--------------------------------------------------------------
+;--                   Defining  Constants                    --
+;--------------------------------------------------------------
+
+        BELL      EQU    07                                     ; Keyboard ASCII Codes
+        BS        EQU    08                                     ; Back Space
+        LF        EQU    10                                     ; Line Feed
+        CR        EQU    13                                     ; Carriage Return
+        ESCKEY    EQU    27
+
+        NULL      EQU    00                                     ; This acts as a sentinel
+        BLOCK     EQU    22                                     ; This is for the cursor
+        CLEAR     EQU   255                                     ; This is to wipe a spot
+
+        DEFAULT   EQU    07                                     ; Default Palette Entries
+        BGROUND   EQU    00                                     ; This is used with CLEAR
+
+        RED       EQU    04                                     ;
+        GREEN     EQU    02                                     ; Feel free to add
+        BLUE      EQU    09                                     ; more of your own
+        YELLOW    EQU    14                                     ;
+
+        CUR_COLOR EQU    07                                     ; DEFAULT
+        SLF_COLOR EQU    14                                     ; YELLOW
+        NCK_COLOR EQU    09                                     ; BLUE
+        SEP_COLOR EQU    07                                     ; DEFAULT
+        MSG_COLOR EQU    02                                     ; GREEN
+
+        VID_SEG   EQU    0A000h                                 ; This is our Video Segment
+
+        MESG_POS  EQU    640*15+8                               ; These two offsets
+        USER_POS  EQU    640*16-80                              ; are in bank number 0
+
+        WALL_POS  EQU    640*69+256                             ; These two offsets
+        TYPE_POS  EQU    640*40+256+8                           ; are in bank number 4
+
+        TYPE_LEN  EQU    54                                     ; Maximum message length
+                                                                ; [Do not change if using LIB]
+
+        TEXT_SPC  EQU    640*14                                 ; Spacing between lines of text
+
+        public BELL, BS, LF, CR, ESCKEY
+        public NULL, BLOCK, CLEAR
+        public DEFAULT, BGROUND
+        public CUR_COLOR, SLF_COLOR, NCK_COLOR, SEP_COLOR, MSG_COLOR
+        public VID_SEG, MESG_POS, USER_POS, WALL_POS, TYPE_POS
+        public TEXT_SPC
+
+;--------------------------------------------------------------
+;--                Defining  Data Structures                 --
+;--------------------------------------------------------------
+
+        LOGIN     EQU    01
+        DATA      EQU    02
+        LOGOUT    EQU    03
+
+        VALID     EQU    09
+        INVALID   EQU    08
+
+        NMSG      EQU    00                                     ;
+        DMSG      EQU    01                                     ; Do not change these values
+        LMSG      EQU    03                                     ;
+
+        public LOGIN, DATA, LOGOUT
+        public VALID, INVALID
+
+GenericMsg STRUC                                                ; Generic Message Structure
+
+  msgType           db ?                                        ; Packet Type Identifier
+  userNum           db ?                                        ; User that transmitted the message
+
+GenericMsg ENDS
+
+LoginMsg STRUC                                                  ; Login Message Structure
+
+  msgType           db LOGIN
+  userNum           db ?
+  userNick          db 8 dup( ? )
+
+LoginMsg ENDS
+
+DataMsg STRUC                                                   ; Data Message Structure
+
+  msgType           db DATA
+  userNum           db ?
+  userMsg           db TYPE_LEN dup( ? )
+
+DataMsg ENDS
+
+LogoutMsg STRUC                                                 ; Logout Message Structure
+
+  msgType           db LOGOUT
+  userNum           db ?
+
+LogoutMsg ENDS
+
+UserInfo STRUC                                                  ; User Information Structure
+
+  userFlag          db INVALID
+  userNick          db 8 dup( CLEAR ), NULL
+
+UserInfo ENDS
+
+UserMesg STRUC                                                  ; User Message Structure
+
+  usrFlag           db INVALID
+  usrNmbr           db ?
+  usrNick           db 8 dup( CLEAR ), NULL
+  usrMesg           db TYPE_LEN dup( CLEAR ), NULL
+
+UserMesg ENDS
+
+BMPHeader STRUC
+
+  BFType            db 'BM'                                     ; File Type
+  BFSize            dd ?
+  BFReserved1       dw 0
+  BFReserved2       dw 0
+  BFOffBits         dd ?                                        ; Offset to start of image data 
+
+  BISize            dd ?
+  BIWidth           dd ?
+  BIHeight          dd ?
+  BIPlanes          dw 1                                        ; 
+  BIBitCount        dw ?                                        ; Refer to Prof. Lockwood's
+  BICompression     dd 0                                        ; notes -[Lecture 22]- for a 
+  BISizeImage       dd ?                                        ; detailed description on the
+  BIXPelsPerMeter   dd ?                                        ; bitmap file header
+  BIYPelsPerMeter   dd ?                                        ;
+  BIColorsUsed      dd 0
+  BIColorsImportant dd 0
+
+  RGBQuad           db 256 dup( 4 dup( ? ) )                    ; Blue, Green, Red, Unused
+
+BMPHeader ENDS
+
+;--------------------------------------------------------------
+;--               Declaring External Procedures              --
+;--------------------------------------------------------------
+
+;       Functions in LIB291.LIB These functions are free to 
+;       be used by you. Complete descriptions of the LIB291
+;       functions can be found in your lab manuals. Use these
+;       functions for displaying output on the screen
+
+        extrn dspmsg:near, dspout:near, ascbin:near
+        extrn rrest:near, rsave:near, binasc:near, kbdin:near
+
+;       Functions in NETLIB.LIB
+;       You will need these wrapper functions for network
+
+        extrn NetInit:near, SendPacket:near, NetRelease:near
+        extrn TXBuffer:byte, RXBuffer:byte
+
+;       Functions in LIBMP4.LIB
+;       You will need to write these functions for this MP
+
+        extrn libGetNickname:near, libSetVideoMode:near, libResetVideoMode:near
+        extrn libLoadFontMap:near, libDrawBackground:near, libLoadPalette:near
+        extrn libDrawCursor:near, libTypeText:near, libDrawPanel:near, libDrawWindow:near
+        extrn libNetPost:near
+
+        libDrawText PROTO near C Text:word, Color:byte, Target:word
+        libDrawChar PROTO near C Char:byte, Color:byte, Target:word
+
+;       This function terminates the program
+
+        extrn mp4xit:near
+
+;--------------------------------------------------------------
+;--                 Defining the Font Segment                --
+;--------------------------------------------------------------
+
+fontseg SEGMENT PUBLIC 'FONT'
+        db  2048 dup( '12345678' )
+fontseg ENDS
+
+;--------------------------------------------------------------
+;--                Defining the Stack Segment                --
+;--------------------------------------------------------------
+
+stkseg SEGMENT stack
+        db  64 dup( '-STACK- ' )
+stkseg ENDS
+
+;--------------------------------------------------------------
+;--                 Defining the Code Segment                --
+;--------------------------------------------------------------
+
+cseg SEGMENT PUBLIC 'CODE'
+        assume cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;--------------------------------------------------------------
+;--           Declaring variables for the Procedures         --
+;--------------------------------------------------------------
+
+grp_name        db 'ECE291 CHAT $$$$'                           ; Set this name for your own use
+                                                                ; but keep string length to 16
+
+my_name         db 'ECE291 CHAT 00$$'                           ; Set this name for your own use
+                                                                ; but keep string length to 16
+                                                                ; and location of 00 unchanged
+my_num          db ?
+
+my_nick         db 8 dup( CLEAR ), NULL
+blnk_nick       db 8 dup( CLEAR ), NULL
+
+user_flag       db NMSG                                         ; Indicates the type of datagram received
+user_list       UserInfo 32 dup( <> )                           ; List of active users
+
+time            dw 0                                            ; Used only in Main()
+
+cursor          db CLEAR                                        ; These two variables are
+blnk            dw 0                                            ; for the cursor
+
+bitmapHeader    BMPHeader <>
+
+fontmap         db 'font.bmp', NULL                             ; This file holds our font
+
+background      db 'bground.bmp', NULL
+file_handle     dw ?
+
+mesg_list       UserMesg 30 dup( <> )                           ; Circular queue of 30 messages
+mesg_indx       dw 0                                            ; Points to the next available slot
+
+text_string     db 64 dup( CLEAR ), NULL                        ; This will fill as we type
+blnk_string     db 64 dup( CLEAR ), NULL                        ; This won't :)
+
+login_string    db 17, ' JOIN ', 16, NULL
+
+logout_string   db 17, ' EXIT ', 16, NULL
+
+nick_string     db CR, LF, 'Please enter a nickname [5-8 characters]? ', '$'
+
+vesa_error_str  db CR, LF, 'This program requires a 640x480x256 VESA video mode', CR, LF, LF, LF, '$'
+
+public grp_name, my_name
+public my_num, my_nick, blnk_nick, user_flag, user_list, cursor, blnk
+public bitmapHeader, fontmap, background, file_handle, mesg_list, mesg_indx
+public text_string, blnk_string, login_string, logout_string, nick_string, vesa_error_str
+public LoadPalette, NetPost
+
+DrawText PROTO near C Text:word, Color:byte, Target:word
+DrawChar PROTO near C Char:byte, Color:byte, Target:word
+
+;--------------------------------------------------------------
+;--                       Main Procedure                     --
+;--------------------------------------------------------------
+
+MAIN PROC FAR
+        mov     ax, cseg
+        mov     ds, ax                                          ; Initialize ds to cs
+
+        GetTime
+        sub     ax, 18*2
+        mov     time, ax
+        mov     blnk, ax
+
+        call    NetRelease
+        call    NetInit                                         ; Initialize the network
+
+        mov     my_num, al
+
+        call    GetNickname                                     ; Get ourselves a nickname
+        jc      mainExit
+
+        call    SetVideoMode                                    ; Set video mode to 640x480x256 VESA
+        jc      mainExit
+
+        call    LoadFontMap
+
+        call    DrawBackground
+
+        xor     bx, bx                                          ; This will be an offset within text_string
+
+mainLoop:
+        call    DrawCursor
+        call    DrawWindow
+        call    DrawPanel
+
+        GetTime
+        sub     ax, time
+        cmp     ax, 18*2
+        jb      mainNoMsg
+
+        mov     (LoginMsg PTR TXBuffer).msgType, LOGIN          ; Send a LOGIN message to the network
+        movmb   (LoginMsg PTR TXBuffer).userNum, my_num         ; periodically every 2 seconds
+        strcpy  (LoginMsg PTR TXBuffer).userNick, my_nick, 8
+
+        mov     ax, SizeOf LoginMsg
+        call    SendPacket
+
+        GetTime
+        mov     time, ax
+
+mainNoMsg:
+        mov     ah, 1
+        int     16h
+        jz      mainLoop        
+
+        call    kbdin
+
+        cmp     al, ESCKEY
+        je      mainDone
+
+        call    TypeText                                        ; Uses al and modifies bx
+
+        jmp     mainLoop
+
+mainDone:
+        call    ResetVideoMode
+
+        mov     (LogoutMsg PTR TXBuffer).msgType, LOGOUT        ; Send a LOGOUT message to the network
+        movmb   (LogoutMsg PTR TXBuffer).userNum, my_num
+
+        mov     ax, SizeOf LogoutMsg
+        call    SendPacket
+
+mainExit:
+        call    NetRelease
+        call    mp4xit
+
+MAIN ENDP
+
+;--------------------------------------------------------------
+;--             Replace Library Calls with your Code!        --
+;--             [Save all reg values that you modify]        --
+;--             Do not forget to add Function Headers        --
+;--------------------------------------------------------------
+
+;--------------------------------------------------------------
+;--                        GetNickname()                     --
+;--------------------------------------------------------------
+
+GetNickname PROC NEAR
+
+        call    libGetNickname
+        ret
+
+GetNickname ENDP
+
+;--------------------------------------------------------------
+;--                       SetVideoMode()                     --
+;--------------------------------------------------------------
+
+SetVideoMode PROC NEAR
+
+        call    libSetVideoMode
+        ret
+
+SetVideoMode ENDP
+
+;--------------------------------------------------------------
+;--                      ResetVideoMode()                    --
+;--------------------------------------------------------------
+
+ResetVideoMode PROC NEAR
+
+        call    libResetVideoMode
+        ret
+
+ResetVideoMode ENDP
+
+;--------------------------------------------------------------
+;--                        LoadFontMap()                     --
+;--------------------------------------------------------------
+
+LoadFontMap PROC NEAR
+
+        call    libLoadFontMap
+        ret
+
+LoadFontMap ENDP
+
+;--------------------------------------------------------------
+;--                      DrawBackground()                    --
+;--------------------------------------------------------------
+
+DrawBackground PROC NEAR
+
+        call    libDrawBackground
+        ret
+
+DrawBackground ENDP
+
+;--------------------------------------------------------------
+;--                        LoadPalette()                     --
+;--------------------------------------------------------------
+
+LoadPalette PROC NEAR
+
+        call    libLoadPalette
+        ret
+
+LoadPalette ENDP
+
+;--------------------------------------------------------------
+;--                      DrawCursor()                        --
+;--------------------------------------------------------------
+
+DrawCursor PROC NEAR
+
+        call    libDrawCursor
+        ret
+
+DrawCursor ENDP
+
+;--------------------------------------------------------------
+;--                        TypeText()                        --
+;--------------------------------------------------------------
+
+TypeText PROC NEAR
+
+        call    libTypeText
+        ret
+
+TypeText ENDP
+
+;--------------------------------------------------------------
+;--                        DrawPanel()                       --
+;--------------------------------------------------------------
+
+DrawPanel PROC NEAR
+
+        call    libDrawPanel
+        ret
+
+DrawPanel ENDP
+
+;--------------------------------------------------------------
+;--                       DrawWindow()                       --
+;--------------------------------------------------------------
+
+DrawWindow PROC NEAR
+
+        call    libDrawWindow
+        ret
+
+DrawWindow ENDP
+
+;--------------------------------------------------------------
+;--                         DrawText()                       --
+;--------------------------------------------------------------
+
+DrawText PROC NEAR C Text:word, Color:byte, Target:word
+
+        invoke  libDrawText, Text, Color, Target
+        ret
+
+DrawText ENDP
+
+;--------------------------------------------------------------
+;--                         DrawChar()                       --
+;--------------------------------------------------------------
+
+DrawChar PROC NEAR C Char:byte, Color:byte, Target:word
+
+        invoke  libDrawChar, Char, Color, Target
+        ret
+
+DrawChar ENDP
+
+;--------------------------------------------------------------
+;--                          NetPost()                       --
+;--                                                          --
+;-- bx = Pointer to the receive buffer                       --
+;-- ax = Length of message                                   --
+;--------------------------------------------------------------
+
+NetPost PROC NEAR
+
+        call    libNetPost
+        ret
+
+NetPost ENDP
+
+CSEG ENDS
+     END    MAIN
+</pre></font>
+
+</body>
+
+</html>

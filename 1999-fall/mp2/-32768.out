@@ -1,0 +1,16 @@
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+-32768
+Verifying and parsing the string...
+Ä32768
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+
+
+LIBMP2 Ver 1.0 Calls
+-LibInput
+-LibCheckParens
+-LibParse
+-LibCheckDone

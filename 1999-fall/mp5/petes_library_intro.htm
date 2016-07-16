@@ -1,0 +1,357 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>Pete's Library Intro</title>
+</head>
+
+<body>
+
+<P><font size="+2"><u><a name="How to Do this MP">Pete's Library Intro</a></u></font></P>
+<p>Pete Johnson write a library of useful protected mode stuff.&nbsp; He was a
+student in 291 last semester and he want to be a TA next semester.&nbsp; He's a
+good guy.&nbsp; If you have any issues with the library (stuff doesn't work or
+could be made better/clearer) e-mail him at <a href="mailto:(pljohnsn@ews.uiuc.edu">pljohnsn@ews.uiuc.edu</a></p>
+<p><font size="+2"><u><a name="How to Do this MP">Pete's Proc and Invoke Macros</a></u></font></p>
+<p>NASM has very sparse, very clean, very simple syntax.&nbsp; You want to make
+a procedure, you don't bother with all that proc and endp crap that you have to
+do in MASM which maks 291 students think there is something mysterious going
+on.&nbsp; You just give it a label, and call the label.&nbsp; A call pushes the
+return address, and a ret pops it off and jumps to it.&nbsp; That's all that's
+going on in MASM anyway, so why not just do it yourself, right?&nbsp; The NASM
+way:</p>
+<table border="1">
+  <tr>
+    <td width="100%"><samp>_main:<br>
+      &nbsp;&nbsp;&nbsp; mov&nbsp;&nbsp; eax,&nbsp;&nbsp; 3<br>
+      &nbsp;&nbsp;&nbsp; mov&nbsp;&nbsp; ebx,&nbsp;&nbsp; 5<br>
+      &nbsp;&nbsp;&nbsp; call&nbsp; </samp><samp>_Add_Two_Things</samp><samp><br>
+      &nbsp;&nbsp;&nbsp; ; Result in eax<br>
+      &nbsp;&nbsp;&nbsp; ret<br>
+      <br>
+      </samp><samp>_Add_Two_Things</samp><samp>:&nbsp; ; Into eax<br>
+      &nbsp;&nbsp;&nbsp; add&nbsp;&nbsp; eax,&nbsp;&nbsp; ebx<br>
+      &nbsp;&nbsp;&nbsp; ret</samp></td>
+  </tr>
+</table>
+<p>This is fine, but if you're going to do a lot of functions, it would be nice
+to have a standard way of passing around parameters and return values and
+stuff.&nbsp; Hey, C has a standard way of doing this, so why don't we just use
+the C-style procedures you learned about?&nbsp; Not only does this make things
+consistent and standard, but you can call your assembly from C without a
+problem.&nbsp; C dictates</p>
+<ul>
+  <li>Parameters passed on stack in reverse order before the call is made</li>
+  <li>Parameters are accessed through [BP + constant]</li>
+  <li>Return Values go in EAX, AX, or AL depending on their size</li>
+  <li>Any of the general purpose registers can be destroyed in a C-Function.
+    <ul>
+      <li>Don't bother preserving them when you write your functions</li>
+      <li>Don't expect them to be preserved when you invoke functions.</li>
+    </ul>
+  </li>
+  <li>All other registers must be preserved in a C-Function.</li>
+</ul>
+<p>This is exactly what Pete did in his library, and to enforce this consistency
+and make things simple, he made a bunch of NASM macros so you can do stuff like
+this:</p>
+<table border="1">
+  <tr>
+    <td width="100%"><samp>BITS 32 ; Tell NASM we're using 32-bit protected mode.<br>
+      <br>
+      GLOBAL _main ; Tells the linker about the label called _main<br>
+      <br>
+      <b>%include "myC32.mac"</b><br>
+      <br>
+      SECTION .text ; Says that this is the start of the code section.<br>
+      <br>
+      _</samp><samp>main:<br>
+      &nbsp;&nbsp;&nbsp; mov&nbsp;&nbsp; eax,&nbsp;&nbsp; 3<br>
+      &nbsp;&nbsp;&nbsp; mov&nbsp;&nbsp; ebx,&nbsp;&nbsp; 5<br>
+      &nbsp;&nbsp;&nbsp; <b>invoke</b> _Add_Two_Things, dword eax, dword ebx<br>
+      </samp><samp>&nbsp;&nbsp;&nbsp; ; Result in eax</samp><samp><br>
+      &nbsp;&nbsp;&nbsp; ret</samp><samp><br>
+      <br>
+      <b>proc</b> </samp><samp>_Add_Two_Things</samp><samp><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; %$First_Thing&nbsp;&nbsp; <b>ar</b><b>g</b>&nbsp;&nbsp;&nbsp;
+      4&nbsp;&nbsp;&nbsp; ; Both Double Word Arguments (4 bytes)<br>
+      &nbsp;&nbsp;&nbsp; %$Second_Thing&nbsp; <b>a</b><b>rg</b>&nbsp;&nbsp;&nbsp;
+      4<br>
+      &nbsp;&nbsp;&nbsp;</samp><samp> _Add_Two_Things_arglen&nbsp;&nbsp; equ&nbsp;&nbsp;
+      8&nbsp; ; Total bytes of arg<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; mov&nbsp;&nbsp; eax, [ebp + %$First_Thing]<br>
+      &nbsp;&nbsp;&nbsp; add&nbsp;&nbsp; eax, [ebp + %$Second_Thing]<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; ; There is no ret, because endproc does<br>
+      &nbsp;&nbsp;&nbsp; ; stack stuff before doing ret itself.<br>
+      <br>
+      <b>endproc</b></samp></td>
+  </tr>
+</table>
+<p><font size="+2"><u><a name="How to Do this MP">Task 10:&nbsp; Simple Proc / Invoke
+Example</a></u></font></p>
+<ul>
+  <li>Make a new <b><samp>invoke.asm</samp></b> file with this example in it.</li>
+  <li>Copy the <b><samp>include</samp></b> and <b><samp>lib</samp></b>
+    directories from the <a href="pmode_tutorial.zip">pmode_tutorial.zip</a>
+    file or the V:\tutorial folder.</li>
+  <li>Look at the <samp><b>myC32.mac</b></samp> file in the <b><samp>include</samp></b>
+    directory to see Pete's NASM macros.</li>
+  <li>Add <b><samp>invoke.exe</samp>&nbsp;</b> to the <b><samp>all:</samp></b>
+    rule of your now-generalized Makefile</li>
+  <li>Note that the <samp><b>-iinclude/</b></samp> on the <b><samp>nasm</samp></b>
+    line of your Makefile tells it to look in the <b><samp>include</samp></b>
+    directory in addition to the directory the file is in when you do <samp><b>%include "myC32.mac".</b></samp></li>
+  <li>Make it.</li>
+  <li><b><samp>cv32</samp></b> it and see exactly what code the macros actually
+    generated.&nbsp; (Alt-H tells us that F8 goes to the next line, where F7
+    will go into the call.)</li>
+</ul>
+<p>For future reference:&nbsp; (Because the MACROs are hard to read)</p>
+<p><i><b>invoke</b></i></p>
+<ul>
+  <li><b>Push arguments</b> onto the stack (This decrements SP by the total
+    length of the arguments.)</li>
+  <li><b>Call</b> the procedure.
+    <ul>
+      <li><b>Push return address</b> on the stack</li>
+      <li><b>Jump</b> to the procedure</li>
+    </ul>
+  </li>
+  <li><b>Sub ESP,&nbsp; total length of arguments</b> to restore the stack to
+    where it was before.</li>
+</ul>
+<p><i><b>proc</b></i></p>
+<ul>
+  <li><b>Push EBP</b> to save it's value</li>
+  <li><b>Mov EBP, ESP</b> so we have a reference to get the arguments</li>
+</ul>
+<p><i><b>arg</b></i></p>
+<ul>
+  <li>Defines the <b><samp>%$First_Thing </samp></b>as a constant representing
+    the offset from EBP that this argument was at.&nbsp; That is why they are
+    used by referencing <samp><b>[EBP + %$First_Thing]</b></samp> in the code.</li>
+</ul>
+<p><i><b>endproc</b></i></p>
+<ul>
+  <li><b>Mov ESP, EBP</b> to restore the stack pointer to what it was when we
+    entered.</li>
+  <li><b>Pop EBP</b> to restore it's value to the value the previous procedure
+    was using for <i>its</i> arguments.</li>
+  <li><b>Ret</b> to return to the procedure that called us.</li>
+</ul>
+<p>Remember that these things are just MACROs.&nbsp; They're not magic.&nbsp;
+You have to understand how they work if you're going to use them.&nbsp; If
+nothing else, assembly programming is supposed to teach you that the &quot;Black
+Boxes&quot; they talk about&nbsp; in your CS classes don't exist.&nbsp;
+(Although making your procedures <i>modular</i> is still good practice.)&nbsp;</p>
+<p><font size="+2"><u><a name="How to Do this MP">Task 11:&nbsp; Random Number Generator</a></u></font></p>
+<p>We need to draw random lines and random dots for the cool graphics stuff
+later on.&nbsp; Let's write some C-Style procedures for this.&nbsp; The simplest
+formula for an iterative random number generator is <b><samp>rand_val = (rand_val * P1
+        + P2)%RAND_MAX</samp></b></p>
+<ul>
+  <li>Define a constants called <samp><b>RAND_MAX, P1, </b></samp>and<samp><b>
+    P2</b></samp> as&nbsp; your constants.
+    <ul>
+      <li><b><samp>RAND_MAX = 2147483647</samp></b> I've heard is a good one.</li>
+      <li> <b><samp>P1 = 1103515245</samp></b>&nbsp;&nbsp; also came from the
+        GCC standard library's source code.</li>
+      <li> <b><samp>P2 = 12345</samp></b>&nbsp;&nbsp; which is why open source
+        is the best thing since sliced bread.</li>
+    </ul>
+  </li>
+  <li>Define a 32-bit &quot;global variable&quot; called <b><samp>rand_val</samp></b>
+    in the uninitialized section (.bss) for the &quot;current random
+    value.&quot;</li>
+  <li>Define a C-Style function to seed the generator:&nbsp; <b><samp>void
+    srand(int seed)</samp></b> which simply copies seed into rand_val.&nbsp; (C
+    does this to hide the global variables.)&nbsp;</li>
+  <li>Write a procedure to seed the generator with the current DOS time:&nbsp; <b><samp>void
+    seed_time()</samp></b>
+    <ul>
+      <li>This should invoke srand with some combination of the information returned
+    by the DOS Get Time function you worked with earlier.</li>
+      <li>DOS's Get Time returns four 1-byte pieces of information.&nbsp; If you
+        just put them all next to each other in one 32-bit register, you'll get
+        a value that's different every millisecond.</li>
+    </ul>
+  </li>
+  <li>Define a C-Style function which updates <b><samp>rand_val</samp></b>
+    and returns the updated value:&nbsp;&nbsp; <b><samp>int rand(void)</samp></b>
+    <ul>
+      <li>Use the Pseudorandom formula:&nbsp; <b><samp>rand_val = (rand_val * P1
+        + P2)%RAND_MAX</samp></b></li>
+      <li>Note that 32-bit multipication on modern Intel processors is <i>much</i>
+        nicer than before.&nbsp; Look in the NASM Help file on the V: drive, for
+        example.&nbsp; It has a pretty good opcode reference section.</li>
+    </ul>
+  </li>
+  <li>To &quot;test&quot; it, call it in a loop which writes to a string of
+    ~80*20 random letters from 'a' through 'z'.
+    <ul>
+      <li>To use the value returned by rand, you mod it with the number of items
+        (in this case 26) and add on the minimum value (in this case 'a').</li>
+      <li>This loop will eventually go in your KeyJumpTable file to demonstrate
+        to the TAs upon handin.</li>
+      <li>If you seed it properly with the time and have implemented your <b>rand</b>
+        properly, every time you run the program, you'll get a different screen
+        full of letters.</li>
+    </ul>
+  </li>
+</ul>
+<p><font size="+2"><u><a name="How to Do this MP">File Handling Routines</a></u></font></p>
+<p>Reading files is very important. What do you guys know about reading in
+files?&nbsp; Well, you blindly copied LoadPCX from the lab manual, so here
+you're going to learn to do it right.&nbsp; File copying is something you definitely
+call library functions for, so we'll use Pete's file routines.&nbsp; Basic
+operations on a file:&nbsp; Open, Read, Write, Close.&nbsp; Not too hard.&nbsp;
+We won't be doing any writing, so I'll only talk about the first three.</p>
+<p>Look at Pete's <b><samp>Filefunc.asm</samp></b> file.&nbsp; There he defines
+the file handling routines as C-style, invokable procedures.&nbsp; Look at the <a href="file:///W:/tutorial_writeup/library_function_reference.html">Library
+Function Reference</a>:</p>
+<table border="1" width="100%">
+  <tr>
+    <td width="100%">
+      <p align="center"><b><samp>OpenFile</samp></b></p>
+      <p align="left"><samp><br>
+      int OpenFile(char *Filename, short LenFilename, short WriteTo);<br>
+      &nbsp;&nbsp; Purpose: Opens a file for reading or writing.<br>
+      &nbsp;&nbsp; Inputs:  Filename, (path)name of the file to read<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LenFilename, length of Filename string (in bytes)<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; WriteTo, 1 if create &amp; open for writing, 0 for open to read<br>
+      &nbsp;&nbsp; Outputs: DOS handle to file&nbsp; (-1 if error)</samp></td>
+  </tr>
+  <tr>
+    <td width="100%">
+      <p align="center"><b><samp>ReadFile</samp></b></p>
+      <p><samp> int ReadFile(int Handle, short BufSeg, void *Buffer, unsigned int Count);<br>
+      &nbsp;&nbsp; Purpose: Reads from a file.<br>
+      &nbsp;&nbsp; Inputs:  Handle, DOS handle of the file to read from<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; BufSeg, selector in which Buffer resides<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          Buffer, pointer (into BufSeg) of buffer to read into<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;          Count, number of bytes to read into buffer<br>
+      &nbsp;&nbsp; Outputs: Number of bytes actually read</samp></td>
+  </tr>
+  <tr>
+    <td width="100%">
+      <p align="center"><b><samp>CloseFile</samp></b></p>
+      <p><samp> void CloseFile(int Handle);<br>
+      &nbsp;&nbsp; Purpose: Closes an open file.<br>
+      &nbsp;&nbsp; Inputs:  Handle, DOS handle of the file to close.<br>
+      &nbsp;&nbsp; Outputs: None</samp></td>
+  </tr>
+</table>
+<p><font size="+2"><u><a name="How to Do this MP">Task 12:&nbsp; Building and
+Linking the Library</a></u></font></p>
+<p>To build a library, you run &quot;<b><samp>ar -rc libname.a object1.o
+object2.0</samp></b>&quot; Which &quot;archives&quot; a bunch of .o files
+together.&nbsp; Then you just link the library into your .exe like the rest of
+the .o files. If you haven't already done so, copy over the lib directory into
+your tutorial directory.</p>
+<ul>
+  <li>Add the line in your Makefile to build the <b><samp>lib291.a</samp></b>
+    library from the lib/*.o files.</li>
+  <li>Add <b><samp>lib291.a</samp></b> to your <b>ld </b>line so it gets linked
+    into to all of your applications.</li>
+  <li>Update all the dependencies, including adding <b><samp>lib291.a</samp></b>
+    first in the <b><samp>all:</samp></b> so it gets made before all the .exe
+    files..</li>
+</ul>
+<p>Too vague?&nbsp; Basically, make your Makefile look like this:&nbsp; (But do
+it yourself so you learn about all-important Makefiles.)</p>
+<table border="1" width="100%">
+  <tr>
+    <td width="100%"><samp>all: lib291.a variable.exe interrupt.exe invoke.exe<br>
+      <br>
+      clean:<br>
+      &nbsp;&nbsp;&nbsp;&nbsp; rm -f *.o *.exe *.lst *.map *.a<br>
+      <br>
+      lib291.a: lib/myloader.o lib/vesa.o lib/textmode.o lib/fileload.o lib/filefunc.o lib/dpmi_int.o lib/dpmi_mem.o<br>
+      &nbsp;&nbsp;&nbsp;&nbsp; ar -rc lib291.a lib/myloader.o lib/vesa.o lib/textmode.o lib/fileload.o lib/filefunc.o lib/dpmi_int.o lib/dpmi_mem.o<br>
+      <br>
+      %.exe: %.o<br>
+      &nbsp;&nbsp;&nbsp;&nbsp; ld -o $* --cref -Map $*.map $(DJDIR)/lib/crt0.o $*.o lib291.a -L$(DJDIR)/lib -L$(DJDIR)/lib/gcc-lib/djgpp/2.81 -L$(DJDIR)/bin -Tdjgpp.djl -lgcc -lc -lgcc<br>
+      &nbsp;&nbsp;&nbsp;&nbsp; stubify $*<br>
+      <br>
+      %.o: %.asm<br>
+      &nbsp;&nbsp;&nbsp;&nbsp; nasm -f coff -iinclude/ $&lt; -l $*.lst</samp></td>
+  </tr>
+</table>
+<p><font size="+2"><u><a name="How to Do this MP">Task 13:&nbsp; Read a Text File</a></u></font></p>
+<p>Another little thing to add to the list off stuff you can now do in protected
+mode:</p>
+
+<ul>
+  <li>Make a new text file called &quot;<b><samp>readme.txt</samp></b>&quot; in
+    your directory.</li>
+  <li>Write some random (funny) stuff in it.</li>
+  <li><b><samp>%include "lib291.inc"</samp></b> instead of &quot;<b><samp>myC32.mac</samp></b>&quot;
+    because <b><samp>lib291.inc</samp></b> just includes all the other include
+    files for all the library functions in addition to the proc/invoke macros.</li>
+  <li>Get rid of your <b><samp>DPMI_Regs</samp></b> definition because it's
+    defined in the library include files.</li>
+  <li>Change your name from <b><samp>_main</samp></b> to <b><samp>_mymain</samp></b>
+    because the library already defines a <b><samp>_main</samp></b> which does
+    it's initialization code before calling <b><samp>_mymain</samp></b></li>
+  <li>Change &quot;<b><samp>GLOBAL _mymain</samp></b>&quot; to &quot;<b><samp>GLOBAL _mymain</samp></b>&quot;
+    after the &quot;<b><samp>BITS 32</samp></b>&quot; at the top to make this
+    name public so that the library can be linked to it.</li>
+  <li>Create a variable called <b><samp>text_file_name</samp></b> as a
+    null-terminated C-style string.&nbsp; (Last character is byte 0, not ASCII
+    zero.)</li>
+  <li>Define a constant called <b><samp>text_file_name_len</samp></b> using
+    &quot;<b><samp>str_len equ $-str_name</samp></b>&quot; trick with the $ from
+    before.</li>
+</ul>
+<p>Make another KeyJumpTable entry for this functionality which just calls a
+procedure for printing out the file.&nbsp; When you call routines, be very
+careful about the length of the arguments because the macros do no type
+checking.&nbsp; In that procedure:</p>
+<ul>
+  <li>Open the file by invoking <b><samp>_OpenFile</samp></b> with the obvious
+    parameters.
+    <ul>
+      <li>C's char is NASM's byte</li>
+      <li>C's short is NASM's word</li>
+      <li>C's int is NASM's dword</li>
+      <li>C's pointers (like for the file name) are addresses, which in 32-bit
+        mode, are dwords.</li>
+    </ul>
+  </li>
+  <li>Read the file directly into the DOS Buffer for easy printing by invoking <b><samp>_ReadFile</samp></b>
+    with:
+    <ul>
+      <li>Handle = the filehandle that <b>_OpenFile</b> returned in eax.</li>
+      <li>BufSeg = the selector of your DOS Buffer that you got from the DPMI
+        call.</li>
+      <li><b>Buffer</b> = 0h, since you want to write to the beginning of the
+        buffer.</li>
+      <li>Count = The length of your buffer minus three (since we still need to
+        add the CR, LF, and '$' so it doesn't print forever.)</li>
+    </ul>
+  </li>
+  <li><b><samp>_ReadFile</samp></b> will return the number of bytes it actually
+    read in eax.&nbsp; Put a CR, LF, and '$' in the Buffer starting at this
+    offset.
+    <ul>
+      <li>If the file was bigger than the buffer, it will only read up to one
+        before the end of the buffer because that's the count we gave it.</li>
+      <li>If it's smaller, it will read until the end of the file.</li>
+    </ul>
+  </li>
+  <li>Display the buffer using the now familiar code <i>or</i> the library code
+    for invoking interrupts <i>or</i> the library code for displaying strings.</li>
+  <li>Invoke <b><samp>_CloseFile</samp></b> with the filehandle returned by <b><samp>_OpenFile</samp></b>
+  </li>
+</ul>
+<p>Make it, run it, and trace through the library code once to see what it's
+doing.</p>
+
+</body>
+
+</html>

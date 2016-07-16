@@ -1,0 +1,295 @@
+<HTML>
+<HEAD>
+   <TITLE>ECE291 Machine Problem 1</TITLE>
+</HEAD>
+<BODY>
+
+<TABLE CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TD align=left   width=33%>ECE291</TD>
+
+<TD align=center width=34%>Computer Engineering II</TD>
+
+<TD align=right  width=33%>Polychronopolous, Spring 2000</TD>
+</TR>
+</TABLE>
+
+<H1 ALIGN=CENTER>Machine Problem 2: Grading Report</H1>
+
+<CENTER><P><I><FONT SIZE=-1>Please print this page and provide it to the
+TA when you demonstrate your machine problem. <BR>
+This page should be stapled to the front of your MP2 assignment. </FONT></I></P></CENTER>
+
+<CENTER><P><FORM></CENTER>
+
+<CENTER><TABLE CELLPADDING=7 >
+<TR>
+<TD>
+<TABLE>
+<TR>
+<TD align=right>Name: </TD>
+
+<TD><INPUT name="name" size=30></TD>
+</TR>
+
+<TR>
+<TD align=right>Date Submitted: </TD>
+
+<TD><INPUT name="submitted" size=20></TD>
+</TR>
+
+<TR>
+<TD align=right>Demo To: </TD>
+
+<TD><INPUT name="demoto" size=6>Graded By: <INPUT name="gradedby" size=6></TD>
+</TR>
+</TABLE>
+</TD>
+
+<TD>
+<TABLE BORDER=1 >
+<TR>
+<TD><INPUT type=checkbox name="gradebook">Hand-in to floppy </TD>
+</TR>
+
+<TR>
+<TD><INPUT type=checkbox name="gradebook">Score recorded </TD>
+</TR>
+
+<TR>
+<TD><INPUT type=checkbox name="gold_star">Gold Star<BR>
+<I>Programming Excellence&nbsp;</I></TD>
+</TR>
+</TABLE>
+</TD>
+</TR>
+</TABLE></CENTER>
+
+<P align="center"><b>PICTURE TIME!&nbsp; You will not be credited for your work
+on MP2 until we get a picture of you.&nbsp;</b></P>
+
+<P align="center"><b>Say Cheese!</b></P>
+
+<P align="center">&nbsp;</P>
+
+</FORM>
+
+<TABLE BORDER=1 CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TH>Category</TH>
+
+<TH>Points</TH>
+
+<TH>Min</TH>
+
+<TH>Max</TH>
+</TR>
+
+<TR>
+<TD><B>TakeInput</B> 
+<UL>
+<LI>Takes user input.</LI>
+<LI>Accepts back space.</LI>
+<LI>Doesn't overflow or underflow the input buffer.</LI>
+<li>Terminates on &lt;ESC>.</li>
+<li>Terminates user input on carriage return.</li>
+<li>Places a '$' at the end of the string.</li>
+</UL>
+  &nbsp;
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>8</TD>
+</TR>
+
+<TR>
+<TD><B>GetArray</B> 
+<UL>
+<LI>Copies the user-input characters into <tt>list</tt> starting from index <tt>1.</tt></LI>
+<LI>Sets <tt>list_size</tt> accordingly.</LI>
+<LI>Ignore all spaces.&nbsp;</LI>
+<LI>The string ends with '$'.</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>6</TD>
+</TR>
+
+<TR>
+<TD><B>Percolate</B> 
+<UL>
+<LI>Performs a percolate down- used both to form a heap and re-heapify the heap
+  after each element is pulled off following the guidelines illustrated in the
+  pseudo-code.</LI>
+<li>Not to be confused with PERCHLORATE.
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>9</TD>
+</TR>
+
+<TR>
+<TD><B>SortHeap</B> 
+<UL>
+<LI>First, iterate backwards through your array to perform a BuildHeap
+  operation.&nbsp;
+<LI>Then iterate through the heap, removing the largest element and placing it
+  at the end of the array.&nbsp;
+<LI>Finally, call Percolate to fix your heap.&nbsp;
+<LI>Correctly determines when the input string is completely simplified.
+</UL>
+</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>8</TD>
+</TR>
+
+<TR>
+<TD><B>QuickSort</B> 
+<UL>
+<LI>Correctly performs the QuickSort algorithm.
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>9</TD>
+</TR>
+
+
+<TR>
+<TD><B>Compare MACRO</B> 
+<UL>
+<LI>Increment Comparison count variable.
+<LI>If printing debugging information, output &quot;Comparing <i>a b</i>&quot;.
+<LI>Return comparison flags.
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>4</TD>
+</TR>
+
+
+<TR>
+<TD><B>Swap MACRO</B> 
+<UL>
+<LI>Increment Swap count variable.</LI>
+<LI>If printing debugging information, output &quot;Swapping <i>a b</i>&quot; by
+  calling PrintList.</LI>
+<LI>Swap the actual locations.</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>4</TD>
+</TR>
+
+<TR>
+<TD><B>PrintList</B> 
+<UL>
+<LI>Provide user feedback by showing the current state of the list if <tt>dbug</tt>
+  is non-zero.&nbsp;</LI>
+<LI>Wait for user input if <tt>dbug</tt> = 2. Called from Swap Macro<tt>.</tt></LI>
+</UL>
+</TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>2</TD>
+</TR>
+
+
+<TR>
+<TD><B>Functionality Sub-Total</B> </TD>
+
+<TD>
+<PRE> </PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>50</TD>
+</TR>
+
+
+<tr><td><b>Comments</b> <i>(* percentage of code written)</i> <br>
+  <ul>
+  <li>Clear and precise comments:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    +0</li>
+  <li>FUNCTION HEADERS (Don't forget to comment your headers!):&nbsp;&nbsp;&nbsp;&nbsp;
+    -3
+  <li>Excessive commenting:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    -1
+  <li>Sparse and/or unclear comments:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+    -1</li>
+  </ul>
+    <p>&nbsp;
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>Technique & Style</b>  <i>(* percentage of code written)</i><br>
+  <ul>
+  <li>Compact and Efficient code: -0
+  <li>Contains repeated code (lacks loops): -3 
+  <li>Does not use Defined constants: -2<br>
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>I/O Specs & Modularity</b> <i>(* percentage of code written)</i> <br>
+  <ul>
+  <li>Violates specifications for given subroutines: -3
+  <li>Procedures do not preserve registers: -2
+  </ul>
+    </td><td><pre> </pre></td><td>-5</td><td>0</td></tr>
+
+<tr><td><b>Penalty/Bonus</b> <br>
+    <i>Before 5pm, Thu 03/09/00: +1 pt/weekday</i><br>
+    <i>After 5pm, Tue 03/09/00: -10 pts/weekday </i>
+    </td><td><pre> </pre></td><td>-50</td><td>5</td></tr>
+
+<tr><td><b>Total</b> </td><td><pre> </pre></td>  <td>0</td><td>55</td></tr>
+
+</TABLE>
+
+</BODY>
+</HTML>

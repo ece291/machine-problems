@@ -1,0 +1,819 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD><STYLE><!--
+strike { background-color: #aaa; }
+	    --></STYLE>
+<%
+title = "ECE291 Machine Problem 5"
+subtitle = "Machine Problem 5"
+%>
+<!--#include file="headvb.asp"-->
+<BODY>
+
+<TABLE border=0 cellPadding=7 cellSpacing=1 width="100%">
+  <TBODY>
+  <TR>
+    <TD vAlign=top>
+      <H1 align=center>Machine Problem 5: Graphics, Serial Port, and Pong</H1>
+      <DIV align=center>
+      <CENTER>
+      <TABLE border=1 width=513>
+        <TBODY>
+        <TR>
+          <TD align=right width=64>Assigned</TD>
+          <TD width=433>Tuesday, 29 October 2002</TD></TR>
+        <TR>
+          <TD align=right width=64>Due Date</TD>
+          <TD width=433>Friday, 15 November 2002, 5:00 p.m.</TD></TR>
+        <TR>
+          <TD align=right width=64>Purpose</TD>
+          <TD width=433 Roman?>To understand graphics and asynchronous
+          serial communication. To work in teams.</TD></TR>
+        <TR>
+          <TD align=right width=64>Points</FONT></TD>
+          <TD width=433>60</TD></TR></TBODY></TABLE></CENTER></DIV>
+          
+<BLOCKQUOTE>
+Now all of the communications plugs the physical link, the
+RS232 connector, is the simplest. I think it was discovered in 
+the ruins at Pompeii -- the Romans probably used it to interface
+with their data runners. It specifies voltages (plus and minus)
+which are prehistoric. It even predates TTL. But it is all there
+is. When forced back to bare copper and elemental, ASCII 
+transmission, RS232 is always there, and we should be thankful,
+because in the intricacies of the higher layers of communications
+protocol lies a tower of Babel -- virtual plugs misted in 
+indescribable complexity. 
+-- Robert W. Lucky, <i>Lucky Strikes Again</i>, 1993.
+</BLOCKQUOTE>
+
+<P>Working in teams, you will write a single program MP5 that implements a 
+version of the classic Pong video game
+over the serial port. When MP5 is run on two computers whose serial ports
+are connected, the user at one computer controls the left paddle, and the
+user at the other computer controls the right paddle. The circular ball bounces off
+the paddles and off the top and bottom boundaries of the screen. When the
+ball reaches the left or right boundaries without bouncing off a paddle,
+the program stops. (Alternatively, the program can keep score.)</p>
+
+<P>Files for MP5 are on the <tt>V:</tt> drive in the directory <tt>V:\ece291\mp5</tt>.
+In this directory are the program framework <tt>mp5.asm</tt> and a 
+running version of the program <tt>mp5lab.exe</tt>. Lab versions of subroutines
+are in <tt>libmp5.lib</tt>, which contains all subroutines of LIB291 plus 
+libInit, libReceiveSrv, libTransmitSrv, libTask1, libTask2, libTask3,
+libMoveBall, libMovePaddle, and libCircle. You will use mp5xit instead of dosxit.
+You should start by copying these files to your home directory with the following command: <BR>
+<TT>xcopy /s V:\ece291\mp5 W:\mp5</TT><BR>
+You may download the files from the server as 
+<A href="http://courses.engr.illinois.edu/ece291/mp/mp5/mp5.zip">mp5.zip</A>  </p>
+
+<p> Reading: Lab Notes, Chapter 12</p>
+
+<H2>Program Specification</H2>
+
+<p>
+The program has three modes of operation.
+<ol start="0">
+<li> Mode 0: Self-testing. In this mode, the up-arrow and down-arrow keys 
+control both the left and the right paddles. This mode does not use the
+serial port. It is particularly useful for testing the program on a 
+single computer.
+</li>
+<li> Mode 1: Primary. In this mode, the up-arrow and down-arrow keys 
+control only the left paddle. With each clock tick, the ball moves, and the
+left paddle may move.
+The program sends information about movement of the ball and the left paddle
+over the serial port and receives information about the movement of the right
+paddle from the serial port. 
+</li>
+<li> Mode 2: Secondary. In this mode, the up-arrow and down-arrow keys
+control only the right paddle. The program receives information about
+movement of the ball and the left paddle over the serial port and changes
+the display to reflect these movements. The program sends information 
+about movement of the right paddle over the serial port.
+</li>
+</ol>
+</p>
+<p>
+The program begins by prompting the user for the mode (0, 1, or 2) and for
+the ball radius (2, ..., 9 pixels). Then the the program displays the playing
+field. At this point, pressing the arrow keys moves the paddles. As long as
+the up-arrow key is depressed, the paddle moves up; as long as the down-arrow key
+is depressed, the paddle moves down. When the key is released, the paddle stops
+moving. Pressing the space bar allows the ball to start moving.
+Whenever the space bar is depressed, the program toggles between moving and
+stopping the ball.
+</p>
+<p>
+When the ball bounces off the top or bottom boundary of the screen, its
+speed remains about the same, but its vertical velocity changes direction. When
+the ball bounces off the top half of the left paddle, the ball begins moving
+upward to the right at a random slope. When the ball bounces
+off the bottom half of the left paddle, the ball begins moving downward to the
+right at a random slope. Similarly, when the ball bounces off the 
+right paddle, it begins moving leftward at a random slope, upward or downward
+depending on whether the ball hit the top or bottom half of the right paddle.
+</p>
+<p>
+At any time, pressing the ESC key exits the program.
+</p> 
+
+<h2>Program Organization</h2>
+
+<P>In this machine problem, the main procedure is provided for you.
+You must write the code to replace the library subroutines 
+libInit, libReceiveSrv, libTransmitSrv, libTask1, libTask2, libTask3,
+libMoveBall, libMovePaddle, and libCircle.
+You will replace these subroutines from the libmp5 library by deleting the 
+statements that call the libmp5 subroutine and by adding your own code. 
+Each subroutine that you write should match the output of the library 
+subroutine exactly.</P>
+<p>
+You may use parts of your team members' subroutines for MP4, such as
+TimerInt, KbdInt, Enq, and Deq.
+</p>
+<p>
+The program uses the following global variables:
+<pre>SavKOff RESW    1               ; Keyboard interrupt vector
+SavKSeg RESW    1
+SavTOff RESW    1               ; Timer interrupt vector
+SavTSeg RESW    1
+SavCOff RESW    1               ; Serial communication port vector
+SavCSeg RESW    1
+Ticks   DW      0               ; Number of timer ticks
+State   DB      0               ; 0 = ball stopped, 1 = ball moving
+Radius  DW      8               ; Radius of ball
+Mode    DB      0               ; 0 = self-testing, 1 = primary, 2 = secondary
+PDir    DB      0               ; Paddle direction -1 = up, 0 = stopped, 1 = down
+VVeloc  DW      0               ; Vertical velocity of ball (negative to move up)
+HVeloc  DW      -4              ; Horizontal velocity of ball (negative to move left)
+BCol    DW      160             ; Current position of center of ball: column
+BRow    DW      100             ; Current position of center of ball: row
+LPaddle DW      90              ; Top row of left paddle
+RPaddle DW      90              ; Top row of right paddle
+</pre>
+There are also parameter lists for the Keyboard Queue (<tt>KQList</tt>),
+Transmit Queue (<tt>TQList</tt>), and Receive Queue (<tt>RQList</tt>).
+</p>
+<p>You may use without penalty the following subroutines, which are provided
+in the <tt>mp5.asm</tt> program framework.
+<ul>
+<li>Rand -- Generate a random number in the range 0, ..., (CX)-1</li>
+<li>EnableTI -- Enable ready-to-transmit interrupts from the 8250 ACE</li>
+<li>DisableTI -- Disable ready-to-transmit interrupts from the 8250 ACE</li>
+<li>SerialInit -- Initialize the 8250 ACE with the baud rate and frame format</li>
+<li>SerialReset -- Reset the 8250 ACE, disabling its interrupts</li>
+<li>ComInt -- Part of interrupt service routine for serial communication port</li>
+</ul>
+</p>
+<P>Your team will replace each of the subroutines listed below with your own code.
+Document each subroutine with a header.
+</P>
+      <TABLE border=1>
+        <TBODY>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Init</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Initializes interrupt vectors and the display screen
+              <LI>Inputs: None</LI>
+              <LI>Outputs: SavTOff, SavTSeg, SavKOff, SavKSeg, SavCOff, SavCSeg</LI>
+              <LI>Calls: Enq, SerialInit</li> 
+              <LI> 
+Init saves the old User timer, Keyboard, and Serial communication port
+interrupt vectors and changes
+them to point to the interrupt service routines TimerInt, KbdInt, 
+and ComInt. Init uses
+<tt>INT 10h</tt> to select 320x200 graphics mode and displays the
+paddles and ball at their initial positions. Each paddle is 20 pixels
+high, 10 pixels wide, and positioned 10 pixels from the left or right
+boundary of the screen.
+              </LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>ReceiveSrv</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Receive one byte through serial port 
+              <LI>Inputs: None</LI>
+              <LI>Outputs: None </li>
+              <LI>Calls: Enq</li>
+              <LI>
+ComInt, the interrupt service routine for the serial communication port,
+calls ReceiveSrv, which receives one byte from the serial port and enqueues it 
+onto the Receive Queue.
+              </LI></UL></TD></tr>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>TransmitSrv</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Transmit one byte through serial port 
+              <LI>Inputs: None</LI>
+              <LI>Outputs:  None </li>
+              <LI>Calls: Deq, DisableTI</li>
+              <LI>
+ComInt, the interrupt service routine for the serial communication port,
+calls TransmitSrv.
+If the Transmit Queue is not empty, then TransmitSrv dequeues
+a byte from this queue and uses the OUT
+instruction to send it to the THR register in the 8250 ACE.
+If the Transmit Queue is empty, then TransmitSrv calls DisableTI.
+(Why should TransmitSrv call DisableTI?)
+              </LI></UL></TD></tr>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Task1</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Processes one scan code byte 
+              <LI>Inputs: None</LI>
+              <LI>Outputs: PDir, State </li>
+              <LI>Calls: Deq, SerialReset, mp5xit</li>
+              <LI>
+Task1 first checks that the Keyboard Queue is nonempty.  If so, then 
+Task1 dequeues the byte at the front of the Keyboard Queue. If it is 
+the scan code for the ESC key, then Task1 restores the old interrupt
+vectors, calls SerialReset, and exits to DOS by calling mp5xit. 
+If the byte is the scan code for an arrow
+key (pressed or released), then Task1 changes PDir appropriately. 
+If the byte is the scan code for the space bar, then Task1 toggles
+State between 0 and 1 in Modes 0 and 1. 
+              </LI></UL></TD></tr>           
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>Task2</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Update display, and enqueue information for
+              transmission over serial port
+              <LI>Inputs: None </LI>
+              <LI>Outputs:  None </li>
+              <LI>Calls: MovePaddle, MoveBall, Enq, EnableTI </LI>
+              <li> 
+Task2 exits if no ticks have elapsed. Otherwise, Task2 sets Ticks to 0.
+If State is not 0, then in Modes 0 and 1, Task2 calls MoveBall to move the ball
+and (in Mode 1) enqueues the sync byte followed by the new values of HVeloc and VVeloc onto
+the Transmit Queue.
+If State is 0, then in Mode 1, Task2 enqueues the sync byte followed by two bytes of 0 for 
+velocities. Next, Task2 calls MovePaddle to move the left paddle (in Modes 0 and 1)
+and to move the right paddle (in Modes 0 and 2). Finally, Task2 enqueues
+PDir onto the Transmit Queue and calls EnableTI to enable the serial port
+to begin transmitting. (Why should Task2 call EnableTI?)
+Thus, in Mode 1, Task2 enqueues four bytes
+onto the queue, and in Mode 2, Task2 enqueues one byte onto the queue.
+
+         </li></UL></TD></TR>
+         <TR vAlign=top>
+          <TD><B><FONT size=+1>Task3</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Handles received bytes from the serial port
+              <LI>Inputs: VVeloc, HVeloc
+                </LI>
+              </li>
+              <LI>Outputs:  VVeloc, HVeloc </li>
+              <LI>Calls: Deq, MovePaddle, MoveBall</LI>
+              <li> 
+The action of Task3 depends on the Mode. In Mode 0, Task3 does nothing.
+In Mode 1, if there is at least one byte on the Receive Queue, then
+Task3 dequeues exactly one byte and calls MovePaddle to move the 
+right paddle in the direction specified by this byte.
+In Mode 2, if there are at least four bytes on the Receive Queue,
+then Task3 verifies the first byte is the sync byte, or dequeues as long
+as there are at least four bytes and the first is not the sync byte.  
+Then Task3 dequeues the sync byte, and dequeues exactly three more bytes.
+It uses the first byte to update HVeloc, the second byte to update VVeloc,
+and the third byte to determine the direction to move the left paddle. It
+calls MoveBall with these new values of HVeloc and VVeloc, and it calls MovePaddle.
+ </LI></UL></TD></tr>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>MoveBall</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Moves the ball
+              <LI>Inputs: BRow, BCol, VVeloc, HVeloc </li>
+              <LI>Outputs:  BRow, BCol, VVeloc, HVeloc, State</LI>
+              <LI>Calls: Rand, Circle </li>
+              <li>
+MoveBall determines whether moving the ball from its current location
+in the distance and directions specified by VVeloc and HVeloc would
+make it exit the screen or collide with a paddle. If so, then MoveBall
+changes VVeloc and HVeloc appropriately to make it bounce. If the ball
+would bounce of the top half of a paddle, then MoveBall calls Rand
+to obtain a random slope (+/- 1, 2, or 3) for the new value of VVeloc;
+negative values are used to move up, positive values to move down. 
+The magnitude of the new value of HVeloc should be 5 minus the magnitude of 
+the new value of VVeloc, so that the apparent speed of the ball is approximately
+the same in every direction. If the ball would move off the screen on
+the left or right, then MoveBall changes State to 0.</li>
+<li>To check a possible collision with the right paddle, simply check whether after
+a move, the rightmost point of the circle, whose row would
+be BRow+VVeloc and whose column would be BCol+HVeloc+Radius 
+intersects the right paddle. The collision criterion for the left paddle is similar.
+</LI></UL></TD></TR>
+        <TR vAlign=top>
+          <TD><B><FONT size=+1>MovePaddle</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Moves a paddle
+              <LI>Inputs: 
+              <ul>
+                <li>(DH) -- 0 for right paddle, 1 for left paddle</li>
+                <li>(DL) -- -1 for up, 1 for down, 0 for no move</li>
+                <li> LPaddle, RPaddle -- current top rows of paddles</li>
+                </LI></ul>
+              </li>
+              <LI>Outputs: LPaddle, RPaddle </li>
+              <li> 
+MovePaddle moves the paddle 4 pixels in the direction
+specified by DL, provided that the paddle is not already at the top
+of the screen (when moving up) or at the bottom (when moving down).
+ </LI></UL></TD></tr>
+       <TR vAlign=top>
+          <TD><B><FONT size=+1>Circle</FONT></B></TD>
+          <TD>
+            <UL>
+              <LI>Draws a circle using Bresenham's algorithm
+              <LI>Inputs: 
+              <ul>
+                    <li>SI -- column of center of circle</li>
+                   <li>DI -- row of center of circle</li>
+                   <li>Radius -- radius of circle</li>
+                   <li>DL -- Color</li>
+                </ul>
+              </li>
+              <LI>Outputs: None</li>
+              <li> 
+Circle draws a circle of radius Radius centered at column SI,
+row DI, on the screen with the color specified by DL.
+ </LI></UL></TD></tr>
+
+ </TBODY></TABLE>
+
+<h2>Optional Features</h2>
+<ul>
+<li>You may choose your own colors for the ball and paddles.</li>
+<li>You may fill in the ball.</li>
+<li>You may use Bresenham's line algorithm to determine the movement
+of the ball along a line.</li>
+<li>You may use a more accurate algorithm for checking a possible
+collision with a paddle.</li>
+<li>You may keep and display the score.</li>
+<li>You may change the serial protocol to use absolute instead of relative 
+positions.</li>
+</ul>
+
+      <p>Thoroughly document any optional features you choose to implement.</p>
+
+<h2>Working in Teams</h2>
+<ul>
+<li>Find an equitable division of subroutines among team members.
+For each subroutine one student could be the primary developer and 
+another student could be the primary tester.
+All students should inspect code written by other team members</li>
+<li>For each team meeting, one student should serve as the manager, and 
+another as the recorder; these roles should rotate so that every student has a
+chance to fill each role. 
+<ul>
+<li>The manager is responsible for finding a time and place
+for the meeting. Substantial time will be allocated in during at least one lecture
+period each week for team meetings. Grainger Library has rooms specifically 
+designated for group meetings. 
+At the meeting, the manager should encourage everyone to 
+participate, ensure that all alternatives are adequately considered,
+and keep discussions on task and on time.</li>
+<li>The recorder is responsible for 
+taking notes, summarizing the decisions in an e-mail to all team members, and
+(for the Final Project) drafting the short document due that week.</li></ul>
+<li>Team members should strive to be professional and civil to each other.
+Disagreements should be based on facts and technical arguments, not on personal
+prejudices.</li>
+<li>At the first meeting, teams should establish ground rules to encourage
+active listening. For example:
+<ul>  
+<li>No student may be interrupted while speaking.</li>
+<li>Each student must start with a brief summary of what the last
+student has said.</li>
+<li>All criticism must be directed at ideas, not at individuals, and
+must be accompanied by constructive alternatives.</li>
+</ul>
+At this first meeting, teams should agree on the meanings of the four criteria
+for peer evaluation: Quality of contributions, Quantity of contributions,
+Timeliness, Cooperation. Teams should discuss the standards and expectations
+for ratings of Excellent, Good, Fair, and Poor on each of these criteria.
+</li>
+</ul>
+
+<H2>Friendly Advice</H2>
+<UL>
+<LI>The libmp5.lib file contains executable library subroutines for each of 
+the routines that you need to implement. The library subroutines allow
+you to run the program and understand how it works before you implement it. 
+You can test your program with any combinations of your own code and library 
+subroutines. You will receive credit only for the subroutines that 
+you implement yourselves. </li>
+<LI>Make sure to both the mode 1 and mode 2 client have started before pressing 
+any movement keys. (Why must you do this?)</li>
+<LI>You may define new memory variables as needed. You may design and implement 
+additional subroutines. For example, MovePaddle and Init could both call a 
+subroutine that draws a segment of a paddle.</li>
+<li>Each subroutine should save and restore any registers that it uses,
+except for registers that deliver subroutine outputs.  The caller 
+may use registers without outputs and expect them to remain unchanged. </li>
+<li>Before subroutine Circle is ready, you may write a simple routine that draws a
+square of the same size (length of square side equals 2 x Radius + 1) 
+to develop other subroutines that call Circle.
+</li>
+<li>To simulate the serial port on one computer, during development of MP5,
+you may write a subroutine Port
+that dequeues a byte from the Transmit Queue (provided that this queue is nonempty)
+and enqueues this byte onto the Receive Queue.
+<tt>libmp5.lib</tt> has a version of this subroutine, and you
+should remove the call to this subroutine when 
+you test your program to use the actual
+serial port.
+</li>
+<li>Although HVeloc and VVeloc are word-sized variables (for ease of arithmetic
+calculations in MoveBall), the values that you transmit are byte-sized. Note that
+the low-order byte is sufficient to hold a signed value in the range -5 to +5.
+</li>
+<li>To erase the ball or a segment of a paddle, write over it with the color BLACK.</li>
+<li>After MP5 terminates, if the DOS window fills the whole screen, use Alt-Enter
+to return to a normal size window.
+</li>
+<LI>Monitor the newsgroups <A href="news:uiuc.class.ece291">uiuc.class.ece291</A> 
+and  <A href="news:uiuc.class.ece291.announce">uiuc.class.ece291.announce</A>
+for clarifications and help.</li>
+<LI>START EARLY!</LI>
+</UL>
+
+<h2>Demonstration, Documentation, and Grading</h2>
+<p>Demonstrate your program to an ECE 291 staff member. He may use mp5lab.exe
+on one of the two connected computers.</p>
+<p>Although each team will develop one program, each submission will be
+individual, as in previous MPs. You will also submit confidential peer evaluations.</p>
+<p>As before, keep an MP development log and write an individual cover memo,
+which you should submit with the program after the demonstration.
+The cover memo should address the following questions:
+<UL>
+<LI>How much time did you spend on this MP, including team meetings, 
+planning and design, and debugging? </LI>
+<LI>What kinds of defects (bugs) did you find during the development 
+of the program? When did you discover these defects (during
+code review, code inspection, or testing)? How did you find them?</LI>
+<LI>What did you learn about working in teams?</LI>
+<LI>What went well in your work on this MP?  What did not?</LI>
+<LI>What you would do differently for the Final Project?</LI>
+<LI>If you did the optional debugging exercises, then 
+please comment on the usefulness of those exercises.
+</UL>
+<p>Your program will be graded according to the clarity of your design
+and the quality of your documentation.</p>
+
+<hr>
+
+      <H2>mp5.asm (program framework)</H2><FONT size=-1>
+      <PRE>; MP5 - Two Player Pong
+
+; Michael Loui
+; 18 October 2002
+
+; This program implements Pong in 320 x 200 graphics mode across the
+; serial port
+
+         BITS    16
+
+;====== SECTION 1: Define constants =======================================
+
+         ESCKEY  EQU     1Bh
+         CR      EQU     0Dh             ; Carriage return
+         LF      EQU     0Ah             ; Line feed
+
+         KVEC    EQU     0024h           ; Location of Keyboard Vector
+         TVEC    EQU     0070h           ; Location of User Timer Vector
+         COMVEC  EQU     0030h           ; Location of Com1 Vector
+         BASE_8259 EQU   0020h           ; Base IO address of the 8259
+         EOI4    EQU       64h           ; End-of-Interrupt 4 command
+         BASE_8250 EQU   03F8h           ; Base IO address of the 8250
+
+         ESCSCAN EQU      1              ; Scan code for ESC key
+         UP      EQU     72              ; Scan code for up arrow
+         DOWN    EQU     80              ; Scan code for down arrow
+         SPACEBAR EQU    57              ; Scan code for space bar
+	 SYNC	 EQU	 55h		 ; Sync byte
+
+         BLACK   EQU     0               ; 320x200 color codes
+         BLUE    EQU     9
+         GREEN   EQU     10
+         RED     EQU     12
+         YELLOW  EQU     14
+         WHITE   EQU     15
+
+         PHeight EQU     20              ; Paddle height: 20 pixels
+         PWidth  EQU     10              ; Paddle width: 10 pixels
+         PCol    EQU     10              ; Initial column of left paddle
+         PRow    EQU     90              ; Initial row of paddle
+         LColor  EQU     BLUE            ; Color of left paddle
+         RColor  EQU     GREEN           ; Color of right paddle
+
+;====== SECTION 2: Declare external procedures ============================
+
+EXTERN  kbdin, kbdine, dspmsg, mp5xit, binasc, dspout
+EXTERN  libInit, libReceiveSrv, libTransmitSrv, libTask1, libTask2, libTask3
+EXTERN  libMoveBall, libMovePaddle, libCircle, libPort
+
+; Make standard variables and routines available to library routines:
+GLOBAL SavKOff, SavKSeg, SavTOff, SavTSeg, SavCOff, SavCSeg
+GLOBAL Ticks, State, Radius, Mode
+GLOBAL PDir, VVeloc, HVeloc, BCol, BRow
+GLOBAL LPaddle, RPaddle, R, ModeMsg, RadiusMsg
+
+GLOBAL KQList, KQBeg, KQCap, KQFront, KQRear, KQCount, KQData, KQArea
+GLOBAL TQList, TQBeg, TQCap, TQFront, TQRear, TQCount, TQData, TQArea
+GLOBAL RQList, RQBeg, RQCap, RQFront, RQRear, RQCount, RQData, RQArea
+
+GLOBAL Init, ReceiveSrv, TransmitSrv, Task1, Task2, Task3
+GLOBAL MoveBall, MovePaddle, Circle
+GLOBAL Rand, EnableTI, DisableTI, SerialInit, SerialReset, ComInt
+
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+         RESB      64*8
+stacktop:
+         RESB    0                       ; NASM bug workaround (?)
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+xitmsg  DB      'MP5LAB: Exit to DOS','$'
+
+SavKOff RESW    1                       ; Keyboard interrupt vector
+SavKSeg RESW    1
+SavTOff RESW    1                       ; Timer interrupt vector
+SavTSeg RESW    1
+SavCOff RESW    1                       ; Serial communication port vector
+SavCSeg RESW    1
+Ticks   DW      0                       ; Number of timer ticks
+State   DB      0                       ; 0 = ball stopped, 1 = ball moving
+Radius  DW      8                       ; Radius of ball
+Mode    DB      0                       ; 0 = self-testing, 1 = primary, 2 = secondary
+PDir    DB      0                       ; Paddle direction -1 = up, 0 = stopped, 1 = down
+VVeloc  DW      0                       ; Vertical velocity of ball
+HVeloc  DW      -5                      ; Horizontal velocity of ball
+BCol    DW      160                     ; Current position of ball
+BRow    DW      100
+LPaddle DW      PRow                    ; Top row of left paddle
+RPaddle DW      PRow                    ; Top row of right paddle
+R       DW      1                       ; Current stored random number
+ModeMsg DB      CR,LF,'Mode (0, 1, or 2): ','$'
+RadiusMsg DB    CR,LF,'Ball radius (2, ..., 9): ','$'
+
+QBeg    EQU     0                       ; Beginning offset of queue area
+QCap    EQU     2                       ; Capacity of of queue
+QFront  EQU     4                       ; Index of front item
+QRear   EQU     6                       ; Index of rear item
+QCount  EQU     8                       ; How many items currently in queue
+QData   EQU     10                      ; Byte to input or output
+
+KQList  RESB    0                       ; Parameter list for Keyboard Queue
+KQBeg   DW      KQArea                  ; Offset of Keyboard Queue area
+KQCap   DW      10
+KQFront DW      0
+KQRear  DW      -1
+KQCount DW      0
+KQData  RESB    1
+KQArea  RESB    10
+
+TQList  RESB    0                       ; Parameter list for Transmit Queue
+TQBeg   DW      TQArea                  ; Offset of Transmit Queue area
+TQCap   DW      30
+TQFront DW      0
+TQRear  DW      -1
+TQCount DW      0
+TQData  RESB    1
+TQArea  RESB    30
+
+RQList  RESB    0                       ; Parameter list for Receive Queue
+RQBeg   DW      RQArea                  ; Offset of Receive Queue area
+RQCap   DW      30
+RQFront DW      0
+RQRear  DW      -1
+RQCount DW      0
+RQData  RESB    1
+RQArea  RESB    30
+
+;You may declare additional variables here
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+         MOV     AX, CS                  ; Initialize Default Segment register
+         MOV     DS, AX
+         MOV     AX, stkseg              ; Initialize Stack Segment register
+         MOV     SS, AX
+         MOV     SP, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+main:
+         MOV     AH, 2Ch                 ; Get current time of day
+         INT     21h                     ;   (DH) = secs, (DL) = hundredths of secs
+         MOV     WORD [R], DX            ; Initialize stored random number
+
+; Interact with user to get radius of ball and Mode (0, 1, or 2)
+.ModeLoop:
+         MOV     DX, ModeMsg
+         CALL    dspmsg
+         CALL    kbdine
+         CMP     AL, '0'                 ; Mode should be 0, 1, or 2
+         JB      .ModeLoop
+         CMP     AL, '2'
+         JA      .ModeLoop
+         SUB     AL, 30h                 ; Convert from ASCII to binary
+         MOV     [Mode], AL
+.RadiusLoop:
+         MOV     DX, RadiusMsg
+         CALL    dspmsg
+         CALL    kbdine
+         CMP     AL, '2'                 ; Radius must be in range 2 to 9
+         JB      .RadiusLoop
+         CMP     AL, '9'
+         JA      .RadiusLoop
+         SUB     AL, 30h                 ; Convert to ASCII
+         CBW                             ;  and to a word
+         MOV     [Radius], AX
+         CALL    Init
+
+.lp:
+         CALL    Task1
+         CALL    Task2
+         CALL    Task3
+         CALL    libPort		 ; Performs Queue Loopback
+         JMP     .lp
+
+; Subroutine Rand
+; Generates random number
+;       Inputs  (CX) -- range of random number
+;               R -- current stored random number
+;       Ouput   (AX) -- random number in range 0 .. (CX)-1
+C2053   DW      2053
+C13849  DW      13849
+C216M1  DW      0FFFFh                  ; 2^16 - 1
+RandOut RESW    1
+
+Rand:
+         PUSHA
+         MOV     AX, WORD [R]            ; Current random number
+         MUL     WORD [C2053]
+         ADD     AX, WORD [C13849]
+         ADC     DX, 0                   ; Propagate carry to DX
+         DIV     WORD [C216M1]           ; Remainder is in DX
+         MOV     WORD [R], DX            ; New random number
+         MOV     AX, DX
+         MOV     DX, 0                   ; Prepare for division
+         DIV     CX
+         MOV     [RandOut], DX           ; In range 0, ..., (CX) - 1
+         POPA
+         MOV     AX, [RandOut]
+         RET
+
+%macro RIS 0
+         PUSH    DX
+         MOV     DX, BASE_8250+2     ; Point to Int ID Reg of 8250
+         IN      AL, DX              ; Read Interrupt Status
+         POP     DX
+%endmacro
+
+%macro EOI 0
+         PUSH    AX
+         MOV     AL, EOI4            ; Specify the end of interrupt
+         OUT     BASE_8259, AL       ;   service routine to 8259
+         POP     AX
+%endmacro
+
+; Subroutine EnableTI
+; Enable 8250 ACE to generate ready-to-transmit interrupt requests
+; via 8259 PIC.
+EnableTI:
+         PUSHA
+         MOV     DX, BASE_8250+1         ; Point to Int Enable Reg of 8250
+         MOV     AL, 00000011b           ; Enable receive and transmit
+         OUT     DX, AL                  ;   interrupts from the 8250
+         POPA
+         RET
+
+; Subroutine DisableTI
+; Disable 8250 ACE from generating ready-to-transmit interrupt requests
+; interrupts.
+DisableTI:
+         PUSHA
+         MOV     DX, BASE_8250+1         ; Point to Int Enable Reg of 8250
+         MOV     AL, 00000001b           ; Disable transmit interrupts
+         OUT     DX, AL
+         POPA
+         RET
+
+; Subroutine SerialInit
+; Initialize 8250 ACE to communicate at 1200 baud with
+; 8 data bits and one stop bit.
+SerialInit:
+         PUSHA
+         CLI                     ; Begin critical section
+         IN  AL, BASE_8259+1     ; Enable IRQ4 at 8259 PIC
+         AND AL, 0EFh
+         OUT BASE_8259+1, AL
+
+         MOV DX, BASE_8250+3     ; Line Control Reg of 8250
+         MOV AL, 80h             ; Set DLAB bit
+         OUT DX, AL
+         MOV DX, BASE_8250       ; Low Divisor Register
+         MOV AX, 96              ; Set baud rate--1200 bud
+         OUT DX, AL              ; Write low divisor byte
+         INC DX                  ; High Divisor Register
+         MOV AL, AH
+         OUT DX, AL              ; Write high divisor byte
+         MOV DX, BASE_8250+3     ; Line Control Register
+         MOV AL, 00000011b       ; No parity, 8 data bit, 1 stop bit
+         OUT DX, AL
+         MOV DX, BASE_8250+1     ; Interrupt Enable Register
+         MOV AL, 00000001b       ; Enable receive interrupts
+         OUT DX, AL
+         MOV DX, BASE_8250+4     ; Modem Control Register
+         MOV AL, 00001011b       ; Enable interrupts
+         OUT DX, AL
+         STI                     ; End critical section
+         POPA
+         RET
+
+; Subroutine SerialReset
+; Reset 8250 ACE, disabling its interrupt requests.
+SerialReset:
+     PUSHA
+     CLI                     ; Begin critical section
+     MOV DX, BASE_8250+1     ; Interrupt Enable Register
+     MOV AL, 00000000b       ; Disable interrupts
+     OUT DX, AL
+     MOV DX, BASE_8250+4     ; Modem Control Register
+     MOV AL, 00000000b       ; Disable interrupts
+     OUT DX, AL
+     IN  AL, BASE_8259+1     ; Disable IRQ4 at 8259 PIC
+     OR  AL, 10h
+     OUT BASE_8259+1, AL
+     STI                     ; End critical section
+     POPA
+     RET
+
+; Interrupt service routine for serial port Com1
+;   Calls   ReceiveSrv, TransmitSrv
+ComInt:
+     PUSH    AX
+     RIS                         ; Get interrupt status of 8250
+     TEST    AL, 00000010b       ; If bit 0 of AL is 1
+     JNZ     .DoTrans            ;    then it's ready-to-transmit
+     CALL    ReceiveSrv
+     JMP     .Exit
+.DoTrans:
+     CALL    TransmitSrv
+.Exit:
+     EOI
+     POP     AX
+     IRET
+
+;====== SECTION 8: Your subroutines =======================================
+
+ReceiveSrv:
+	CALL	libReceiveSrv
+	RET
+
+TransmitSrv:
+	CALL	libTransmitSrv
+	RET
+
+Init:
+	CALL	libInit
+	RET
+
+Task1:
+	CALL	libTask1
+	RET
+
+Task2:
+	CALL	libTask2
+	RET
+
+MoveBall:
+	CALL	libMoveBall
+	RET
+
+Task3:
+	CALL	libTask3
+	RET
+
+MovePaddle:
+	CALL	libMovePaddle
+	RET
+
+Circle:
+	CALL	libCircle
+	RET
+</PRE></FONT></TD></TR></TBODY></TABLE>
+<!--#include file="foot.asp"-->

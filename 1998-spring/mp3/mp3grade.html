@@ -1,0 +1,480 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.01 [en] (Win95; I) [Netscape]">
+   <TITLE>ECE291 Machine Problem 2</TITLE>
+</HEAD>
+<BODY>
+&nbsp;
+<TABLE CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TD ALIGN=LEFT WIDTH="33%">ECE291</TD>
+
+<TD ALIGN=CENTER WIDTH="34%">Computer Engineering II</TD>
+
+<TD ALIGN=RIGHT WIDTH="33%">Lockwood, Spring 1998</TD>
+</TR>
+</TABLE>
+
+<CENTER>
+<H1>
+Machine Problem 3: Grading Report</H1></CENTER>
+
+<CENTER><I><FONT SIZE=-1>Please print this page and provide it to the TA
+when you demonstrate your machine problem.</FONT></I></CENTER>
+
+<CENTER><I><FONT SIZE=-1>When you submit this, the TA should:</FONT></I></CENTER>
+
+<CENTER><I><FONT SIZE=-1>check your solutions,</FONT></I></CENTER>
+
+<CENTER><I><FONT SIZE=-1>ask a random question that tests your understanding
+of the MP,</FONT></I></CENTER>
+
+<CENTER><I><FONT SIZE=-1>assign points for each item on the list,</FONT></I></CENTER>
+
+<CENTER><I><FONT SIZE=-1>assign bonus/penalty points,</FONT></I></CENTER>
+
+<CENTER><I><FONT SIZE=-1>and provide the floppy for electronic handin.</FONT></I></CENTER>
+
+<CENTER><I><FONT SIZE=-1>This page should be stapled to the front of your
+MP3 assignemnt.</FONT></I></CENTER>
+
+<CENTER></CENTER>
+
+<CENTER><FORM></CENTER>
+
+<CENTER><TABLE CELLPADDING=7 >
+<TR>
+<TD>
+<TABLE>
+<TR>
+<TD ALIGN=RIGHT>Name:&nbsp;</TD>
+
+<TD><INPUT name="name" size=30></TD>
+</TR>
+
+<TR>
+<TD ALIGN=RIGHT>Date Submitted:&nbsp;</TD>
+
+<TD><INPUT name="submitted" size=20></TD>
+</TR>
+
+<TR>
+<TD ALIGN=RIGHT>Demo To:&nbsp;</TD>
+
+<TD><INPUT name="demoto" size=6>Graded By:&nbsp;<INPUT name="gradedby" size=6></TD>
+</TR>
+</TABLE>
+&nbsp;</TD>
+
+<TD>
+<TABLE BORDER >
+<TR>
+<TD><INPUT type=checkbox name="gradebook">Handin to floppy&nbsp;</TD>
+</TR>
+
+<TR>
+<TD><INPUT type=checkbox name="gradebook">Score recorded&nbsp;</TD>
+</TR>
+
+<TR>
+<TD><INPUT type=checkbox name="gold_star">Gold Star
+<BR><I>Programming Excellence</I></TD>
+</TR>
+</TABLE>
+&nbsp;</TD>
+</TR>
+</TABLE></CENTER>
+</FORM>
+<BR>Notes:
+<UL>
+<LI>
+The Main routine provided must be intact.&nbsp; No modifications are allowed
+for full credit.</LI>
+
+<LI>
+To receive credit, all routines must preserve any modified registers that
+are not output registers</LI>
+</UL>
+&nbsp;
+<TABLE BORDER CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TH>Category</TH>
+
+<TH>Points</TH>
+
+<TH>Min</TH>
+
+<TH>Max</TH>
+</TR>
+
+<TR>
+<TD><B>MouseControl</B>
+<UL>
+<LI>
+Does not return until a valid place on the screen has been clicked</LI>
+
+<LI>
+Correctly determines which tile or button has been clicked</LI>
+
+<LI>
+Uses provided constants for return values.&nbsp; Return values not hardcoded.</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>8</TD>
+</TR>
+
+<TR>
+<TD><B>ResetBoard</B>
+<UL>
+<LI>
+Resets the tiles to their factory installed positions (in order)</LI>
+
+<LI>
+Clears the stack of all moves (Click 'Solve' to test)</LI>
+
+<LI>
+Resets number of Moves</LI>
+
+<LI>
+Game continues to function correctly after it is reset&nbsp;</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>3</TD>
+</TR>
+
+<TR>
+<TD><B>Shuffle</B>
+<UL>
+<LI>
+Uses random numbers to shuffle the board</LI>
+
+<LI>
+Makes <I>ShuffAmount</I> valid moves&nbsp;</LI>
+
+<LI>
+No tile bouncing - a tile moved in one direction is not immediately moved
+back to its original position.</LI>
+
+<LI>
+Moves pushed to stack correctly (Click 'Solve' to test)</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>5</TD>
+</TR>
+
+<TR>
+<TD><B>MoveHole</B>
+<UL>
+<LI>
+Moves the hole in the direction specified in SI</LI>
+
+<LI>
+Returns error if move attempted is invalid</LI>
+
+<LI>
+Uses lookup tables to efficiently implement (lose efficiency points if
+not)</LI>
+
+<LI>
+Motion is animated using Delay routine</LI>
+
+<LI>
+Does not alter the stack</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>8</TD>
+</TR>
+
+<TR>
+<TD><B>DrawBoard</B>&nbsp;
+<UL>
+<LI>
+Draws the buttons as well as the tiles</LI>
+
+<LI>
+Draws any other static screen elements</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>4</TD>
+</TR>
+
+<TR>
+<TD><B>UpdateScreen</B>&nbsp;
+<UL>
+<LI>
+Updates the "Number of Moves" display</LI>
+
+<LI>
+Updates the "Delay" display&nbsp;</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>4</TD>
+</TR>
+
+<TR>
+<TD><B>Delay</B>&nbsp;
+<UL>
+<LI>
+Causes some sort of delay that is directly proportional to value in <I>Delayc</I>&nbsp;</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>1</TD>
+</TR>
+
+<TR>
+<TD><B>Random</B>&nbsp;
+<UL>
+<LI>
+Returns a somewhat random number (Click 'Shuffle' to test)</LI>
+
+<LI>
+First call to random returns the seed</LI>
+
+<LI>
+Correctly implements R(i+1)=(K1 * R(i) + K2)%MaxValue</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>3</TD>
+</TR>
+
+<TR>
+<TD><B>AutoSolve</B>&nbsp;
+<UL>
+<LI>
+Pops all moves from the stack to result in a solved puzzle (all tiles in
+order)</LI>
+
+<LI>
+Increments <I>Moves</I> variable for each pop</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>3</TD>
+</TR>
+
+<TR>
+<TD><B>DrawTile</B>
+<UL>
+<LI>
+Correctly draws a tile at the location specified by BX</LI>
+
+<LI>
+Labels the tile with the number in AL</LI>
+
+<LI>
+Tile color remains consistent (Tile 1 is always drawn as the same color)</LI>
+</UL>
+</TD>
+
+<TD>&nbsp;</TD>
+
+<TD>0</TD>
+
+<TD>3</TD>
+</TR>
+
+<TR>
+<TD><B>CheckMove</B>
+<UL>
+<LI>
+Determines if a user's click represents a valid move</LI>
+
+<LI>
+Moves tiles in line with the hole</LI>
+
+<LI>
+Moves multiple tiles, if necessary</LI>
+
+<LI>
+Correctly pushes moves to the stack (Click 'Solve' to test)</LI>
+
+<LI>
+Increments <I>Moves</I> variable for each move.</LI>
+
+<LI>
+Uses <I>MoveHole</I> and <I>UpdateScreen</I>.</LI>
+
+<LI>
+Efficiently determines hole alignment.&nbsp; (lose efficiency points if
+not)</LI>
+</UL>
+</TD>
+
+<TD>&nbsp;</TD>
+
+<TD>0</TD>
+
+<TD>8</TD>
+</TR>
+
+<TR>
+<TD><B>Functionality SubTotal</B>&nbsp;</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>50</TD>
+</TR>
+
+<TR>
+<TD><B>Comments</B> <I>(* percentage of code written)</I>&nbsp;
+<UL>
+<LI>
+Clear and precise line &amp; procedure comments&nbsp;</LI>
+
+<BR>(describes all major routines and any additional routines): -0&nbsp;
+<LI>
+Sports Announcer comments (line-by-line): -1&nbsp;</LI>
+
+<LI>
+Unclear comments: -1&nbsp;</LI>
+
+<LI>
+Sparse comments: -3&nbsp;</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>-5</TD>
+
+<TD>0</TD>
+</TR>
+
+<TR>
+<TD><B>Technique &amp; Style</B> <I>(* percentage of code written)</I>
+<UL>
+<LI>
+Compact and Efficient code: -0&nbsp;</LI>
+
+<LI>
+Contains repeated code (lacks loops): -3&nbsp;</LI>
+
+<LI>
+Makes poor use of registers and/or variables: -2&nbsp;</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>-5</TD>
+
+<TD>0</TD>
+</TR>
+
+<TR>
+<TD><B>I/O Specs &amp; Modularity</B> <I>(* percentage of code written)</I>&nbsp;
+<UL>
+<LI>
+Violates specifications for given subroutines: -5&nbsp;</LI>
+</UL>
+</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>-5</TD>
+
+<TD>0</TD>
+</TR>
+
+<TR>
+<TD><B>Penalty/Bonus</B>&nbsp;
+<BR><I>Before 5pm, Tuesday 3/10/98: +1 pt/weekday</I>
+<BR><I>After 5pm, Tuesday 3/10/98: -10 pts/weekday&nbsp;</I></TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>-50</TD>
+
+<TD>5</TD>
+</TR>
+
+<TR>
+<TD><B>Total</B>&nbsp;</TD>
+
+<TD>
+<PRE>&nbsp;</PRE>
+</TD>
+
+<TD>0</TD>
+
+<TD>55</TD>
+</TR>
+</TABLE>
+&nbsp;
+</BODY>
+</HTML>

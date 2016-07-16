@@ -1,0 +1,344 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 1</title>
+</head>
+
+<body bgcolor=ffffff>
+<p>
+<table cellpadding=3 width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Lockwood, Spring 1997</td></tr></table>
+<h2> </h2>
+<center><h1>Machine Problem 1: Events Calendar</h1></center>
+
+<p>
+<center><table border=1 cellpadding=3 width=60%>
+  <tr><td align=right><b>Assigned</b></td>      <td>Thursday 1/30/97</td></tr>
+  <tr><td align=right><b>Due Date</b></td>      <td>Tuesday 2/11/97</td></tr>
+  <tr><td align=right><b>Purpose</b></td><td>
+     Learn to write assembler code.  Use looping and branching.
+     Perform simple math operations.
+     </td></tr>
+   <tr><td align=right><b>Points</b></td><td>50</td></tr>
+</table>
+</center>
+<!--
+<p>
+<img src="../../icon/construct.gif" align=center>This MP is under construction.
+  --> 
+<p>
+<h2>Introduction</h2>
+Life is full of events.  Between assignments, meetings, birthdays,
+and anniversaries, it is easy to forget about an important event.
+A single semester of ECE291, for example, has over a dozen deadlines 
+just for homeworks and machine problems.  To remember events,
+it helps to be warned of those that have deadlines approaching
+in the near future.
+
+<h2>Problem Description</h2> 
+For this machine problem, you are to complete an assembly program
+which scans a list of events and reports those that have 
+deadlines within a given number of days in the future.  
+
+<p>
+For this machine problem, you are given:
+<ul>
+<li>A list of events defined as an array variable in memory.
+<li>A variable called <i>lookahead</i> which determines how many days in
+    advance the calendar should be searched.
+<li>LIBMP1 function to read the current month and day from the system clock
+<li>LIBMP1 function to print a date in "MM/DD" format
+<li>LIBMP1 function to calculate a day number from a given month/day
+<li>LIB291 functions to display output on the screen.
+</ul>
+
+Your program is required to:
+<ul>
+<li>Output data in the same format as the <i>sample output</i>
+    given later in this assignment.
+<li>Print each event for the days between the current date and
+    <i>lookahead</i> days in the future.
+<li>Operate for any value of <i>lookahead</i> between 0 and 365.
+<li>Operate for any database of arbitrary data and number of records.
+<li>Wrap around the calendar at the end of the year.
+    If your program were run on 12/25 with the default value of
+    <i>lookahead</i>=14, for example, your program should report on events 
+    not only through the rest of December, but also on
+    events in early January.
+<li>Print the events in the same order as they appear in the data file.
+<li>Run efficiently.  Points will be deducted for an inefficient algorithm
+    and excessive coding.
+</ul><p>
+
+<h2>Format of an event</h2>
+A structure (abbreviated STRUC) describes to the computer how
+your data is represented.  
+For MP1, each event is described as a message and a date. 
+The message is represented as an ASCII string and the
+month and day are represented as byte-sized integers.
+The deadline for this machine problem, for example, can be described 
+as "MP1 due" on 2/11.  
+<p>
+The format of the 32-byte Event structure is
+summarized below.  In this table 
+'B' represents a 1-byte unsigned integer, 'A' represents an ASCII character,
+and '$' represents the ASCII character used to mark the end of a string.
+By default, <i> message </i> is initialized as a 29-byte array of
+blank characters.  The <i>endmark</i> field is always filled with
+the '$' character so that <i> message </i> can be easily printed 
+with the DSPMSG routine of LIB291.  The <i>offset</i> refers to the starting 
+location of each field in the structure.
+<p>
+<center><table border=1 cellpadding=3>
+<tr>
+  <th>Field</th>
+  <th> month</th>
+  <th>day</th>
+  <th>message </th>
+  <th>endmark</th>
+  </tr>
+<tr>
+  <th>Data</th>
+  <td><tt>B</tt></td>
+  <td><tt>B</td>
+  <td><tt>AAAAAAAAAAAAAAAAAAAAAAAAAAAAA</tt></td>
+  <td><tt>$</tt></td>
+<tr>
+  <th>Offset</th>
+  <td>0<td>1<td>2<td>31</tr>
+</table></center>
+<p>
+An array of event structures is defined by a variable called <i>events</i>.
+The number of events in this array is given by a word-sized 
+integer called <i>numrec</i>.
+
+<h2>Sample Output</h2>
+
+<ul>
+<li>Suppose the database contains the following information.
+<table border=1><tr><td><font size=-1><xmp>  
+Events Event \
+ < 1, 1,'New Years'>,
+ < 1,28,'HW0 Due'>,
+ < 1,31,'MP0 Due'>,
+ < 2, 4,'HW1 Due'>,
+ < 2,11,'MP1 Due'>,         
+ < 2,21,'MP2 Due'>,          
+ < 2,25,'HW2 Due'>,
+ < 2,27,'EXAM I' >,
+ < 3, 1,'MP3 Due'>,
+ < 3,18,'HW3 Due'>, 
+ < 3,20,'MP4 Due'>,
+ < 3,25,'Spring Break'>,
+ < 4, 1,'Project Signup'>,
+ < 4, 8,'HW4 Due'>,
+ < 4,10,'EXAM II'>,
+ < 4,15,'MP5 Due'>,
+ < 4,22,'Proj. Writeup'>,
+ < 4,29,'Proj. Demos'>,
+ < 5, 6,'Proj. Submit'>,
+ < 5, 8,'HW5 Due'>,
+ <12,25,'XMAS'>
+
+numrec dw LENGTHOF Events 
+</xmp></font></td></tr></table><p>
+<p>
+<li>Sample A: Program output on January 29, 1997 with lookahead=14. <Br>
+  <i>Note the events prior to Jan 29 are not printed.</i> 
+    <table border=1><tr><td><font size=-1><xmp>  
+Today is:  1/29
+
+-Date- ----------Event------------- -Days-
+ 1/31  MP0 Due                       2
+ 2/ 4  HW1 Due                       6
+ 2/11  MP1 Due                       13
+</xmp></font></td></tr></table><p>
+
+<li>Sample B: Program output on November 5, 1999 with lookahead=60.<br>
+  <i>Note that program wrapped the calendar to include January events.</i>
+    <table border=1><tr><td><font size=-1><xmp>  
+Today is: 11/ 5
+
+-Date- ----------Event------------- -Days-
+ 1/ 1  New Years                     56
+ 12/25 XMAS                          50
+</xmp></font></td></tr></table><br>
+</ul>
+<xmp>
+
+
+
+</xmp>
+<h2>Procedure</h2>
+<ul>
+<li>You will begin this MP with the following files:
+    <ul>
+    <li><tt>MP1.ASM</tt>: Program Framework
+    <li><tt>EVENTS.INC</tt>: Events Database
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled
+        and linked.
+    <li><tt>LIBMP1.LIB</tt>: Library functions for MP1
+    <li><tt>LIB291.LIB</tt>: General-purpose library functions
+    </ul>
+<li>You may copy these files from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s E:\ece291\mp1 F:\mp1</tt><br>
+    or download the files from this server as <a href="mp1.zip">mp1.zip</a> 
+<li>Add your code to <tt>MP1.ASM</tt>.
+<li>Assemble and link your program by typing<br>
+      <tt>nmake</tt><Br>
+    This command reads <i>Makefile</i> then invokes MASM and LINK to build 
+    an executable program.  
+<li>Use DEBUG or CodeView (CV) to find and correct program errors. 
+<li>Verify your program operation by testing with
+    different events, dates, and lookahead values.
+</ul>
+
+<h2>Final Steps</h2>
+<ol>
+<li>Demonstrate MP1.EXE to a TA or to the instructor.  
+    You will be asked to recompile and demonstrate 
+    MP1 using a different EVENTS.INC file.  
+    This file will specify a modified database of events
+    and a different lookahead value.  
+    Successful completion of your program with different inputs
+    will ensure that you followed directions and that your program
+    has no hard-coded operations.
+<li>Be sure that your name and date appears in the first line of MP1.ASM.
+<li>Copy your programs to a floppy using the following command: <br>
+    <tt>xcopy /s F:\mp1 a:\mp1</tt> 
+<li>Print MP1.ASM 
+<li>Take your printout and disk with MP1 to the same TA which approved your 
+    demonstration.  
+</ol>
+
+<hr>
+<h2>MP1.ASM</h2>
+<font size=-1><xmp>
+        PAGE 75, 132
+        TITLE  ECE291:MP1:Events - Your Name - Date  
+
+COMMENT *
+        This program checks a calendar to remind you of
+        events that will occur in the near future.
+        The data for this program are read from the file
+        events.inc when the program is assembled.
+        Dates are specified in a month/day format.       
+
+        ECE291 Machine Problem 1
+        Prof. John W. Lockwood
+        Unversity of Illinois, Dept. of Electrical & Computer Engineering
+        Spring 1997
+	*
+
+;====== SECTION 1: Define constants =======================================
+
+        CR        EQU     0Dh
+        LF        EQU     0Ah
+        
+;====== SECTION 2: Declare external procedures ============================
+
+; -- Functions in LIB291.LIB --
+
+        extrn binasc:near, dspmsg:near, dosxit:near, dspout:near;
+
+        ; Please read your lab manual for a full description of the
+        ; LIB291 functions.  You will want to use these functions for
+        ; displaying output on the screen.
+
+; -- Functions in LIBMP1.LIB --
+
+        ; You may use these procedures freely.
+
+        extrn getdate:near
+          ;Purpose: Read current date
+          ; Inputs: None
+          ;Outputs: DH = month
+          ;         DL = day
+          ;         CX = year
+          ;Registers: All others preserved
+
+        extrn printdate:near
+          ;  Purpose: Print a 5-character date string as "MM/DD"
+          ;   Inputs: DH=month (MM)
+          ;           DL=day   (DD)
+          ;   Output: None (Prints to screen)
+          ;Registers: All others preserved
+
+        extrn calcdate:near
+          ;  Purpose: Calculates a day number from a given month and day.
+          ;   Inputs: DH=month
+          ;           DL=day
+          ;  O utput: AX=Day number (0..365)
+          ;Registers: All others preserved
+          ;     Note: Always assumes that Feb has 29 days (leap year)
+
+
+;====== SECTION 3: Define stack segment ===================================
+
+stkseg  segment stack                   ; *** STACK SEGMENT ***
+        db      64 dup ('STACK   ')
+stkseg  ends
+
+;====== SECTION 4: Define code segment ====================================
+
+cseg    segment public                  ; *** CODE SEGMENT ***
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== SECTION 5: Declare variables for main procedure ===================
+
+Event STRUC                      ; -- Format of Events Database --
+  month   BYTE ?                 ; Month Number (1..12)
+  day     BYTE ?                 ; Day Number (1..31)
+  message BYTE 29 dup(' ')       ; Message to Print
+  endmark BYTE '$'
+Event ENDS
+
+INCLUDE events.inc
+; Read the file called 'events.inc'. 
+; 'Events' defined as an array of event structures
+; 'numrec'    : 16-bit word which stores the number of records
+; 'lookahead' : 16-bit word which indicates how many days to look ahead
+                             
+todaymsg db 'Today is: ','$'; First Message Printed
+
+hdr db '-Date- ----------Event------------- -Days-',CR,LF,'$' ; Column Header
+
+pbuf db 7 dup(?)   ; Temporary storage used by BINASC lib291 call
+
+crlf db CR,LF,'$'  ; String to generate a new line
+
+today dw ? ; Stores the day number
+
+;====== SECTION 6: Procedures =========================================
+                                                
+main      proc    far
+          mov     ax, cseg                ; Initialize DS register
+          mov     ds, ax
+ 
+; --- Free code to get you started ---
+
+          mov dx, offset todaymsg ; Print 'Today is: '
+          call dspmsg
+
+          call getdate    ; Read the date
+          call printdate  ; Print the date
+          call calcdate   ; Calculate the day number
+          mov today,ax    ; save the result in the variable 'today'
+                                                 
+          mov dx,offset crlf ; Print two carriage returns
+          call dspmsg
+          call dspmsg
+          
+; ================================================
+;            YOUR CODE GOES HERE
+; ================================================
+
+          call    dosxit
+main      endp
+
+cseg      ends
+          end     main
+</xmp></font>
+</body>

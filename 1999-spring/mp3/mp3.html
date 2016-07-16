@@ -1,0 +1,911 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.05 [en] (Win95; I) [Netscape]">
+   <TITLE>ECE291 Machine Problem 3</TITLE>
+</HEAD>
+<BODY>
+&nbsp;
+<TABLE BORDER=0 CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TD ALIGN=LEFT WIDTH="33%">ECE291</TD>
+
+<TD ALIGN=CENTER WIDTH="34%">Computer Engineering II</TD>
+
+<TD ALIGN=RIGHT WIDTH="33%">Lockwood, Spring 1999</TD>
+</TR>
+</TABLE>
+
+<CENTER>
+<H1>
+Machine Problem 3: RPN Calculator GUI</H1></CENTER>
+
+<CENTER><TABLE BORDER CELLPADDING=3 WIDTH="60%" >
+<TR>
+<TD ALIGN=RIGHT><B>Assigned</B></TD>
+
+<TD>Thursday 3/4/99</TD>
+</TR>
+
+<TR>
+<TD ALIGN=RIGHT><B>Due Date</B></TD>
+
+<TD>Thursday 3/25/99 <TD>
+</TR>
+
+<TR>
+<TD ALIGN=RIGHT><B>Purpose</B></TD>
+
+<TD>Keyboard and Mouse Interrupts,&nbsp;
+<BR>Text-Mode Graphics</TD>
+</TR>
+
+<TR>
+<TD ALIGN=RIGHT><B>Points</B></TD>
+
+<TD>50</TD>
+</TR>
+</TABLE></CENTER>
+<!--
+<IMG SRC="../../icon/construct.gif" >Under Construction!! 
+-->
+<BR>&nbsp;
+<H2>Introduction</H2>
+End users like a Graphical User Interface (GUI)
+because it provides them with 
+a simple, easy-to-use, point-and-click interface.
+Programmers, however,
+typically prefer designing command line interfaces (CLI's) because 
+their interface can be simpler and can more easily be used both
+from the keyboard and as a part scripting environment.  
+In the end, though, GUI's are included as a part of
+all modern software because they are often more intuitive 
+to use than CLI's and reduce the learning curve 
+for the end-user of the application.
+
+<P>In MP2 you implemented a stack-based RPN calculator with a 
+simple CLI.  In MP3, you will start with the same three procedures from MP2 
+(<TT>ProcessInput</TT>,
+<TT>Calculate</TT>, and <TT>FormatOutput</TT>) and implement a GUI around
+them.&nbsp; The new interface will accept both the keyboard commands from
+MP3 as well as commands created by pressing "buttons" on the graphical
+display.
+<H2>
+Problem Description</H2>
+For this machine problem, you will implement a graphical user interface
+for the RPN Calculator of MP2. <Br>
+A screen dump of the running program is shown below:
+
+<ul>
+<li><img src="mp3.gif" width="411" height="509">
+</ul>
+<p>
+
+Using the GUI, the calulation of 6+27 can be computed by:
+  <ul>
+  <li>Clicking on the [6] button 
+  <li>Clicking on the [ENTER] button 
+  <li>Clicking on the [2] button 
+  <li>Clicking on the [7] button 
+  <li>Clicking on the [ENTER] button 
+  <li>Clicking on the [+]
+  </ul>
+<p>
+The best way to understand how the MP works is to 
+<a href="mp3.exe">run it,</a>. <br>
+Hit [Q] then [ENTER] to quit.
+
+
+
+
+<h2>Major Features</h2>
+
+<BLOCKQUOTE>
+
+
+<H3>Full-Screen Text-mode Video</H3>
+The graphics for the GUI will be implemented using 40x25
+text-mode video.  For maximum speed, your code will write directly to 
+video memory (beginning at address B8000h).&nbsp; 
+Each character block on the screen represents
+an ASCII character and its corresponding attributes.&nbsp; The attributes
+include the foreground color,&nbsp; background color, and whether the character
+blinks or not.&nbsp; Text-mode video is discussed in lecture 12.&nbsp;
+The 40x25 mode operates exactly like the 80x25 mode, except that there
+are only half as many characters in each row.  
+<p>
+Since specifying the graphics yourself would be tedious, 
+a 'skin' has been written as a single byte-array (<TT>calcskin</TT>) 
+that contains an ASCII "image" of the calculator.  This 
+skin is stored in a separate data file called <TT>calcskin.dat</TT>.&nbsp; 
+Feel free to change the variable <TT>textattr</TT>, in order
+to vary the color scheme of your calculator.  
+The color shown in the screendump has blue text on a white background.
+
+
+<H3>
+Interrupt Service Routines</H3>
+In MP2, we used LIB291's <TT>kbdine</TT> to read data from
+the keyboard.  Calling this function causes your computer
+to poll the default keyboard handler until
+a key is read into the DOS keyboard buffer.
+<p>
+But what if you wanted to do something else
+while waiting for a keyboard input.  Suppose, for example,
+you also wanted to read from a mouse at the same time
+you were waiting for input from the keyboard.
+You could not do this with blocking I/O.
+<P>
+The use of customized interrupt service routines (interrupt handlers)
+allows the program to handle <i>asynchronous I/O</i>.
+With asynchronous
+I/O, the program is able to do other things while waiting for data from
+one particular input.&nbsp; In this MP you are required to watch for inputs
+from both the keyboard and the mouse at the same time.&nbsp; By writing
+a routine for each, triggered only by external device interrupts, this
+will be possible.&nbsp; 
+<p>
+The subject of ISRs is discussed in lectures 13
+through 16.&nbsp; Read the lecture notes and Chapter 9 in the lab manual
+for more information.
+</BLOCKQUOTE>
+
+<H2>
+Implementation</H2>
+
+<H3>
+Variables</H3>
+From MP2 :
+<UL>
+<LI>
+DispMode - Specifies which base to input and display values in. {2, 10.
+16}</LI>
+
+<LI>
+InputBuffer - Contains one line of user input in ASCII.&nbsp; Can be either
+a new operand, an operation, or a mode change.</LI>
+
+<LI>
+BufLength - Actual length of InputBuffer</LI>
+
+<LI>
+OutputBuffer - Contains the formatted result in ASCII.</LI>
+</UL>
+New for MP3 :
+<UL>
+<LI>
+oldKbdV - Far pointer to the default keyboard interrupt handler</LI>
+
+<LI>
+inputValid - Status about input from the keyboard and mouse.</LI>
+
+<UL>
+<LI>0 - InputBuffer is not ready</LI>
+<LI>+1 - InputBuffer is ready for processing</LI>
+<LI>-1 - Escape key was pressed. Exit immediately.</LI>
+</UL>
+
+<LI>bottomOfStack - The stack pointer's value at the beginning.&nbsp; Used
+to determine number of operands on the stack.</LI>
+
+<LI>calcskin - byte array of graphical framework in file <TT>calcskin.dat</TT>.</LI>
+
+</UL>
+
+<H3>
+Procedures</H3>
+For this program, you will write ten procedures and add one feature. 
+You may use the library
+versions of the three MP2 procedures.
+<UL>
+<LI>
+<B>MP3Main</B></LI>
+
+This is the main routine for this program and you should implement it first.
+<br>
+Before you start, read through the entire writeup and 
+  make sure you understand the other functions that you
+  will need to call.<p>
+
+Program Body
+<ul>
+<li>Your main program must initially: 
+<UL>
+<LI>Install the mouse and keyboard interrupt handlers.</LI>
+<LI>Draw the graphics of the current screen.</LI>
+<LI>Record the initial stack pointer offset,<br>
+   so that your display can show the number of items on the stack..</LI>
+</UL>
+<li>Main loop 
+<ul>
+<li>It should wait for the user to enter a complete string to InputBuffer
+<li>Exit the program if 'Q' or 'q' is pressed.
+<li>Processed the InputBuffer string, like MP2.
+<li>Calculate results, like MP2
+<li>Format the results, like MP2
+<li>Display the results in the gray window.
+</ul>
+<li>Final steps
+  <ul>
+  <li> When the program is ready to
+  exit, both the mouse and keyboard should be restored to their original
+  form and any remaining operands on the stack should be flushed.
+  </ul>
+<p>
+</ul>
+Example Operation
+<ul>
+<li>You enter "80FF" into the program using the mouse or the keyboard and 
+   then enter it by either pressing <i>ENTER</i> or 
+   clicking on the "ENTER" button.
+  The placement of the keys into the buffer occurs in the Interrupt
+  Service Routine.  The processing of the loop occurs in main.
+<p>
+</ul>
+Note
+<ul>
+<li>It is important that you NOT accept mouse or keyboard
+  input while you main program is processing the InputBuffer String. 
+  The time between when your program starts and finishes
+  the processing of InputBuffer is a <I>critical section</I>.
+  In order to avoid corruption of InputBuffer, the
+input (keyboard and mouse) event handlers should not be allowed to write
+to InputBuffer during this time.&nbsp; 
+This can be done by disabling and
+then re-enabling external interrupts. 
+Use the STI and CLI assembly instructions as discussed in lecture 15.&nbsp;
+Disable interrupts after completing input to InputBuffer and re-enable
+interrupts after you are done using InputBuffer.
+</ul>
+<BR>&nbsp;
+
+<LI><B>DrawScreen</B></LI>
+
+<UL>
+<LI>
+Inputs: <TT>calcskin</TT></LI>
+
+<LI>
+Outputs: Writes graphics video memory (segment 0B800h).</LI>
+<LI>Purpose: Draw the "skin" of the calculator to the screen.
+Read the byte array <TT>calcskin</TT> and write it to video memory using
+the attribute byte <TT>textattr</TT>.&nbsp; Also fill in the results window
+with gray background.
+<BR>&nbsp;
+</UL>
+<LI><B>WaitForInput</B></LI>
+
+<UL>
+<LI>Input: 
+  <ul>
+  <li><tt>inputValid</tt>: Variable to indicate when buffer is ready.
+  </ul>
+<LI>
+Outputs:</LI>
+  <UL>
+  <LI><TT>InputBuffer</TT> is ready</LI>
+  <LI>Carry flag is set if the program should exit immediately.</LI>
+  </UL>
+
+<li>Description: Initially clears the content of InputBuffer
+and sets <tt>BufLength</tt> to zero.
+It then waits for <tt>inputValid</tt> to be set
+by the routine that processes input.
+Note that the writing of <TT>InputBuffer</TT>
+will be done asynchronously by the keyboard and mouse interrupt handlers.
+</UL>
+<BR>&nbsp;
+<LI><B>DisplayResult</B></LI>
+
+<UL>
+<LI>Input: <TT>OutputBuffer</TT></LI>
+
+<LI>Output: Writes new results to display window on screen with:</LI>
+
+<UL>
+<LI>Result value displayed right-justified on the second line.</LI>
+
+<LI>A 'b', 'd', or 'h' appended to the result depending upon the value of <TT>DispMode</TT>.</LI>
+
+<LI>The number of operands remaining on the stack display on the left side
+of the first line.</LI>
+</UL>
+<li>Notes: Watch how window changes in program given.
+<BR>&nbsp;
+</UL>
+<LI><B>KbdInstall</B></LI>
+
+<UL>
+<LI>Input: None</LI>
+<LI>Output: oldKbdV variable</LI>
+
+<li>Purpose:
+  <ul>
+  <li>Installs Interrupt 9's (IRQ1's) vector to the address of KbdHandler.
+  <LI>Saves far pointer to default keyboard handler in oldKbdV</LI>
+  </ul>
+<li>Notes:
+  <ul>
+  <li>Code this routine at the same time you code KbdUninstall
+  </ul>
+</ul>
+<LI><B>KbdUninstall</B></LI>
+
+<UL>
+<LI>Input: oldKbdV variable
+<li>Output: None 
+<LI>Purpose: Restore keyboard Interrupt vector to the original value.</LI>
+</UL><p>
+
+<LI><B>KdbHandler</B></LI>
+
+<UL>
+<LI>Input: None</LI>
+<LI>Output:</LI>
+
+<UL>
+<LI>InputBuffer updated</LI>
+
+<LI>inputValid</LI>
+
+  <UL>
+  <LI>0 if input not finished (carriage return not seen)</LI>
+  <LI>+1 if input finished</LI>
+  <LI>-1 if escape key pressed</LI>
+  </UL>
+
+<LI>Results window updated.&nbsp;
+   The unfinished input operand should be displayed
+left-justified on the second line.</LI>
+</UL>
+
+<li>Purpose:
+This routine is the Interrupt Service Routine called when your
+keyboard hardware reads in the scan code from the keyboard.
+By reading the scancode from the keyboard's hardware register
+(see lab notes, chapter 9), your program can determine
+which key was pressed.
+Your routine should then translate this scan code into 
+a corresponding ASCII code.
+You do not need to translate all keys, but rather just the
+characters that we expect as input ('+', '~', 'A', '5', '%', etc.). Add
+the character to InputBuffer and display the current contents left-justified
+on the second line of the results window.&nbsp; Make sure to handle the
+backspace key, so that we can edit our entry.&nbsp; Set inputValid to +1
+when a carriage return is seen.
+
+<li>Notes: 
+Remember that this handler is called on every key press and key release.&nbsp;
+Bit 7 of the scan code is set if this event is a key release and is unset
+if this event is a key press.&nbsp; The handler must accept all valid keystrokes
+and ignore the others.&nbsp; Also note that you need to keep track of whether
+one of the shift keys is down or not.&nbsp; Do not worry about events on
+the numeric keypad if you do not wish to.
+<BR>&nbsp;
+</UL> 
+<LI><B>MouseInstall</B></LI>
+
+<UL>
+<LI>
+Input: None</LI>
+
+<LI>
+Output: None</LI>
+
+<li>Purpose: Instruct the mouse driver to call 
+     your Mousehandler routine for specified clicks.
+<li>Implementation: Three calls to Int 33h routines must be made. <br>
+<UL>
+<LI>Reset the mouse driver. (Described in chapter 9 of the lab manual)</LI>
+
+<LI>Show the mouse cursor. (Described in chapter 9 of the lab manual)</LI>
+
+<LI>Set MouseHandler to be the user event handler for left-mouse-button (LMB)
+clicks.</LI>
+
+<UL>
+<LI>
+Input:</LI>
+
+<UL>
+<LI>
+AX = 000Ch</LI>
+
+<LI>
+CX = Event mask</LI>
+
+<BR>Bit 0: mouse movement
+<BR>Bit 1: LMB activated
+<BR>Bit 2: LMB released
+<BR>Bit 3: RMB activated
+<BR>Bit 4: RMB released
+<BR>Bit 5: MMB activated
+<BR>Bit 6: MMB released
+<BR>Bits 7-15: Unused
+<LI>
+ES = Segment address of handler</LI>
+
+<LI>
+DX = Offset address of handler</LI>
+</UL>
+
+<LI>
+Output: None</LI>
+</UL>
+</UL>
+&nbsp;
+</UL>
+
+<LI><B>MouseUninstall</B></LI>
+
+<UL>
+<LI>
+Input: None</LI>
+
+<LI>
+Output: None</LI>
+<li>Purpose: Restore the mouse driver to it's original state
+<li>Implementation: First hide the mouse
+cursor, then reset the driver.
+<BR>&nbsp;
+</UL>
+<LI><B>MouseHandler</B></LI>
+
+<UL>
+<li>Description: This routine will be called by the
+  mouse driver.  It should process clicks on the screen
+  and put characters into InputBuffer.
+<LI>Input:</LI>
+
+<UL>
+<LI>
+AX = event mask (same format as described in MouseInstall above)</LI>
+
+<LI>
+BX = mouse button status</LI>
+
+<BR>Bit 0: LMB activated
+<BR>Bit 1: RMB activated
+<BR>Bit 2: MMB activated
+<BR>Bits 3-15: Unused
+<LI>
+CX = horizontal mouse position</LI>
+
+<BR>This is given in pixels.&nbsp; In 40x25 one character space is 16 pixels
+wide.
+<LI>
+DX = vertical mouse position</LI>
+
+<BR>In 40x25 one character space is 8 pixels tall.
+<LI>
+SI = length of last horizontal mouse movement</LI>
+
+<BR>The values in SI and DI are signed and refer to mickeys (1/200 inch).&nbsp;
+They communicate relative movement and so are <I>signed</I> integers.
+<LI>
+DI = length of last vertical mouse movement</LI>
+
+<LI>
+DS = data segment of the mouse driver</LI>
+</UL>
+
+<LI>
+Output:</LI>
+
+<UL>
+<LI>
+InputBuffer updated</LI>
+
+<LI>
+inputValid</LI>
+
+<UL>
+<LI>
+0 if input not finished (carriage return not seen)</LI>
+
+<LI>
++1 if input finished</LI>
+</UL>
+
+<LI>
+Results window updated.&nbsp; The unfinished input operand should be displayed
+left-justified on the second line.</LI>
+</UL>
+<li>Notes: 
+Event handlers as set up in MouseInstall are called by the mouse driver
+through a FAR call and therefore must be terminated with a RETF instruction.&nbsp;
+Register contents must be preserved.&nbsp; This procedure is similar to
+KbdHandler in that it translates raw input into values for the InputBuffer.&nbsp;
+But instead of reading scan codes, it must check in which region of the
+display the mouse click occurred.&nbsp; Note that the upper left corner
+is position (0, 0).&nbsp; If an operation is specified while an operand
+is being entered, then the operand is dropped and the operation is performed.
+
+<P>If a value for an <I>operand</I> is clicked on, then it is added to
+InputBuffer.&nbsp; The buffer is ready when the "ENTER" button is clicked
+on.&nbsp; If some <I>operation</I> or <I>mode</I> button is clicked on,
+then we should fill in the buffer and notify the main program immediately.</UL>
+
+
+<p>
+<li><B>OFF Button</b>
+  <ul>
+  <li>The current calculator lacks an OFF button. <br> Modify the
+      program skin and mouse mappings to include a button
+      which quits the program when clicked.
+  </ul>
+
+</UL>
+
+<H2>
+Program Assignment</H2>
+You will begin this machine problem with a fully functional program. The
+skeleton file is given below. We have provided the library routines for
+each of the ten procedures above. You should complete MP3Main first, because
+the library version (LibMP3Main) will only call other library procedures.&nbsp;
+You will score points by replacing the library procedures with your own
+code. Your score will be proportional to the percentage of the code that
+you write yourself. The breakdown in points is given below: Your routine
+MUST perform all functions of the subroutine to obtain credit.
+<UL>
+<LI>
+MP3Main - 5 points</LI>
+
+<LI>
+DrawScreen - 5 points</LI>
+
+<LI>
+WaitForInput - 5 points</LI>
+
+<LI>
+DisplayResult - 5 points</LI>
+
+<LI>
+KbdInstall and KbdUninstall - 5 points</LI>
+
+<LI>
+KbdHandler - 7 points</LI>
+
+<LI>
+MouseInstall and MouseUninstall - 5 points</LI>
+
+<LI>
+MouseHandler - 7 points</LI>
+
+<LI>
+Off Button - 6 points</LI>
+</UL>
+
+<H2>
+Preliminary Procedure</H2>
+
+<UL>
+<LI>
+Copy the given MP3 files from the network drive to your home directory
+with the following command:</LI>
+
+<BR><TT>xcopy /s V:\ece291\mp3 W:\mp3</TT>
+<BR>Alternatively, from home you can download the same files as <A HREF="mp3.zip">mp3.zip</A>.
+<LI>
+As with previous MP's, run <TT>NMake</TT> to build an executable program
+using the given ECE291 library functions.</LI>
+
+<LI>
+As with previous MP's, use a text editor to modify the program. As given,
+the program uses LIBMP3 routines to implement all functionality. To receive
+full credit for the assignment, you will need to implement each of the
+subroutines described above with your own code.</LI>
+
+<LI>
+As with previous MP's, use CodeView (<TT>CV</TT>) to debug and test your
+program. Because you only receive credit for procedures that function <I>completely</I>
+as specified, it is best to debug each routine individually.&nbsp; This
+means use all library routines, except for the one you are testing.</LI>
+
+<LI>
+By modifying a few comments, you can mix and match usage of your own code
+and Library routines. You may notice that the LIBMP3 routines contain extraneous
+and difficult-to-read code. They are not meant to be easily unassembled!</LI>
+</UL>
+
+<H2>
+Final Steps</H2>
+
+<OL>
+<LI>
+Download and print the MP3 grading sheet from the web site.</LI>
+
+<LI>
+Verify that your program meets all requirements for handin.</LI>
+
+<LI>
+Demonstrate MP3.EXE to a TA or to the instructor. Your program must work
+with all given input. Once approved, you are ready to turn in your program.</LI>
+
+<LI>
+Be prepared to answer questions about any aspect of the operation of your
+program. The TAs will not accept an MP if you cannot fully explain the
+operation of your code.</LI>
+
+<LI>
+Print MP3.ASM using GreenPrint32 and give it to to the same TA which approved
+your demonstration. Be sure that your name is the printout.</LI>
+
+<LI>
+Electrically submit your programs to the TA's handin floppy:</LI>
+
+<BR><TT>A:\HANDIN </TT><I>MyWindowsLogin</I></OL>
+
+<H2>
+Guidelines / Hints</H2>
+
+<UL>
+<LI>
+As a rule, always preserve register values across procedure calls.&nbsp;
+This is especially important for interrupt handlers.&nbsp; You can do this
+using the LIB291 routines RSAVE and RREST, or more efficiently by pushing
+and popping only the registers that your routine modifies.</LI>
+
+<LI>
+Helper functions will come in handy.</LI>
+
+<UL>
+<LI>
+You may wish to reuse some version of ProcessKey from MP2.</LI>
+
+<LI>
+You cannot write strings to video memory using the LIB291 routines <TT>dspout</TT>
+or <TT>dspmsg</TT>, so write your own version.</LI>
+
+<LI>
+You will want to convert X and Y screen coordinates to a linear offset,
+so write a function to do this.</LI>
+</UL>
+
+<LI>
+Debugging interrupt handlers is difficult.&nbsp; Do not expect to insert
+a breakpoint in one of the handlers in CV and have CV stop at that point.&nbsp;
+You should use CV to debug all other routines but special methods are in
+order for the handlers.&nbsp; For the keyboard handler, start with toy
+code, like getting the main program to write a '#' to the screen each time
+any key is pressed.&nbsp; This is especially helpful when dealing with
+the shift keys.&nbsp; Try similar things for the mouse, like printing out
+what text coordinates the mouse is at when the button is clicked.</LI>
+
+<LI>
+The race condition mentioned in the description of MP3Main can be covered
+rather well by creating a critical section around one routine call in MP3Main.&nbsp;
+Which one?</LI>
+</UL>
+
+<HR>
+<H2>
+MP3.ASM</H2>
+<pre>
+TITLE ECE291:MP3-Calculator GUI - Your Name - Date
+
+COMMENT % A GUI for MP2's RPN Calculator
+
+          ECE291: Machine Problem 3
+          Prof. John W. Lockwood
+          Guest Author: Josh Scheid
+          University of Illinois
+          Dept. of Electrical & Computer Engineering
+          Spring 1999
+          
+          Ver. 1.1
+        %
+
+;====== Constants =========================================================
+
+;ASCII values for common characters
+BEEP    EQU 7
+CR      EQU 13
+LF      EQU 10
+ESCKEY  EQU 27
+BSKEY   EQU 8
+SEMI    EQU 59
+SPACE   EQU 32
+
+;====== Externals =========================================================
+
+; -- LIB291 Routines (Free) ---
+extrn dspmsg:near, dspout:near, kbdin:near
+extrn rsave:near, rrest:near, binasc:near
+
+; -- LIBMP3 Routines (Your code will replace calls to these functions) ---
+
+extrn LibKbdInstall:near
+extrn LibKbdUninstall:near
+extrn LibKbdHandler:near
+
+extrn LibMouseInstall:near
+extrn LibMouseUninstall:near
+extrn LibMouseHandler:near
+
+extrn LibDrawScreen:near
+extrn LibWaitForInput:near
+extrn LibDisplayResult:near
+
+extrn LibMP3Main:near
+
+extrn MP3XIT:near           ; Exit program with a call to this procedure
+
+; Routines from LIBMP2
+extrn LibProcessInput:near
+extrn LibCalculate:near
+extrn LibFormatOutput:near
+
+;====== Stack ========================================================
+stkseg  segment stack                   ; *** STACK SEGMENT ***
+        db      64 dup ('STACK   ')     ; 64*8 = 512 Bytes of Stack
+stkseg  ends
+
+;====== Begin Code/Data ==============================================
+cseg    segment public  'CODE'    ; *** CODE SEGMENT ***
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== Variables ====================================================
+
+inputValid      db  0           ; 0: InputBuffer is not ready
+                                ; 1: InputBuffer is ready
+                                ;-1: Esc key pressed
+
+oldKbdV         dd  ?           ;far pointer to default keyboard
+                                ;  interrupt function
+
+DispMode        dw  10          ; Operate in decimal mode by default
+
+
+bottomOfStack   dw  0           ; Offset of stack at beginning of program
+                                ; Used to calculate current number of 
+                                ; operands on the stack
+                                
+operandsStr     db  'Operands: ','$'                                
+
+
+OutputBuffer    db 16 dup(?),'$' ; Contains formatted output
+                                 ; (Should be terminated with '$')
+                                 
+MAXBUFLENGTH    EQU 24
+InputBuffer     db  MAXBUFLENGTH dup(?),'$' ; Contains one line of user input
+BufLength       dw  ?                       ; Actual length of InputBuffer
+
+include calcskin.dat            ; 2000 byte character array to define a
+                                ; 40x25 screen
+
+PUBLIC DispMode, InputBuffer, BufLength, OutputBuffer   ; Needed by LIBMP2/3
+PUBLIC inputValid, oldKbdV, bottomOfStack, operandsStr  ; Needed by LIBMP3
+PUBLIC calcskin                                         ; Needed by LIBMP3
+
+                                   
+;====== Procedures ========================================================
+
+KbdInstall PROC NEAR
+
+    ; Your code here
+    
+KbdInstall ENDP
+
+;------------------------------------------------------------------------
+
+KbdUninstall PROC NEAR
+
+    ; Your code here
+    
+KbdUninstall ENDP
+
+;------------------------------------------------------------------------
+
+KbdHandler PROC NEAR
+
+    ; Your code here
+    
+KbdHandler ENDP
+
+;------------------------------------------------------------------------
+
+MouseInstall PROC NEAR
+
+    ; Your code here
+    
+MouseInstall ENDP
+
+;------------------------------------------------------------------------
+
+MouseUninstall PROC NEAR
+
+    ; Your code here
+    
+MouseUninstall ENDP
+
+;------------------------------------------------------------------------
+
+MouseHandler PROC NEAR
+
+    ; Your code here
+
+MouseHandler ENDP
+
+;------------------------------------------------------------------------
+
+DrawScreen PROC NEAR
+
+    ; Your code here
+   
+DrawScreen ENDP
+
+;------------------------------------------------------------------------
+
+WaitForInput PROC NEAR
+
+    ; Your code here
+    
+WaitForInput ENDP
+
+;------------------------------------------------------------------------
+
+DisplayResult PROC NEAR
+
+    ; Your code here
+
+DisplayResult ENDP
+
+;------------------------------------------------------------------------
+
+MP3Main PROC NEAR
+
+    ; Your code here
+
+MP3Main ENDP
+
+;====== Main Procedure ====================================================
+
+MAIN    PROC    FAR
+
+        MOV     AX, CSEG     ; Use common code and data segment
+        MOV     DS, AX
+
+        MOV     AX, 0B800h   ; Use extra segment to access video screen
+        MOV     ES, AX
+
+        MOV     AX, 0000h    ; Put display into 40x25 text mode
+        INT     10h
+
+        MOV     AH, 01h      ; hide text cursor
+        MOV     CX, 2000h
+        INT     10h
+
+        CALL    LibMP3Main              ; Replace this call with a call to
+                                        ; your MP3Main routine.
+                                        ; Add nothing else to MAIN                                       
+
+        ; Start your coding by writing main with all LIB routines
+        ;
+        ; ---------------- Pseudo-code for main ---------------
+        ;
+        ; Install Mouse and Keyboard handlers
+        ; Draw initial screen
+        ; Record initial stack pointer
+        ;
+        ; Loop {
+        ;    Wait for user to finish entering string from keyboard or mouse
+        ;     ..
+        ;    Process the input text
+        ;    Calculate Result
+        ;    Format the Output
+        ;    Display the result
+        ;  }
+        ;
+        ; Un-install Mouse and Keyboard handlers
+        
+        CALL    MP3XIT                  ; Exit to DOS
+
+MAIN    ENDP
+
+CSEG    ENDS
+        END     MAIN
+</pre>
+
+</BODY>
+</HTML>

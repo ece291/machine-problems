@@ -1,0 +1,1019 @@
+<%
+title = "ECE 291 - MP3"
+subtitle = "MP3"
+%>
+<!--#include file="headvb.asp"-->
+<h1 align="center">Machine Problem 3: Falling Alphabet Fun!</h1>
+<DIV align="center">
+	<CENTER>
+		<TABLE id="Table2" width="513" border="1">
+			<TR>
+				<TD align="right" width="64">Assigned</TD>
+				<TD width="433">Thursday, 10/1/03</TD>
+			</TR>
+			<TR>
+				<TD align="right" width="64">Due Date</TD>
+				<TD width="433">Thursday, 10/15/03</TD>
+			</TR>
+			<TR>
+				<TD align="right" width="64">Purpose</TD>
+				<TD width="433" Roman>Install and write timer and keyboard interrupts. Use polling 
+					for parallel port inputs. Use text mode video. Have fun.</TD>
+			</TR>
+			<TR>
+				<TD align="right" width="64">Points</TD>
+				<TD width="433">80</TD>
+			</TR>
+		</TABLE>
+	</CENTER>
+	<CENTER>
+		<P>&nbsp;</P>
+	</CENTER>
+	<CENTER>
+		<DT><FONT size="4"><STRONG>"Y2K, we're not familiar with that. However in regard to the 
+					"Millennium Bug"---not to worry my friend, we are prepared to spray 
+					everywhere."</STRONG></FONT>
+			<DD>
+				One of the comments made at <!-- A HREF="http://www.duh-2000.com/" --><A href="http://www.duh-2000.com/">http://www.duh-2000.com/</A><!-- /A -->
+	</CENTER>
+	</DD>
+</DIV>
+<H2>Changes made : 10/2/03 </H2>
+<p><span style="background-color: #FFFF00">InitParport</span><span style="background-color: #FFFF00"> : Set Strobe 
+bit on the control port to 0 value to output a HIGH voltage on the strobe pin.</span></p>
+<p><span style="background-color: #FFFF00">In NumberTable add a 'G' to the end 
+of Eight to get:<br>
+eight db A|B|C|D|E|F|G</span></p>
+<p><span style="background-color: #FFFF00">In ReadParport the bits 4/5 of the 
+status port will be 0 when the buttons are pressed, and 1 when the buttons are 
+not pressed </span></p>
+<p><span style="background-color: #FFFF00">Changed KbdISR infomation so it made 
+more sense</span></p>
+<p><span style="background-color: #FFFF00">Added section with information about 
+the FallingLetterArray.</span></p>
+<H2>Introduction</H2>
+<P>This MP introduces the routines of writing a functional game, using interrupts 
+	and polling methods to await user inputs. Parallel input/output is also 
+	introduced here, as well as text mode video.</P>
+<P>&nbsp;</P>
+<H2>Problem Description</H2>
+<P>Your program is required to:
+</P>
+<UL>
+	<LI>
+	Install and uninstall a timer and keyboard ISR
+	<LI>
+	Code keyboard ISR
+	<LI>
+	Use text mode video to display on the screen
+	<LI>
+	Use and understand parallel port inputs/outputs
+	<LI>
+		Display an understanding on how to write a main function</LI></UL>
+<P>Reading : Chapter 10, 11 and 13 (I/O Devices, Graphics and Parallel 
+	Communications)</P>
+<P>&nbsp;</P>
+<P><img border="0" src="Image3.jpg" width="645" height="332"></P>
+<P>&nbsp;</P>
+<H2>MP3 Program Assignment</H2>
+<P>In this machine problem, the main procedure is provided for you; however, you 
+	must write the code to replace the library procedures. You will replace these 
+	procedures from the LIBMP3 library by commenting out the statements calling the 
+	library procedure and adding your code. Each procedure that you write should 
+	match the output of the library code exactly. Each of the function calls and 
+	their functionality is described below in the <B>Procedures</B> section. The 
+	best way to get a feel for the program is to run it to see how it is supposed 
+	to operate. You can also edit the test file to see how various changes will 
+	affect the program execution.</P>
+<P>The program can be run by typing <TT>mp3</TT> at the command prompt.&nbsp; If 
+	can use the right and left arrow keys to move the bucket right and left, and 
+	ESC to quit.&nbsp;&nbsp; If you enable the parallel port you can move the 
+	bucket with the buttons on the test board.</P>
+<h2>The parallel port and the test board</h2>
+<P>To complete the part of the mp that uses the parallel port you need to have a 
+	test board.&nbsp;&nbsp; There should be a test be a test board connected to 
+	every computer in the lab.&nbsp; If you run mp3 with the parallel port on, the 
+	test board should display the level and also allow control of the bucket with 
+	the buttons on the test board.&nbsp; Please leave the boards in the lab, there 
+	is not enough of them for every student to taken one home.&nbsp;&nbsp; Much 
+	of&nbsp; mp3 can be completed entirely without using the test board, by not 
+	enabling the parallel port when starting.&nbsp;
+</P>
+<P>If you have problems getting the test board to work:</P>
+<ul>
+	<li>
+	Use the BOARDTEST program that is provided with the mp.
+	<li>
+	Try a different computer. If the the BOARDTEST program works on that computer 
+	let a TA know so it can be fixed.
+	<li>
+		If you are sure that the test board itself is broken, put it on the front 
+		chalkboard so it can be fixed.</li>
+</ul>
+<h2><span style="background-color: #FFFF00">FallingLetterArray</span></h2>
+<p>The falling letter array is used to store the row, column and ASCII character 
+of the falling letters in the game.&nbsp; Each element in the array is 3 bytes 
+the first byte is the letter's value (CHAR), the second byte is the row of the 
+letter (ROW), and the third byte is the column of the letter (COL).&nbsp; When 
+an element in the array is not in use, the CHAR value of the letter will be 0.&nbsp;
+</p>
+<H2>Hints</H2>
+<UL>
+	<LI>
+		In this MP, the falling alphabets objects and its attributes are stored in an 
+		array. This array contains 3 attributes, CHAR value, ROW value and COL value. 
+		Use a pointer to transverse down the array when adding or updating the array.<BR>
+	<LI>
+		Movement in this MP is stored in a byte-sized memory called Flags.<BR>
+	<LI>
+		Flags contain&nbsp;6 useful&nbsp;bits in which information about movement is 
+		stored.
+		<UL>
+			<LI>
+			Bit 0 - Set on Exit
+			<LI>
+			Bit&nbsp;1 - Set when Right Keyboard Button is pressed
+			<LI>
+			Bit&nbsp;2 - Set when Left Keyboard Button is pressed
+			<LI>
+			Bit&nbsp;3 - Set when Right Parallel Button is pressed
+			<LI>
+			Bit&nbsp;4 - Set when Left Parallel Button is pressed
+			<LI>
+				Bit&nbsp;5 - Set when Parallel Port is used<br>
+                <BR>
+			</LI>
+		</UL>
+	<LI>
+		A Random function is provided for you
+		<UL>
+			<LI>
+			Input - CX&nbsp;&nbsp;&nbsp; : Range of Values that Random should return
+			<LI>
+			Output - AX&nbsp;: Random Value returned
+			<LI>
+				Notes : Returns a value from 0 to the range as stated by CX<BR>
+			    <br>
+&nbsp;</LI>
+		</UL>
+	<LI>
+		The LIBMP3 file contains executable library functions for each of the routines 
+		that you need to implement. This allows you to run the program and understand 
+		how it works before you implement it. You can test your program with any 
+		combinations of your own code and library functions. You will only receive 
+		credit, however, for the routines that you implement yourself.
+		<BR>
+	<LI>
+		When debugging your code in TD, you will find it helpful to use the memory 
+		window to show you the memory location of the file and strings. You can also 
+		use the watch window to keep track of variables in your code.<BR>
+	<LI>
+		Do not assume that the file starts at memory location 0.
+		<BR>
+	<LI>
+		You may define new variables as needed.
+		<BR>
+	<LI>
+		Be very careful if you call another procedure not to destroy registers that the 
+		calling procedure uses.
+		<BR>
+	<LI>
+		<SPAN style="BACKGROUND-COLOR: #ffff00">START EARLY!</SPAN>
+		There are a total of&nbsp;14 functions you have to write, including the <STRONG>main
+		</STRONG>function. You will be writing the main function in this MP, and points 
+		will be awarded accordingly to how you separate your functions.<BR>
+	<LI>
+		<P>You need to <STRONG>preserve </STRONG>register values in all of the procedures 
+			you write.&nbsp; To do this, push all the registers you use in the procedure at 
+			the beginning of the procedure.&nbsp; Then, pop them all in reverse order at 
+			the end of the procedure (right before you return).<BR>
+		</P>
+	<LI>
+		<P>You need to create function headers for each of the functions you write.&nbsp; 
+			Function headers should include the name of the function, the list of inputs to 
+			the function, the list of the outputs, and any functions that the function 
+			calls.&nbsp; You will lose points if you do not do this!<BR>
+		</P>
+	<LI>
+		We provided you with a timer ISR. Take a look at the code, it may make writing 
+		the keyboard ISR much more simple.<BR>
+	<LI>
+		Monitor the <A href="http://my.ece.uiuc.edu/secure/webboard.asp">webboard</A> for 
+		clarifications and help.</LI></UL>
+<H2>Procedures</H2>
+<P>This assignment has four procedures. You will receive credit by replacing each 
+	of these four procedures listed below with your own code.
+</P>
+<P>
+	<TABLE id="Table3" border="1">
+		<TR>
+			<TD vAlign="middle"><FONT size="+1"><B>InitVideo</B></FONT></TD>
+			<TD>
+				<UL>
+					<LI>
+						Init<SPAN style="BACKGROUND-COLOR: #ffffff">ialize mode 03h text 
+        mode video. </SPAN>
+					<LI>
+						<SPAN style="BACKGROUND-COLOR: #ffffff">Inputs: </SPAN>
+					<LI>
+						<SPAN style="BACKGROUND-COLOR: #ffffff">Outputs: </SPAN>
+					<LI>
+						<SPAN style="BACKGROUND-COLOR: #ffffff">Calls: int 10h </SPAN>
+					<LI>
+						<SPAN style="BACKGROUND-COLOR: #ffffff">Notes: </SPAN>
+						<UL>
+							<LI>
+								<SPAN style="BACKGROUND-COLOR: #ffffff">Set screen to 03h video 
+          mode </SPAN>
+							<LI>
+								<SPAN style="BACKGROUND-COLOR: #ffffff">Clear screen to black 
+          background </SPAN>
+							<LI>
+								<SPAN style="BACKGROUND-COLOR: #ffffff">Section 11.3 (page 113) of 
+          the lab manual has information on setting the video mode 
+        </SPAN></LI></UL>
+					<LI>
+						<SPAN style="BACKGROUND-COLOR: #ffffff">Points: 5</SPAN></LI></UL>
+			</TD>
+		</TR>
+		<TR vAlign="top">
+			<TD vAlign="middle"><FONT size="+1"><B>InstallISR</B></FONT></TD>
+			<TD>
+				<UL>
+					<LI>
+					Saves the old interrupt service routines and installs the modified timer and 
+					keyboard service routines.
+					<LI>
+						<SPAN style="BACKGROUND-COLOR: #ffffff">Inputs: </SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">cs</SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">, </SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">TmrISR</SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">, </SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">KbdISR</SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">, Interrupt vector table </SPAN>
+					<LI>
+						<SPAN style="BACKGROUND-COLOR: #ffffff">Outputs: Interrupt Vector 
+        Table, </SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">SavKSeg</SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">,&nbsp; </SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">SavKOff</SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">,&nbsp; </SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">SavTSeg</SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">, </SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">SavTOff</SPAN><SPAN style="BACKGROUND-COLOR: #ffffff"> = addresses of old interrupt vector 
+        segments and offsets </SPAN>
+					<LI>
+						<SPAN style="BACKGROUND-COLOR: #ffffff">Calls: None </SPAN>
+					<LI>
+						<SPAN style="BACKGROUND-COLOR: #ffffff">Notes: </SPAN>
+						<UL>
+							<LI>
+								<SPAN style="BACKGROUND-COLOR: #ffffff">There are two ways to 
+          install the interrupts, accessing the interrupt vector table directly, 
+          or using INT 21h to do some of the work for you.&nbsp; Writing the 
+          interupt table directly was covered in class&nbsp; Do NOT use INT 21 
+          to install the ISR! </SPAN>
+							<LI>
+								<SPAN style="BACKGROUND-COLOR: #ffffff">Use 0x1C for the timer 
+          interrupt and 0x09 for the keyboard interrupt </SPAN>
+							<LI>
+								<SPAN style="BACKGROUND-COLOR: #ffffff">Remember you MUST disable 
+          interrupts while changing&nbsp; the interrupt vector table (using the 
+          </SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">STI</SPAN><SPAN style="BACKGROUND-COLOR: #ffffff"> and </SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">CLI</SPAN><SPAN style="BACKGROUND-COLOR: #ffffff"> instructions).</SPAN></LI></UL>
+					<LI>
+						<SPAN style="BACKGROUND-COLOR: #ffffff">Points: 7</SPAN></LI></UL>
+			</TD>
+		</TR>
+		<TR>
+			<TD vAlign="middle"><FONT size="+1"><B>RestoreISR</B></FONT></TD>
+			<TD>
+				<DIV style="BORDER-RIGHT: 1px solid; PADDING-RIGHT: 4px; BORDER-TOP: 1px solid; PADDING-LEFT: 4px; PADDING-BOTTOM: 1px; BORDER-LEFT: 1px solid; PADDING-TOP: 1px; BORDER-BOTTOM: 1px solid">
+					<UL>
+						<LI>
+							<SPAN style="BACKGROUND-COLOR: #ffffff">Restores the old keyboard 
+        and timer interrupt service routines. &nbsp; </SPAN>
+						<LI>
+							<SPAN style="BACKGROUND-COLOR: #ffffff">Inputs: </SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">SavKSeg</SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">,&nbsp; </SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">SavKOff</SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">,&nbsp; </SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">SavTSeg</SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">, </SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">SavTOff</SPAN><SPAN style="BACKGROUND-COLOR: #ffffff"> = addresses of old interrupt vector 
+        segments and offsets </SPAN>
+						<LI>
+							<SPAN style="BACKGROUND-COLOR: #ffffff">Outputs: Interrupt Vector 
+        Table </SPAN>
+						<LI>
+							<SPAN style="BACKGROUND-COLOR: #ffffff">Calls: None </SPAN>
+						<LI>
+							<SPAN style="BACKGROUND-COLOR: #ffffff">Notes: </SPAN>
+							<UL>
+								<LI>
+									<SPAN style="BACKGROUND-COLOR: #ffffff">There are two ways to 
+          install the interrupts, accessing the interrupt vector table directly, 
+          or using INT 21h to do some of the work for you.&nbsp; Writing the 
+          interupt table directly was covered in class&nbsp; Do NOT use INT 21 
+          to install the ISR! </SPAN>
+								<LI>
+									<SPAN style="BACKGROUND-COLOR: #ffffff">Remember you MUST disable 
+          interrupts while changing&nbsp; the interrupt vector table (using the 
+          </SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">STI</SPAN><SPAN style="BACKGROUND-COLOR: #ffffff"> and </SPAN><SPAN style="BACKGROUND-COLOR: #ffffff">CLI</SPAN><SPAN style="BACKGROUND-COLOR: #ffffff"> instructions). </SPAN></LI></UL>
+						<LI>
+							<SPAN style="BACKGROUND-COLOR: #ffffff">Points: 5 
+      </SPAN></LI></UL>
+				</DIV>
+			</TD>
+		</TR>
+		<TR>
+			<TD vAlign="middle"><FONT size="+1"><B>KbdISR</B></FONT></TD>
+			<TD>
+				<UL>
+					<LI>
+					Interrupt service routine to handle keyboard interrupt events
+					<LI>
+						Inputs:
+						<UL>
+							<LI>
+								Keyboard port</LI></UL>
+					<LI>
+						Outputs:
+						<UL>
+							<LI>
+								[Flags]&nbsp;- Movement Flags</LI></UL>
+					<LI>
+					Calls:
+					<LI>
+						Notes:
+						<UL>
+							<LI>
+							Read scancode from keyboard port
+							<LI>
+							When it is the scancode for a left arrow press, set 
+                            the LEFT_KEY_FLAG (to 1) in [Flags]<LI>
+							When it is the scancode for a right arrow press, set 
+                            the RIGHT_KEY_FLAG (to 1) in [Flags]<LI>
+							When it is the scancode for a left arrow release, 
+                            clear the LEFT_KEY_FLAG (to 0) in [Flags]<LI>
+							When it is the scancode for a right arrow release, 
+                            clear the RIGHT_KEY_FLAG (to 0) in [Flags]<LI>
+							Checks if ESC is pressed, set the the EXIT_FLAG in 
+                            [Flags]<LI>
+										See Hints section for implementation of [Flags]</LI>
+							<LI>
+								Acknowledge PIC<SPAN style="BACKGROUND-COLOR: #ffffff"> (port 20h) 
+          </SPAN>
+							<LI>
+							Remember that the DS is undefined when your interrupt service routine gets 
+							triggered
+							<LI>
+								Section 10.1.2 of the lab manual has sample code that may be helpful take take 
+								a look at
+							</LI>
+						</UL>
+					<LI>
+						Points: 8</LI>
+				</UL>
+				<P>&nbsp;</P>
+			</TD>
+		</TR>
+		<TR>
+			<TD vAlign="middle"><FONT size="+1"><B>InitParport</B></FONT></TD>
+			<TD>
+				<UL>
+					<LI>
+					Initializes the parallel port so that it can be used
+					<LI>
+					Inputs: None
+					<LI>
+					Outputs: Control port (0x37a)
+					<LI>
+					Calls: None
+					<LI>
+						Notes:
+						<UL>
+							<LI>
+								<SPAN style="BACKGROUND-COLOR: #ffffff">This function is only call 
+          if using the parallel input and output is enabled </SPAN>
+							<LI>
+							Set/Clear the necessary bit(s) of the control port (0x37A) to put the data pins 
+							in output mode.
+							<LI>
+							Set/Clear the necessary bit(s) of the control port (0x37A) to have the strobe 
+							pin to output a
+                            <span style="background-color: #FFFF00">HIGH</span> value 
+                            by setting the strobe bit on the control port
+                            <span style="background-color: #FFFF00">LOW</span><LI>
+								Sometimes the control port already has the right settings, to make sure your 
+								program works for sure you can try setting with debug and then testing your 
+								program</LI></UL>
+					<LI>
+						Points: 5</LI></UL>
+			</TD>
+		</TR>
+		<TR>
+			<TD vAlign="middle"><FONT size="+1"><STRONG>ReadParport</STRONG></FONT></TD>
+			<TD>
+				<UL>
+					<LI>
+					Reads in the input from the parallel port
+					<LI>
+						Inputs:
+						<UL>
+							<LI>
+								Parallel Port</LI></UL>
+					<LI>
+						Outputs:
+						<UL>
+							<LI>
+								[Flags] - Movement Flags</LI></UL>
+					<LI>
+					Calls:
+					<LI>
+						Notes:
+						<UL>
+							<LI>
+							Reads&nbsp;the status value from the Status Port (0x379).
+							<LI>
+								Checks if the if buttons are pressed by reading PaperEnd (bit 5 of status port) 
+								and SelectIn (bit 4 of status port)<UL>
+									<LI>
+									When the Right button is pressed the PaperEnd bit 
+                                    of the status port will be
+                                    <span style="background-color: #FFFF00">LOW</span>.<LI>
+									When the Left button is pressed the SelectIn bit of the 
+									status port will be
+                                    <span style="background-color: #FFFF00">LOW</span>.<LI>
+										When the Right/Left button is pressed on the test board set the 
+										RIGHT_BUTTON_FLAG/LEFT_BUTTON_FLAG of [Flags] variable.<UL>
+											<LI>
+												See Hints section for implementation of [Flags]</LI></UL>
+									</LI>
+								</UL>
+							<LI>
+								Points: 7</LI>
+						</UL>
+					</LI>
+				</UL>
+				<P>&nbsp;</P>
+			</TD>
+		</TR>
+		<TR>
+			<TD vAlign="middle"><STRONG><FONT size="4">OutputParport</FONT></STRONG></TD>
+			<TD>
+				<UL>
+					<LI>
+					Outputs the level onto the 7 segment LED on the parallel port.
+					<LI>
+						Inputs:
+						<UL>
+							<LI>
+							[Level] - current level of the game
+							<LI>
+								NumberTable - lookup table</LI></UL>
+					<LI>
+						Outputs:
+						<UL>
+							<LI>
+								Writes to data port (0x378)</LI></UL>
+					<LI>
+					Calls: None
+					<LI>
+						Notes:
+						<UL>
+							<LI>
+							We have already given you the values need to display a digit correctly in the 
+							test board, in the NumberTable.&nbsp; Each entry in the number table is the 
+							byte you would need to write to the data port to display that number.&nbsp; For 
+							example if you wanted to display a '5' to the test board you would output 
+							[NumberTable + 5] to the data port.
+							<LI>
+								You MUST use the NumberTable as a lookup table,
+								<span style="BACKGROUND-COLOR: #ffff00">DO NOT</span>
+							use 10 compare statements in the code.&nbsp; Using the NumberTable as a lookup 
+							table is very simple, it should take less than 10 lines (excluding pushing and 
+							popping) of code to do.
+							<LI>
+								Points: 8</LI></UL>
+					</LI>
+				</UL>
+			</TD>
+		</TR>
+		<TR>
+			<TD vAlign="middle"><FONT size="+1"><B>DisplayBucket</B></FONT></TD>
+			<TD>
+				<UL>
+					<LI>
+					Draw image of bucket to correct part of the screen
+					<LI>
+						Inputs:
+						<UL>
+							<LI>
+								[BucketPosition] - current position of the bucket</LI></UL>
+					<LI>
+						Outputs:
+						<UL>
+							<LI>
+								None</LI></UL>
+					<LI>
+					Calls:
+					<LI>
+						Notes:
+						<UL>
+							<LI>
+							Print a bucket 7 characters wide and&nbsp;6 characters deep on the bottom of 
+							the screen.
+							<LI>
+							Write directly to video memory to display this bucket.
+							<LI>
+							See the game demo on how the bucket looks like.
+							<LI>
+								Points: 5</LI>
+						</UL>
+					</LI>
+				</UL>
+			</TD>
+		</TR>
+		<TR>
+			<TD vAlign="middle"><STRONG><FONT size="4">UpdateBucket</FONT></STRONG></TD>
+			<TD>
+				<UL>
+					<LI>
+					Updates the position of the bucket
+					<LI>
+						Inputs:
+						<UL>
+							<LI>
+								[Flags] - Movement Flags</LI></UL>
+					<LI>
+						Outputs:
+						<UL>
+							<LI>
+								[BucketPosition] - current position of the bucket</LI></UL>
+					<LI>
+					Calls:
+					<LI>
+						Notes:
+						<UL>
+							<LI>
+							Checks the LEFT_KEY_FLAG and the LEFT_BUTTON_FLAG bits of [Flags], and moves 
+							the bucket to the left.
+							<LI>
+								Checks the RIGHT_KEY_FLAG and the RIGHT_BUTTON_FLAG bits of [Flags], and moves 
+								the bucket to the right.
+								<UL>
+									<LI>
+										See Hints section for implementation of [Flags]</LI></UL>
+							<LI>
+								Points: 5</LI></UL>
+					</LI>
+				</UL>
+			</TD>
+		</TR>
+		<TR>
+			<TD vAlign="middle"><STRONG><FONT size="4">AddNewLetter</FONT></STRONG></TD>
+			<TD>
+				<UL>
+					<LI>
+					Adds a new letter on top of the screen
+					<LI>
+						Inputs:
+						<UL>
+							<LI>
+								None</LI></UL>
+					<LI>
+						Outputs:
+						<UL>
+							<LI>
+								None</LI></UL>
+					<LI>
+						Calls:
+						<UL>
+							<LI>
+								Random</LI></UL>
+					<LI>
+						Notes:
+						<UL>
+							<LI>
+							First, the function checks through the particle array to look for an empty 
+							particle <span style="background-color: #FFFF00">(an 
+                            empty letter's CHAR will be 0)</span><LI>
+							Give this particle a random column value from 5 to 75
+							<LI>
+							Gives this letter a random value from 'A' to 'Z'
+							<LI>
+								Points: 7</LI></UL>
+					</LI>
+				</UL>
+			</TD>
+		</TR>
+		<TR>
+			<TD vAlign="middle"><STRONG><FONT size="4">FallLetters</FONT></STRONG></TD>
+			<TD>
+				<UL>
+					<LI>
+					Make the letter fall, and checks if the bucket catches the letter.
+					<LI>
+						Inputs:
+						<UL>
+							<LI>
+								[BucketPosition] - current position of the bucket</LI></UL>
+					<LI>
+						Outputs:
+						<UL>
+							<LI>
+								[Level] - Game Level</LI></UL>
+					<LI>
+					Calls:
+					<LI>
+						Notes:
+						<UL>
+							<LI>
+							For each letter in the array
+						<UL>
+							<li>If the CHAR for the letter is 0 skip that 
+                            letter.</li>
+                            <li>Erase the letter from the screen at its current 
+                            position</li>
+                            <li>Increment the ROW of the letter.</li>
+                            <li>Draw the letter onto the screen at its new 
+                            position</li>
+                            </UL>
+					        <li>If the letter is on the bottom of the screen
+						<UL>
+							<li>Kill the letter by setting the CHAR of the 
+                            letter to 0</li>
+                            <li>Check if the Bucket is below the letter, and increase the Level by 1</li>
+                            </UL>
+					        </li>
+                        </UL>
+					</LI>
+							<LI>
+								Points: 8</LI>
+				</UL>
+			</TD>
+		</TR>
+		<TR>
+			<TD vAlign="middle"><STRONG><FONT size="4">DisplayLevel</FONT></STRONG></TD>
+			<TD>
+				<UL>
+					<LI>
+					Display the level on the top left corner of the screen
+					<LI>
+						Inputs:
+						<UL>
+							<LI>
+								[Level] - Game level</LI></UL>
+					<LI>
+						Outputs:
+						<UL>
+							<LI>
+								Draws to screen</LI></UL>
+					<LI>
+					Calls:
+					<LI>
+						Notes:
+						<UL>
+							<LI>
+							Write directly to video memory to display the level.<LI>
+							Display the level on the top left corner of the 
+                            screen<LI>
+							You only need to worry about displaying 0-9 for the 
+                            Level.<LI>
+								Points: 2</LI></UL>
+					</LI>
+				</UL>
+			</TD>
+		</TR>
+		<TR>
+			<TD vAlign="middle"><STRONG><FONT size="4">ClearScreenBottom</FONT></STRONG></TD>
+			<TD>
+				<UL>
+					<LI>
+					Clears the bottom of the screen.
+					<LI>
+						Inputs:
+						<UL>
+							<LI>
+								None</LI></UL>
+					<LI>
+						Outputs:
+						<UL>
+							<LI>
+								Draws to screen</LI></UL>
+					<LI>
+					Calls:
+					<LI>
+						Notes:
+						<UL>
+							<LI>
+							Clears the bottom 6 rows of the screen, and sets it to a nice green color.
+							<LI>
+								Points: 5</LI></UL>
+					</LI>
+				</UL>
+			</TD>
+		</TR>
+		<TR vAlign="top">
+			<TD vAlign="middle"><FONT size="+1"><B>Main</B></FONT></TD>
+			<TD>
+				<UL>
+					<LI>
+					Main Function
+					<LI>
+					Inputs:
+					<LI>
+					Outputs:
+					<LI>
+					Calls:
+					<LI>
+					dspmsg, kbdine, InitParport, InitParport, InstallISR, InitVideo, ReadParport, 
+					OutputParport, UpdateBucket, DisplayLevel, ClearScreenBottom, FallLetters, 
+					DisplayBucket, AddNewLetter, Random, RestoreISR, mp3xit
+					<LI>
+						pseudo-code is given below:</LI></UL>
+				<P>Display StartMsg<BR>
+					Prompts user to enter keyboard/parallel preference.<BR>
+					Sets/Resets USE_PARPORT_FLAG in [Flags] accordingly.<BR>
+					See Hints section for implementation of [Flags]<BR>
+					If (parallel port is selected)<BR>
+					&nbsp;&nbsp;&nbsp; call&nbsp; InitParport<BR>
+					call InstallISR<BR>
+					call InitVideo<BR>
+					MainLoop:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+					// This loops runs until ESC is pressed, or when the game reaches past level 9<BR>
+					&nbsp;&nbsp; if (TickCount&nbsp;&lt; 2)&nbsp;&nbsp;{<BR>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; loop back to MainLoop&nbsp;&nbsp; }<BR>
+					&nbsp;&nbsp; TickCount = TickCount -2<BR>
+					&nbsp;&nbsp;&nbsp;if (Parallel Port is selected)&nbsp;&nbsp;{<BR>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; call ReadParport, 
+					OutputParport&nbsp; }<BR>
+					&nbsp;&nbsp; call UpdateBucket, DisplayLevel, ClearScreenBottom, DisplayBucket 
+					in succession<BR>
+					&nbsp;&nbsp; FallCount ++<BR>
+					&nbsp;&nbsp; if (FallCount &gt;=9)&nbsp;&nbsp; {<BR>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; FallCount = 0<BR>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; call FallLetters&nbsp;&nbsp; }<BR>
+					&nbsp;&nbsp; Randomly call AddNewLetter&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // show 
+					how you randomly do this<BR>
+					&nbsp;&nbsp; loop back to MainLoop<BR>
+					&nbsp;&nbsp; if (game reaches past level 9)<BR>
+					&nbsp; &nbsp; &nbsp; display WinMsg<BR>
+					&nbsp;&nbsp; if ESC is pressed, or when game reaches past level&nbsp;<BR>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; call RestoreISR</P>
+				<P>&nbsp;Points : 8</P>
+				<P>&nbsp;</P>
+			</TD>
+		</TR>
+	</TABLE>
+</P>
+<H2>Procedure</H2>
+<UL>
+	<LI>
+		You will begin this MP with the following files:
+		<UL>
+			<LI>
+				<TT>MP3.ASM</TT>: Program Framework
+			<LI>
+				<TT>Makefile</TT>: Specifies how and when programs are assembled and 
+			linked.
+			<LI>
+				<TT>LIBMP3.LIB</TT>: Library functions for MP3
+			<LI>
+				<TT>LIB291.LIB</TT>: General-purpose library functions
+			</LI>
+		</UL>
+	<LI>
+		You may copy these files from the network drive to your home directory with the 
+		following command:
+		<BR>
+		<TT>xcopy /s V:\ece291\mp3 W:\mp3</TT><BR>
+		or download the files from this server as <a href="mp3.zip">mp3.zip</a>
+	<LI>
+		Add your code to <TT>MP3.ASM</TT>.
+	<LI>
+		Assemble and link your program by typing<TT> make.</TT>&nbsp; This command 
+	reads the Makefile then invokes NASM and TLINK to build an executable program.
+	<LI>
+		Use TD debugger to find and correct program errors.
+	</LI>
+</UL>
+<H2>Final Steps</H2>
+<OL>
+	<LI>
+	Demonstrate your MP3.EXE to a TA or to the instructor.&nbsp; The TA or 
+	instructor will verify that your program produces the correct output.
+	<LI>
+	Be prepared to answer questions about any aspect of the operation of your 
+	program. The TAs will not accept an MP if you cannot fully explain the 
+	operation of your code and details of your implementation. Delayed MPs will be 
+	subject to late penalties as described in the course syllabus (10%/day).
+	<LI>
+		The TA will handin your MP online.
+	</LI>
+</OL>
+<HR>
+<P>&nbsp;</P>
+<H2>MP1.ASM (program framework)</H2>
+<pre>;MP3 -Falling Alphabets
+;  Your Name
+;  Today's Date
+;
+; Author: 2003
+;	Derek King
+;	Wee Horng Ang 
+; University of Illinois, Urbana-Champaign
+; Dept. of Electrical and Computer Engineering
+;
+; Version 1.0</pre>
+<pre>        BITS    16</pre>
+<pre>;====== SECTION 1: Define constants =======================================
+		Escape	EQU		1Bh
+        CR      EQU     0Dh             ; Carriage return
+        LF      EQU     0Ah             ; Line feed
+        BS      EQU     08h             ; Backspace
+</pre>
+<pre>        KVEC    EQU     0024h           ; Location of Keyboard Vector
+        TVEC    EQU     0070h           ; Location of User Timer Vector
+        ROWS    EQU     25              ; Number of rows on screen
+        COLS    EQU     80              ; Number of columns on screen
+</pre>
+<pre>	;the masks for various flags
+	EXIT_FLAG		equ	000001b
+	RIGHT_KEY_FLAG		equ	000010b
+	LEFT_KEY_FLAG		equ	000100b
+	RIGHT_BUTTON_FLAG	equ	001000b
+	LEFT_BUTTON_FLAG	equ	010000b
+	USE_PARPORT_FLAG	equ	100000b
+</pre>
+<pre>	;length of array (in elements) use to store letters to
+	FALLING_LETTER_ARRAY_LENGTH	equ	5
+	CHAR		EQU		0
+	ROW		equ		1
+	COL		equ		2</pre>
+<pre>	;The scancodes for various keys
+	LEFT_SCANCODE	equ 	75	;scancode for left arrow
+	RIGHT_SCANCODE	equ 	77	;scancode for right arrow
+	EXIT_SCANCODE	equ	1	;scancode for esc key</pre>
+<pre>;====== SECTION 2: Declare external procedures ============================</pre>
+<pre>EXTERN  ascbin, binasc, kbdin, kbdine, dspout, dspmsg, mp3xit</pre>
+<pre>EXTERN  libMain, libInstallISR, libRestoreISR, libInitVideo, libKbdISR
+EXTERN	libOutputParport, libUpdateBucket, libDisplayLevel, libClearScreenBottom
+EXTERN	libRandom, libAddNewLetter, libDisplayBucket, libFallLetters
+EXTERN	libInitParport, libReadParport
+</pre>
+<pre>GLOBAL	Main, InstallISR, RestoreISR, InitVideo
+GLOBAL	TmrISR, KbdISR
+GLOBAL	OutputParport, UpdateBucket, DisplayLevel, ClearScreenBottom
+GLOBAL	Random, AddNewLetter, DisplayBucket, FallLetters
+GLOBAL	InitParport, ReadParport
+</pre>
+<pre>GLOBAL  SavKOff, SavKSeg, SavTOff, SavTSeg, TickCount
+GLOBAL	StartMsg, Flags, Level, FallCount, WinMsg
+GLOBAL	FallingLetterArray,  NumberTable, BucketPosition</pre>
+<pre>;====== SECTION 3: Define stack segment ===================================</pre>
+<pre>SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        RESB    64*8
+stacktop:
+        RESB    0                       ; NASM bug workaround </pre>
+<pre>;====== SECTION 4: Define code segment ====================================</pre>
+<pre>SEGMENT code                            ; *** CODE SEGMENT ***</pre>
+<pre>;====== SECTION 5: Declare variables for main procedure ===================
+MP3Msg		db 'ECE 291 MP3 -- The Falling Letters Game','$'
+WinMsg		db 'YOU WIN!!','$'
+StartMsg	db "Do you want to enable the parallel port? (y/n)", '$'
+</pre>
+<pre>TickCount	db	0	;Timer interupt counter
+FallCount	db	0	;Counter to slow letter movement
+Level		db	0	;Level of game, goes from 0 to 9
+BucketPosition	db	40	;Column of left side of bucket
+Flags		db 	0	;Storage for various flags used by the game
+</pre>
+<pre>SavTSeg		RESW	1	;Segment of old timer interupt routine
+SavTOff		RESW	1	;Offset of old timer interupt routine
+SavKSeg		RESW	1	;Segment of old timer interupt routine
+SavKOff		RESW	1	;Offset of old timer interupt routine
+	
+</pre>
+<pre>;array of infomation for falling letters
+FallingLetterArray times FALLING_LETTER_ARRAY_LENGTH*3 db 0
+</pre>
+<pre>;used by random function
+seed		RESW	1
+random		RESW	1
+
+</pre>
+<pre>;
+C	equ 0x01	
+D	equ 0x02
+E	equ 0x04
+G	equ 0x08
+F	equ 0x10
+A	equ 0x20
+B	equ 0x40</pre>
+<pre>;Lookup table used for turning on LED's
+NumberTable:
+zero		db A|B|C|D|E|F
+one		db B|C
+two		db A|B|D|E|G
+three		db A|B|C|D|G
+four		db B|C|F|G
+five		db A|C|D|F|G
+six		db A|C|D|E|F|G
+seven		db A|B|C
+eight		db A|B|C|D|E|F
+nine		db A|B|C|F|G
+</pre>
+<pre>	
+; You may declare additional variables here</pre>
+<pre>;====== SECTION 6: Program initialization =================================</pre>
+<pre>..start:
+        MOV     AX, CS                  ; Initialize Default Segment register
+        MOV     DS, AX  
+        MOV     AX, stkseg              ; Initialize Stack Segment register
+        MOV     SS, AX
+        MOV     SP, stacktop            ; Initialize Stack Pointer register</pre>
+<pre>;====== SECTION 7: Your subroutines =======================================
+
+</pre>
+<pre>;- Main ----------------------------------------------------
+Main:
+	call libMain
+	call mp3xit
+</pre>
+<pre>;- InitParport ----------------------------------------------------
+InitParport:
+	call libInitParport
+	ret	
+</pre>
+<pre>;- ReadParport ----------------------------------------------------
+ReadParport:
+	call libReadParport
+	ret
+</pre>
+<pre>;- OutputParport ----------------------------------------------------
+OutputParport:
+	call libOutputParport
+	ret
+</pre>
+<pre>;- UpdateBucket ----------------------------------------------------
+UpdateBucket:
+	call libUpdateBucket
+	ret
+</pre>
+<pre>;- AddNewLetter ----------------------------------------------------
+AddNewLetter:
+	call libAddNewLetter
+	ret
+</pre>
+<pre>;- FallLetters ----------------------------------------------------
+FallLetters:
+	call libFallLetters
+	ret
+</pre>
+<pre>;- DisplayLevel ----------------------------------------------------
+DisplayLevel:
+	call libDisplayLevel
+	ret
+</pre>
+<pre>;- DisplayBucket ----------------------------------------------------
+DisplayBucket:
+	call libDisplayBucket
+	ret
+</pre>
+<pre>;- ClearScreenBottom ----------------------------------------------------
+ClearScreenBottom:
+	call libClearScreenBottom
+	ret
+</pre>
+<pre>;- KbdISR ----------------------------------------------------	
+KbdISR:
+	jmp libKbdISR
+</pre>
+<pre>;- InstallISR ----------------------------------------------------
+InstallISR:
+	call libInstallISR
+	ret
+</pre>
+<pre>;- RestoreISR ----------------------------------------------------
+RestoreISR:
+	call libRestoreISR
+	ret
+</pre>
+<pre>;- InitVideo ----------------------------------------------------
+InitVideo:
+	call libInitVideo
+	ret
+</pre>
+<pre>;- TmrISR ----------------------------------------------------
+;- Inputs: NONE
+;- Outputs: TickCount - interrupt counter
+;- Calls: NONE
+TmrISR:
+	inc byte [cs:TickCount]  ;increment TickCount :-P
+.done
+	iret ;return from interupt :-)</pre>
+<pre>	
+;- Random ----------------------------------------------------
+;- Inputs:	CX = Max value to return 
+;- Outputs: 	AX = random value in range from (CX-1) to 0
+;- Calls:	NONE
+Random
+	push	dx
+	push	bx
+        mov     ax, word [seed]
+        mov     bx, 37549                                                     </pre>
+<pre>        mul     bx
+        add     ax, 37747
+        adc     dx, 0
+        mov     bx, 65535
+        div     bx
+        mov     ax, dx    
+ 	mov     word [seed], dx</pre>
+<pre>        xor     dx, dx
+        div     cx
+        mov     ax, dx
+	pop	bx
+	pop	dx</pre>
+<pre>        ret</pre>

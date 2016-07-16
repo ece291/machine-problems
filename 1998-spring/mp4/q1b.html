@@ -1,0 +1,108 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (Win95; I) [Netscape]">
+</HEAD>
+<BODY>
+
+<H2>
+Problem 6 : Video graphics</H2>
+
+<UL>
+<LI>
+Using appropriate 80x86 string opcodes, write a procedure to draw a filled,
+red box 16 pixels wide and 20 pixels tall.&nbsp; The upper left corner
+of the box should be located 10 pixels from the left edge of the screen
+and 10 pixels from the top of the screen.&nbsp; Make the procedure as efficient
+as possible.&nbsp; Assume 320x200 (mode 13h) video screen with a default
+palette and rememder that <TT>VidGrSeg=0A000h</TT>. <I>(10 pts)</I></LI>
+</UL>
+
+<UL>&nbsp;
+<TABLE BORDER COLS=1 WIDTH="81%" >
+<TR>
+<TD>DrawBox proc near
+<BR>&nbsp;
+<BR>&nbsp;
+<BR>&nbsp;
+<BR>&nbsp;
+<BR>&nbsp;
+<BR>&nbsp;
+<BR>&nbsp;
+<BR>&nbsp;
+<BR>&nbsp;
+<BR>&nbsp;
+<BR>&nbsp;
+<BR>&nbsp;
+<BR>&nbsp;
+
+<P>DrawBox endp</TD>
+</TR>
+</TABLE>
+
+<PRE></PRE>
+
+<LI>
+Suppose a video card can display 3500x2000 pixels using a palette with
+128 entries of 21-bit color values (7 bits for each of red, green, and
+blue). <I>(2 pts/each)</I></LI>
+
+
+<P>&nbsp;
+<UL>
+<LI>
+How many different colors can this card display ?</LI>
+</UL>
+&nbsp;
+<BR>&nbsp;
+<UL>
+<LI>
+How many colors can displayed simultaneously ?</LI>
+</UL>
+&nbsp;
+<BR>&nbsp;
+<UL>
+<LI>
+How much video memory does this card require ?</LI>
+</UL>
+&nbsp;
+<BR>&nbsp;
+<UL>
+<LI>
+How many shades of green can be displayed simultaneously ?</LI>
+</UL>
+&nbsp;</UL>
+&nbsp;
+<UL>
+<LI>
+Write the 80x86 opcodes necassary to add 10 to the red component of palette
+entry 20 in 320x200 (mode 13h) graphics. <I>(7 pts.)</I></LI>
+
+<BR>The following constants may be used:
+<UL>
+<LI>
+<FONT SIZE=-1>PALETTE_REGISTER_READ&nbsp; EQU 03C7h</FONT></LI>
+
+<LI>
+<FONT SIZE=-1>PALETTE_REGISTER_WRITE EQU 03C8h</FONT></LI>
+
+<LI>
+<FONT SIZE=-1>PALETTE_DATA EQU 03C9h</FONT><BR>
+<BR>
+<BR>
+<BR>
+<BR></LI>
+</UL>
+</UL>
+
+<UL>
+<PRE>
+
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;
+</PRE>
+</UL>
+
+</BODY>
+</HTML>

@@ -1,0 +1,701 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <title>MP4: Networked Quake2D: Problem Description</title>
+</head>
+<body bgcolor="#FFFFFF">
+&nbsp;
+<table BORDER=0 CELLPADDING=3 WIDTH="100%" >
+<tr>
+<td ALIGN=LEFT WIDTH="33%">ECE291</td>
+
+<td ALIGN=CENTER WIDTH="34%">
+<center>Computer Engineering II</center>
+</td>
+
+<td ALIGN=RIGHT WIDTH="33%">Polychronopoulos, Spring 2000</td>
+</tr>
+</table>
+
+<h1 align='center'>
+<a href='index.html'>Machine Problem 4 and 5</a>: Networked Quake2D</h1>
+
+<h2><a href='index.html#intro'>Introduction</a></h2>
+<h2><a href='description.html'>Problem Description</a></h2>
+<h2>The Procedures</h2>
+
+<p>All functions declared in C-style use the C calling convention (parameters on stack, return value
+in EAX/AX/AL, all registers other than esi and edi may be clobbered) and also have the function name
+prepended with a underscore ( _ ).  Parameters and return values specified in C format obey the following
+size conventions: short, 16 bit integer (default signed); int, 32-bit integer (default signed);
+pointer (of any type), 32-bit.
+
+<ul>
+ <li>Screen Handling</li>
+ <ul>
+  <li><a href='#graphicsinit'>_GraphicsInit</a></li>
+  <li><a href='#graphicsexit'>_GraphicsExit</a></li>
+  <li><a href='#setmode13'>_SetMode13</a></li>
+  <li><a href='#setmodec80'>_SetModeC80</a></li>
+  <li><a href='#drawmap'>_DrawMap</a></li>
+  <li><a href='#drawplayers'>_DrawPlayers</a></li>
+  <li><a href='#drawarrows'>_DrawArrows</a></li>
+  <li><a href='#drawmouse'>_DrawMouse</a></li>
+  <li><a href='#drawtext'>_DrawText</a></li>
+  <li><a href='#transparentblit'>_TransparentBlit</a></li>
+  <li><a href='#refreshscreen'>_RefreshScreen</a></li>
+ </ul>
+ <li>Image Loading</li>
+ <ul>
+  <li><a href='#loadgraphics'>_LoadGraphics</a></li>
+  <li><a href='#loadmap'>_LoadMap</a></li>
+  <li><a href='#loadfont'>_LoadFont</a></li>
+  <li><a href='#decodepcx'>_DecodePCX</a></li>
+ </ul>
+ <li>Input Handling</li>
+ <ul>
+  <li><a href='#installkeyboard'>_InstallKeyboard</a></li>
+  <li><a href='#removekeyboard'>_RemoveKeyboard</a></li>
+  <li><a href='#mouseinit'>_MouseInit</a></li>
+  <li><a href='#installmouse'>_InstallMouse</a></li>
+  <li><a href='#removemouse'>_RemoveMouse</a></li>
+  <li><a href='#installtimer'>_InstallTimer</a></li>
+  <li><a href='#removetimer'>_RemoveTimer</a></li>
+  <li><a href='#keyboardisr'>KeyboardISR</a></li>
+  <li><a href='#mousecallback'>MouseCallback</a></li>
+  <li><a href='#timerisr'>TimerISR</a></li>
+ </ul>
+ <li>Game Logic</li>
+ <ul>
+  <li><a href='#movearrows'>_MoveArrows</a></li>
+  <li><a href='#moveplayerlocal'>_MovePlayerLocal</a></li>
+  <li><a href='#firearrowlocal'>_FireArrowLocal</a></li>
+  <li><a href='#playerrespawn'>_PlayerRespawn</a></li>
+  <li><a href='#updateplayermap'>_UpdatePlayerMap</a></li>
+ </ul>
+ <li>Network Communication</li>
+ <ul>
+  <li><a href='#installnetwork'>_InstallNetwork</a></li>
+  <li><a href='#removenetwork'>_RemoveNetwork</a></li>
+  <li><a href='#networkcallback'>_NetworkCallback</a></li>
+  <li><a href='#updatefromnetwork'>_UpdateFromNetwork</a></li>
+ </ul>
+</ul>
+
+
+<h3><a name='graphicsinit'>bool GraphicsInit(void)</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li><em>None</em></li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li>Return 1 on error, 0 on success</li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li>Initialize graphics by:</li>
+  <li>Getting selector for segment 0A000h</li>
+  <li>Allocating backbuffer</li>
+  <li>Clearing Screen</li>
+  <li>Setting Palette</li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li>Get a selector for a real-mode segment by using <a
+  href=''>int 31h, function 2h</a></li>
+  <li>Allocate memory by using <a href='library.html#AllocMem'>_AllocMem</a></li>
+ </ul>
+</ul>
+
+<h3><a name='graphicsexit'>void GraphicsExit(void)</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li><em>None</em></li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li><em>None</em></li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li>Free memory allocated by <a href='#graphicsinit'>GraphicsInit</a></li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li>Free memory by using <a href=''>_FreeMem</a></li>
+ </ul>
+</ul>
+
+<h3><a name='setmode13'>void SetMode13(void)</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li><em>None</em></li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li><em>None</em></li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li>Set video adapter to mode 13h</li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li>Change video modes with <a href=''>int 10h, function 0h</a></li>
+ </ul>
+</ul>
+
+<h3><a name='drawmap'>void DrawMap(void)</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li>Reads from variables: Map, Images, Players</li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li>Writes to backbuffer</li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li>Draw the map centered around the player to the backbuffer</li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li>The upper left tile should be drawn starting at (8,12)</li>
+  <li>The upper left tile is 9 to the left and 5 above your player's
+  (X,Y)</li>
+  <li>Each change in the (X,Y) coordinates on the map corresponds to one
+  tile, or 16 pixels in the corresponding direction.</li>
+  <li>Remember that there are only 128 tiles, not 256.</li>
+  <li>Use string instructions to efficiently copy data.</li>
+ </ul>
+</ul>
+
+<h3><a name='drawplayers'>void DrawPlayers(void)</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li>Reads from variables: Images, Players, PlayerImages</li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li>Writes to backbuffer</li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li>Draws all visible players on the backbuffer</li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li>All players must be considered</li>
+  <li>A player must be both active and within a given range to be
+  visible</li>
+  <li>A player is within range if within ±9 tiles horizontally and ±5
+  pixels vertically of the local player</li>
+  <li>A player must be drawn with his or her image, indexed by the
+  player's number</li>
+  <li>Don't forget to convert back to screen coordinates to draw the
+  player</li>
+  <li>Draw the player using transparancy so the map can show through
+  behind him</li>
+ </ul>
+</ul>
+
+<h3><a name='drawarrows'>void DrawArrows(void)</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li>Reads from variables: Images, Arrows, ArrowImages</li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li>Writes to backbuffer</li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li>Draws all visible arrows on the backbuffer</li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li>All arrows must be considered</li>
+  <li>An arrow must be both active and within a given range to be
+  visible</li>
+  <li>A arrow is within range if within ±9 tiles horizontally and ±5
+  pixels vertically of the local player</li>
+  <li>A arrow must be drawn with the proper direction tile, indexed by the
+  Direction portion of the arrow descriptor</li>
+  <li>Don't forget to convert back to screen coordinates to draw the
+  arrow</li>
+  <li>Draw the arrow using transparancy so the map can show through
+  behind it</li>
+ </ul>
+</ul>
+
+<h3><a name='drawmouse'>void DrawMouse(void)</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li>Reads from variables: MouseImage, MouseX, MouseY</li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li>Writes to backbuffer</li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li>Draws the mouse cursor on the backbuffer</li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li>Only draw the mouse cursor on the playing field</li>
+  <li>Draw the cursor transparently, so everything else shows through</li>
+ </ul>
+</ul>
+
+<h3><a name='drawtext'>void DrawText(int X, int Y, char *Text)</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li>X, the screen x coordinate of the upper-left corner of your string </li>
+  <li>Y, the screen y coordinate of the upper-left corner of your string </li>
+  <li>Text, the 0 terminated string of text to be drawn</li>
+  <li>Reads from variable: FontMap</li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li>Writes to backbuffer</li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li>Draws a string of text to the backbuffer</li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li>Draw one character at a time, until the 0 is found</li>
+  <li>0 is not '0' - it is 00h</li>
+  <li>For each character, draw eight lines of eight pixels, probably
+  done easiest as eight horizontal lines of 8 pixels</li>
+  <li>Keep one pointer for the backbuffer location, and one for the
+  location in FontMap</li>
+  <li>Similarly, keep track of your X,Y coordinate in the letter as well
+  as your current letter</li>
+  <li>Don't worry about clipping at the edges of the screen - this
+  function will only be called with text that fits fully on the
+  screen</li>
+ </ul>
+</ul>
+
+<h3><a name='transparentblit'>void TransparentBlit(int x, int y, char *image, int sourcewidth)</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li>x, x coordinate of upper-left corner of destination in backbuffer</li>
+  <li>y, y coordinate of upper-left corner of destination in backbuffer</li>
+  <li>image, offset of 16x16x256 color image to copy to backbuffer</li>
+  <li>sourcewidth, the width of the source image - what needs to be
+  added to the offset for moving down one pixel</li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li>Write to backbuffer</li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li>Copy all non-transparent pixels of a 16x16 256 color image to the
+  given destination in backbuffer, from a block of images in
+  memory.</li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li>Transparent is defined as color index 0 - don't write these</li>
+  <li>Similar to DrawText, perform your copy in 16 lines of 16
+  pixels</li>
+  <li>Dissimilar from DrawText, do 16x16 pixels of copying, rather than
+  8x8, and do not look for a 0 at the end of the image source</li>
+ </ul>
+</ul>
+
+<h3><a name='refreshscreen'>void RefreshScreen(void)</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li>Reads from backbuffer</li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li>Writes to Video Memory</li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li>Copy backbuffer to screen as fast as possible</li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li>Use <a
+  href='http://www.ece.uiuc.edu/ece291/lecture/l17.html#String Opcodes'>String
+  operations</a> for fast copying (try copying dwords for fastest performance!)</li>
+  <li>(Optional) To avoid shearing, wait for the screen retrace to end before
+  copying (Information on how to do this exists on the internet)</li>
+ </ul>
+</ul>
+
+<h3><a name='loadgraphics'>void LoadGraphics(void)</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li>Reads from variables: TilesFilename, MouseFilename,
+  PlayersFilename, ArrowsFilename</li>
+  <li>Reads from corresponding files</li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li>Writes to variables: TileImages, MouseImage,
+  PlayerImages, ArrowImages, PaletteData</li>
+  <li>1 on error</li>
+  <li>0 on success</li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li>Load and decode PCX images for use in the Draw routines</li>
+  <li>Load palette from one of the PCX images for graphics initialization</li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li>Open a file by using <a href="library.html#OpenFile">OpenFile</a></li>
+  <li>Read from a file by using <a href="library.html#ReadFile">ReadFile</a></li>
+  <li>Close a file by using <a href="library.html#CloseFile">CloseFile</a></li>
+  <li>Call DecodePCX for each PCX file read</li>
+  <li>Use _ScratchBlock (provided by the library) for scratch space.  This is a
+  selector value, so put it into a segment register and offset into it that way!</li>
+ </ul>
+</ul>
+
+<h3><a name='loadmap'>_LoadMap</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li>Filename, the filename of the map to load</li>
+  <li>Reads from corresponding file</li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li>Writes to Map, RespawnPoints</li>
+  <li>1 on error</li>
+  <li>0 on success</li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li>Load the ascii map from file, converting the hex data into actual
+  binary data, ignoring all but hexadecimal digits</li>
+  <li>Load the respawn coordinates from the map file (they come as XY pairs
+  of hexidecimal-encoded bytes immediately after the map itself).</li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li>This is byte by byte (two ascii bytes into one binary byte, even),
+  so don't worry about endianness of the file</li>
+  <li>Hex digits are 0-9, A-F, and a-f - everything else should be
+  ignored</li>
+  <li>Read until the full size of the map has been filled</li>
+ </ul>
+</ul>
+
+<h3><a name='loadfont'>_LoadFont</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li>Filename, filename of the font pcx file to load</li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li>Writes to FontMap</li>
+  <li>1 on error</li>
+  <li>0 on success</li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li>Load and decode the PCX font file data</li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li>This should function much like LoadGraphics</li>
+ </ul>
+</ul>
+
+<h3><a name='decodepcx'>_DecodePCX</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li>SrcSel, selector of source data</li>
+  <li>Src, offset of source data</li>
+  <li>DestSel, selector of decoded data's destination</li>
+  <li>Dest, offset of decoded data's destination</li>
+  <li>SrcLen, length of source buffer</li>
+  <li>DestLen, length of destination buffer</li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li>Writes decoded PCX data to DestSel:Dest</li>
+  <li>Returns offset of palette in SrcSel (NOT Src)</li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li>Decode PCX data, placing in destination location - source must be
+  in memory</li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li>Remember that the PCX files are 256-color</li>
+ </ul>
+</ul>
+
+<h3><a name='installkeyboard'>_InstallKeyboard</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li></li>
+ </ul>
+</ul>
+
+<h3><a name='removekeyboard'>_RemoveKeyboard</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li></li>
+ </ul>
+</ul>
+
+<h3><a name='mouseinit'>_MouseInit</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li></li>
+ </ul>
+</ul>
+
+<h3><a name='installmouse'>_InstallMouse</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li></li>
+ </ul>
+</ul>
+
+<h3><a name='removemouse'>_RemoveMouse</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li></li>
+ </ul>
+</ul>
+
+<h3><a name='installtimer'>_InstallTimer</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li></li>
+ </ul>
+</ul>
+
+<h3><a name='removetimer'>_RemoveTimer</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li></li>
+ </ul>
+</ul>
+
+<h3><a name='keyboardisr'>KeyboardISR</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li></li>
+ </ul>
+</ul>
+
+<h3><a name='mousecallback'>MouseCallback</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li></li>
+ </ul>
+</ul>
+
+<h3><a name='timerisr'>TimerISR</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li></li>
+ </ul>
+</ul>
+
+<h3><a name='movearrows'>_MoveArrows</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li></li>
+ </ul>
+</ul>
+
+<h3><a name='moveplayers'>_MovePlayers</a></h3>
+<ul>
+ <li>Input</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Output</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Purpose</li>
+ <ul>
+  <li></li>
+ </ul>
+ <li>Notes</li>
+ <ul>
+  <li></li>
+ </ul>
+</ul>
+
+
+
+<h2><a href='index.html#prelim'>Preliminary Procedure</a></h2>
+</body>
+</html>

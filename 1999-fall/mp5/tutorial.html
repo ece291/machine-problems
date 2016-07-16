@@ -1,0 +1,248 @@
+<HTML>
+<HEAD><TITLE>ECE 291 MP 5</TITLE></HEAD>
+<BODY>
+
+<table border="0" cellPadding="3" width="100%">
+  <tbody>
+    <tr>
+      <td align="left" width="33%">ECE291</td>
+      <td align="middle" width="34%">Computer Engineering II</td>
+      <td align="right" width="33%">Kalbarczyk, Fall 1999</td>
+    </tr>
+  </tbody>
+</table>
+<center>
+<h1>Machine Problem 5:</h1>
+<h1>Protected Mode, High Resolution Graphics Tutorial</h1>
+<table border="1" cellPadding="3" width="60%">
+  <tbody>
+    <tr>
+      <td align="right"><b>Purpose</b></td>
+      <td>To force you to learn protected mode and VESA graphics!</td>
+    </tr>
+    <tr>
+      <td align="right"><b>Points</b></td>
+      <td>50</td>
+    </tr>
+    <tr>
+      <td align="right"><b>Due Date</b></td>
+      <td>Tuesday, November 23rd at 5pm</td>
+    </tr>
+  </tbody>
+</table>
+</center><!-- <CENTER><B><I>This MP is under Construction</I></B></CENTER> -->
+<p>&nbsp;</p>
+
+<ul>
+  <li><a href="tutorial.html"><b>Intro Stuff (This File)</b></a>
+    <ul>
+      <li><a href="#Don't Print This">Don't Print This</a></li>
+      <li><a href="#How to Do this MP">How to Do this MP</a></li>
+      <li><a href="#The Goal">The Goal</a></li>
+      <li><a href="#Task 1: Play with The Goal Program">Task 1:&nbsp; Play with the Goal Program</a></li>
+      <li><a href="#Protected Mode and your Final Project">Protected Mode and
+        Your Final Project</a></li>
+      <li><a href="#Resources">Resources</a></li>
+    </ul>
+  </li>
+  <li><a href="dev_env.html"><b>Development Environment</b></a>
+    <ul>
+      <li><a href="dev_env.html#Task 2: Beating the Simplest Program to Death">Task 2:&nbsp; Beating The Simplest Program to Death</a></li>
+      <li><a href="dev_env.html#What Actually Happened When You Ran Your Program">What Actually Happened When You Ran Your Program</a></li>
+    </ul>
+  </li>
+  <li><a href="masm_nasm.html"> <b> MASM vs. NASM</b></a>
+    <ul>
+      <li><a href="masm_nasm.html#Task 3: A More Interesting Program">Task 3: A More Interesting Program</a></li>
+      <li><a href="masm_nasm.html#Task 4: Setting up a Makefile">Task 4: Setting Up a Makefile</a></li>
+    </ul>
+  </li>
+  <li><a href="real_protected.html"><b>Real Mode vs. Protected Mode</b></a>
+    <ul>
+      <li><a href="real_protected.html#Task 5:  Generalizing your Makefile">Task
+        5: Generalizing your Makefile</a></li>
+      <li><a href="real_protected.html#Task 6:  Get the Time">Task 6: Get the Time</a></li>
+      <li><a href="real_protected.html#Task 7:  Output a String to the Screen&nbsp;">Task
+        7: Output a String to the Screen</a></li>
+      <li><a href="real_protected.html#Task 8:  Get a Key Press">Task 8: Get Key Press</a></li>
+      <li><a href="real_protected.html#Task 9:  Draw Pixels in 320x200">Task 9: Write Pixels in 320x200</a></li>
+    </ul>
+  <li><a href="lib_intro.html"><b>Intro to Pete's Library</b></a>
+    <ul>
+      <li><a href="lib_intro.html#Pete's Proc and Invoke Macros">Proc and Invoke Macros</a></li>
+      <li><a href="lib_intro.html#Task 10:  Simple Proc / Invoke Example">Task
+        10: Simple Proc / Invoke Example</a></li>
+      <li><a href="lib_intro.html#C-Style Procedures">C-Style Procedures</a></li>
+      <li><a href="lib_intro.html#Task 11:  Set up a Jump Table">Task 11:&nbsp; Set
+        Up a Jump Table</a></li>
+      <li><a href="lib_intro.html#Task 12:  Building and Linking the Library">Task
+        12: Building and Linking the Library</a></li>
+      <li><a href="lib_intro.html#Task 13:  Random Number Generator">Task 13:
+        Random Number Generator</a></li>
+      <li><a href="lib_intro.html#File Handling Routines">File Handling Routines</a></li>
+      <li><a href="lib_intro.html#Task 14:  Read a Text File">Task 14: Read a Text File</a>
+        (Optional)</li>
+    </ul>
+  </li>
+  <li><a href="vesa.html"><b>High Resolution Graphics with VESA</b></a>
+    <ul>
+      <li><a href="vesa.html#Task 15:  Write Pixels in VESA Mode">Task 15: Write Pixels in VESA Mode</a></li>
+      <li><a href="vesa.html#Task 16:  Load Full Color BMP">Task 16: Load Full
+        Color BMP</a></li>
+      <li><a href="vesa.html#Managing Memory Buffers">Managing Memory Buffers</a></li>
+      <li><a href="vesa.html#Task 18:  Draw Blob / Blur Loop">Task 17: Blur Loop</a></li>
+      <li><a href="vesa.html#Task 18:  Draw Blob / Blur Loop">Task 18: Draw Blob
+        / Blur Loop</a></li>
+      <li><a href="vesa.html#Task 19:  Draw Line / Blur Loop">Task 19: Draw Line / Blur Loop</a>
+        (Optional)</li>
+      <li><a href="vesa.html#Task 20:  Draw Dots / Smoke Loop">Task 20: Draw Dots / Smoke Loop</a>
+        (Optional)</li>
+      <li><a href="vesa.html#Task 21:  Conway's Game of Life">Task 21: Conway's Game of Life</a>
+        (Optional)</li>
+      <li><a href="vesa.html#Task 22:  Take a Screen Shot">Task 22: Take a
+        Screen Shot</a> (Optional)</li>
+    </ul>
+  </li>
+  <li><a href="lib_reference.html"><b> Library Function Reference</b></a></li>
+  <li><a href="questions.html"><b>Questions</b></a></li>
+  <li><b><a href="answers.html">Answers</a></b></li>
+  <li><b><a href="review.html">Exam Review</a></b></li>
+</ul>
+
+<P><font size="+2"><a name="Don't Print This">Don't Print This</a></font></P>
+<ul>
+  <li>Write-up will improve constantly.</li>
+  <li>Links don't do anything when you click a piece of paper.</li>
+  <li>Copy/Paste is harder on paper.</li>
+</ul>
+
+<P><font size="+2"><a name="How to Do this MP">How to Do this MP</a></font></P>
+<P>I could have a huge reference section, and then a huge code description
+section, but I decided to do a little bit at a time in a tutorial format.&nbsp;
+&quot;Here's how this works.&nbsp; Now here's how you write the code.&nbsp; Now
+write the code.&quot;&nbsp; It's probably not worth reading over the whole thing
+before you start.&nbsp; Just sit down at a computer and go through it step by
+step.&nbsp; It's going to some time to go through this, but you're
+going to learn everything the right way with no &quot;black boxes&quot; or
+mysterious files given to you by the TAs.&nbsp; If a file does seem mysterious,
+type it in instead of blindly pasting it in.&nbsp; Look at the references.&nbsp;
+Ask the guy (or gal) next to you.&nbsp; Hopefully you'll learn not only
+32-bit protected mode, but a little about how assemblers, compilers, and linkers
+work, learn a little about Makefiles, learn a little about graphics, and maybe
+even learn a little bit about <i>yourself.</i>&nbsp; So lets begin where every
+good tutorial should begin -- at the end.</P>
+
+<P><font size="+2"><a name="The Goal">The Goal</a></font></P>
+<P>The Goal is to make a cool graphics program in protected mode using a
+high-resolution, high-color graphics mode, which you'll play with in a second.&nbsp;
+I want to make this the
+best protected-mode tutorial ever, so keep a text file of running
+comments.&nbsp; Even if you figure it out in the next paragraph, perhaps it
+should have been moved up.&nbsp; Send that text file to me at the end. If you have a question or if something is
+unclear, incomplete, or just plain wrong, e-mail me at <a href="mailto:gallicch@uiuc.edu">gallicch@uiuc.edu</a>
+with &quot;MP5 -- you suck because xxxxx&quot; as the subject.</P>
+
+<P><font size="+2"><a name="Task 1: Play with The Goal Program">Task 1: Play
+with The Goal Program</a></font></P>
+
+<P>Either download <a href="pmode_tutorial.zip">pmode_tutorial.zip</a> or copy
+it from the V: drive in the lab.</P>
+
+<P>Run the cool graphics program <b>final.exe</b></P>
+
+<p><a href="questions.html#Question1">Question 1:</a>&nbsp; How running the goal make you <i>feel?</i>&nbsp;
+      Scared?&nbsp; Intimidated?&nbsp; Excited to know you'll learn cool
+      stuff?&nbsp; Pissed that you're going to be forced to do all this
+      crap?&nbsp; Happy that it doesn't look like there's a Parse function
+      involved?</p>
+
+<p>Don't worry!</p>
+
+<P><font size="+2"><a name="Protected Mode and your Final Project">Protected
+Mode and Your Final Project</a></font></P>
+
+<p><b><i>Advantages</i></b></p>
+<ul>
+  <li>Better memory management
+    <ul>
+      <li>Can allocate huge buffers for huge pictures</li>
+      <li>Don't have to deal with stupid segment limitations</li>
+    </ul>
+  </li>
+  <li>Better instructions
+    <ul>
+      <li>Take full advantage of advanced instructions</li>
+      <li>Reference memory with <i>any</i> register or combination</li>
+    </ul>
+  </li>
+  <li>High color, high resolution graphics
+    <ul>
+      <li>Your projects will look <i>much</i> nicer</li>
+      <li>Palettes used to be a huge pain.</li>
+    </ul>
+  </li>
+  <li>Better tools
+    <ul>
+      <li>NASM is much cleaner and more consistent MASM</li>
+      <li>NSAM uses standard formats and is compatible with standard GNU tools.</li>
+    </ul>
+  </li>
+  <li>Pete's Library
+    <ul>
+      <li>We give you libraries <i>with</i> source code for some pretty cool
+        stuff.</li>
+    </ul>
+  </li>
+</ul>
+<p><i><b>Disadvantages</b></i></p>
+<ul>
+  <li>You're not as used to it's beauty.</li>
+  <li>Doing hardware stuff will be harder.</li>
+  <li>Doing sound will be harder</li>
+  <li>Doing networking will be harder</li>
+  <li>Debugging will be harder</li>
+</ul>
+<p><b>If you use Protected Mode</b></p>
+<ul>
+  <li>If you do sound in your project, make it a nice Pete-like library so it's
+    no longer harder.</li>
+  <li>If you do networking in your project, it it a nice Pete-like library so
+    it's no longer harder.</li>
+  <li>Document your successes and tribulations for others in the future</li>
+  <li>If you contribute to the future of protected mode programming in the
+    class, you will be more kindly graded.</li>
+</ul>
+<p><font size="+2"><a name="Resources">Resources</a></font></p>
+NASM:
+<BR><A HREF="http://www.web-sites.co.uk/nasm/">http://www.web-sites.co.uk/nasm/</A>
+<BR><BR>
+DJGPP:
+<BR><A HREF="http://www.delorie.com/djgpp/">http://www.delorie.com/djgpp/</A>
+<BR><A HREF="news:comp.os.msdos.djgpp">news:comp.os.msdos.djgpp</A>
+
+<p>DPMI:<br>
+<a href="http://www.ece.uiuc.edu/ece291/class-resources/pmode/dpmi/index.html">http://www.ece.uiuc.edu/ece291/class-resources/pmode/dpmi/index.html</a>
+<br>
+<br>
+Graphics programming:<br>
+<a href="http://www.osha.igs.net/~dandelong/nw/index.htm">http://www.osha.igs.net/~dandelong/nw/index.htm</a><br>
+</p>
+
+<p>Other 32-bit Stuff that we're not using here:</p>
+
+<p>
+<br>
+WDOSX:<br>
+<a href="http://www.geocities.com/SiliconValley/Park/4493/">http://www.geocities.com/SiliconValley/Park/4493/</a><br>
+<br>
+<br>
+QFORCE 32-bit programming page:<br>
+<a href="http://www.geocities.com/SiliconValley/Peaks/1231/">http://www.geocities.com/SiliconValley/Peaks/1231/</a><br>
+<br>
+<br>
+Dolphinz Win32 Assembly Programming page:<br>
+<a href="http://personal5.iddeo.es/ret007ow/index.html">http://personal5.iddeo.es/ret007ow/index.html</a><br>
+</p>
+
+</BODY>
+</HTML>

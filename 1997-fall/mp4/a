@@ -1,0 +1,48 @@
+<H2>Preliminary Procedure</H2>
+
+<UL>
+<LI>Copy the empty MP4 program (MP4.ASM), libraries (libmp4.lib, lib291.lib),
+and Makefile from the network drive to your home directory with the following
+command: <BR>
+
+<TT>xcopy /s I:\ece291\mp4 F:\mp4</TT><br>
+
+or download the same files from the web as <a href="mp4.zip">mp4.zip</a>.
+
+<LI>As with the other MP's, run NMake to build an executable program using
+the given MP4 library functions.</LI>
+
+<LI>To receive full credit for the assignment, you need to implement each of
+the subroutines described above with your own code.&nbsp; As given, the
+MP4.ASM file will run the library versions of those subroutines</LI>
+
+</UL>
+
+<H2>Errors and Eratica</H2>
+<ul>
+<li><i>Will be listed here and/or discussed in the newsgroup</i>
+</ul>
+
+<H2>Final Steps</H2>
+
+<OL>
+<LI>Demonstrate MP4.EXE to a TA or to the instructor.
+Be sure that you can run the all the test cases
+that exercise each routine.
+
+<LI>Be prepared to answer questions about any aspect of the operation of your
+program.&nbsp; The TA's will not accept an MP if you cannot fully explain
+the operation of any part of your algorithm or code.</LI>
+
+<LI>Copy you programs to the handin floppy: 
+  <TT>A:\HANDIN <I>YourWindowsLogin</I></TT></LI>
+
+<LI> Print MP4.ASM.  Use small fonts to save paper.</LI>
+</OL>
+
+<HR WIDTH="100%">
+<H2>MP4.ASM (Program framework)</H2>
+<font size=-1><pre>
+
+</pre></font> </BODY>
+</HTML>

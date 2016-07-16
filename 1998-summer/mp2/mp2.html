@@ -1,0 +1,767 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 2</title>
+</head>
+
+<body bgcolor=ffffff>
+<p>
+<table cellpadding=3 width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Moorman, Summer 1998</td></tr></table>
+<h2> </h2>
+
+
+<center><h1>Machine Problem 2: Error Detection </h1></center>
+<p>
+<center><table border=1 cellpadding=3 width=60%>
+  <tr><td align=right><b>Due Date</b></td><td>Tuesday 7/7/98</td></tr>
+  <tr><td align=right><b>Purpose</b></td><td>
+     Subroutines, User I/O, Error Detection Algorithms 
+     </td></tr>
+   <tr><td align=right><b>Points</b></td><td>50</td></tr>
+</table>
+</center>
+
+<!--
+<p><img src="../../icon/construct.gif">This MP is under construction <p>
+-->
+
+<h2>Introduction</h2>
+   In any type of digital communication transmitted data sent over a wire
+   may contain errors when it is received.  This data corruption is usually
+   due to noise on the communication medium.  In order for communication to
+   be useful we need to be able to depend on the correctness of the data.
+   To help solve this problem there are a number of error control
+   algorithms designed to ensure the reliability of digital communication.
+   These fall into two major areas: Error-correction and Error-detection.
+<p>
+   Error-correction is a method of including redundant information in a
+   data stream so that a receiver can determine what a message with an
+   error should have been.  These methods usually uses some type of
+   probabilistic analysis to determine what the data is according to how
+   close it is to the possible choices.
+   For example, if only the numbers 1-10 were being transmitted, we
+   know these can be represented with 4 bits.  However, we might choose to
+   represent them with 8 bits so that an error in the byte would still be
+   able to be recognized as the correct number.
+<p>
+   Error-detection is a more commonly used method for error control.  This
+   can be attributed to its efficiency over error correction.  The extra bits
+   needed for error correction are around one order of magnitude more than
+   the extra bits need for simple error detection. Once an error is detected
+   the sender can be notified and the original message resent.  This is the
+   general method used in most network protocols including TCP/IP.
+<p> 
+  In this MP, we will write an interactive assembly program that encodes
+  and decodes text messages using a Cyclic Redundancy Code (CRC) for
+  error-detection.
+  The text message will consist of symbols that include all ASCII
+  characters between the space (' '), and the tilda ('~').  
+  Each symbol will be added to a bit stream to calculate the CRC.
+
+<h2>Error Detection</h2>
+  The general method used for error detection is to perform some
+  computation on the data being sent and append the results of this
+  calculation to the sent message.  When the message is received the
+  same computation is applied to the data stream and the results
+  compared to the transmitted results.  If they are equal the message
+  is valid, otherwise an error occurred.
+
+<h3>Parity</h3>
+  There are many different ways to approach the detection
+  of errors in the transmitted message.  Let's first look at the
+  simple idea of a parity bit.  One method employed is the use of an
+  extra bit for every x-bits of data.  This bit, the parity bit, is
+  used to signify if the number of 1's in the previous x-bits was even
+  or odd.  In other words, we might add an even parity bit for every
+  8 bits of data.  If the parity bit is 1 then there was an even number
+  of bits in the 8 bit stream, otherwise the number of bits was odd.
+  As you might guess, this method only has limited value in detecting
+  errors since a 2 bit error (2 bits are incorrect) might still produce
+  the correct parity bit even though the message was errored.
+
+<h3>Checksum</h3>
+  The second method we will look at is called a checksum.  This is a
+  simple computation of adding together all bytes in the data stream for
+  a resulting sum that consists only of a byte.  If the sum exceeds the
+  size of a byte then only the lower 8 bits are kept for the sum.  This
+  method can detect more errors than just a parity bit and it is very
+  simple to implement.  However, it is not nearly as robust as the final
+  method we will discuss.
+
+<h3>CRC</h3>
+  The last method we will study is the Cyclic Redundancy Code (CRC).  This
+  is the method most often used in practice.  It can be quickly computed
+  and can detect most instances of errored messages.
+
+<h4>Theory</h4>
+  The basic idea behind the CRC is to use a known polynomial which is used
+  to divide the bit stream.  Both sides of the communication (sender and
+  receiver) must use the same polynomial in the calculation.  The frame
+  to be sent is divided by the polynomial and the remainder is appended to
+  the outgoing message.  Let the generator polynomial be G(x), and the
+  frame to be sent be T(x).  Enough 0 bits are appended to T(x) before
+  dividing so that the last bit in the message can be divided by G(x).  This
+  is equal to 1 bit less than the number of bits in G(x).  
+  After the division the
+  remainder is subtracted from the bit stream with the appended 0 bits.
+  It should be noted that the transmitted frame must be at least as large
+  as the generator polynomial, otherwise the remainder is the transmitted
+  frame.
+<p>
+  Upon receiving the message the same polynomial is used to divide the
+  transmitted message.  If the result is 0, then the message had no
+  errors.  To make more sense of this lets look at a case in decimal.
+  If the message to send is 798, and the generator polynomial is 13, what
+  would happen? <br>
+<p>
+  First we append the message: 798 -> 7980<br>
+  Then divide: 7980/13 = 613 R 11<br>
+  We subtract the remainder: 7980 - 11 = 7969<br>
+  The message is transmitted: 7969<br>
+  The receiver divides: 7969/13 = 613 R 0<br>
+  The remainder is 0 so there was NO Error.<br>
+<p>
+  More generally we have T(x), G(x), M(x), and R(x) where M(x) is the
+  actual message transmitted and R(x) is the remainder.<br>
+<p>
+  Transmitter:<br>
+  R(x) = ( T(x) + 0's ) MOD G(x)<br>
+  M(x) = ( T(x) + 0's ) - R(x)<br>
+<p>
+  Receiver:<br>
+  R(x) = M(x) / G(x)<br>
+  If R(x) = 0, then NO Error.<br>
+<p>
+  What kind of errors can this detect?  (Without detailing all of the theory
+  why, the following errors will be found):<br>
+<ul>
+<li>All single bit errors.</li>
+<li>Most double bit errors (depending on the polynomial).</li>
+<li>All odd number of bit errors.</li>
+<li>Errors with a burst length < r, where r = # bits in G(x).
+</ul>
+
+<h4>Implementation</h4>
+ The two most important concepts we must know to calculate the CRC is what
+  polynomial to use for the division, and how the division should work.  
+<p>
+  The polynomials that we will be using are international standards.  They
+  generate 16-bit results and will catch 99.998% of all 18-bit error bursts.
+  They are generally used on messages with 8-bit characters.  You should note
+  that one requirement of all generator polynomials is that both the
+  most significant and least significant bits must be 1.  The two
+  polynomials are:
+<center><table border=1>
+<tr><td>Name</td> <td>Polynomial</td> <td>Bit representation</td></tr>
+<tr><td>CRC-16</td> <td>x^16 + x^15 + x^2 + X^0</td>
+    <td>11000000000000101</td</tr>
+<tr><td>CRC-CCITT</td> <td>x^16 + x^12 + x^5 + x^0</td>
+    <td>10001000000100001</td</tr>
+</table></center>
+
+<p>
+  Division takes place by using polynomial arithmetic modulo 2.  What this
+  means is that operations are performed at a binary level but there are
+  NO carries for addition and NO borrows for subtraction.  If you do a couple
+  examples you will see that both addition and subtraction can be thought
+  of as an exclusive.  They are exactly the same, an XOR.
+
+<center><table border=0><right>
+<tr><td align=right>Example 1: <br>Addition</td><td width=10%></td>
+    <td align=right>Example 2: <br>Subtraction</td></tr>
+<tr><td align=right>11011011</td><td></td>
+    <td align=right> 11011011</td></tr>
+<tr><td align=right>+10101010</td><td></td>
+    <td align=right>-10101010</td></tr>
+<tr><td align=right>------------</td><td></td>
+    <td align=right>------------</td></tr>
+<tr><td align=right> 01110001</td><td></td>
+    <td align=right> 01110001</td></tr>
+</right></table></center>
+
+  The rest of the division is exactly like performing long division in
+  decimal except that we are working in base 2.  To tell if the divisor
+  goes into part of the dividend you just look at the high bit, if it is
+  a 1 then it goes in 1 time, if it is a 0 then it goes in 0 times.
+<p>
+  The easiest way to grasp the method is to look at an example.  For
+  simplicity we will use 5-bit generator polynomial as the divisor and
+  an 8-bit frame as the dividend.
+<ul>
+<li> Frame: 10110111 </li>
+<li> Generator: 11001</li>
+<li> Frame with appended bits: 101101110000</li>
+<li> The division: </li>
+</ul>
+<table align=center>
+<tr><td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td>1<td>1<td>0<td>1<td>0<td>0<td>1<td>1</tr>
+<tr><td> <td> <td> <td> <td> <td>_<td>_<td>_<td>_<td>_<td>_<td>_<td>_<td>_<td>_<td>_<td>_<td>_</tr>
+<tr><td>1<td>1<td>0<td>0<td>1<td>|<td>1<td>0<td>1<td>1<td>0<td>1<td>1<td>1<td>0<td>0<td>0<td>0</tr>
+<tr><td> <td> <td> <td> <td> <td> <td>1<td>1<td>0<td>0<td>1<td> <td> <td> <td> <td> <td> <td> </tr>
+<tr><td> <td> <td> <td> <td> <td> <td>_<td>_<td>_<td>_<td>_<td> <td> <td> <td> <td> <td> <td> </tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td>1<td>1<td>1<td>1<td>1<td> <td> <td> <td> <td> <td> </tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td>1<td>1<td>0<td>0<td>1<td> <td> <td> <td> <td> <td> </tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td>_<td>_<td>_<td>_<td>_<td> <td> <td> <td> <td> <td> </tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td> <td>0<td>1<td>1<td>0<td>1<td> <td> <td> <td> <td> </tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td> <td>0<td>0<td>0<td>0<td>0<td> <td> <td> <td> <td> </tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td> <td>_<td>_<td>_<td>_<td>_<td> <td> <td> <td> <td> </tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td> <td> <td>1<td>1<td>0<td>1<td>1<td> <td> <td> <td> </tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td> <td> <td>1<td>1<td>0<td>0<td>1<td> <td> <td> <td> </tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td> <td> <td>_<td>_<td>_<td>_<td>_<td> <td> <td> <td> </tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td>0<td>0<td>1<td>0<td>0<td> <td> <td> </tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td>0<td>0<td>0<td>0<td>0<td> <td> <td> </tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td>_<td>_<td>_<td>_<td>_<td> <td> <td> </tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td>0<td>1<td>0<td>0<td>0<td> <td> </tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td>0<td>0<td>0<td>0<td>0<td> <td> </tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td>_<td>_<td>_<td>_<td>_<td> <td> </tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td>1<td>0<td>0<td>0<td>0<td> </tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td>1<td>1<td>0<td>0<td>1<td> </tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td>_<td>_<td>_<td>_<td>_<td> </tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td>1<td>0<td>0<td>1<td>0</tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td>1<td>1<td>0<td>0<td>1</tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td>_<td>_<td>_<td>_<td>_</tr>
+<tr><td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td> <td>1<td>0<td>1<td>1</tr>
+</table>
+
+
+<ul>
+<li>The remainder: 1011</li>
+<li>Transmitted Frame: 101101111011<br>
+      (We subtracted the remainder = XOR)</li>
+</ul>
+
+  Now that we know how to do the division we just use our 17-bit polynomials
+  and operate on the received frame by XORing bit by bit.  This is the method
+  that you will use in your program.
+
+<h4>Practical Implementation</h4>
+  One final note regarding the implementation of CRC calculations in
+  real programs.  Performing bit by bit shifting and XORing is much too
+  expensive for computation on all incoming data.  This would involve at
+  least one clock cycle of computation for each bit.  What is used instead
+  is a lookup table for the CRC codes.  The incoming message is broken at
+  the byte boundaries.  Each byte is used to access a table with 256 values.
+  The resulting value is used to XOR into the final result.  The next byte
+  is used to reference the table and the result XORed.  This helps eliminate
+  a shifting and XORing loop for 7 of every 8 bits.  Once you have
+  completed this MP you will more easily recognize the significant
+  optimization that this provides.
+                        
+<h2>User Interface</h2>
+  <ul>
+  <li>You are given the framework of a program which provides
+      a menu-driven interface. <p>
+
+  <li>By selecting an option from the menu, the user can:
+      <ul>
+      <li>Enter text message or binary data
+      <li>Print the contents of the message or buffer
+      <li>Calculate the Text Message Checksum
+      <li>Encode a message with a CRC or decode the buffer with CRC
+      </ul><p>
+
+  <li>All binary data is entered and displayed from left-to-right with
+      the <i>Least Significant Bit (LSB)</i> first.
+
+  </ul>
+
+<h2>Sample Input & Output</h2>
+<ul>
+
+<li>Results from a sample run of the program are shown below:<br>
+    (<b>Boldface</b> letters are provided as input)<p>
+<table border=1><tr><td><tt>---------- MP2 Menu -----------<br>
+  Enter   (T)ext    (B)inary<br>
+  Print   (M)essage (R)buffeR<br>
+  Error Detect:<br>
+        (C)hecksum<br>
+        (E)ncode CRC<br>
+        (D)ecode CRC<br>
+---- [ESC] or (Q)uit = exit ----<br>
+<br>
+&gt</tt><b>T</b><tt> Enter Text Message:<br> </tt><b>Hello!</b><br><br>
+<tt>&gt</tt><b>C</b><tt> Checksum = 21<br><br>
+&gt</tt><b>M</b><tt> Text Message: <br>Hello!<br><br>
+&gt</tt><b>E</b><tt> The old buffer is: <br></tt>00010010 10100110 00110110 00110110
+             11110110<br>10000100<br><br>The CRC is: -12636<br><br>
+             The new buffer is:<br>00010010 10100110 00110110 00110110
+             11110110<br>10000100 11001110 10100100<br><br>
+&gt</tt><b>D</b><tt> The remainder = 0<br>The CRC verified the message.<br><br>
+             Text Message:<br>Hello!<br><br>
+&gt</tt><b>B</b><tt> Enter Binary Data: <br></tt><b>
+             111111110000000010101010</b><br><br>
+<tt>&gt</tt><b>D</b><tt> The remainder = 4080<br>There was a CRC error: Message
+             corrupt.<br><br></tt>
+</pre></td></tr></table>
+<p>
+
+<li>To understanding the program, run the library-based MP2.EXE 
+    program interactively.
+    Try encoding and decoding CRC's for your own data.
+<p>
+
+<li>A sample input data, <tt>test1.in</tt>, is included with this MP.  <br>
+    Use the following command to pipe this file into MP2: <br>
+    <tt>mp2 &lt test1.in</tt><br>
+    Your results should match <tt>test1.out</tt>. 
+<p>
+
+<li>Your program should work for all types of data.  <Br>
+    TAs will provide you with additional test cases when you demo your MP.
+</ul>
+
+
+<h2>Data Structures</h2>
+  <ul>
+  <li>A few variables have already been defined for you in the program
+      framework.  <p>
+     <ul>
+     <li><b>TextMsg</b>: String of ASCII bytes holding raw text.<br>
+          The end of this string should always be marked with 
+          the NULL character.  <p>
+     <li><b>Buffer</b>: An array of bytes that holds the
+         encoded data. <br> 
+         The first code begins with the least 
+         significant bit (LSBit) of the first byte (Buffer[0]) in the array.
+         The next code begins at the next bit location in the buffer.
+         Note that the bit buffer may overlap multiple 
+         byte locations.<p>
+     <li><b>BufferLength</b>: A word which indicates how many
+         bits are stored in the buffer.<p>
+     </ul> <p>
+   <li>A few constants have also been defined:<p>
+     <ul>
+     <li><b>TextMsgMaxLength</b> == 70 <i>bytes</i></b>,<br>
+        i.e., Just less than one line of full-screen text.<p>
+     <li><b>BufferMaxLengthBits</b> == TextMsgMaxLength * 8 + 16 <i>bits</i>,<br>
+        i.e., The Text Message times 8-bits/character plus 2 bytes for the CRC.<p>
+     <li><b>BufferMaxLength</b> == 1+(BufferMaxLengthBits/8) <i>bytes</i>,<br>
+        i.e., Number of bytes required to hold Buffer, rounded up to next byte.<p>
+     <li><b>CRC16</b> == 1000000000000101b<br>
+        i.e., CRC-16 polynomial (without the high bit).<p>
+     <li><b>CRCCCITT</b> == 0001000000100001b<br>
+        i.e., CRC-CCITT polynomial (without the high bit).<p>
+     <li><b>CRC</b> == 1010000000000001b (1000010000001000b)<br>
+        i.e., CRC-16 (CRC-CCITT) polynomial reversed for easier division.<p>
+     </ul>
+  </ul>
+
+<h2>Procedures</h2>
+
+  <ul>
+  <li>This assignment has nine procedures.  
+      You will receive credit for this
+      assignment by replacing each of the nine
+      procedures listed below with your own code.  
+  <li>Experiment with the working code 
+      to gain a full understanding of how the programs works.
+  <li>Your program should exactly match the functionality of the library 
+      subroutines.
+  <li>All subroutines should be <i>modular</i>.  They should use the stack to
+      <i>preserve</i> the value of any registers they may modify.  
+  </ul>
+
+<ul>
+
+
+<li><font size=+1><b>PrintTextMsg</b></font>
+  <ul>
+  <li><b>Purpose</b>: Prints the contents of the <tt>TextMsg</tt>
+       variable.
+  <li><b>Inputs:</b> <tt>TextMsg</tt> variable
+  <li><b>Outputs:</b> Writes to screen
+  <li><b>Hints:</b> Use LIB291 Functions where appropriate.
+  <li><b>Points</b>: 5
+  </ul><p>
+
+<li><font size=+1><b>ReadTextMsg</b></font>
+  <ul>
+  <li><b>Purpose</b>: Read a Text Message from the keyboard.  
+     <ul>
+     <li>Allows backspacing (BS = ASCII 8)
+     <li>Ignores line feeds (LF = ASCII 10) 
+     <li>Prevents Underflow and Overflow of variables <br>
+         (i.e., writing past the beginning or end of TextMsg)
+     <li>Terminates with a carriage return  (CR = ASCII 13)
+     <li>Rejects any invalid input and beeps
+     <li>Marks end of <tt>TextMsg</tt> with a NULL.
+     </ul>
+  <li><b>Inputs:</b> Keyboard
+  <li><b>Outputs:</b> <tt>TextMsg</tt> variable
+  <li><b>Hint:</b> To erase a character from the screen, print 
+   a backspace, then whitespace, then backspace.
+  <li><b>Points</b>: 5
+  </ul><p>
+
+<li><font size=+1><b>PrintBuffer</b></font>
+  <ul>
+  <li><b>Purpose</b>: Prints the contents of the binary 
+       <tt>Buffer</tt> array
+     <ul>
+     <li>Prints 8 bits at a time
+     <li>Prints least significant bit of each symbol first.
+     <li>Prints 5 bytes (40 bits) per line
+     </ul>
+  <li><b>Inputs:</b>
+      <ul>
+      <li><tt>Buffer</tt> variable
+      <li><tt>BufferLength</tt> variable
+      </ul>
+  <li><b>Outputs:</b> Writes to screen
+  <li><b>Hint:</b> Review your shifting techniques and modulo arithmetic!
+  <li><b>Points</b>: 5
+  </ul><p>
+
+
+<li><font size=+1><b>ReadBuffer</b></font>
+  <ul>
+  <li><b>Purpose</b>: Read binary Buffer from the keyboard.  
+     <ul>
+     <li>Accepts only 0's and 1's
+     <li>Allows backspacing
+     <li>Prevents Underflow and Overflow of variable
+     <li>Terminates with a carriage return  (CR = ASCII 13)
+     <li>Ignores line feeds (LF = ASCII 10) 
+     <li>Rejects any invalid input and beeps
+     <li>Sets <tt>BufferLength</tt> = number of bits read
+     </ul>
+  <li><b>Inputs:</b> Keyboard
+  <li><b>Outputs:</b>
+      <ul>
+      <li><tt>Buffer</tt> variable
+      <li><tt>BufferLength</tt> variable
+      </ul>
+  <li><b>Calls</b>: <i>AppendBufferN</i>
+  <li><b>Points</b>: 5
+  </ul><p>
+
+<li><font size=+1><b>Checksum</b></font>
+  <ul>
+  <li><b>Purpose</b>: Calculates the Checksum of the Text Message
+  <li><b>Input:</b> <tt>TextMsg</tt> variable
+  <li><b>Outputs:</b> Output Checksum to screen
+  <li><b>Points</b>: 3
+  </ul><p>
+
+
+<li><font size=+1><b>AppendBufferN</b></font>
+  <ul>
+  <li><b>Purpose</b>: Appends a variable-length symbol to the end of 
+      the Buffer array.
+  <li><b>Inputs</b>: 
+     <ul>
+     <li>AX = Symbol 
+     <li>DH = Symbol-size (Number of bits)
+     </ul>
+  <li><b>Output</b>: Appends symbol-size bits to <i>Buffer</i> then 
+     adds symbol-size to <i>BufferLength</i> 
+  <li><b>Calls</b>: This function is called by <i>EncodeCRC</i> and <i>ReadBuffer</i>
+  <li><b>Points</b>: 7
+  </ul><p>
+
+
+<li><font size=+1><b>EncodeCRC</b></font>
+  <ul>
+  <li><b>Purpose</b>: Puts the text message into the buffer.<br>
+                      Calculates the CRC of the buffer and appends the
+                      resulting remainder to the end of the buffer.
+  <li><b>Input</b>:
+     <ul>
+     <li><tt>TextMsg</tt> variable
+     </ul>
+  <li><b>Output</b>:
+     <ul>
+     <li>Old Buffer output to screen
+     <li>Calculated CRC output to screen
+     <li><tt>Buffer</tt> has Calculated CRC appended
+     <li><tt>BufferLength</tt> updated
+     <li>New Buffer output to screen
+     </ul>
+  <li><b>Calls</b>: <i>AppendBufferN</i> and <i>Divide</i>
+  <li><b>Points</b>: 5
+  </ul><p>
+
+<li><font size=+1><b>DecodeCRC</b></font>
+  <ul>
+  <li><b>Purpose</b>: Decodes Buffer to determine if the Message was valid<br>
+                      (Checks if CRC Polynomial divides evenly into buffer)
+  <li><b>Inputs</b>:
+     <ul>
+     <li><tt>Buffer</tt> variable
+     <li><tt>BufferLength</tt> variable
+     </ul>
+  <li><b>Output</b>:
+     <ul>
+     <li>Outputs calculated Remainder from Buffer/CRC Poly to screen
+     <li><tt>TextMsg</tt> variable has decoded message
+     <li>Text Message is output to screen.
+     </ul>
+  <li><b>Note</b>: An error message is generated if the division results
+                   in a non-zero remainder.
+  <li><b>Calls</b>: <i>Divide</i>
+  <li><b>Points</b>: 5
+  </ul><p>
+
+<li><font size=+1><b>Divide</b></font>
+  <ul>
+  <li><b>Purpose</b>: Performs a Polynomial Divide of the frame
+                      by a generator polynomial<br>
+                      (The frame is appended with 16 zero's for the divide)
+  <li><b>Inputs</b>:
+    <ul>
+    <li>SI = Offset of buffer<br>
+    <li>DX = Bits in buffer<br>
+    <li>CRC = Generator Polynomial Constant
+    </ul>
+  <li><b>Output</b>: AX = Remainder from divide
+  <li><b>Calls</b>: This function is called by <i>EncodeCRC</i> and <i>DecodeCRC</i>
+  <li><b>Note</b>: An error message is generated if the size of the buffer
+                   is too small to perform the division (&lt 16 bits)
+  <li><b>Hints</b>: Divide from right to left using backwards CRC.
+  <li><b>Points</b>: 10
+  </ul>
+</ul>
+
+<h2>Preliminary Procedure</h2>
+<ul>
+<li>Copy the 
+    empty MP2 program (<tt>MP2.ASM</tt>), 
+    sample input file (<tt>test1.in</tt>),
+    corresponding output files (<tt>test1.out</tt>),
+    libraries (<tt>libmp2.lib</tt>, <tt>lib291.lib</tt>), and 
+    <tt>Makefile</tt> from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s V:\ece291\mp2 W:\mp2</tt><br>
+    Alternatively, from home, you can download the same files as 
+    <a href="mp2.zip">mp2.zip</a>.
+<li>As with MP0 and MP1, run <tt>NMake</tt> to build an executable program 
+    using the given ECE291 library functions.
+<li>As with MP0 and MP1, use a text editor to modify the program.
+    As given, the program uses LIBMP2 routines 
+    to implement all
+    functionality.  To receive full credit for the assignment,
+    you will need to implement each of the subroutines described above with
+    your own code.
+<li>As with MP0 and MP1, use CodeView (<tt>CV</tt>) to debug and test your 
+    program.
+    Because you only receive credit for procedures that function completely
+    as specified, it is best to debug each routine individually.  
+<li>By modifying a few comments, you can mix and match usage of your 
+    own code and Library routines.  You may notice that the LIBMP2
+    routines contain extraneous and difficult-to-read code.  They 
+    are not meant to be unassembled!
+</ul>
+
+
+
+<h2>Final Steps</h2>
+<ol>
+<li>Print a copy of the <a href="mp2grade.html">MP2 grading sheet</a>.
+<li>Demonstrate MP2.EXE to a TA or to the instructor.  
+  <ul>
+   <li>Be prepared to answer questions about any aspect of the operation 
+       of your program.  The TAs will not accept an MP if you cannot fully
+       explain all operations of your code.
+  <li>Your program must work for all possible data patterns.
+      Additional test patterns will be listed on the grade sheet.
+  <li>The TA will determine performance points using a sample message
+  </ul>
+<li>Handin in your program by running: <br>
+    <tt>A:\Handin </tt> <i>YourWindowsLogin</i>
+<li>Print <font color="red">MP2.ASM </font> using <i>GreenPrint32</i>
+<li>Staple the MP2 grading sheet to the front of your MP2.ASM file
+    and give both to the same TA that approved your demonstration.
+</ol>
+
+<hr>
+
+<h2>MP2.ASM (Program framework)</h2>
+<font size=-1> <xmp>
+
+
+        TITLE ECE291: Error Detection - Your Name - Date
+
+COMMENT *
+        Error Detection.
+
+        For this MP, you will write an interactive program which uses
+        Error Detection for Transmitted/Received messages.
+
+        ECE291: Machine Problem 2
+        Jay R. Moorman
+        Unversity of Illinois
+        Dept. of Electrical & Computer Engineering
+        Summer 1998
+
+        Ver 1.0
+        *
+
+;====== Constants =========================================================
+
+NULL    EQU 0
+BEEP    EQU 7
+BS      EQU 8
+CR      EQU 13
+LF      EQU 10
+
+ESCKEY  EQU 27
+SPACE   EQU 32
+
+TextMsgMaxLength     EQU 70 ; Bytes ; Limit text messages to one line
+BufferMaxLengthBits  EQU TextMsgMaxLength * 8 + 16  ; Limit enough to convert plus CRC
+BufferMaxLength      EQU 1 + (BufferMaxLengthBits/8)  ; Bytes
+
+CRC16    EQU 1000000000000101b  ; CRC-16 polynomial (Leading 1)
+CRCCCITT EQU 0001000000100001b  ; CRC-CCITT polynomial (Lead 1)
+CRC      EQU 1010000000000001b  ; The CRC we will use (CRC-16 reversed)
+;CRC     EQU 1000010000001000b  ; The CRC we will use (CRC-CCITT reversed)
+
+;====== Externals =========================================================
+
+; -- LIB291 Routines (Free) ---
+
+extrn kbdine:near, kbdin:near, dspout:near   ; LIB291 Routines
+extrn dspmsg:near, binasc:near, ascbin:near  ; (Always Free)
+
+extrn mp2xit:near ; Exit program with a call to this procedure
+
+; -- LIBMP2 Routines (Replace these with your own code) ---
+
+extrn ReadTextMsg:near   ; Read TextMsg from keyboard
+extrn PrintTextMsg:near  ; Print contents of TextMsg
+extrn AppendBufferN:near ; Append N bits to Buffer
+extrn ReadBuffer:near    ; Read Buffer from keyboard
+extrn PrintBuffer:near   ; Print contents of Buffer
+extrn Checksum:near      ; Calculated checksum of TextMsg
+extrn Divide:near        ; Divide Frame by word
+extrn EncodeCRC:near     ; CRC Encode TextMsg -> Buffer
+extrn DecodeCRC:near     ; CRC Decode Buffer -> TextMsg
+
+;====== SECTION 3: Define stack segment ===================================
+stkseg  segment stack                   ; *** STACK SEGMENT ***
+        db      64 dup ('STACK   ')     ; 64*8 = 512 Bytes of Stack
+stkseg  ends
+
+;====== SECTION 4: Define code segment ====================================
+cseg    segment public  'CODE'    ; *** CODE SEGMENT ***
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== SECTION 5: Variables ==============================================
+
+Buffer  db BufferMaxLength    dup(0)        ; Data Buffer for encoded Message
+TextMsg db TextMsgMaxLength   dup(0), NULL ; Text Message 
+
+BufferLength dw 0       ; Number of bits in buffer
+
+crlf    db CR,LF,'$' ; DOS uses carriage return + Linefeed for new line
+PBuf    db 7 dup(?)
+
+PUBLIC Buffer, TextMsg, BufferLength, CRC
+                                   
+;====== Procedures ========================================================
+
+
+; Your Subroutines go here !
+; ---- ----------- -- ----
+
+;====== Main procedure ====================================================
+
+MenuMessage db CR,LF, \
+  '----------- MP2 Menu -----------',CR,LF,\
+  '  Enter   (T)ext    (B)inary',CR,LF, \
+  '  Print   (M)essage (R)buffeR',CR,LF, \
+  '  Error Detect:',CR,LF, \
+  '          (C)hecksum ',CR,LF, \
+  '          (E)ncode CRC ',CR,LF, \
+  '          (D)ecode CRC ',CR,LF, \
+  '---- [ESC] or (Q)uit = exit ----',CR,LF,'$'
+Prompt      db '>','$'
+
+main    Proc FAR
+        mov  ax, cseg
+        mov  ds, ax
+
+        mov  dx, offset MenuMessage
+        call dspmsg                     ; Display Menu
+
+MainLoop:
+        mov  dx, offset crlf
+        call dspmsg
+        mov  dx, offset Prompt
+        call dspmsg
+
+MainRead:
+        call kbdin                      ; Read Input
+
+        cmp  al,'a'
+        jb   MainOpt
+        cmp  al,'z'                     ; Convert Lowercase to Uppercase
+        ja   MainOpt
+        sub  al,'a'-'A'
+
+MainOpt:
+        cmp  al,'T'
+        jne  MainNotT                   
+        call ReadTextMsg                ; Read in a text message
+        jmp  MainLoop
+
+MainNotT:
+        cmp  al,'B'
+        jne  MainNotB
+        call ReadBuffer                 ; Read in a binary message
+        jmp  MainLoop
+
+MainNotB:
+        cmp  al,'M'
+        jne  MainNotM
+        call PrintTextMsg               ; Print TextMsg
+        jmp  MainLoop
+
+MainNotM:
+        cmp  al,'R'
+        jne  MainNotR                   ; Print Buffer
+        call PrintBuffer                ; (show least significants bit first) 
+        jmp  MainLoop                  
+
+MainNotR:
+        cmp  al,'C'
+        jne  MainNotE
+        call Checksum                   ; Checksum Message 
+        jmp  MainLoop
+
+MainNotE:
+        cmp  al,'E'
+        jne  MainNotD
+        call EncodeCRC                  ; CRC Encode Message
+        jmp  MainLoop
+
+MainNotD:
+        cmp  al,'D'
+        jne  MainNotP                   ; CRC Decode Message
+        call DecodeCRC                  ; and show result
+        jmp  MainLoop
+
+MainNotP:
+        cmp  al,ESCKEY
+        je   MainDone                   ; Quit program
+        cmp  al,'Q'
+        je   MainDone
+
+        jmp  MainRead                   ; Ignore any other character 
+               
+MainDone:
+        call MP2xit                     ; Exit to DOS
+
+main    endp
+
+cseg    ends
+        end     main
+
+                 
+                  
+
+
+</xmp>
+</body>

@@ -1,0 +1,467 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 5</title>
+</head>
+
+<body bgcolor=ffffff>
+
+<table width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Lockwood, Spring 1997</td></tr></table>
+<center><h1>Machine Problem 5: Network Tag<br> Part I (Video Routines)</h1>
+</center>
+
+
+<p>
+<center><table border=1 width=60%>
+ <tr><td align=right><b>Assigned</b></td>
+    <td>Thursday, April 17, 1997 </td></tr>
+ <tr><td align=right><b>Due Date</b></td>
+    <td>Wednesday, May 7, 1997, 5pm</td></tr>
+   <tr><td align=right><b>Purpose: </b></td>
+    <td>Video Animation and Networking 
+</td></tr>
+   <tr><td align=right><b>Points</b></td><td>50</td></tr>
+</table></center>
+
+<p>
+<!--
+<img src="../../icon/construct.gif"> This page is under construction</a>
+-->
+<p>
+<h2>Introduction</h2>
+Tag was a popular game to play in our earlier years.
+The rules were simple.  The person that was <i>it</i>
+chased after everyone else.  Upon <i>tagging</i> someone, 
+that person become <i>it</i>.
+<p>
+Thanks to the miracles of modern network technology, 
+we can revive the game of tag in a virtual environment.  
+Our game will be played in the safety of the ECE291 lab
+using Ethernet and VGA video graphics.  
+<p>
+For network tag, we will each represent ourself in the game as
+a bitmapped image.  Our playing field is the VGA graphics display.  
+We will use NetBIOS's datagram group service to transmit our images and 
+movements to the other players on the network. 
+Each player sees an identical view of the game from their own machine.
+Up to 63 players can play the game at once.
+
+<h2>Video Graphic Implementation</h2>
+To create complex graphic images, it is convienient to use existing 
+software tools and standard image file formats.  For this MP, we will use
+the free <i>Paint</i> program that comes with Windows95 to create
+BMP files.  To standardize the palette entries, 
+we will limit ourselves to 16-colors of the default palette.  
+All images for this MP have the dimensions of 32x32 pixels.  
+<p>
+For <i>Part I</i> of this machine problem, we will write the following
+routines to load, store, and draw these images on the screen.
+A screen dump of the running program is shown below:
+<p>
+<img src="mp5.gif" width="640" height="397">
+<p>
+
+<h2>Video Graphic Routines</h2>
+<ul>
+<li><i>All routines should preserve the values of
+       any registers modified</i>
+<li><i>Use proper segments where needed</i><p>
+
+<li><font size=+2><b>LoadBMP</b></font>
+  <ul>
+  <li><b>Purpose:</b> Load a BMP file from disk to memory
+  <li><b>Input: </b>
+    DX: Pointer to the null-terminated string with the file name
+  <li><b>Output: </b>
+    Contents of file stored in Variable BMP
+  <li><b>Description:</b> This routine uses DOS <tt>INT 21h</tt> 
+    services to open and read a file from the disk.  
+    The contents of the file should be stored in the variable called BMP.  
+  <li><b>Notes:</b>
+    <ul>
+    <li>The variable BMP is located in a different segment. <br>
+        The segment can be accessed as <tt>Seg BMP</tt>.
+    <li>The structure of the BMP file  is given to you in the source code.
+    <li>Null-terminated strings end with ASCII 0.
+    <li>If the file cannot be read, print appropriate error messages 
+         and terminate the program.
+    </ul>
+  </ul><p>
+
+<li><font size=+2><b>StoreBMP</b></font>
+  <ul>
+  <li><b>Purpose:</b> Convert BMP data and store to image array.
+  <li><b>Inputs: </b>
+    <ul>
+    <li>AX: Image Number (0..63)
+    <li>DS:SI: Pointer to BMP data (Segment:Offset)
+    </ul>
+  <li><b>Output: </b>
+    1024 bytes written to AX<i>th</i> element of <tt>ImageArray</tt>
+  <li><b>Description</b>: 
+      This routine converts a 16-color, 32x32-pixel BMP image to 
+      a VGA mode-13h formatted array of bytes and stores the data
+      in an array.   
+  <li><b>Notes:</b> <ul>
+     <li>The variable <tt>ImageArray</tt> is located in a different segment
+     <li>The default palette entries for 16-color BMP files store
+         data as <tt>I,B,G,R</tt> rather than <tt>I,R,G,B</tt>.
+     <li>BMP files store rows from the bottom up.
+     <li><tt>ImageArray</tt> uses consecutive memory locations to store
+         64 images of 1024 bytes in row-column format.
+    </ul>
+  </ul><p>
+
+<li><font size=+2><b>DrawBMP</b></font>
+  <ul>
+  <li><b>Purpose:</b> Write an image to the screen
+  <li><b>Inputs: </b>
+    <ul>
+    <li>AX: Image Number (0..63)
+    <li>DI: Screen location (top-left corner)
+    <li>Variable <tt>ImageArray</tt>
+    </ul>
+  <li><b>Output: </b> Writes directly to screen
+  <li><b>Description</b>: 
+    This routine draws the AX<i>th</i> image from <tt>ImageArray</tt>
+    to the VGA display.  DI is specified as a offset on a mode-13h screen.  
+  <li><b>Notes</b>:
+    <ul>
+    <li>This will be a frequently-used routine for this MP.  <br>
+       It should be optimized for performance using a 32-bit register 
+       (386, 486, Pentium) and string operations.
+    </ul>
+   </ul><p>
+
+<li><font size=+2><b>DrawBox</b></font>
+  <ul>
+  <li><b>Purpose:</b> Draw a filled square on the screen
+  <li><b>Inputs: </b>
+    <ul>
+    <li>AL: Color
+    <li>DI: Screen location (top-left corner)
+    </ul>
+  <li><b>Output: </b> Writes directly to screen
+  <li><b>Description</b>: 
+    This routine draws a 32x32 filled square on the screen
+    using the palette number specified in AL.
+  <li><b>Notes</b>:
+    <ul>
+    <li>This will be a frequently-used routine for this MP.  <br>
+       It should be optimized for performance using a 32-bit register 
+       (386, 486, Pentium) and string operations.
+    </ul>
+  </ul><p>
+
+<li><font size=+2><b>DrawEmptyBox</b></font>
+  <ul>
+  <li><b>Purpose:</b> Draw an empty square box on the screen
+  <li><b>Inputs: </b>
+    <ul>
+    <li>AL: Color
+    <li>DI: Screen location (top-left corner)
+    </ul>
+  <li><b>Output: </b> Writes directly to screen
+  <li><b>Description</b>: 
+    This routine draws an empty 32x32 square box
+    on the screen using the palette number specified in AL.
+    Pixels inside the box should not be affected by this call.
+  </ul><p>
+
+<li><font size=+2><b>MyImage.bmp</b></font>
+  <ul>
+  <li><b>Purpose:</b> Your virtual representation 
+  <li><b>Inputs: </b> Artistic creation skills 
+  <li><b>Output: </b> 32x32, 16-color BMP image 
+  <li><b>Description</b>: 
+    Using Windows95 paint program, create an image to represent yourself
+    in the network tag game.  This image should resemble
+    yourself and be suitable for display to all members of the class.
+  <li><b>Notes</b>:
+    <ul>
+    <li>The <i>Paint</i> program can be invoked from the start menu
+        as <i>Accessories/Paint</i> or by typing <i>pbrush</i> from
+        a command prompt.
+    <li>Begin a new image and set <i>Image/Attributes</i> to 
+        Height=32 pels, Width=32 pels.
+    <li>Use <i>View/Zoom/Large</i> to edit your image
+    <li>Use <i>File/SaveAs/16-color bitmap</i> with file name of 
+        <tt>MyImage.bmp</tt>
+    <li>If you use a different program to create your image, be sure that
+        your palette matches that of a 16-color paint file.
+    </ul>
+  </ul>
+</ul>
+
+<hr>
+<h2>Points</h2>
+
+You will earn the following points for replacing each of the subroutines
+with your own code. 
+ 
+<ul>
+<li>LoadBMP: 4 pts
+<li>StoreBMP: 4 pts
+<li>DrawBMP: 4 pts
+<li>DrawBox: 4 pts
+<li>DrawEmptyBox: 4 pts
+<li>Myimage.bmp: 4 pts <i>(Really)</i>
+</ul>
+
+
+<h2>Preliminary Procedure </h2> 
+<ul>
+<li>You will begin MP5 with the following files:
+    <ul>
+    <li><tt>MP5gr.EXE</tt>: Fully functional program using library functions
+    <li><tt>MP5gr.ASM</tt>: Graphic Functions Framework
+    <li><tt>LIBMP5gr.LIB</tt>: Working versions of all routines
+    <li><tt>LIB291.LIB</tt>: Useful (and free) routines 
+    <li><tt>MYIMAGE.BMP</tt>: A really ugly BMP file
+    <li><tt>DOG.BMP</tt>: Picture of a dog
+    <li><tt>Makefile</tt>
+    </ul>
+
+<li>You can obtain these files via one of the methods listed below:
+  <ul>
+  <li>In lab, copy all files from the MP5 directory to your directory 
+      with the following command:<br>
+      <tt>xcopy /s G:\ECE291\MP5\ F:\MP5</tt> <br>
+      <i>Note: Drive letters have changed with the installation of
+         the new machines.  Your letters may vary.
+         If necessary, use Windows explorer to map the network drive
+         ECEUILNT\\PC_APPS to <tt>G:</tt></i>.
+  <li>Alternatively, 
+      download all files as: <a href="mp5gr.zip">MP5GR.ZIP</a> 
+  </ul>
+</ul>
+
+<h2>Clearifications and Erratica </h2> 
+<ul>
+  <li>The palette entries for 16-color BMP files are
+      in the form of I,B,G,R.
+</ul>
+
+<hr>
+<h2>MP5GR.ASM</h2>
+<font size=-2><xmp>
+        PAGE 75, 132
+        TITLE  Network_Tag_Graphics - Your Name Here! - 3/97
+
+Comment *
+        NETWORK TAG - Graphic Routines
+        ------------------------------
+        ECE291: Machine Problem 5-1
+        Prof. John W. Lockwood
+        University of Illinois, Dept. of Electrical & Computer Engineering
+        Spring 1997
+        Documentation: http://www.ece.uiuc.edu/~ece291/mp/mp5/mp5.html
+        Revision 1.0
+        *
+
+.MODEL COMPACT  ; Allow Multiple Segments
+.486            ; Enable use of 32-bit registers and 286/386/486 Registers
+
+OPTION NOOLDMACROS  ; Only commas count as whitespaces
+
+; ===== Handy General MACROS & Constants =================================
+
+        CR        EQU 13      ; ASCII Carriage Return
+        LF        EQU 10      ; ASCII LineFeed
+
+        VidGrSEG EQU 0A000h
+
+GMODE MACRO ; Set Mode13h VGA Graphics
+        PUSH AX
+        mov ah,00h
+        mov al,13h
+        int 10h
+        POP AX
+ENDM
+
+TMODE MACRO ; Set VGA for 80x25 Text Mode 
+        PUSH AX
+        mov ah,00h
+        mov al,02h
+        int 10h
+        POP AX
+ENDM
+
+;====== Bitmap structure definition =======================================
+
+BMPTYPE STRUC
+; --- BitMapFileHeader --- ; 14 bytes
+  BFType            DB 'BM' ; File Type
+  BFSize            DD   ?  ; File Size (in Bytes)
+  BFReserved1       DW   0  ; Reserved 
+  BFReserved2       DW   0  ;    "
+  BFOffBits         DD   ?  ; Offset to start of image data 
+; --- BitMapInfoHeader --- ; 40 bytes
+  BISize            DD   ?  ; Size of BitMapInfoHeader (28h = 40d)
+  BIWidth           DD   ?  ; # Pixel Rows 
+  BIHeight          DD   ?  ; # Pixel Columns
+  BIPlanes          DW   1  ;
+  BIBitCount        DW   ?  ; Log2(palette size) = 4 for 16-color image
+  BICompression     DD   0  ; RGB = 0 = Uncompressed 
+  BISizeImage       DD   ?  ; Size of Image (Bytes)
+  BIXPelsPerMeter   DD   ?  ;
+  BIYPelsPerMeter   DD   ?  ;
+  BIColorsUsed      DD   0  ; 0=All
+  BIColorsImportant DD   0  ;
+; --- Color Table --- ; 64 Bytes
+  RGBQuad           DB 16 dup ( 4 dup(?) ) ; Blue, Green, Red, Unused
+; --- Image Data Follows ; n Bytes
+  ImageData         DB 512 dup(0) ; Image data (bottom row first)
+BMPTYPE ENDS
+
+;====== Externals ========================================================
+
+; -- LIB291 Routines (Free) --
+
+extrn dspmsg:near, dosxit:near, kbdin:near
+
+; -- LIBMP5GR.LIB Routines (Write these) --
+
+extrn LoadBMP     :near ; Comment out to use your own code
+extrn StoreBMP    :near ; Comment out to use your own code
+extrn DrawBMP     :near ; Comment out to use your own code
+extrn DrawBox     :near ; Comment out to use your own code
+extrn DrawEmptyBox:near ; Comment out to use your own code
+
+extrn MP5Xit:near
+
+;====== PUBLICs ===========================================================
+
+  PUBLIC bmp        ; Must be available for linkage with LIBMP5gr library
+  PUBLIC ImageArray
+
+;====== Stack Segment =====================================================
+
+stkseg  segment stack                   ; *** STACK SEGMENT ***
+        db      64 dup ('STACK   ')
+stkseg  ends
+
+;====== BMP Segment =======================================================
+
+bmpseg  segment public                  ; *** BMP Segment ***
+  bmp bmptype < >
+bmpseg ends
+
+;====== Image Segment ====================================================
+
+imageseg segment public                 ; *** IMAGE Segment ***
+  ImageArray db 32 dup( 512 dup(4,15), 512 dup(2,15) )
+  ; 64 Images * 1024 bytes : red/white , greeen/white Stripe pattern
+imageseg ends
+
+;====== Code/Data segment ================================================
+
+cseg    segment public                  ; *** CODE SEGMENT ***
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+crlf    db CR,LF,'$'
+
+;====== Procedures =======================================================
+
+; Your code goes here !
+                                                                    
+;====== Main =============================================================
+
+MyImage  db 'MyImage.BMP',0 ; Null-terminated Filename
+DogImage db 'Dog.BMP',0
+
+Main PROC far
+        MOV AX,CS
+        MOV DS,AX
+
+        MOV     DX, offset MyImage
+        Call LoadBMP
+
+        PUSH    DS
+        MOV     AX,Seg BMP
+        MOV     DS,AX
+        MOV     SI,Offset BMP
+        MOV     AX,0
+        Call StoreBMP
+        POP     DS
+
+        MOV DX,offset DogImage
+        Call LoadBMP
+
+        PUSH    DS
+        MOV     AX,Seg BMP
+        MOV     DS,AX
+        MOV     SI,Offset BMP
+        MOV     AX,5
+        Call StoreBMP
+        POP     DS
+
+        GMODE
+
+        MOV     AX,0  ; MyImage
+        MOV     DI,0
+        Call DrawBMP
+
+        MOV     AX,5  ; Dog
+        MOV     DI,50
+        Call DrawBMP
+
+        MOV     AX,10 ; Uninitialized Picture
+        MOV     DI,100
+        Call DrawBMP
+
+        MOV     DI,320*50 + 0
+        MOV     AL,1  ; Blue
+        Call DrawBOX
+
+        MOV     DI,320*50 + 50
+        MOV     AX,5  ; Dog
+        Call DrawBMP
+        MOV     AL,4  ; Red
+        Call DrawEmptyBox
+
+        MOV     DI,320*50 + 100
+        MOV     AX,0  ; Dog
+        Call DrawBMP
+        MOV     AL,2  ; Green
+        Call DrawEmptyBox
+
+        MOV AX,0000h
+        MOV ES,AX      ; Timer TICK Counter
+        MOV SI,046Ch
+
+        MOV DI,320*100 + 320-32
+        MOV CX,320-32
+
+Animate:MOV     AX,5
+        Call    DrawBMP
+
+Waiting:CMP EDX,ES:[SI]
+        JE Waiting
+        MOV EDX,ES:[SI]
+
+        MOV     AL,0
+        Call    DrawBOX
+
+        DEC DI
+        LOOP Animate
+
+        Call Kbdin
+        TMODE
+
+        Call MP5Xit
+
+Main ENDP
+
+;====================================================================
+
+cseg    ENDS
+        END MAIN
+</xmp>
+</font>
+
+</body>
+
+

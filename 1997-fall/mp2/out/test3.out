@@ -1,0 +1,40 @@
+
+------------- MP2 Menu --------------
+  Enter   (T)ext     / (B)inary
+  Print   (M)essage  / (R)buffeR
+  RLE     (E)ncode   / (D)ecode
+------ [ESC] or (Q)uit to exit ------
+
+Enter Text Message: 
+ECEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+
+Compressed Size = 25 bits ~= 3 bytes.  (LSBit .. MSBit)
+10100 11000 10100 11111 11111
+
+Enter Text Message: 
+ECEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+
+Compressed Size = 30 bits ~= 3 bytes.  (LSBit .. MSBit)
+10100 11000 10100 11111 11111 10100
+
+Enter Text Message: 
+ECEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+
+Compressed Size = 35 bits ~= 4 bytes.  (LSBit .. MSBit)
+10100 11000 10100 11111 11111 10100 10100
+
+Enter Text Message: 
+ECEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+
+Compressed Size = 40 bits ~= 5 bytes.  (LSBit .. MSBit)
+10100 11000 10100 11111 11111 10100 11111 01000
+
+
+
+LIBMP2 Calls: 
+ -PrintBuffer 
+ -ReadTextMsg 
+ -Encode 
+ -AppendBuffer 
+ -EncodeRLE 
+

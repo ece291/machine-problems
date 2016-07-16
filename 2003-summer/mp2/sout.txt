@@ -1,0 +1,143 @@
+
+This is MP2LAB
+:Input this into the sending side 
+
+Not a command
+
+:Send this
+  
+Sending encrypted message
+end this
+
+:S1 234567890abcdefghijklmnopABCXYZ
+  
+Sending encrypted message
+1 234567890abcdefghijklmnopABCXYZ
+
+:K 23 257
+
+The new inverse key is 190
+
+:S Does your program handle BS?                        Your program does handle BACKSPACE.
+  
+Sending encrypted message
+ Qoes  Rour program does handle VWGPXBWGJ.
+
+:S dollar SiGnS$$$$
+  
+Sending encrypted message
+ dollar XiFnX
+
+:Error
+
+Not a command
+
+:K 23 7759
+
+The new inverse key is 6747
+
+:K 23 7759
+
+The new inverse key is 6747
+
+:K 23 7759
+
+The new inverse key is 6747
+
+:S ABCDXYZ
+  
+Sending encrypted message
+ WNDUTFG
+
+:K 254 6619
+
+The new inverse key is 6176
+
+:K 254 6619
+
+The new inverse key is 6176
+
+:K 254 6619
+
+The new inverse key is 6176
+
+:SABCDXYZ
+  
+Sending encrypted message
+KVWIFPE
+
+:K 12 8447
+
+The new inverse key is 704
+
+:K 12 8447
+
+The new inverse key is 704
+
+:K 12 8447
+
+The new inverse key is 704
+
+:SABCDXYZ
+  
+Sending encrypted message
+LXHUYKN
+
+:K 343 13063
+
+The new inverse key is 10359
+
+:K 343 13063
+
+The new inverse key is 10359
+
+:K 343 13063
+
+The new inverse key is 10359
+
+:S   ABCDXYZ
+  
+Sending encrypted message
+   GNDUMYZ
+
+:K 23 5555
+
+Invalid keys
+
+:K NAN 23
+
+Invalid keys
+
+:K 23 NAN
+
+Invalid keys
+
+:
+
+Not a command
+
+:S Stuff
+  
+Sending encrypted message
+ Stuff
+
+:S More Stuff
+  
+Sending encrypted message
+ Rore Stuff
+
+:S EvenMOreStuff
+  
+Sending encrypted message
+ EvenRTreStuff
+
+:X
+
+MP2: Exit to DOS
+LIBMP2 * ver 1.0 * calls:
+-libGetStr()
+-libPrime()
+-libKeys()
+-libEncDec()
+-libInitSerial()
+-libSend()

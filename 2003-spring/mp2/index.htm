@@ -1,0 +1,1133 @@
+<HTML>
+	<HEAD>
+		<title>Machine Problem 2</title><% title = "ECE291 Machine Problem 2"
+subtitle = "Machine Problem 2"
+
+ %>
+		<!--#include file="headvb.asp"-->
+		<meta http-equiv="Content-Language" content="en-us">
+		<meta name="ProgId" content="FrontPage.Editor.Document">
+		<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+	</HEAD>
+	<body>
+		<h1 align="center"><font face="Verdana" size="5">Machine Problem 2: Intensive RPN 
+				Calculator</font></h1>
+		<div align="center">
+			<center>
+				<table cellSpacing="2" cellPadding="2" width="60%" border="0">
+					<tr>
+						<td align="right" bgColor="#efefef"><b><font size="2" face="Verdana"> Assigned</font></b></td>
+						<td bgColor="#efefef"><font size="2" face="Verdana">Wednesday, 2/12/2003</font></td>
+					</tr>
+					<tr>
+						<td align="right" bgColor="#efefef"><b><font size="2" face="Verdana">Due Date</font></b></td>
+						<td bgColor="#efefef"><font size="2" face="Verdana">Wednesday, February 26, 2003, 5:00 
+								PM</font></td>
+					</tr>
+					<tr>
+						<td align="right" bgColor="#efefef"><b><font size="2" face="Verdana"> Purpose</font></b></td>
+						<td bgColor="#efefef"><font size="2" face="Verdana">Input handling, Mathematical 
+								operations, Stack implementation, and Recursion.</font></td>
+					</tr>
+					<tr>
+						<td align="right" bgColor="#efefef"><b><font size="2" face="Verdana"> Points</font></b></td>
+						<td bgColor="#efefef"><font face="Verdana" size="2">50</font></td>
+					</tr>
+				</table>
+			</center>
+		</div>
+		<h2><span style="BACKGROUND-COLOR: #ffff00">UPDATE:&nbsp;&nbsp;&nbsp; </span>
+			<span style="FONT-WEIGHT: 400; BACKGROUND-COLOR: #ffff00">
+				<i>1pm 2/13/2003&nbsp;&nbsp;&nbsp; libmp2.lib has been updated so that the 
+					subroutines preserve registers.&nbsp; Please get the new one from the V: 
+					drive.&nbsp; Don't override your code!</i></span></h2>
+		<h2><span style="BACKGROUND-COLOR: #ffff00">UPDATE:</span><span style="FONT-WEIGHT: 400; BACKGROUND-COLOR: #ffff00"><i>&nbsp;&nbsp;&nbsp; 
+					3pm 2/14/2003&nbsp;&nbsp; Swapped order of operands S0 and S1 (look under </i>
+			</span>
+			<span style="BACKGROUND-COLOR: #ffff00">. Operations</span><span style="FONT-WEIGHT: 400; BACKGROUND-COLOR: #ffff00"><i>).</i></span></h2>
+		<h2><span style="BACKGROUND-COLOR: #ffff00">UPDATE:</span><span style="FONT-WEIGHT: 400; BACKGROUND-COLOR: #ffff00"><i>&nbsp;&nbsp;&nbsp; 
+					There is a small demo <a href="stack.htm">here</a></i></span>
+		</h2>
+		<h2><span style="font-weight: 400; background-color: #FFFF00">
+        <font face="Times New Roman">UPDATE:&nbsp; 2/17/03 3:30PM&nbsp;&nbsp;&nbsp;
+        <i> <b>CalError</b></i> is for <i>ProcessOperators</i>.&nbsp; Not for <i>
+        ProcessNumbers. </i></font></span>
+		</h2>
+		<h2><span style="background-color: #FFFF00">
+        <font face="Times New Roman">UPDATE:<i><span style="font-weight: 400">&nbsp;&nbsp;&nbsp; 
+        4pm 2/19/2003&nbsp;&nbsp; Here is the </span><a href="test1.in">test 
+        data file</a><span style="font-weight: 400"> and here is the </span>
+        <a href="test1.mp">output</a><span style="font-weight: 400"> generated 
+        by it. Look above </span>Hints<span style="font-weight: 400"> for more 
+        information on how to use these files. </span></i></font></span>
+        <span style="font-weight: 400"><i>&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        </i></span>
+		</h2>
+		<h2><font face="Verdana">Introduction</font></h2>
+		<p><font face="Verdana" size="2">Calculators were one of the greatest gifts to the 
+				engineer last century. They eliminated the tedious work of calculating numeric 
+				results. Hewlett-Packard (HP) innovated a method of calculation called Reverse 
+				Polish Notation (RPN).</font></p>
+		<p><font face="Verdana" size="2">RPN employs a stack to hold numbers and intermediate 
+				results. When a number is entered, it is PUSHed to the stack. When an operation 
+				is entered, it POPs its operand(s) from the stack, performs the calculation, 
+				and PUSHes the result back to the stack. With RPN there is no need for 
+				parentheses or equal buttons.</font></p>
+		<p><font face="Verdana" size="2">Using RPN, the equation <em>X+(Y*Z)</em> can be 
+				computed by entering the following keystrokes:</font></p>
+		<div><center><h2>
+					<tt>X [space] Y [space] Z [space] * [space] + [space]</tt></h2>
+			</center>
+		</div>
+		<p><font size="2" face="Verdana">For this example, X, Y, and Z were pushed to the 
+				stack. When the multiplication command was entered (*), the values Y and Z were 
+				POPped from the stack. Y*Z was computed, and this product (YZ) was PUSHed back 
+				to the stack. When the addition command was entered (+), X and YZ were POPped 
+				from the stack, X+YZ was computed, and this sum was pushed back to the stack. 
+				The final result is stored at the top of the stack.</font></p>
+		<h2><font face="Verdana">Problem Description</font></h2>
+		<p><font face="Verdana" size="2">For this machine problem, you will implement the core 
+				functionality of a RPN calculator. Your calculator will compute results on 
+				32-bit rational numbers composed of a 16-bit integer numerator and 16-bit 
+				integer denominator. It will print results in split fractional form (3 + 4/5). 
+				It will support all standard logical and mathematical operations. Fractions 
+				will always be reported in smallest terms.</font></p>
+		<table cellSpacing="1" cellPadding="7" width="100%" border="0">
+			<tr>
+				<td vAlign="top">
+					<ul>
+						<li>
+							<font face="Verdana" size="2"><strong>Internal Storage</strong> </font>
+							<p><font size="2" face="Verdana">All numbers are internally stored as a pair of 16-bit 
+									signed integers using 2's complement notation. 16-bit words are PUSHed and 
+									POPped to and from a custom stack (</font><font size="2"><tt><font face="System">OperandStack</font></tt><font face="Verdana">) 
+										at its top (</font><tt><font face="System">StackTop</font></tt></font><font size="2" face="Verdana">). 
+									For this machine problem, you may choose whether you wish to detect stack 
+									overflows and underflows, or you may assume they do not occur (our tests will 
+									never POP more numbers than were already PUSHed).</font></p>
+							<p><font size="2" face="Verdana">Note that our </font><font size="2"><tt><font face="Verdana">OperandStack</font></tt><font face="Verdana">
+										closely mimics the real stack, and that </font><tt><font face="Verdana">word </font>
+										<font face="System">[[</font></tt><font face="System"><tt><font face="System">StackTop</font></tt>]]</font><font face="Verdana">
+										refers to the numerator of the top value, and </font><tt><font face="Verdana">word 
+											[[</font></tt><font face="System"><tt><font face="System">StackTop</font></tt></font><font face="Verdana"><tt>]+2]</tt></font><font face="Verdana">
+										refers to the denominator of the top value. But in a fit of genius, </font><tt><font face="System">
+											OperandStack</font></tt><font face="Verdana"> is designed to confuse your 
+										understanding of the real stack, by growing forward in memory. The second 
+										top-most item is at </font><tt><font face="Verdana">word [[</font><font face="System">StackTop</font><font face="Verdana">]-4]</font></tt><font face="Verdana">
+										and </font><tt><font face="Verdana">word [[</font><font face="System">StackTop</font><font face="Verdana">]-2]</font></tt><font face="Verdana">. 
+										When you PUSH an operand, the operand you add should go to </font><tt><font face="Verdana">
+											word [[</font><font face="System">StackTop</font><font face="Verdana">]+4]</font></tt><font face="Verdana">
+										and </font><tt><font face="Verdana">word [[</font><font face="System">StackTop</font><font face="Verdana">]+6]</font></tt></font><font size="2" face="Verdana">.</font></p>
+						</li>
+					</ul>
+				</td>
+			</tr>
+			<tr>
+				<td vAlign="top">
+					<ul>
+						<li>
+							<b><font face="Verdana" size="2">List</font></b><p>
+								<font face="Verdana" size="2">The program use <b>tmpList</b> as a list when 
+									performing <b>DoublePopping</b> function.&nbsp; The order of these variable is 
+									very important when accessing these variables to perform calculations. Let S0 
+									refer to the element at the top of the stack, and S1 refer to the next element.</font></p>
+							<table border="0" cellpadding="0" cellspacing="0" style="BORDER-COLLAPSE: collapse" bordercolor="#111111" width="500" id="AutoNumber1">
+								<tr>
+									<td width="95"><font face="System" size="2">tmpList</font></td>
+									<td width="59"><font face="System" size="2">resb</font></td>
+									<td width="25" align="middle"><font face="System" size="2">0</font></td>
+									<td width="316">&nbsp;</td>
+								</tr>
+								<tr>
+									<td width="95"><font face="System" size="2">tmpVar1 </font>
+									</td>
+									<td width="59"><font face="System" size="2">dw </font>
+									</td>
+									<td width="25" align="middle"><font face="System" size="2">0 </font>
+									</td>
+									<td width="316"><font face="System" size="2">; temporary variable for S1 numerator</font></td>
+								</tr>
+								<tr>
+									<td width="95"><font face="System" size="2">tmpVar2</font></td>
+									<td width="59"><font face="System" size="2">dw </font>
+									</td>
+									<td width="25" align="middle"><font face="System" size="2">0</font></td>
+									<td width="316"><font size="2" face="System">; temporary variable for S1 denominator</font></td>
+								</tr>
+								<tr>
+									<td width="95"><font face="System" size="2">tmpVar3</font></td>
+									<td width="59"><font face="System" size="2">dw </font>
+									</td>
+									<td width="25" align="middle"><font face="System" size="2">0</font></td>
+									<td width="316"><font face="System" size="2">; temporary variable for S0 numerator</font></td>
+								</tr>
+								<tr>
+									<td width="95"><font face="System" size="2">tmpVar4</font></td>
+									<td width="59"><font face="System" size="2">dw </font>
+									</td>
+									<td width="25" align="middle"><font face="System" size="2">0</font></td>
+									<td width="316"><font face="System" size="2">; temporary variable for S0 denominator</font></td>
+								</tr>
+							</table>
+						</li>
+					</ul>
+				</td>
+			</tr>
+		</table>
+		<table cellSpacing="1" cellPadding="7" width="100%" border="0">
+			<tr>
+				<td vAlign="top">
+					<ul>
+						<li>
+							<font face="Verdana" size="2"><strong>Operations</strong> </font>
+							<p><font face="Verdana" size="2">Operations take two operands from the stack, perform 
+									an operation, and push the result back to the stack. Let S0 refer to the 
+									element at the top of the stack, and S1 refer to the next element.</font></p>
+							<p><font face="Verdana" size="2">Two-operand instructions (such as addition) POP the 
+									first two elements (S0 and S1), perform the operation, then PUSH the result 
+									back to the stack to become the new S0.</font></p>
+							<table border="1">
+								<caption>
+									<font face="Verdana" size="2">Supported Operations</font></caption>
+								<!--<caption>Math Operations</caption>-->
+								<tr>
+									<th>
+										<font face="Verdana" size="2">Command</font></th>
+									<th>
+										<font face="Verdana" size="2">Description</font></th>
+								</tr>
+								<tr>
+									<td>
+										<p align="center"><font face="Verdana" size="2">+</font></p>
+									</td>
+									<td><font face="Verdana" size="2">Addition: S0 = S0 + S1</font></td>
+								</tr>
+								<tr>
+									<td>
+										<p align="center"><font face="Verdana" size="2">-</font></p>
+									</td>
+									<td><font face="Verdana" size="2">Subtraction: S0 = S0 - S1</font></td>
+								</tr>
+								<tr>
+									<td>
+										<p align="center"><font face="Verdana" size="2">*</font></p>
+									</td>
+									<td><font face="Verdana" size="2">Multiplication: S0 = S0 * S1</font></td>
+								</tr>
+								<tr>
+									<td>
+										<p align="center"><font face="Verdana" size="2">/</font></p>
+									</td>
+									<td><font face="Verdana" size="2">Division: S0 = S0 / S1</font></td>
+								</tr>
+								<!--<tr><td>N</td><td>Negation: S0 = -S0</td></tr>-->
+								<tr>
+									<td>
+										<p align="center"><font face="Verdana" size="2">^</font></p>
+									</td>
+									<td><font face="Verdana" size="2">Power: S0 = S0 ^ S1</font></td>
+								</tr>
+							</table>
+						</li>
+					</ul>
+				</td>
+			</tr>
+		</table>
+		<table cellSpacing="1" cellPadding="7" width="100%" border="0">
+			<tr>
+				<td vAlign="top">
+					<ul>
+						<li>
+							<font face="Verdana" size="2"><strong>Some Global Variables</strong> </font>
+							<p><font face="Verdana" size="2">Some global variables are pre-defined for you to use 
+									in this program.</font></p>
+							<p><font size="2" face="System">tbuf&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </font><font face="Verdana" size="2">
+									&nbsp;: Buffer for the input string<br>
+								</font><font size="2" face="System">binascbuf </font><font face="Verdana" size="2">&nbsp;: 
+									Buffer to be used when calling <b>binasc</b>.<b>&nbsp; </b>Read <a href="http://courses.engr.illinois.edu/ece291/books/labmanual/libraries.html">
+										Chapter 9</a> for more information on <b>binasc</b>.<br>
+								</font><font size="2" face="System">NumCount</font><font face="Verdana" size="2"> : 
+									Variable to keep track of number of input Operands.</font></p>
+						</li>
+					</ul>
+				</td>
+			</tr>
+		</table>
+		<p><b><font face="Verdana" size="5">MP2 Program Assignment</font></b></p>
+		<p><font face="Verdana" size="2">In this machine problem, the main procedure, <b>PrintOut</b>
+				subroutine are given for you to understand how <b>OperandStack</b> works in 
+				this MP.&nbsp; You will replace other subroutines from the LIBMP2 library by 
+				commenting out the statements calling the library subroutines and inserting 
+				your code.&nbsp; Each subroutine that you write should satisfy all the 
+				requirements state in <b>Subroutines</b> Section.</font></p>
+		<p><font face="Verdana" size="2">Your Program is required to:</font></p>
+		<ul>
+			<li>
+				<font face="Verdana" size="2">Take all the inputs as one string and perform the 
+					operations while it is being processed.</font>
+			<li>
+				<font face="Verdana" size="2">Able to handle the negative results while performing 
+					the operations.</font>
+			<li>
+				<font face="Verdana" size="2">Able to support Rational Numbers for all these 
+					operations.</font>
+			<li>
+				<font face="Verdana" size="2">Run efficiently.&nbsp; Points will be deduced for 
+					inefficient algorithms and excessive coding.</font></li>
+		</ul>
+		<p><font size="2" face="Verdana">The program can be run by typing</font> <tt><font face="System">
+					mp2</font></tt> <font size="2" face="Verdana">at the command prompt. If you 
+				wish to use the test data files as input, type</font> <tt><font face="System">mp2 
+					&lt; test1.in</font></tt> <font size="2" face="Verdana">at the prompt. To 
+				output to a file and compare the outputs type</font> <tt><font face="System">mp2 
+					&lt; test1.in &gt; test1.mp</font></tt> <font face="Verdana" size="2">and 
+				then</font> <tt><font face="System">fc test1.mp test1.out .</font></tt></p>
+		<h2><font face="Verdana">Hints</font></h2>
+		<ul>
+			<li>
+				<font size="2" face="Verdana">The LIBMP2 file contains executable library functions 
+					for each of the routines that you need to implement. This allows you to run the 
+					program and understand how it works before you implement it. You can test your 
+					program with any combinations of your own code and library functions. You will 
+					only receive credit, however, for the routines that you implement yourself.
+					<br>
+					&nbsp;</font>
+			<li>
+				<font size="2" face="Verdana">Check out <a href="http://courses.engr.illinois.edu/ece291/books/labmanual/libraries.html">
+						Chapter 9</a> in your lab manual for descriptions and documentation for the 
+					lib291 functions <b>binasc</b> and <b>ascbin</b>. These functions are used for 
+					displaying a character and a string to the screen, respectively.
+					<br>
+					&nbsp;</font>
+			<li>
+				<font size="2" face="Verdana">You should not need to define new variables.&nbsp; 
+					But if you need to, please comment them on the top.
+					<br>
+					&nbsp;</font>
+			<li>
+				<font size="2" face="Verdana">START EARLY! This MP requires you to handle a lot of 
+					error handling as well as to think cases when performing these operations. 
+					Finally, this MP is significantly longer and harder than MP1.
+					<br>
+					&nbsp;</font>
+			<li>
+				<font size="2" face="Verdana">Monitor the <a href="news:uiuc.class.ece291">newsgroup</a>
+					for clarifications and help. </font>
+			</li>
+		</ul>
+		<p><b><font size="5" face="Verdana">Subroutines</font></b></p>
+		<p><font size="2" face="Verdana">This assignment has nine subroutines.&nbsp; You may 
+				add additional subroutine to assist in these procedures listed below.&nbsp; You 
+				will receive credit by replacing each of these nine procedures listed below 
+				with your own code.</font></p>
+		<p><font size="2" face="Verdana">Document your functions with descriptive function 
+				headers.</font></p>
+		<table border="1" width="100%" style="BORDER-COLLAPSE: collapse" bordercolor="#111111" cellpadding="0" cellspacing="0">
+			<tr vAlign="top">
+				<td><b><font face="Arial">GetString</font></b></td>
+				<td>
+					<ul>
+						<li>
+							<font face="Verdana" size="2"><b>Inputs:</b><br>
+								ax = size of the buffer<br>
+								bx = offset of the buffer<br>
+								&nbsp;</font>
+						<li>
+							<font face="Verdana"><b><font size="2">Outputs:</font></b><font size="2"><br>
+									ax = number of characters in the buffer (excluding '$'), -1 if ESCAPE key is 
+									entered.<br>
+									bx = buffer that holds the typed characters<br>
+									&nbsp;</font></font>
+						<li>
+							<font face="Verdana"><b><font size="2">Purpose:</font></b><font size="2"><br>
+									&nbsp;<br>
+									<b>1) </b></font></font><font size="2" face="Verdana"><b>Take keyboard entry 
+									from the user and write it back to screen<br>
+								</b>
+								<br>
+								<b>2) Handling backspace (</b></font><b><font face="System">BS</font></b><font size="2" face="Verdana"><b>)</b><br>
+								&nbsp;&nbsp;&nbsp; - When the users make a mistake in typing, chances are they 
+								will hit the Backspace key. In general we want to make this delete the previous 
+								character, perhaps in memory just decreasing our length counter. To actually 
+								delete the character on the screen, however, we must display a backspace to 
+								move back, a space to remove the displayed character, and a second backspace to 
+								move back once again.<br>
+								<br>
+								<b>3) Ignore linefeed characters (LF)<br>
+									&nbsp;&nbsp;&nbsp;&nbsp; - </b>LF characters are part of a file stored in 
+								the disk, generated as one of two characters for every newline (think Enter or 
+								Return) stored in the file. By ignoring this we can take files as test inputs.<b><br>
+								</b>
+								<br>
+								<b>4) End input upon Enter<br>
+									&nbsp;&nbsp;&nbsp;&nbsp; - </b></font><font size="2"><font face="Verdana">When 
+									the user presses Enter, </font><font face="System">GetString</font><font face="Verdana">
+									must place a </font><tt><font face="Verdana">'$'</font></tt><font face="Verdana">
+									at the spot where the </font><tt><font face="Verdana">CR</font></tt><font face="Verdana">
+									would otherwise go, and return with the appropriate outputs. Enter should be 
+									accepted at any point along the line, including an empty or a full buffer.<br>
+									<br>
+									<b>5) Handling ESCAPE (ESCKEY)</b><br>
+									&nbsp;&nbsp;&nbsp; - When ESCAPE key is entered, set ax = -1 and quit the 
+									procedure immediately.</font></font><font face="Verdana" size="2"><br>
+								&nbsp;</font>
+						<li>
+							<b><font size="2" face="Verdana">Calls:</font></b> <font face="System">dspout</font>,
+							<font face="System">kbdin</font>.
+						<li>
+							<font face="Verdana" size="2"><b>Note: </b>
+								<br>
+								- Display the "&gt; " but do not place it in the buffer.<br>
+								- It is highly recommended to use stack to store the input "size of the buffer" 
+								to the stack rather than creating addition variable.<br>
+								- Points will be taken off for using&nbsp; <b>TBUF_SIZE</b> constant in this 
+								procedure.</font></li>
+					</ul>
+				</td>
+			</tr>
+			<tr vAlign="top">
+				<td><b><font face="Arial">ProcessNumbers</font></b></td>
+				<td>
+					<ul>
+						<li>
+							<font size="2" face="Verdana"><b>Inputs:</b><br>
+								bx = offset of the buffer from which to read<br>
+								&nbsp;</font>
+						<li>
+							<font size="2" face="Verdana"><b>Outputs:</b><br>
+								ax = 0 on error or non-zero on success<br>
+								bx = offset of the operation character following the numbers being PUSHed.<br>
+								&nbsp;</font>
+						<li>
+							<font size="2" face="Verdana"><b>Purpose:</b>
+								<br>
+								1) Retrieve numbers from the input string; error if not at least 2 numbers or 
+								wrong input.<br>
+								2) Update </font><font size="2" face="System">NumCount</font><font size="2" face="Verdana">
+								to the # of input Operands.<br>
+								3) Update </font><font size="2" face="System">StackTop</font><font size="2" face="Verdana">
+								if a number is PUSHed.<br>
+								4) Ignore <b>SPACE</b>.<br>
+								5) Make sure to set denominator to 1.<br>
+								6) Operation character (+ - * / ^) is detected, then exit the procedure.<br>
+								7) Detect overflow.&nbsp; Display </font><font size="2" face="System">ProcOverflow</font><font size="2" face="Verdana">
+								message if the number is not between -32768 and 32767 (Read </font><font size="2" face="System">
+								ascbin</font><font size="2" face="Verdana"> 
+                            info). <br>
+								&nbsp;</font>
+						<li>
+							<font size="2" face="Verdana"><b>Calls:</b></font> <font face="System">ascbin</font>,
+							<font face="Verdana" size="2">optionally</font> <font face="System">SinglePushing<br>
+								&nbsp;</font>
+						<li>
+							<font face="Verdana" size="2"><b>Note:</b><br>
+								- Push the register individually or it will not work.<br>
+								&nbsp;</font>
+						<li>
+							<font face="Verdana" size="2"><b>Cases to consider:</b><br>
+								- First check for number or not. If number, store it to <b>OperandStack</b>.<br>
+								- If not number, then check if operator, space or not.&nbsp; If neither, then 
+								set ax to error and quit.<br>
+								&nbsp;</font></li>
+					</ul>
+				</td>
+			</tr>
+			<tr vAlign="top">
+				<td><b><font face="Arial">ProcessOperators</font></b></td>
+				<td>
+					<ul>
+						<li>
+							<font face="Verdana"><b><font size="2">Inputs:</font></b><font size="2"><br>
+									bx = offset of the buffer from which operator to read<br>
+									&nbsp;</font></font>
+						<li>
+							<font size="2" face="Verdana"><b>Outputs:</b><br>
+								none<br>
+								&nbsp;</font>
+						<li>
+							<font size="2" face="Verdana"><b>Purpose:</b>
+								<br>
+								1) Retrieve Operator from the input string and execute according to input.<br>
+								2) Display </font><font size="2" face="System">ErrorMsg3</font><font size="2" face="Verdana">, 
+								if unidentified input is detected in the Operation part of the string.<br>
+								3) Only perform </font><font size="2" face="System">word[NumCount</font><font size="2" face="System">]-1</font><font size="2" face="Verdana">
+								Operations. This implies that if you have the input string: 2 2 2 + + + then 
+								your result is 6. You don't have to give any error message in this case.
+								<br>
+								4) Before calling Calculate, set AX to the following.<br>
+                            5) Use <b>CalError</b> as a 
+								flag to check whether 'any of the operations' created an overflow.<br>
+								<b>AX = 1 for Addition<br>
+									AX = 2 for Subtraction<br>
+									AX = 3 for Multiplication<br>
+									AX = 4 for Division</b><br>
+								&nbsp;</font>
+						<li>
+							<font size="2" face="Verdana"><b>Calls:</b> </font><font size="2" face="System">dspmsg</font><font size="2" face="Verdana">,
+							</font><font size="2" face="System">Calculate, PowerInit</font></li>
+					</ul>
+				</td>
+			</tr>
+			<tr vAlign="top">
+				<td><b><font face="Arial">Calculate</font></b></td>
+				<td>
+					<ul>
+						<li>
+							<font face="Verdana" size="2"><b>Input</b>:<br>
+								ax =&nbsp; Number corresponding to type of calculation<br>
+								tmpList = list to hold for Popping from the stack.<br>
+								&nbsp;</font>
+						<li>
+							<font face="Verdana" size="2"><b>Output:</b> nope<br>
+								&nbsp;</font>
+						<li>
+							<font face="Verdana" size="2"><b>Purpose: </b>Calculate the operation on S0 and S1 
+								variables, and store it back into stack (S0).&nbsp; Remember, all the 
+								calculation needs to support Rational number as well as negative numbers. When 
+								storing negative number, make numerator negative and denominator 
+								positive.&nbsp; Detect overflow if number is larger than 16 bit signed number 
+								(-32768 to 32767) and print out <b>overflowmsg</b>. Also, you should 
+								simplify&nbsp;before&nbsp;multiplication and division. <b>
+									<br>
+									&nbsp;</b></font>
+						<li>
+							<font face="Verdana" size="2"><b>Call:</b> </font><font size="2" face="System">dspmsg, 
+								GCD, DoublePopping, SinglePushing<br>
+								&nbsp;</font>
+						<li>
+							<font size="2" face="Verdana"><b>Hints:</b><br>
+								1) Recall on how to subtract using using 2's compliment number and Full Adder.<br>
+								2) Look up the command <b>CWD</b> and <b>IMUL</b>,<b> IDIV</b> in the lab 
+								manual.&nbsp;
+								<br>
+								3) Know the difference between <b>SIGN JUMPS</b> and <b>UNSIGNED JUMPS </b>(<a href="http://courses.engr.illinois.edu/ece291/lecture/Spring2003/Lecture5.htm">Lecture 
+									5</a>).<br>
+								4) Know how to check for overflow flag (<a href="http://courses.engr.illinois.edu/ece291/lecture/Spring2003/Lecture4.htm">Lecture 
+									4</a>).</font></li>
+					</ul>
+				</td>
+			</tr>
+			<tr vAlign="top">
+				<td><b><font face="Arial">GCD</font></b></td>
+				<td>
+					<ul>
+						<li>
+							<font face="Verdana" size="2"><b>Input: </b>
+								<br>
+								bx = one out of two number you want to find the GCD of<br>
+								cx = one out of two number you want to find the GCD of
+								<br>
+								&nbsp;</font>
+						<li>
+							<font face="Verdana" size="2"><b>Output: </b>
+								<br>
+								ax = the absolute value of the GCD of the inputs.<br>
+								&nbsp;</font>
+						<li>
+							<font face="Verdana" size="2"><b>Purpose: </b>
+								<br>
+								1) Find the GCD of two number using <a href="http://www.cut-the-knot.com/blue/Euclid.shtml">
+									Euclid Algorithm</a>.<br>
+								2) <b>Must implement using recursion to get credit.&nbsp; No credit will be given 
+									without recursion. </b>
+								<br>
+								Example: To find GCD(6,4)
+								<br>
+								6 = 4*2+2 = GCD(6,4) = GCD(4,2)<br>
+								4 = 2*2 , GCD(4,2) = 2<br>
+								Therefore, the GCD of 6 and 4 is 2</font></li>
+					</ul>
+				</td>
+			</tr>
+			<tr vAlign="top">
+				<td><b><font face="Arial">PowerInit</font></b></td>
+				<td>
+					<ul>
+						<li>
+							<font face="Verdana" size="2"><b>Input:</b>
+								<br>
+								none<br>
+								pops the operands from the stack using DoublePopping<br>
+								&nbsp;</font>
+						<li>
+							<font face="Verdana" size="2"><b>Output: </b>
+								<br>
+								- stores the result on the stack<br>
+								- set <b>byte[CalError]</b> to 1 if any error.<br>
+								&nbsp;</font>
+						<li>
+							<font face="Verdana" size="2"><b>Purpose:</b> Get the value from the stack and 
+								check the following cases.<br>
+								1) exp is not a fraction. In this case you will display <b>ExperrorMsg </b>and 
+								exit the routine.<br>
+								2) support negative exponent.<br>
+								- invoke </font><font size="2" face="System">CalPow </font><font size="2" face="Verdana">
+								with the correct inputs</font><font size="2" face="System">.</font><font face="Verdana" size="2"><br>
+								- store the result back from </font><font size="2" face="System">CalPow</font><font face="Verdana" size="2">
+								<br>
+								&nbsp;</font>
+						<li>
+							<font face="Verdana" size="2"><b>Call:</b> CalPow, DoublePopping, SinglePushing</font></li>
+					</ul>
+				</td>
+			</tr>
+			<tr vAlign="top">
+				<td><b><font face="Arial">CalPow</font></b></td>
+				<td>
+					<ul>
+						<li>
+							<font face="Verdana" size="2"><b>Inputs:</b><br>
+								si = S0 the base
+								<br>
+								di = S1 the exponent<br>
+								&nbsp;</font>
+						<li>
+							<font face="Verdana" size="2"><b>Output: </b>
+								<br>
+								ax has the result of base ^ exponent (S0 ^ S1)<br>
+								&nbsp;</font>
+						<li>
+							<font face="Verdana" size="2"><b>Call:</b> </font><font size="2" face="System">CalPow</font><font face="Verdana" size="2">
+								(itself)<br>
+								&nbsp;</font>
+						<li>
+							<font face="Verdana" size="2"><b>Purpose:</b> this is a recursive function which 
+								implements exponentiation using divide and conquer technique.<br>
+								&nbsp;- We can see that exp = floor(exp/2) + ceil(exp/2)<br>
+								&nbsp;- therefore, base ^ exp = (base ^ (exp/2))^2 for even exponent and<br>
+								&nbsp;- base ^ exp = base*(base ^ floor(exp/2))^2 for odd exponent. Note: floor 
+								(5/2) = 2. You don't need a floor function as such to implement this.
+								<br>
+								&nbsp;- <b>Must implement using recursion to get credit.&nbsp; No credit will be 
+									given without recursion.<br>
+									&nbsp;- </b>You may write additional helper functions for this subroutine.<b> </b>
+							</font>
+						<li>
+							<font face="Verdana" size="2">You have to check for overflow and in case of 
+								overflow display <b>Oflowerrmsg.</b></font></li>
+					</ul>
+				</td>
+			</tr>
+			<tr vAlign="top">
+				<td><b><font face="Arial">DoublePopping</font></b></td>
+				<td>
+					<ul>
+						<li>
+							<font face="Verdana" size="2"><b>Input:</b>
+								<br>
+								bx = tmpList (make sure bx points to tmpList before this subroutine is called)<br>
+							</font><font size="2" face="System">StackTop</font><font face="Verdana" size="2"> pointer<br>
+								&nbsp;</font>
+						<li>
+							<font face="Verdana" size="2"><b>Output:</b>
+								<br>
+								[bx] = S1 numerator<br>
+								[bx+2] = S1 denominator<br>
+								[bx+4] = S0 numerator<br>
+								[bx+6] = S0 denominator<br>
+								&nbsp;</font>
+						<li>
+							<font face="Verdana" size="2"><b>Purpose:</b>
+								<br>
+								1) Obtain S1 and S0 from the <b>OperandStack</b> and store it into the buffer 
+								bx pointed.<br>
+								2) Update <b>StackTop</b> variable as it pops from the stack<br>
+								&nbsp;</font>
+						<li>
+							<font face="Verdana" size="2"><b>Note:</b> This function is intended to be called 
+								from <b>Calculate</b> and <b>Power</b>.</font></li>
+					</ul>
+				</td>
+			</tr>
+			<tr vAlign="top">
+				<td><b><font face="Arial">SinglePushing</font></b></td>
+				<td>
+					<ul>
+						<li>
+							<font face="Verdana" size="2"><b>Input:</b><br>
+								ax = numerator<br>
+								cx = denominator<br>
+								&nbsp;</font>
+						<li>
+							<font face="Verdana" size="2"><b>Purpose:</b> Save the number to the OperandStack 
+								and update StackTop variable</font></li>
+					</ul>
+				</td>
+			</tr>
+		</table>
+		<h2><font face="Verdana">Procedure</font></h2>
+		<ul>
+			<li>
+				<font face="Verdana" size="2">You will begin this MP with the following files: </font>
+				<ul>
+					<li>
+						<tt><font size="2" face="Verdana">MP2.ASM</font></tt><font size="2" face="Verdana">: 
+							Program Framework </font>
+					<li>
+						<tt><font size="2" face="Verdana">Makefile</font><font size="2"></font></tt><font size="2" face="Verdana">: 
+							Specifies how and when programs are assembled and linked. </font>
+					<li>
+						<tt><font size="2" face="Verdana">LIBMP2.LIB</font></tt><font size="2" face="Verdana">: 
+							Library functions for MP2</font>
+					<li>
+						<tt><font size="2" face="Verdana">LIB291.LIB</font></tt><font size="2" face="Verdana">: 
+							General-purpose library functions </font>
+					</li>
+				</ul>
+			<li>
+				<font size="2" face="Verdana">You may copy these files from the network drive to 
+					your home directory with the following command:
+					<br>
+				</font><font size="2"><tt><font face="Verdana">xcopy /s V:\ece291\mp2 W:\mp2</font></tt></font><font size="2" face="Verdana"><br>
+					or download the files from this server as <a href="http://courses.engr.illinois.edu/ece291/mp/mp2/mp2.zip">
+						mp2.zip</a> </font>
+			<li>
+				<font size="2" face="Verdana">Add your code to </font><font size="2"><tt><font face="Verdana">
+							MP2.ASM</font></tt></font><font size="2" face="Verdana">. </font>
+			<li>
+				<font size="2" face="Verdana">Assemble and link your program by typing<br>
+				</font><font size="2"><tt><font face="Verdana">make</font></tt></font><font size="2" face="Verdana"><br>
+					This command reads <i>Makefile</i> then invokes NASM and TLINK to build an 
+					executable program. </font>
+			<li>
+				<font face="Verdana" size="2">Use Turbo Debugger (TD) to find and correct program 
+					errors. </font>
+			<li>
+				<font face="Verdana" size="2">Verify your program operation by playing the game and 
+					checking all cases. </font>
+			</li>
+		</ul>
+		<h2><font face="Verdana">Development Log and Cover Memo</font></h2>
+		<p><font face="Verdana" size="2">As you work on each machine problem, you will keep a 
+				simple MP development log. The log will document your design decisions, 
+				development plan, and debugging experiences, including the time you spent on 
+				different parts of the machine problem. The log may be kept in any form. In 
+				general, whenever you work on a machine problem, briefly record the starting 
+				time, significant design decisions, progress in coding and testing, bugs you 
+				discovered, and the ending time. Do <i>not</i> record simple syntax errors 
+				detected by NASM at assembly time; these are not considered to be bugs.</font></p>
+		<p><font face="Verdana" size="2">For each machine problem, you will submit a cover memo 
+				of 200 to 400 words (up to one page, single spaced). The cover memo should 
+				answer the following questions, based on the information that you record in 
+				your MP development log. </font>
+		</p>
+		<ul>
+			<li>
+				<font face="Verdana" size="2">How much time did you spend on the design, coding, 
+					and testing of each part or subroutine? </font>
+			<li>
+				<font face="Verdana" size="2">What kinds of defects (bugs) did you find during the 
+					development of the program? When did you discover these defects (during code 
+					review or during testing)? How did you find them? </font>
+			<li>
+				<font face="Verdana" size="2">What you would do differently for the next MP? </font>
+			</li>
+		</ul>
+		<p><font face="Verdana"><font size="2">Type your cover memo into a plain text file in your 
+					W:\mp2 directory</font> </font>
+		</p>
+		<h2><font face="Verdana">Final Steps</font></h2>
+		<ol>
+			<li>
+				<font face="Verdana" size="2">Demonstrate your MP2.EXE to a TA or to the 
+					instructor.&nbsp; The TA or instructor will verify that your program works as 
+					intended. </font>
+			<li>
+				<font face="Verdana" size="2">Be prepared to answer questions about any aspect of 
+					the operation of your program. The TAs will not accept an MP if you cannot 
+					fully explain the operation of your code and details of your implementation. 
+					Delayed MPs will be subject to late penalties as described in the course 
+					syllabus (10%/day). </font>
+			<li>
+				<font face="Verdana" size="2">The TA will handin your MP online. </font>
+				<hr>
+			</li>
+		</ol>
+		<h2><font face="Verdana">MP2.ASM (program framework)</font></h2>
+		<FONT size="-1">
+			<XMP>
+; MP2 - Intensive RPN Calculator
+;  Your Name
+;  Today's Date
+;
+; Professor Zbigneiw Kalbarczyk, Spring 2003
+; Author: Pyi Sone Maung, Man Mui, Vibhore Vardhan
+; Thanks: Michael Urman, John Lockwood
+; University of Illinois, Urbana-Champaign
+; Dept. of Electrical and Computer Engineering
+;
+; Version 1.0
+
+	BITS	16
+
+;====== SECTION 1: Define constants =======================================
+
+   	BS	    	EQU 	8
+   	CR		EQU	0Dh
+    	LF		EQU	0Ah
+	BEL		EQU	07h
+	BKSPKEY		EQU	08h
+	TAB		EQU	09h
+	ESCKEY		EQU	1Bh
+	SPACE		EQU 	20h
+	TBUF_SIZE	EQU	79
+
+;====== SECTION 2: Declare external routines ==============================
+
+; These are functions from lib291
+EXTERN kbdin, dspout, dspmsg, ascbin, binasc, dosxit
+
+; These are functions from libmp2
+EXTERN libGetString, libProcessNumbers, libProcessOperators, libPowerInit, libCalPow, libCalculate, libGCD, libDoublePopping, libSinglePushing, mp2xit
+
+; Declare local routines
+GLOBAL GetString, ProcessNumbers, ProcessOperators, PowerInit, CalPow, Calculate, GCD, DoublePopping, SinglePushing, PrintOut, dspint
+
+; Make program variables global
+GLOBAL tbuf, binascbuf, NumCount
+GLOBAL OperandStack, StackTop, tmpList
+GLOBAL HelpMsg, NumCount, ErrorMsg1, ErrorMsg2, ErrorMsg3, ErrorMsg4, Experrormsg, Oflowerrmsg,  overflowmsg, ResultMsg, crlf, tmpList, tmpVar1, tmpVar2, tmpVar3, tmpVar4, CalError, OperandStack, StackTop
+GLOBAL ProcOverflow
+
+
+
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        resb      64*8
+stacktop:
+        resb      0                     ; work around NASM bug
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+HelpMsg	db CR, LF, '====== ECE291 Intensive RPN Calculator =======', CR,LF
+	db         'Enter Numbers with space between each    -and-', CR,LF
+	db         '   Operation (+ - * / ^)                      ', CR,LF
+	db         '=============== Spring 2003 ==================', CR,LF, CR,LF, '$'
+
+
+tbuf		resb 	TBUF_SIZE		; Buffer for the input string
+binascbuf	resb 	7   			; Buffer to be used when calling binasc
+
+NumCount	dw	0 			; Variable to keep track of number of input Operands
+ErrorMsg1	db	CR,LF,'GetString: AX returns 0; Need Input',CR,LF,'$'
+ErrorMsg2	db	CR,LF,'ProcessNumbers: Either wrong input or not enough Operands in the String',CR,LF,'$'
+ErrorMsg3	db	CR,LF,'ProcessOperations: Wrong input detected',CR,LF,'$'
+ErrorMsg4	db	CR,LF,'ProcessOperations: Calculation Error detected',CR,LF,'$'
+Experrormsg	db	CR,LF,'Error! Exponent can not be a fraction',CR,LF,'$'
+Oflowerrmsg	db	CR,LF,'Error! Exponent overflow',CR,LF,'$'
+
+overflowmsg	db	CR,LF,'Calculate: OVERFLOW',CR,LF,'$'
+ProcOverflow	db	CR,LF,'ProcessNumbers: OVERFLOW',CR,LF,'$'
+
+ResultMsg 	db 	CR,LF,'Result: ','$'	; message displayed before output
+crlf 		db 	CR, LF, '$'		; newline
+
+tmpList		resb	0
+tmpVar1		dw	0			; tmp variable for 1st numerator
+tmpVar2		dw	0               	; tmp variable for 1st denominator
+tmpVar3		dw	0              	 	;		   2nd numerator
+tmpVar4		dw	0           		;		   2nd denominator
+
+CalError	db	0			; flag to set when there is any type of calculation error
+						; 1 = error, 0 = no error
+
+; Stack variables
+STACKDEPTH 	EQU 	4*64			; depth of our operand stack: 64 Rationals
+OperandStack 	resb 	STACKDEPTH
+StackTop	dw 	OperandStack-4		; initialize stack to empty
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        mov     ax, cs                  	; Initialize Default Segment register
+        mov     ds, ax
+        mov     ax, stkseg              	; Initialize Stack Segment register
+        mov     ss, ax
+        mov     sp, stacktop            	; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+MAIN:
+	mov     dx, HelpMsg			; print online help
+	call    dspmsg
+
+.Beginning:                   		; loop to make sure it receive proper input
+    	mov word[NumCount], 0
+    	mov byte[CalError], 0
+	mov ax, TBUF_SIZE
+	mov bx, tbuf
+	call GetString
+	cmp ax, -1
+	je .quit
+	cmp ax, 0
+	je .GetStringError
+
+	call ProcessNumbers
+	cmp ax, 0
+	je .ProcessNumberError
+
+	call ProcessOperators
+	cmp byte[CalError], 1
+	je .CalError
+
+    	mov dx, ResultMsg
+	call dspmsg
+	call PrintOut
+	mov dx, crlf
+	call dspmsg
+	mov dx, crlf
+	call dspmsg
+	jmp .Beginning
+
+.CalError:
+	mov dx, ErrorMsg4
+	call dspmsg
+	jmp .Beginning
+
+.GetStringError:
+	mov dx, ErrorMsg1
+	call dspmsg
+	jmp .Beginning
+
+.ProcessNumberError:
+	mov dx, ErrorMsg2
+	call dspmsg
+	mov si, OperandStack			; reset the StackTop pointer
+	sub si, 4
+	mov [StackTop], si
+	jmp .Beginning
+
+.quit:
+	call mp2xit
+
+;====== SECTION 8: Your subroutines =======================================
+
+
+
+;--------------------------------------------------------------------------
+; GetString
+; Inputs:
+;	ax = size of the buffer
+;	bx = offset of the buffer
+; Outputs:
+;	ax = number of characters in the buffer (excluding '$')
+;	buffer at bx holds the typed characters
+; Purpose: take keyboard entry from the user, handling backspace and bounds
+; Calls:
+;	dspout, kbdin, optionally dspmsg
+; Note:
+;	Display the "> " but do not place it in the buffer.
+
+;--------------------------------------------------------------------------
+GetString:
+	call libGetString
+	ret
+
+;--------------------------------------------------------------------------
+; ProcessNumbers
+; Inputs:
+;	bx = offset of the buffer from which to read
+; Outputs:
+;	ax = 0 on error or non-zero on success
+;	bx = offset of the character following the number returned, undefined on error
+;       cx = 1 for successful, cx = 0 for stack full
+;	variable StackTop updated if a number is PUSHed
+; Purpose: retrieve numbers from the input string; error if not at least 2 numbers.
+;
+;--------------------------------------------------------------------------
+ProcessNumbers:
+	call libProcessNumbers
+	ret
+
+
+;--------------------------------------------------------------------------
+; ProcessOperators
+; Inputs:
+; 	bx = offset of the buffer from which operator to read
+; Outputs:
+;	none
+; Purpose:
+;	1) Retrieve Operator from the input string and execute according to input.
+;	2) Display ErrorMsg3, if unidentified input is detected in the Operation part of the string.
+;	3) Only perform word[NumCount]-1 Operations.
+;	4) Before calling Calculate, set AX to the following.
+;		AX = 1 for Addition
+;		AX = 2 for Subtraction
+;		AX = 3 for Multiplication
+;		AX = 4 for Division
+;
+; Calls: dspmsg, Calculate, Power
+;
+;--------------------------------------------------------------------------
+ProcessOperators:
+	call libProcessOperators
+	ret
+
+;------------------------------------------------------------------------------------------------------------
+; assume I have word [first_numerator], word[first_denominator], word[second_numerator], word[second_denominator]
+; will change it as stack function
+; result will return back to [second_numerator] and [second_denominator]
+; actually, [second_denominator] is always 1 since we don't know fraction iput
+Calculate:
+	call libCalculate
+	ret
+
+;GCD
+;based on Euclid's Algorithm
+;example
+; Let a = 2322, b = 654.
+; 2322 = 654*3 + 360    gcd(2322, 654) = gcd(654, 360)
+; 654 = 360*1 + 294     gcd(654, 360) = gcd(360, 294)
+; 360 = 294*1 + 66      gcd(360, 294) = gcd(294, 66)
+; 294 = 66*4 + 30       gcd(294, 66) = gcd(66, 30)
+; 66 = 30*2 + 6         gcd(66, 30) = gcd(30, 6)
+; 30 = 6*5              gcd(30, 6) = 6
+;Therefore, gcd(2322,654) = 6.
+
+;input bx, cx	; bx, cx are the numbers that we want to find their GCD
+;output ax		; return the GCD into ax, and it is always a positive number
+
+GCD:
+	call libGCD
+	ret
+
+;------------------------------------------------------------------------------
+; PowerInit
+; Input =  none, pops the operands from the stack
+; Output = none, stores the result on the stack
+; Purpose = Find the result of (base) ^ exp using divide and conquer technique.
+;-------------------------------------------------------------------------------
+PowerInit:
+	call libPowerInit
+	ret
+
+
+;-------------------------------------------------------------------------------
+; CalPow
+; Inputs = si has the base and di has the exponent
+; Output = ax has the result of base ^ exponent
+; Purpose = this is a recursive function which implements exponentiation using
+;            divide and conquer.  we can see that exp = floor(exp/2) + ceil(exp/2)
+;			 therefore, base ^ exp = (base ^ (exp/2))^2 for even exponent and
+;						base ^ exp = base*(base ^ floor(exp/2))^2 for odd exponent
+;--------------------------------------------------------------------------------
+
+CalPow:
+	call libCalPow
+	ret
+
+
+
+;-------------------------------------------------------------------------------------
+; DoublePopping
+; Input: bx = tmpList (make sure bx points to tmpList before this subroutine is called
+;	 StackTop pointer
+; Output: 	bx = S1 numerator
+;	  	bx+2 = S1 denominator
+;		bx+4 = S0 numerator
+;		bx+6 = S0 denominator
+;
+; Purpose: Update StackTop variable as it pops from the stack
+; Note: This function is intended to called from Calculate and Power.
+;-------------------------------------------------------------------------------------
+
+DoublePopping:
+	call libDoublePopping
+	ret
+
+;--------------------------------------------------------------------------------
+; SinglePushing
+; input:
+;	ax = numerator
+;	cx = denominator
+; Purpose: Save the number to the OperandStack and update StackTop variable
+;
+;--------------------------------------------------------------------------------
+SinglePushing:
+	call libSinglePushing
+	ret
+
+
+
+;=====================Following will be the given code============================
+
+
+;------------------------------------------------------------------------------
+; Written by: Mike Urman
+;
+; Inputs:
+; 	variable StackTop = address of rational number
+; Outputs:
+; 	None
+; Purpose: Print out the rational number at the top of the OperandStack in proper format
+; Calls: dspint, dspmsg, dspout, binasc
+;-------------------------------------------------------------------------------
+PrintOut:
+
+	push	ax
+	push	bx
+	push	dx
+
+	mov	bx, [StackTop]
+	mov	ax, [bx]
+	mov	bx, [bx+2]
+
+	cwd
+	idiv	bx
+	test	ax, ax
+	je	.justfrac
+	call	dspint
+	test	dx, dx
+	jz	.done
+	push	dx
+	mov	dl, ' '
+	call	dspout
+	pop	dx
+
+	cmp	dx, 0 				; check for negative nominator if there is a whole part
+	jge	.justfrac                       ; if negative, then change sign.
+	neg	dx
+.justfrac:
+	mov	ax, dx
+.improper:
+	call	dspint
+	test	ax, ax
+	jz	.done
+	cmp	bx, 1
+	je	.done
+	mov	dl, '/'
+	call	dspout
+	mov	ax, bx
+	call	dspint
+
+.done:
+	pop	dx
+	pop	bx
+	pop	ax
+	ret
+;----------------------------------------------------------------
+; Helper function to PrintOut
+; Written by Mike Urman
+;----------------------------------------------------------------
+dspint:
+	push	bx
+	push	cx
+	push	dx
+	mov	bx, binascbuf
+	call	binasc
+	mov	dx, bx
+	call	dspmsg
+	pop	dx
+	pop	cx
+	pop	bx
+	ret
+
+</XMP>
+		</FONT>
+		<!--#include file="foot.asp"-->
+	</body>
+</HTML>

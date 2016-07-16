@@ -1,0 +1,67 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML><HEAD><%
+title = "ECE291 Machine Problem 4 : User Input"
+subtitle = "User Input"
+%>
+<!--#include file="headvb.asp"-->
+<BODY>
+
+<h1>Handling User Input</h1>
+<p>You can control a protected mode program with both the keyboard and
+the mouse.  Graphical 291Hack doesn't have any use for the mouse, but
+you may find the information about it useful for your final project.</p>
+
+<h2>Keyboard</h2>
+<p>After MP3, keyboard ISRs should be no problem for you now.  In
+the _KeyboardISR, you will need to update the [Input] variable again by
+the scancode you read from the key the user pressed.  Refer to the <a
+    href="hiresgraph.html">basics of graphics programming</a> and the
+various <a href="pmode.html">protected mode programming</a> resources
+for more information on what's different here from MP3.</p>
+
+<h2><a name="mouse">Mouse</a></h2>
+<p>Like the keyboard, you would need procedures for installation,
+removal, and handling the mouse data.</p>
+
+<p><strong>But!</strong></p>
+
+<p>The mouse handler isn't truly a handler at all. It's a callback. A
+callback is the best of both worlds: it gets called like a normal
+procedure, getting all data in standard places instead of having to
+perform odd I/O to get it; yet it is also called in interrupt fashion -
+only, and immediately, when data is available.</p>
+
+<p>Or to look at it slightly less positive way, it's still called from
+an interrupt, so you have to be careful about what you call -
+particularly no DOS interrupts.</p>
+
+<p>Luckily for you, the library does have a function available that gets
+a real-mode callback address for your protected mode callback: Get_RMCB.
+However, you will still need to tell the mouse driver to call the
+callback, and where the callback is.</p>
+
+<ul>
+  <li>Use Get_RMCB to get a real-mode callback address for
+  MouseCallback. Save the segment and offset in MouseSeg and
+  MouseOff</li>
+  <li>Call the Mouse interrupt (33h), function 0Ch to have the mouse
+  driver call your callback on left mouse button press and release and
+  mouse movement</li>
+</ul>
+
+<p>Removing the mouse callback is a matter of reversing your steps.</p>
+
+<ul>
+  <li>Again use the mouse interrupt, this time to tell the mouse not to
+  call your callback - use segment:offset of 0000:0000 for &quot;no
+  callback&quot;</li>
+  <li>Then, use Free_RMCB to release the real-mode callback</li>
+</ul>
+
+<p>Now that you've got the callback installing and removing, what does
+your actual callback have to do?&nbsp; When the user clicks the mouse,
+just update the _MPFlags variable accordingly.&nbsp; Also update the
+position of the mouse, which is stored in the _MouseX and _MouseY
+variables. </p>
+
+<!--#include file="foot.asp"-->

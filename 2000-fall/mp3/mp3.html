@@ -1,0 +1,1176 @@
+<html>
+
+<head>
+<title>ECE 291 Fall 2000 - MP3</title>
+</head>
+
+<body bgcolor="#FFFFFF">
+<div align="center"><center>
+
+<table border="0" width="100%" cellspacing="0" cellpadding="0">
+  <tr>
+    <td width="33%" align="left">ECE 291</td>
+    <td width="33%" align="center">Computer Engineering II</td>
+    <td width="33%" align="right">Kalbarczyk, Fall 2000</td>
+  </tr>
+</table>
+</center></div>
+
+<h1 align="center">Machine Problem 3: Tetris 291</h1>
+<div align="center"><center>
+
+<table border=1 width=60%>
+  <tr>
+    <td align=right>Assigned</td>
+    <td>Thursday 10/5/00</td>
+  </tr>
+  <tr>
+    <td align="right">Due Date</td>
+    <td>Tuesday 10/24/00</td>
+  </tr>
+  <tr>
+    <td align="right">Purpose</td>
+    <td>Text Mode Video, Asynchronous I/O, Gameplay</td>
+  </tr>
+  <tr>
+    <td align="right">Points</font></td>
+    <td>50</td>
+  </tr>
+</table>
+</center></div>
+
+<h2>Introduction</h2>
+
+
+<p>Tetris is a well-known video game. Seven different shaped pieces fall 
+from the top of the playing field one after another. The object of the game is to keep the 
+pieces from piling up to the top of the playing field. To do this, you can move pieces left
+or right, or rotate them clockwise or counterclockwise as they fall. When you completely fill 
+in a line of the playing field with parts of pieces, the line is cleared, and all lines above
+it move down.
+
+</p>
+
+<CENTER><IMG SRC=mp3.gif ALIGN=CENTER width="652" height="331"></CENTER>
+
+
+<h2>Problem Description</h2>
+
+<h3>Text Mode Video</h3>
+This game will be written in text mode video.  Read lecture 12 and chapter 10 in the lab
+manual for information on text mode video.  Since the characters in text mode video are 
+twice as high as they are wide, each individual array value for both the pieces and the 
+playing field must be drawn twice to the buffer.  This will eliminate the pieces and 
+playing field appearing very narrow.  Also, use the null character (ASCII value 0) as the
+character byte when drawing the pieces and game board to the screen.
+<p>
+Double buffering is a common technique used in animation.  To perform double buffering, you 
+create a buffer in memory the size of the image you want to draw (in our case the entire 
+screen), do all of your drawing of the next frame of the animation on the buffer, 
+and then copy the buffer to the screen when the entire frame is drawn.  This helps eliminate
+flicker and provides smooth animation of objects on the screen. The BackBuffer variable
+has been set up as the buffer to which you will do all of your drawing.
+
+<h3>Asynchronous I/O</h3>
+In previous MPs, we used the library's <tt>kbdin/kbdine</tt> functions to
+get user input.  These functions continuously polled the keyboard until they
+received input.  In many cases, we want our programs to accept input from
+other devices and/or execute other functions while waiting for
+user input.  This is done by writing our own interrupt service routines (ISRs).
+For this MP, you will need to write two ISRs, one for the keyboard and one
+for the system timer.  ISRs are discussed in lectures 13 through 16.  Refer
+to these lectures and chapter 9 of the lab manual for information on how
+to create your own ISRs.
+
+<h3>Gameplay</h3>
+The playing field is represented as a two-dimensional array, 23x14 in size, and is 
+stored in the GameBoard variable.  There is a border of size 1 around all four sides of the playing
+field, the walls are of size 1, and the space in which the pieces can move is 20x10.
+Each of the 7 pieces is also represented as a two-dimensional array, 4x4 in size, and they are 
+collectively stored in the Pieces variable.
+These arrays contain both zero and non-zero values.  Zero values in the Pieces array correspond
+to unused cells in representing the piece, and zero values in the GameBoard array indicate cells
+in where parts of pieces are not contained.  Non-zero values for both arrays
+correspond to parts of pieces and/or the playing field walls, and the non-zero value is the
+color byte used to display the piece part on the screen.  Also, the CurrentPiece, NextPiece, and TempPiece variables will hold one of
+the seven pieces at a time.
+<p>
+In MP2, your flags were separate variables, each taking up a byte in memory.  This is a waste
+because you only need one bit for each flag.  In this MP, the GameFlags variable
+will hold all of the flags you'll need to implement the game.  So, you must make sure than when
+you set or clear a flag that you don't alter the values of the other flags.  This will require
+bitwise operations such as <tt>and</tt> and <tt>or</tt>.  Study the truth tables for all bitwise
+operations to see how you can set, clear, or toggle only 1 bit of a byte.
+<p>
+Only pieces that have fallen completely will be stored in the playing field array.  Thus,
+the current falling piece will not appear in this array until it stops falling.
+You will need to keep track of the X and Y position of the current falling piece within the 
+playing field. Variables XPos and YPos will be used to do this.  XPos and YPos represent the upper left-hand corner (offset 0) of the CurrentPiece 
+variable.  In the illustration below, the * indicates the array cell to which XPos and YPos refer.  
+Zero values in the CurrentPiece array are shown as white squares.
+<p>
+<center><img src="xposypos.gif" width="192" height="192"></center>
+<p>
+Note that the X and Y position of the current piece on the playing field is NOT 
+the X and Y position of the current piece on the screen.  The playing field starts at screen 
+coordinate (0,26), so you will have to offset XPos and YPos by these amounts when
+you're drawing the current piece to the BackBuffer.
+<p>
+You'll have to perform collision checking between the current falling piece and the boundaries
+and other pieces in the playing field.  To perform collision checking, you'll need to know the
+X and Y position of the current piece, contained in XPos and YPos respectively, the contents
+of the CurrentPiece array, and the contents of the GameBoard array.  Loop through each
+cell in the CurrentPiece array.  If you encounter a non-zero value, you have found part of the
+current piece.  Then, check the corresponding cell in the GameBoard array.  If this value is
+also non-zero, then there is a collision between the piece and the playing field, and in this
+case you should move the piece back to its original location (reset its XPos and YPos values).
+<p>
+Illustrations of collision checking are given below.  The asterisks, as above, indicate the upper left-hand corner
+of the CurrentPiece value.  The zero values in the GameBoard array are indicated by white squares,
+and the zero values in the CurrentPiece array are indicated by gray squares.  Pieces stored
+in the playing field overlap the values of the CurrentPiece array for convenience.
+<p>
+<center>
+<img src="nocollision.gif" width="560" height="240"> <br>
+In this case, after the piece moves down, all non-zero values in the CurrentPiece array have zero values <br>
+for their corresponding cells in the GameBoard array.  Thus no collision occurs, and the piece remains where it is.
+<p>
+<img src="collision.gif" width="880" height="240"> <br>
+When the piece tries to move down again, a collision occurs between the current piece and a piece in the playing field. <br>
+So, the piece is moved back to its original location.
+<p>
+</center>
+<p>
+
+<p>
+This is the first MP in which you will write your own main function.  This will help you
+understand not only how the individual parts of the game work but how to pull them together
+in order to get them to work as required.  The pseudocode for MP3Main is as follows:
+
+<ul>
+<li>Install ISRs
+<li>Initialize game variables
+<li>GameLoop:
+<ul> 
+<li>If the ESC key is pressed, user wants to exit, so end GameLoop.
+<li>If current falling piece cannot move down further
+<ul>
+<li>Store the piece in the playing field array
+<li>Clear lines in the field if necessary
+<li>Update game stats: level, number of lines cleared, and score
+<li>Randomly choose next piece and check to see if this piece can move down.  If not, game is over, so end GameLoop.
+</ul>
+<li>Draw the wallpaper, playing field, current piece, and stats to the buffer
+<li>If user wants to display next piece
+<ul>
+<li>Draw next piece to screen
+</ul>
+<li>Copy the buffer to the screen
+</ul>
+<li>Uninstall ISRs
+</ul>
+</ul>
+</ul>
+
+<h2>Gold Star</h2>
+You can earn a gold star on this MP.  To do this, you will need to rewrite your
+rotate functions to rotate pieces about their center.  The library's functions
+just rotate the piece stored in the CurrentPiece variable as is.  You will need
+to determine the center of the current piece and perform your rotation about
+that point.
+
+<h2>Hints</h2>
+<ul>
+<li>When you are testing your program, run the program in full-screen mode because
+the game does not run smoothly in a window.  This is done by pressing Alt-Enter in 
+a command prompt window. Before running your program full-screen, make sure that
+the window size is 80x25.  You can check this setting in the window properties by
+right clicking on the title bar.  If it's not, the program will not draw correctly
+when run in full-screen mode.
+<p>
+<li>The LIBMP3 file contains executable library functions for each of the
+routines that you need to implement.  
+This allows you to run the program and understand how it works before you 
+implment it.  You can test your program by stepping through the game and 
+making sure the display and comparison functions work correctly.  
+You will only receive credit, however, for the routines that you implement yourself. 
+<p>
+<li>When debugging your code in Codeview, you will find it helpful to use
+the memory window to show you the memory location of the file and strings.
+You can also use the watch window to keep track of variables in your 
+code.
+<p>
+<li>Do not assume that the file starts at memory location 0.
+<p>
+<li>You may define new variables and function as needed.
+<p>
+<li>Be very careful if you call another procedure not to destroy registers
+that the calling procedure uses.
+<p>
+<li>Remember to include function headers for each of your functions!
+<p>
+<li>Remember to include comments within the functions you write!
+<p>
+<li>START EARLY!  This MP involves integration of many different concepts.
+<p>
+<li>Monitor the <a href="news:uiuc.class.ece291">newsgroup</a> for 
+clarifications and help.</p>
+</ul>
+
+<h2>Functions</h2>
+
+<p>This assignment has twenty-one functions (yes it says twenty-one - you do not
+need to adjust your browser or monitor settings). You will receive credit by 
+replacing each of the twenty-one functions listed below with your own code.
+<p>
+<table BORDER=1 >
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>MP3Main</font></b></td>
+<td>    
+<ul>
+<li>Installs/Uninstalls ISRs and runs main game loop <br>
+<li>Inputs: None 
+<li>Outputs: None
+<li>Calls: KbdInstall, TimerInstall, Initialize, DrawGameBoard, DrawStats,
+       DrawCurrentPiece, DrawNextPiece, RefreshScreen, UpdateStats, 
+       GetNextPiece, CheckPieceCollision, PutPieceOnBoard, ClearLines,
+       KbdUninstall, TimerUninstall
+<li>Points: 5
+<li>Notes:
+<ul><li>Pseudocode for MP3Main given in problem description
+</ul>
+</ul>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>Initialize</font></b></td>
+<td>    
+<ul>
+<li>Initializes game variables
+<li>Inputs: None
+<li>Outputs: GameFlags, Score, Level, NumLines, CurrentPiece, NextPiece
+<li>Calls: GetNextPiece
+<li>Points: 1
+<li>Notes:<br>
+<ul>
+<li>Game starts on level 1
+<li>Game is defaulted to show the next piece
+</ul>
+</ul>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>GetNextPiece</font></b></td>
+<td>    
+<ul>
+<li>Copies the next piece to the current piece and generates a new next piece
+<li>Inputs: Pieces, CurrentPiece, NextPiece
+<li>Outputs: CurrentPiece, NextPiece, XPos, YPos, GameFlags
+<li>Calls: None
+<li>Points: 2
+<li>Notes:
+<ul>
+<li>You must write your own random number generator to return a number between
+0 and 6.  It doesn't matter what generator you choose to implement.
+<li>Once you get your random number, multiply it by 16 to get your offset
+of the first position of the piece you have chosen in the Pieces array.
+Do NOT use the <tt>mul</tt> instruction to do this - there are much cleaner ways
+to multiply by 16.
+<li>Clear the "piece cannot move down anymore" flag
+<li>Start the current piece off at (YPos,XPos) = (0,5)
+</ul>
+</ul>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>MovePiece</font></b></td>
+<td>    
+<ul>
+<li>Moves current falling in the direction specified by the direction bits in GameFlags<br>
+<li>Inputs: GameFlags, XPos, YPos
+<li>Outputs: GameFlags, XPos, YPos
+<li>Calls: CheckPieceCollision
+<li>Points: 3
+<li>Notes:
+<ul>
+<li>Upper left-hand corner of GameBoard is (0,0), and lower right-hand corner is (22,13).  
+<li>Move piece in desire direction.  If it collides with a piece/wall
+    in the playing field, move it back to where it was.
+<li>Update appropriate flag when piece is unable to move down any further.
+</ul>
+</ul>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>RotatePieceCW</font></b></td>
+<td>    
+<ul>
+<li>Rotates the current piece 90 degrees clockwise <br>
+<li>Inputs: CurrentPiece, TempPiece
+<li>Outputs: CurrentPiece
+<li>Calls: CheckPieceCollision
+<li>Points: 3
+<li>Notes:<br>
+<ul>
+<li>Use TempPiece as a copy of CurrentPiece
+<li>If there is a collision with the rotated piece and the game
+    board, restore the current piece to what it originally was.
+
+</ul>
+</ul>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>RotatePieceCCW</font></b></td>
+<td>    
+<ul>
+<li>Rotates the current piece 90 degrees counterclockwise <br>
+<li>Inputs: CurrentPiece, TempPiece
+<li>Outputs: CurrentPiece
+<li>Calls: CheckPieceCollision
+<li>Points: 3
+<li>Notes:<br>
+<ul>
+<li>Use TempPiece as a copy of CurrentPiece
+<li>If there is a collision with the rotated piece and the game
+    board, restore the current piece to what it originally was.
+
+</ul>
+</ul>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>CheckPieceCollision</font></b></td>
+<td>    
+<ul>
+<li>Checks for a collision between the current piece and the playing field
+<li>Inputs: CurrentPiece, GameBoard, XPos, YPos
+<li>Outputs: Carry Flag is set if there is a collision and cleared otherwise <br>
+<li>Calls: None
+<li>Points: 4
+<li>Notes:
+<ul>
+<li><tt>stc</tt> is an instruction to set the carry flag
+<li><tt>clc</tt> is an instruction to clear the carry flag
+
+</ul>
+</ul>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>PutPieceOnBoard</font></b></td>
+<td>    
+<ul>
+<li>Writes the current piece to the playing field
+<li>Inputs: XPos, YPos, CurrentPiece, GameBoard
+<li>Outputs: GameBoard
+<li>Calls: None
+<li>Points: 2
+<li>Notes:
+<ul>
+<li>Only write non-zero values in CurrentPiece to GameBoard
+</ul>
+</ul>
+</ul>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>ClearLines</font></b></td>
+<td>    
+<ul>
+<li>Clears all complete lines from the playing field and moves all lines above
+    a cleared line down one row in the playing field
+<li>Inputs: GameBoard <br>
+<li>Outputs: GameBoard, LinesCleared <br>
+<li>Calls: None
+<li>Points: 5
+<li>Notes:
+<ul>
+<li>Move all lines above a cleared line down one at a time
+<li>For each line, the GameBoard array cell directly above the cell you're
+    currently at (source) is copied to the cell you're currently at (destination)
+<li>Output number of lines cleared in LinesCleared variable
+</ul>
+</ul>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>UpdateStats</font></b></td>
+<td>    
+<ul>
+<li>Updates the users game stats
+<li>Inputs: PointsArray, LinesCleared, Score, Level, NumLines
+<li>Outputs: Score, Level, NumLines
+<li>Calls: None
+<li>Points: 2
+<li>Notes:<br>
+<ul>
+<li>PointsArray is a lookup table holding the score obtained for clearing 0 - 4 lines
+<li>Score is computed with given level.  If you clear one or more lines
+and this brings you to the next level, you must calculate the score
+obtained with the current level before increasing the level.
+<li>Level is incremented for every 10 lines cleared
+<li>Score is calculated as follows: <br>
+    +10 points for each dropped piece that does not clear a line<br>
+    + ( Level * corresponding value in PointsArray for clearing N = 1 ... 4 lines )
+</ul>
+</ul>
+</td>
+</tr>
+
+
+madam
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>DrawGameBoard</font></b></td>
+<td>    
+<ul>
+<li>Draws Wallpaper and GameBoard to the BackBuffer, in that order
+<li>Inputs: Wallpaper, GameBoard, BackBuffer
+<li>Outputs: BackBuffer
+<li>Calls: None
+<li>Points: 3
+<li>Notes:
+<ul>
+<li>Draw the playing field with it's upper left coordinate at (0,26).  You can hard
+code this offset value since it will not change.
+</ul>
+</ul>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>DrawCurrentPiece</font></b></td>
+<td>    
+<ul>
+<li>Draws the current falling piece to the BackBuffer
+<li>Inputs: CurrentPiece, XPos, YPos, BackBuffer
+<li>Outputs: BackBuffer
+<li>Calls: None
+<li>Points: 2
+<li>Notes:
+<ul>
+<li>Only draw non-zero values in CurrentPiece.
+</ul>
+</ul>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>DrawNextPiece</font></b></td>
+<td>    
+<ul>
+<li>Draws next piece to the BackBuffer at screen coordinate (12,62)
+<li>Inputs: NextPiece, BackBuffer
+<li>Outputs: BackBuffer
+<li>Calls: None
+<li>Points: 2
+<li>Notes:
+<ul><li>You can hard code the initial offset of (12,62) since this number
+will not change.
+</ul>
+</ul>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>DrawStats</font></b></td>
+<td>    
+<ul>
+<li>Draws the game stats to the BackBuffer <br>
+<li>Inputs: binascBuffer, BackBuffer, Score, NumLines, Level
+<li>Outputs: BackBuffer <br>
+<li>Calls: binasc
+<li>Points: 2
+<li>Notes:<br>
+<ul>
+<li>Read lab manual for description of binasc
+<li>Binasc right justifies numbers with spaces.  When you display the
+    numbers, left justify the numbers (remove the spaces).
+<li>Since we are in text mode video, calling dspmsg will NOT work to display 
+    the stats to the screen.
+<li>Display the level at screen coordinate (5,68)
+<li>Display the number of lines at screen coordinate (7,68)
+<li>Display the Score at screen coordinate (9,68)
+<li>You can hard code these offset values since they will not change
+<li>Don't worry about negative scores - since binasc is only written for
+    16 bit values, scores that go over 65535 will become negative.  You can
+    ignore this bug.
+<li>Draw numbers with black background and gray foreground colors.
+</ul>
+</ul>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>RefreshScreen</font></b></td>
+<td>    
+<ul>
+<li>Copies BackBuffer to video memory<br>
+<li>Inputs: BackBuffer <br>
+<li>Outputs: Contents of BackBuffer drawn to video screen 
+<li>Calls: None
+<li>Points: 1
+<li>Notes:
+<ul>
+<li>Use string commands for fast performace
+<li>Register <tt>es</tt> is set up for accessing video memory
+
+</ul>
+</ul>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>KbdInstall</font></b></td>
+<td>    
+<ul>
+<li>Installs the keyboard ISR
+<li>Inputs: None
+<li>Outputs: oldKbdV
+<li>Points: 1
+<li>Calls: None
+<li>Notes: 
+<ul>
+<li>Use <tt>int 21h</tt> calls to install your custom keyboard handler function
+<li>Remember to save the address of the keyboard handler you're replacing in the
+oldKdbV variable
+</ul>
+</ul>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>KbdUninstall</font></b></td>
+<td>    
+<ul>
+<li>Uninstalls the keyboard ISR
+<li>Inputs: oldKbdV
+<li>Outputs: None
+<li>Points: 1
+<li>Calls: None
+<li>Notes: 
+<ul>
+<li>Use <tt>int 21h</tt> calls to restore the old keyboard handler function
+</ul>
+</ul>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>KbdHandler</font></b></td>
+<td>    
+<ul>
+<li>Handles keyboard input from the user<br>
+<li>Inputs: Keypress waiting at port 60h <br>
+<li>Outputs: GameFlags <br>
+<li>Calls: MovePiece, RotatePieceCW, RotatePieceCCW
+<li>Points: 3
+<li>Notes:<br>
+<ul>
+<li>Remember to send recognition of keypress to port 61h
+<li>ESC key will end the game
+<li>UP arrow key and F key rotate the current piece clockwise
+<li>A key rotates current piece counterclockwise
+<li>SPACEBAR toggles the display of the next piece
+<li>LEFT arrow key moves current piece left
+<li>RIGHT arrow key moves current piece right
+<li>DOWN arrow key moves current piece down
+</ul>
+</ul>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>TimerInstall</font></b></td>
+<td>    
+<ul>
+<li>Installs the system timer ISR
+<li>Inputs: None
+<li>Outputs: oldTimerV
+<li>Calls: None
+<li>Points: 1
+<li>Notes:
+<ul>
+<li>Use <tt>int 21h</tt> calls to install your custom system timer handler function
+<li>Set the system timer to fire 18 times per second
+<li>Remember to save the address of the system timer handler in the oldTimerV variable
+</ul>
+</ul>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>TimerUninstall</font></b></td>
+<td>    
+<ul>
+<li>Uninstalls the system timer ISR
+<li>Inputs: oldTimerV
+<li>Outputs: None
+<li>Calls: None
+<li>Points: 1
+<li>Notes:
+<ul>
+<li>Use <tt>int 21h</tt> calls to restore the original system timer handler function
+</ul>
+</ul>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td><b><font SIZE=+1>TimerHandler</font></b></td>
+<td>    
+<ul>
+<li>Handles timer ticks from the system timer<br>
+<li>Inputs: TimerTick, oldTimerV <br>
+<li>Outputs: TimerTick <br>
+<li>Calls: MovePiece
+<li>Points: 3
+<li>Notes:<br>
+<ul>
+<li>Since other running programs may use the system timer as well, you need to chain
+the original system timer handler
+<li>Increment TimerTick with every call of the function
+<li>if TimerTick = 12 - Level, move the current piece down one and reset TimerTick to 0
+<li>The speed maxes out when the user reaches level 10.  Thus if the user reaches a higher
+level, you need to compute the above quantity as if he or she were on level 10.
+</ul>
+</ul>
+</td>
+</tr>
+
+
+
+
+
+</table>
+
+<h2>Procedure</h2>
+<ul>
+<li>You will begin this MP with the following files:
+    <ul>
+    <li><tt>MP3.ASM</tt>: Program Framework
+    <li><tt>bground.dat</tt>: File containing background Wallpaper
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled
+        and linked.
+    <li><tt>LIBMP3.LIB</tt>: Library functions for MP3
+    <li><tt>LIB291.LIB</tt>: General-purpose library functions
+    </ul>
+<li>You may copy these files from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s V:\ece291\mp3 W:\mp3</tt><br>
+    or download the files from this server as <a 
+href="mp3.zip">mp3.zip</a> 
+<li>Add your code to <tt>MP3.ASM</tt>.
+<li>Assemble and link your program by typing<br>
+      <tt>nmake</tt><Br>
+    This command reads <i>Makefile</i> then invokes MASM and LINK to build 
+    an executable program.  
+<li>Use CodeView (CV) to find and correct program errors. 
+<li>Verify your program operation by testing the
+    input test file.  You should alter the test file to check 
+    different scenarios with your code.
+</ul>
+
+<h2>Final Steps</h2>
+
+<ol>
+  <li>Print a copy of the MP3 grading report (<a 
+href="mp3grade.html">MP3GR</a>).
+   Double-check that your program is ready for demonstration.
+  <li>Print MP3.ASM at 4 pages/side.
+  <li>Demonstrate your MP3.EXE to a TA or to the instructor.</li>
+  <li>Be prepared to answer questions about any aspect of the operation of
+   your program. The TAs will not accept an MP if you cannot fully explain
+   the operation of your code and details of your implementation. Delayed
+   MPs will be subject to late penalties as described in the course
+   syllabus (10pts/day).</li>
+  <li>The TA will electronically handin a copy of your code.
+  <li>Take your printouts to the same TA which approved your demonstration.
+    Staple the grading sheet to the front of the MP3.ASM printout.  Be sure
+    that your name appears in your code and on the grading sheet.
+</ol>
+
+<hr>
+
+<h2>MP3.ASM (program framework)</h2>
+
+<font size=-1>
+<pre>
+
+TITLE     ECE291        Your Name       Today's Date
+
+COMMENT % Tetris 291
+          ECE291 - Machine Problem 3 
+          Prof. Zbigniew Kalbarczyk
+          Author: Ryan Chmiel
+          University of Illinois at Urbana-Champaign
+          Dept. of Electrical & Computer Engineering
+          Fall 2000
+
+          Ver. 1.0
+        %
+  
+;--------------------------------------------------------------
+;--                   Defining  Constants                    --
+;--------------------------------------------------------------
+
+        ESCKEY  EQU     01      ; ESC key scancode
+        AKEY    EQU     30      ; A key scancode
+        FKEY    EQU     33      ; F key scancode
+        SPACE   EQU     57      ; SPACEBAR key scancode
+        RARROW  EQU     77      ; RIGHT Arrow key scancode
+        LARROW  EQU     75      ; LEFT Arrow key scancode
+        DARROW  EQU     80      ; DOWN Arrow key scancode
+        UARROW  EQU     72      ; UP Arrow key scancode
+        public ESCKEY, AKEY, FKEY, SPACE, RARROW, LARROW, DARROW, UARROW
+
+;--------------------------------------------------------------
+;--               Declaring External Procedures              --
+;--------------------------------------------------------------
+
+;       Functions in LIB291.LIB These functions are free to 
+;       be used by you. Complete descriptions of the LIB291
+;       functions can be found in your lab manuals. Use these
+;       functions for displaying output on the screen.
+
+        extrn rsave:near, rrest:near, binasc:near
+
+;       Functions in LIBMP3.LIB
+        extrn libMP3Main:near, libInitialize:near, libGetNextPiece:near, libMovePiece:near
+	extrn libRotatePieceCW:near, libRotatePieceCCW:near, libCheckPieceCollision:near
+	extrn libPutPieceOnBoard:near, libClearLines:near, libUpdateStats:near
+	extrn libDrawGameBoard:near, libDrawCurrentPiece:near, libDrawNextPiece:near
+	extrn libDrawStats:near, libRefreshScreen:near, libKbdInstall:near
+	extrn libKbdUninstall:near, libKbdHandler:near, libTimerInstall:near
+        extrn libTimerUninstall:near, libTimerHandler:near, mp3xit:near
+
+;       You will need to write these functions for this program.
+        public MP3Main, Initialize, GetNextPiece, MovePiece
+	public RotatePieceCW, RotatePieceCCW, CheckPieceCollision
+	public PutPieceOnBoard, ClearLines, UpdateStats
+	public DrawGameBoard, DrawCurrentPiece, DrawNextPiece
+	public DrawStats, RefreshScreen, KbdInstall
+	public KbdUninstall, KbdHandler, TimerInstall
+	public TimerUninstall, TimerHandler
+
+;--------------------------------------------------------------
+;--                Defining the Stack Segment                --
+;--------------------------------------------------------------
+
+stkseg SEGMENT stack
+        db  64 dup ('STACK   ')
+stkseg ENDS
+
+;--------------------------------------------------------------
+;--                 Defining the Code Segment                --
+;--------------------------------------------------------------
+
+cseg SEGMENT PUBLIC 'CODE'
+        assume cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;--------------------------------------------------------------
+;--           Declaring variables for Lib Procedures         --
+;--------------------------------------------------------------
+
+binascBuffer	db	7 dup (' '),'$'		; buffer for binasc library call
+oldKbdV		dd	?			; Address of old Kbd Handler
+oldTimerV	dd	?			; Address of old Timer Handler
+TimerTick	db	0			; variable to keep track of each tick of the timer
+
+GameFlags	db	00000000b		; Flags used in game
+						; Bit 0 - End of Game Flag 
+						; Bit 1 - Piece cannot move down anymore flag
+						; Bit 2 - Show Next Piece Flag
+                                                ; Bits 3 & 4 - Direction bits for MovePiece()
+						; Encoding:
+						;  00 - Move Down
+						;  01 - Move Right
+						;  10 - Move Left
+						;  11 - Not Used
+
+CurrentPiece	db	16 dup(0)	        ; Current Piece
+NextPiece	db	16 dup(0)		; Next Piece
+TempPiece	db	16 dup(0)		; Temporary piece used in rotations
+Pieces		db	00h, 00h, 00h, 00h	; 4 X 4 x 7 Array of Pieces
+		db	10h, 10h, 10h, 00h
+		db	00h, 00h, 10h, 00h
+		db	00h, 00h, 00h, 00h
+
+		db	00h, 00h, 00h, 00h
+		db	00h, 50h, 50h, 50h
+		db	00h, 50h, 00h, 00h
+		db	00h, 00h, 00h, 00h
+
+		db	00h, 00h, 00h, 00h
+		db	00h, 00h, 20h, 20h
+		db	00h, 20h, 20h, 00h
+		db	00h, 00h, 00h, 00h
+
+		db	00h, 00h, 00h, 00h
+		db	40h, 40h, 00h, 00h
+		db	00h, 40h, 40h, 00h
+		db	00h, 00h, 00h, 00h
+
+		db	00h, 00h, 00h, 00h
+		db	00h, 60h, 60h, 00h
+		db	00h, 60h, 60h, 00h	      
+		db	00h, 00h, 00h, 00h
+
+		db	00h, 00h, 00h, 00h
+		db	10h, 10h, 10h, 00h
+		db	00h, 10h, 00h, 00h
+		db	00h, 00h, 00h, 00h
+
+		db	00h, 00h, 00h, 00h
+		db	30h, 30h, 30h, 30h
+		db	00h, 00h, 00h, 00h 
+		db	00h, 00h, 00h, 00h
+
+GameBoard	db	14 dup (00h)      	; 23 x 14 Array representing game board
+		db	00h, 70h
+                db      10 dup(0)
+		db	70h, 00h
+		db	00h, 70h
+                db      10 dup(0)
+		db	70h, 00h
+		db	00h, 70h
+                db      10 dup(0)
+		db	70h, 00h
+		db	00h, 70h
+                db      10 dup(0)
+		db	70h, 00h
+		db	00h, 70h
+                db      10 dup(0)
+		db	70h, 00h
+		db	00h, 70h
+                db      10 dup(0)
+		db	70h, 00h
+		db	00h, 70h
+                db      10 dup(0)
+		db	70h, 00h
+		db	00h, 70h
+                db      10 dup(0)
+		db	70h, 00h
+		db	00h, 70h
+                db      10 dup(0)
+		db	70h, 00h
+		db	00h, 70h
+                db      10 dup(0)
+		db	70h, 00h
+		db	00h, 70h
+                db      10 dup(0)
+		db	70h, 00h
+		db	00h, 70h
+                db      10 dup(0)
+		db	70h, 00h
+		db	00h, 70h
+                db      10 dup(0)
+		db	70h, 00h
+		db	00h, 70h
+                db      10 dup(0)
+		db	70h, 00h
+		db	00h, 70h
+                db      10 dup(0)
+		db	70h, 00h
+		db	00h, 70h
+                db      10 dup(0)
+		db	70h, 00h
+		db	00h, 70h
+                db      10 dup(0)
+		db	70h, 00h
+		db	00h, 70h
+		db	10 dup(0)
+		db	70h, 00h
+		db 	00h, 70h
+		db      10 dup(0)
+		db	70h, 00h
+		db	00h, 70h
+                db      10 dup(0)
+		db	70h, 00h
+		db	00h, 70h
+		db	10 dup (70h)
+		db	70h, 00h
+		db	14 dup (00h)	
+
+XPos		dw	0			; X coordinate position of CurrentPiece in GameBoard
+YPos		dw	0			; Y coordinate position of CurrentPiece in GameBoard
+
+Score		dw	0			; Current score
+Level		db	0			; Current game level
+NumLines	db	0			; Number of lines cleared so far
+LinesCleared	db	0		        ; Number of lines cleared when a piece is in place
+PointsArray	dw	10, 50, 100, 250, 500   ; Lookup table of score additions for a
+						; number of lines cleared
+
+include         bground.dat	 		; Background wallpaper stored in variable Wallpaper
+BackBuffer	db	4000 dup (0)     	; BackBuffer used for double buffering
+                                        
+public binascBuffer, oldKbdV, oldTimerV, TimerTick, GameFlags, CurrentPiece, NextPiece, TempPiece
+public Pieces, GameBoard, XPos, YPos, Score, Level, NumLines, LinesCleared, BackBuffer, Wallpaper
+public PointsArray
+
+;--------------------------------------------------------------
+;--                       Main Procedure                     --
+;--------------------------------------------------------------
+
+MAIN PROC FAR
+
+        mov     ax, cseg    ; Use common code and data segment
+        mov     ds, ax
+        
+        mov     ax, 0B800h  ; Use extra segment to access video screen
+        mov     es, ax      ;
+        
+        mov     ah, 1       ; Set up the video screen
+        mov     cx, 2000h   ;
+        int     10h         ;
+    
+        call    MP3Main
+
+        mov     ax, 0700h   ; clearing
+        mov     cx, 160*25  ; the
+        mov     di, 0       ; screen
+        rep     stosw       ; 
+           
+        call    mp3xit
+
+MAIN ENDP
+
+;--------------------------------------------------------------
+;--           Replace Library Calls with your Code!          --
+;--           Save all reg values that you modify            -- 
+;--           Don't forget to add Function Headers           --
+;--------------------------------------------------------------
+
+;--------------------------------------------------------------
+;--                        MP3Main()                         --
+;--------------------------------------------------------------
+MP3Main PROC NEAR
+	call	libMP3Main
+	ret
+
+MP3Main ENDP
+
+;--------------------------------------------------------------
+;--                       Initialize()                       --
+;--------------------------------------------------------------
+Initialize PROC NEAR
+	call	libInitialize
+	ret
+
+Initialize ENDP
+
+;--------------------------------------------------------------
+;--                      GetNextPiece()                      --
+;--------------------------------------------------------------
+GetNextPiece PROC NEAR
+	call	libGetNextPiece
+	ret
+
+GetNextPiece ENDP
+
+;--------------------------------------------------------------
+;--                      MovePiece()                         --
+;--------------------------------------------------------------
+MovePiece PROC NEAR
+	call	libMovePiece
+	ret
+
+MovePiece ENDP
+
+;--------------------------------------------------------------
+;--                     RotatePieceCW()                      --
+;--------------------------------------------------------------
+RotatePieceCW PROC NEAR
+	call	libRotatePieceCW
+	ret
+
+RotatePieceCW ENDP
+
+;--------------------------------------------------------------
+;--                    RotatePieceCCW()                      --
+;--------------------------------------------------------------
+RotatePieceCCW PROC NEAR
+	call	libRotatePieceCCW
+	ret
+
+RotatePieceCCW ENDP
+
+;--------------------------------------------------------------
+;--                  CheckPieceCollision()                   --
+;--------------------------------------------------------------
+CheckPieceCollision PROC NEAR
+	call	libCheckPieceCollision
+	ret
+
+CheckPieceCollision ENDP
+
+;--------------------------------------------------------------
+;--                   PutPieceOnBoard()                      --
+;--------------------------------------------------------------
+PutPieceOnBoard PROC NEAR
+	call	libPutPieceOnBoard
+	ret
+
+PutPieceOnBoard ENDP
+
+;--------------------------------------------------------------
+;--                       ClearLines()                       --
+;--------------------------------------------------------------
+ClearLines PROC NEAR
+	call	libClearLines
+	ret
+
+ClearLines ENDP
+
+;--------------------------------------------------------------
+;--                       UpdateStats()                      --
+;--------------------------------------------------------------
+UpdateStats PROC NEAR
+	call	libUpdateStats
+	ret
+
+UpdateStats ENDP
+
+;--------------------------------------------------------------
+;--                     DrawGameBoard()                      --
+;--------------------------------------------------------------
+DrawGameBoard PROC NEAR
+	call	libDrawGameBoard
+	ret
+
+DrawGameBoard ENDP
+
+;--------------------------------------------------------------
+;--                   DrawCurrentPiece()                     --
+;--------------------------------------------------------------
+DrawCurrentPiece PROC NEAR
+	call	libDrawCurrentPiece
+	ret
+
+DrawCurrentPiece ENDP
+
+;--------------------------------------------------------------
+;--                     DrawNextPiece()                      --
+;--------------------------------------------------------------
+DrawNextPiece PROC NEAR
+	call	libDrawNextPiece
+	ret
+
+DrawNextPiece ENDP
+			   
+;--------------------------------------------------------------
+;--                        DrawStats()                       --
+;--------------------------------------------------------------
+DrawStats PROC NEAR
+	call	libDrawStats
+	ret
+
+DrawStats ENDP
+
+;--------------------------------------------------------------
+;--                     RefreshScreen()                      --
+;--------------------------------------------------------------
+RefreshScreen PROC NEAR
+	call	libRefreshScreen
+	ret
+
+RefreshScreen ENDP    
+
+;--------------------------------------------------------------
+;--                        KbdInstall()                      --
+;--------------------------------------------------------------
+KbdInstall PROC NEAR
+        call	libKbdInstall
+        ret
+        
+KbdInstall ENDP
+
+;--------------------------------------------------------------
+;--                       KbdUninstall()                     --
+;--------------------------------------------------------------
+KbdUninstall PROC NEAR
+        call	libKbdUninstall
+        ret
+        
+KbdUninstall ENDP
+
+;--------------------------------------------------------------
+;--                        KbdHandler()                      --
+;--------------------------------------------------------------
+KbdHandler PROC NEAR
+        call	libKbdHandler
+        iret
+        
+KbdHandler ENDP
+
+;--------------------------------------------------------------
+;--                      TimerInstall()                      --
+;--------------------------------------------------------------
+TimerInstall PROC NEAR
+        call	libTimerInstall
+        ret
+
+TimerInstall ENDP
+
+;--------------------------------------------------------------
+;--                     TimerUninstall()                     --
+;--------------------------------------------------------------
+TimerUninstall PROC NEAR
+       	call	libTimerUninstall
+        ret
+
+TimerUninstall ENDP
+
+;--------------------------------------------------------------
+;--                      TimerHandler()                      --
+;--------------------------------------------------------------
+
+TimerHandler PROC NEAR
+	call	libTimerHandler
+	iret
+
+TimerHandler ENDP
+
+CSEG ENDS
+        END MAIN
+
+</pre>
+</font>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

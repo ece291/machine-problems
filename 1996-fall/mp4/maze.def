@@ -1,0 +1,56 @@
+
+; Additions to MAZE.DEF for MP4
+; John Lockwood; 10/96
+
+; Video Memory Segments (Store in ES)
+VIDGRSEG EQU 0A000h
+
+; VidMode Options
+TEXTMODE EQU 0
+GRMODE   EQU 1
+
+; New Mouse Cursers (Mouse North,East,South,West)
+MNCH    EQU 0000101000011110b
+MECH    EQU 0000101000010000b
+MSCH    EQU 0000101000011111b
+MWCH    EQU 0000101000010001b
+
+; Mode 13 Predefined Palette Colors (use for coloring)
+CYAN    EQU 3
+GRAY    EQU 8
+BLUE    EQU 1
+RED     EQU 4
+GREEN   EQU 2
+YELLOW  EQU 8+6 
+REDBR   EQU 12
+MAGENTA EQU 5
+
+; Constants for Side3d Array
+LSW    EQU 10000000b ; Left Side Wall
+RSW    EQU 01000000b ; Right Side Wall
+LRSW   EQU 11000000b ; Left & Right Side Wall
+
+; Maximum depth of 3d-view
+MAXDepth3d EQU 9
+
+; Macro to switch to Graphic or Text
+GMODE MACRO
+        push ax
+        mov ax,VidGrSEG
+        mov es,ax
+        mov ah,00h
+        mov al,13h
+        int 10h
+        pop ax
+ENDM
+
+TMODE MACRO
+        push ax
+        mov ax,VidSEG
+        mov es,ax
+        mov ah,00h
+        mov al,02h
+        int 10h
+        pop ax
+ENDM
+

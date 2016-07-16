@@ -1,0 +1,443 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 1</title>
+</head>
+
+<body bgcolor=ffffff>
+<p>
+<table cellpadding=3 width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Lockwood, Fall 1997</td></tr></table>
+<h2> </h2>
+<center><h1>Machine Problem 1: Score Distribution Chart</h1></center>
+<p>
+<center><table border=1 cellpadding=3 width=60%>
+  <tr><td align=right><b>Due Date</b></td><td>Wednesday 9/24/97</td></tr>
+  <tr><td align=right><b>Purpose</b></td><td>
+     Looping, branching, and math operations.
+     </td></tr>
+   <tr><td align=right><b>Points</b></td><td>50</td></tr>
+</table>
+</center>
+
+<h2>Introduction</h2>
+For this machine problem, you are to write a program which produces
+a frequency distribution table of ECE291 scores.  
+The program converts a list of raw homework, MP, exam, and final
+scores into a table that shows the frequencies of the total scores.
+In particular, this program will plot the number
+of students that are in the same 16-point range, 
+<p>
+A list of scores is given to you in the form of a <i>database</i>.
+For ECE291, our database is collection
+of records that each hold a student ID and individual raw scores.  
+The ID is an alpha-numeric string stored as 5 ASCII characters
+and terminated with a '$' symbol.  Each of the 16 individual raw scores is
+stored as a 1-byte unsigned integer.  The <i>total score</i> is
+represented as a 2-byte unsigned integer.  In total, each ECE291 record
+occupies 24 bytes.  
+<h2>Record Format</h2>
+The record format of the ECE291 database is
+summarized below.  In this table 'A' represents an ASCII character;
+'$' represents the ASCII character used to mark the end of a string;
+'B' represents a 1-byte unsigned integer; and 'WW' represents a 2-byte
+unsigned integer.  The <i>offset</i> refers to the starting 
+location of each field in each 24-byte array.
+<p>
+<pre> 
+</pre>
+<center><table border=1 cellpadding=3>
+<tr>
+  <th>Field</th>
+  <th colspan=1>ID</th>
+  <th colspan=6>Homework</th>
+  <th colspan=7>Machine Problems</th>
+  <th colspan=2>Exams</th>
+  <th colspan=1>Final</th>
+  <th colspan=1>Total</th></tr>
+<tr>
+  <th>Data</th>
+  <td>AAAAA$</td>
+  <td>B<td>B<td>B<td>B<td>B<td>B
+  <td>B<td>B<td>B<td>B<td>B<td>B<td>B
+  <td>B<td>B
+  <td>B
+  <td>WW</tr>
+<tr>
+  <th>Offset</th>
+  <td>0<td>6<td>7<td>8<td>9 
+  <td>10<td>11<td>12<td>13<td>14<td>15
+  <td>16<td>17<td>18<td>19<td>20<td>21<td>22
+</tr>
+</table></center>
+<p>
+For this machine problem, you will use the INCLUDE directive to read
+a database of fictitious ECE291 scores into your program.  
+This directive will insert the contents of the specified file 
+into your .ASM program at the time you assemble with MASM.
+The <tt>gbk-test.dta</tt> and <tt>gbk-big.dta</tt> files each
+define a variable called <tt>gbk</tt> which holds 
+an entire database of student records as well as a variable called 
+<tt>numrec</tt> which stores the number of records in the database.  
+The contents of <tt>gbk-test.dta</tt> is shown below:
+<p>
+<center><table border=1 cellpadding=3><tr><td><pre>
+; Format: id,'$',hw0,hw1,hw2,hw3,hw4,hw5,
+;         mp0,mp1,mp2,mp3,mp4,mp5,mp6(project),
+;         exam1,exam2,final
+
+gbk db 'PRFCT','$',25,75,75,75,75,75, 25,50,50,50,50,50,125, 150,150,200, 0,0
+    db 'DOPEY','$',10,40,40,40,40,40,  0,20,30,40,40,40, 70,  50, 60, 70, 0,0
+    db 'HAPPY','$',25,20,75,25,75,25, 25,50,35,50,40,50,100, 115, 90,150, 0,0
+    db 'LUCKY','$',20,70,70,70,70,70, 20,40,40,40,40,40, 90, 110,120,150, 0,0
+    db 'ANGRY','$',20,40,40,40,40,30, 10,20,30,40,40,30, 70,  60, 50, 70, 0,0
+
+numrec dw 5 </pre></table></center>
+<p>
+A similar table of current scores for this class can be dynamically 
+generated and downloaded from the ECE291 on-line gradebot.
+<p>
+
+<h2>Procedures</h2>
+This assignment has three procedures.  You will receive credit for this
+assignment by replacing each of three procedures listed below with your
+own code.
+
+<ul>
+<li><font size=+1><b>CompTotal</b></font>
+  <ul>
+  <li><b>Purpose</b>: Computes the total score (<tt>total</tt>)
+      for each  student in the gradebook as the sum of HW, MP, exam, 
+      and the final scores.
+  <li><b>Input</b>: <tt>numrec</tt> variable and <tt>hw, mp, exam</tt>, and 
+       <tt>final</tt> fields of <tt>gbk</tt> records.
+  <li><b>Output</b>: <tt>total</tt> field of <tt>gbk</tt> records.
+  <li><b>Note1</b>: Recall that the subtotal of the homework scores 
+      needs to be divided by four.  
+  <li><b>Note2</b>: Observe that you are adding byte-sized integers
+      to compute a word-sized total.  
+  <li><b>Hint1</b>: There is an efficient opcode that 
+       divides an integer by a power of two.
+  <li><b>Hint2</b>: Avoid repetitive code by using loops to iterate 
+       though the records and compute sums.  
+  <li><b>Points</b>: 16 
+  </ul>
+  <p>
+
+<li><font size=+1><b>FillTable</b></font>
+  <ul>
+  <li><b>Purpose</b>: Compute the score distribution array,
+      (<tt>ScoreDist</tt>), as the frequency of students that 
+      achieve a range of scores.  This routine should also compute 
+        the lowest and highest score ranges.
+  <li><b>Input</b>: <tt>total</tt> fields of the <tt>gbk</tt> array
+  <li><b>Outputs</b>: <tt>ScoreDist</tt> array and
+       <tt>MinBin</tt>, <tt>MaxBin</tt> variables.
+  <li><b>Description</b>: Each element (or "bin") of the <tt>ScoreDist</tt> 
+      array represents a 16-point range of total points.  The array has 
+      been defined with 65 elements to represent all possible scores
+      between 0 and 1030.  The first bin,
+      (<tt>ScoreDist[0]</tt>), represents the number of students
+      that have scores between 0 and 15.  The last bin 
+      (<tt>ScoreDist[64]</tt>), represents the number of students
+      that have scores between 1024 and 1039.  The variables
+      <tt>MinBin</tt> and <tt>Maxbin</tt> represent the lowest and
+      highest score range obtained by one or more students.
+      <tt>MinBin</tt> represents the first non-empty bin and
+      <tt>MaxBin</tt> represents the last non-empty bin.
+  <li><b>Hint</b>: The <tt>ScoreDist</tt> array can be computed using
+       only a single pass through the <tt>gbk</tt> array.
+  <li><b>Points</b>: 17
+  </ul><p>
+
+<li><font size=+1><b>PlotChart</b></font>
+  <ul>
+  <li><b>Purpose</b>: Plots the distibution chart using the ASCII
+     asterisk (*) symbol to represent the number of students obtaining
+     the same score range.
+  <li><b>Inputs</b>: <tt>ScoreDist</tt> array and
+       <tt>MinBin</tt>, <tt>MaxBin</tt> variables.
+  <li><b>Output</b>: Prints to the screen 
+  <li><b>Hint</b>: Use the BINASC, DSPMSG, and DSPOUT routines of LIB291.
+      Be sure to note how registers are used and modified by each routine.
+  <li><b>Points</b>: 17
+  </ul>      
+</ul>
+
+<h2>Sample Output</h2>
+<ul>
+<li>For the sample database (<tt>gbk-test.dta</tt>, as shown above), 
+the computed scores totals are: PRFCT=1000 (3E8h), DOPEY=472 (1D8h),
+HAPPY=766 (2FEh), LUCKY=782 (30Eh), and ANGRY=472 (1D8h).  The expected
+output of the program is shown below:
+</ul>
+
+<center><table border=1 cellpadding=3>
+<tr><td><pre>
+   464 ..    479 **
+   480 ..    495 
+   496 ..    511 
+   512 ..    527 
+   528 ..    543 
+   544 ..    559 
+   560 ..    575 
+   576 ..    591 
+   592 ..    607 
+   608 ..    623 
+   624 ..    639 
+   640 ..    655 
+   656 ..    671 
+   672 ..    687 
+   688 ..    703 
+   704 ..    719 
+   720 ..    735 
+   736 ..    751 
+   752 ..    767 *
+   768 ..    783 *
+   784 ..    799 
+   800 ..    815 
+   816 ..    831 
+   832 ..    847 
+   848 ..    863 
+   864 ..    879 
+   880 ..    895 
+   896 ..    911 
+   912 ..    927 
+   928 ..    943 
+   944 ..    959 
+   960 ..    975 
+   976 ..    991 
+   992 ..   1007 *
+
+LIBMP1 Calls: 
+CompTotal 
+FillTable 
+PlotChart </pre></td></tr>
+</table></center>
+<ul>
+<li>Note that the inclusive range of values for the scores
+    is printed on each line of the distribution table.
+<li>Observe that the printing of scores begins and ends at
+     the minimum and maximum range
+</ul>
+<p>
+
+<ul>
+<li>For the larger database (<tt>gbk-big.dta</tt>), the expected output
+would be:
+</ul>
+
+<center><table border=1 cellpadding=3>
+<tr><td><pre>
+   640 ..    655 *
+   656 ..    671 *
+   672 ..    687 
+   688 ..    703 *
+   704 ..    719 ***
+   720 ..    735 *
+   736 ..    751 ***
+   752 ..    767 ***
+   768 ..    783 *******
+   784 ..    799 ********
+   800 ..    815 ****
+   816 ..    831 *********
+   832 ..    847 *****
+   848 ..    863 ************
+   864 ..    879 ***********
+   880 ..    895 ********
+   896 ..    911 ***
+   912 ..    927 *
+   928 ..    943 *
+   944 ..    959 ***
+
+LIBMP1 Calls: 
+CompTotal 
+FillTable 
+PlotChart </pre></td></tr>
+</table></center>
+<ul>
+<li>You can test this case with your program by modifying 
+     the INCLUDE statement in your variable section to:
+      <tt>INCLUDE gbk-big.dta </tt>
+<li>In general, Your output should match the output of the LIBMP1 routines 
+     for any input.
+</ul>
+
+<h2>Preliminary Procedure</h2>
+<ul>
+<li>Copy the 
+    empty MP1 program (<tt>MP1.ASM)</tt>), 
+    example database files (<tt>gbk-test.dta</tt> and <tt>gbk-big.dta</tt>),
+    sample output (<tt>gbk-test.out</tt> and <tt>gbk-big.out</tt>),
+    libraries (<tt>libmp1.lib</tt> and <tt>lib291.lib</tt>), and 
+    <tt>Makefile</tt> from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s I:\ece291\mp1 F:\mp1</tt><br>
+    Alternatively, from home you can download the same files as 
+    <a href="mp1.zip">mp1.zip</a>.
+<li>As with MP0, run <tt>NMake</tt> to build an executable program 
+    using the given ECE291 library functions.
+<li>As with MP0, use a text editor to modify the program.
+    As given, the program uses LIBMP1 routines to implement all
+    functionality.  To receive full credit for the assignment,
+    you will need to implement each of the subroutines described above with
+    your own code.
+<li>As with MP0, use CodeView (<tt>CV</tt>) to debug and test your program.
+    Because you only receive credit for procedures that function completely
+    as specified, it is best to debug each routine individually.  
+<li>By modifying a few comments, you can mix and match usage of your 
+    own code and Library routines.  You may notice that the LIBMP1
+    routines contain extraneous and difficult-to-read code.  They 
+    are not meant to be easily unassembled!
+</ul>
+
+
+<h2>Final Steps</h2>
+<ol>
+<li>Demonstrate MP1.EXE to a TA or to the instructor.  
+    You will
+    then be asked to recompile and demonstrate 
+    MP1 with different database files.
+    Your program must work with all given input.
+    Once approved, you are ready to turn in your program.
+<li>Be prepared to answer questions about any aspect of the operation of your
+    program.  The TAs will not accept an MP if you cannot fully
+    explain the operation of your code.
+<li>Copy your programs to a floppy: <br>
+    <tt>xcopy /s F:\mp1 a:\mp1</tt>
+<li>Print MP1.ASM 
+<li>Take your printout and disk with MP1 to the same TA which approved your 
+    demonstration.  Be sure that your name is on the disk and on the printout. 
+</ol>
+
+<hr>
+<h2>MP1.ASM (Program framework)</h2>
+<font size=-1> <xmp> 
+        PAGE 75, 132
+        TITLE   MP1     your name       current date
+
+COMMENT *
+        Score Chart
+        -----------
+        ECE291: Machine Problem 1
+        Prof. John W. Lockwood
+        University of Illinois, Dept. of Electrical & Computer Engineering
+        Fall 1997
+        Revision 1.0
+
+        This program produces a distribution table of ECE291 total
+        scores using a table of raw scores for homeworks, machine problems,
+        exams, and the final.
+	*
+
+;====== SECTION 1: Define constants =========================================
+
+	CR	EQU	0Dh
+	LF	EQU	0Ah
+	ESCKEY	EQU	1Bh
+
+;====== SECTION 2: Declare external procedures ==============================
+
+        extrn   binasc:near  ; From lib291.lib (Described in the lab manual)
+        extrn   dspout:near  ; (You can use these functions freely)
+        extrn   dspmsg:near  ;
+        extrn   mp1xit:near  ; From libmp1.lib: Call to exit your program
+
+        extrn   CompTotal:near  ; From libmp1.lib
+        extrn   FillTable:near  ; (You need to write these yourself)
+        extrn   PlotChart:near  ; Comment these lines to use your own code
+
+        Public gbk, numrec, crlf, pbuf, ScoreDist, MinBin, MaxBin
+
+;====== SECTION 3: Define stack segment =====================================
+
+stkseg  segment stack                   ; *** STACK SEGMENT ***
+        db      64 dup ('STACK   ')
+stkseg  ends
+
+;====== SECTION 4: Define code segment ======================================
+
+cseg    segment public                  ; *** CODE SEGMENT ***
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== SECTION 5: Declare variables for main procedure =====================
+
+; Format of the gradebook database:
+;   [Note that each record is 24 bytes long]
+;
+;            ID: 5 ASCII letters or numbers
+;    hw0..final: 1-byte unsigned integers (array of 16 elements)
+;           tot: 2-byte unsigned integer (calculated as per instructions)
+;          flag: 1 byte (not used for this assignment)
+;
+; ID,'$',hw0,hw1,hw2,hw3,hw4,hw5,
+;     mp0,mp1,mp2,mp4,mp5,mp6,exam1,exam2,final,total
+
+INCLUDE gbk-test.dta  ; Read from External File
+
+; This directive inserts the contents of the file gbk.dta here.
+; In this file, two variables are defined: gbk and numrec
+;
+; gbk is an array of 24-byte records holding raw scores
+; numrec is defined as a 16-bit integer which stores the number of records
+
+crlf db CR,LF,'$' ; Carriage Return / Line Feed String
+
+pbuf db 7 dup(?) ; Buffer for use with BINASC / DSPMSG library routines
+
+ScoreDist db 65 dup(0) ; Table of 64 byte-size integers
+                       ; ScoreDist[0]=Number of scores between  0 .. 15
+                       ; ScoreDist[1]=Number of scores between 16 .. 31
+                       ;         ...
+                       ; ScoreDist[64]=Number of scores between 1024 .. 1030
+
+MinBin  dw 64 ; Lowest Score Range (The first bin that is non-zero)
+              ; Computed by CompTable, used by PlotChart
+ 
+MaxBin  dw 0  ; Highest Score Range (The last bin that is non-zero)
+              ; Computed by CompTable, used by PlotChart
+
+;====== SECTION 6a: Your procedure ==========================================
+
+; CompTotal Proc near ; Compute score totals
+
+          ; .. Un-comment procedure and add your code here ..
+
+          ret
+; CompTotal ENDP
+
+; FillTable Proc NEAR ; Fill ScoreDist Table; Compute MinBin, MaxBin
+
+          ; .. Un-comment procedure and add your code here ..
+
+
+          ret
+; FillTable ENDP
+
+; PlotChart Proc NEAR ; Plot Distibution Table from MinBin .. MaxBin
+
+          ; .. Un-comment procedure and add your code here ..
+
+          ret
+; PlotChart ENDP
+
+;====== SECTION 6b: Main procedure ==========================================
+                    
+
+main    proc    far
+        mov     ax, cseg                ; Initialize DS register
+        mov     ds, ax
+
+        call CompTotal  ; Compute totals in each record
+        call FillTable  ; Populate ScoreDist with # of similar scores
+        call PlotChart  ; Print chart of score frequencies
+
+        call    mp1xit
+
+main    endp
+
+cseg    ends
+        end main
+</xmp>
+</body>

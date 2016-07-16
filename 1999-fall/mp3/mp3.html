@@ -1,0 +1,700 @@
+<HTML>
+
+<HEAD>
+<TITLE>MP3</TITLE>
+</HEAD>
+
+<BODY bgColor=#ffffff>
+
+<TABLE border=0 cellPadding=3 width="100%">
+  <TBODY>
+  <TR>
+    <TD align=left width="33%">ECE291</TD>
+    <TD align=middle width="34%"><P align=center>Computer Engineering II</P></TD>
+    <TD align=right width="33%">Kalbarczyk, Fall 1999</TD>
+  </TR>
+  </TBODY>
+</TABLE>
+
+<CENTER><H1>Machine Problem 3: Text-Mode Pong</H1></CENTER>
+
+<CENTER>
+
+<TABLE border=1 cellPadding=3 width="60%">
+  <TBODY>
+  <TR>
+    <TD align=right><B>Assigned</B></TD>
+    <TD>Tuesday, October 12, 1999</TD></TR>
+  <TR>
+    <TD align=right><B>Purpose</B></TD>
+    <TD>Text-Mode Graphics, Keyboard and Timer Interrupts</TD></TR>
+  <TR>
+    <TD align=right><B>Points</B></TD>
+    <TD>50</TD></TR>
+  <TR>
+    <TD align=right><B>Due Date</B></TD>
+    <TD>Tuesday October 26, 1999 - 5:00pm </TD></TR></TBODY></TABLE></CENTER><!--<Center><IMG SRC="../../icon/construct.gif" >This MP is under construction</Center>-->
+<H2>Introduction</H2>
+<div align="center">
+  <center>
+  <table border="0" width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td width="100%">
+        <p align="center">Pong, while not the first videogame, was the first
+        coin-op arcade game and the first mainstream videogame that was
+        available to almost everyone. Pong was the impetus for the development
+        of the video gaming industry, almost single-handedly creating both the
+        home and the arcade videogame markets.</td>
+    </tr>
+    <tr>
+      <td width="100%">
+        <p align="center"><img border="0" src="pong.gif" width="278" height="199"></td>
+    </tr>
+    <tr>
+      <td width="100%">
+        <p align="center">For your next MP, you will design a different kind of
+        Pong. In addition to the paddles and the ball moving back and forth, you
+        will have blocks placed in between, that fall off as the ball bounces
+        off them giving the ball a more random behavior.</td>
+    </tr>
+  </table>
+  </center>
+</div>
+<H2>Problem Description</H2>
+<P align="center"><img border="0" src="mp3grafx.jpg" width="834" height="533"><P>As
+we are working in text-mode, a few rules need to be set ( just to make our lives
+easier).&nbsp;
+<ul>
+  <li>First of all, our object positions shall be calculated as ( 160 * row +
+    column ). Thus, the position of an object is nothing but its offset in the
+    video buffer.</li>
+  <li>Next, we shall assume that the ball moves only at a 45 degree angle. In
+    order to achieve this, we shall increment/decrement by 6 units in the
+    X-direction for every increment/decrement of 1 unit in the Y-direction. So,
+    the x-coordinate of the ball, takes values from 4 to 154, in increments of
+    6, whereas the y-coordinate of the ball, can range from 1 to 23 ( due to
+    the presence of the two bars ).</li>
+  <li>The paddles are located at the ends and have freedom of motion only in the
+    Y-direction. The computer's paddle position can take any value from 160 to
+    160*19 and the player's paddle takes values from 160*2-2 to 160*20-2 ( as
+    the paddles are each 5 units long ). For your convenience, this number may
+    be <b>hard-coded</b>.</li>
+  <li>The ball shall always start from any row in the center column. This is so
+    as to give equal advantage to both players. This center column is 76.</li>
+  <li>The player has 10 lives, with the top right corner showing the number of
+    lives remaining. The player loses a life every time he/she misses the ball.</li>
+  <li>The score at the bottom indicates the number of times the player has
+    returned the ball. It is accumulative over the 10 lives.</li>
+  <li>The game should quit if the Esc key is pressed at any time during the game
+    or if all 10 lives have been used up.</li>
+</ul>
+<p><i>Gold Star for implementation of different angles and velocities...</i></p>
+<H2>Implementation</H2>
+<p><i>A word about Double Buffering</i>:</p>
+<ul>
+  <li>In order for the display to be smooth, we need to perform double
+    buffering. To achieve this we shall use pages 0 and 1 of the video buffer.
+    In our function call that draws to the screen, we shall dump each object
+    onto page 1 of the buffer and then perform a quick dump from page 1 to page
+    0. This way, we update the whole screen at a time, rather than just a part
+    of it.</li>
+</ul>
+<p><i>A word about the Random Generator Algorithm</i>:</p>
+<ul>
+  <li>To bring about an element of randomness into the game, as far as the initial
+    co-ordinates of the ball and the behavior of the ball are concerned, we
+    shall use the following algorithm to generate random numbers&nbsp;<br>
+    <ul>
+      <li>R<sub>1</sub> = Randval</li>
+      <li>R<sub>i+1</sub> = Randval = ( K1 * R<sub>i</sub> + K2 ) % MaxValue&nbsp;<br>
+        Where</li>
+    </ul>
+    <ul>
+      <ul>
+        <li><i>R<sub>i</sub></i> is the random value generated in the i-th call
+          to the subroutine.
+        <li><i>Randval</i> is a variable that holds the initial random value and
+          is updated with the result after each call to the random function.
+        <li><i>K1</i> and <i>K2</i> are two large, prime-valued constants.
+        <li><i>MaxValue</i> is the largest random value desired.</li>
+      </ul>
+      <li>For a list of large prime numbers, refer <a href="http://www.ece.uiuc.edu/ece291/class-resources/primes.html">http://www.ece.uiuc.edu/ece291/class-resources/primes.html</a></li>
+    </ul>
+  </li>
+</ul>
+<p><i>A word about Interrupt Service Routines</i>:</p>
+<ul>
+  <li>In MP2, we used LIB291's <tt>kbdine</tt> to read data from the keyboard.
+    Calling this function causes your computer to poll the default keyboard
+    handler until a key is read into the DOS keyboard buffer.</li>
+  <li>But what if you wanted to do something else while waiting for a keyboard
+    input. Suppose, for example, you also wanted to read from a mouse at the
+    same time you were waiting for input from the keyboard. You could not do
+    this with blocking I/O.</li>
+  <li>The use of customized interrupt service routines (interrupt handlers)
+    allows the program to handle <i>asynchronous I/O</i>. With asynchronous I/O,
+    the program is able to do other things while waiting for data from one
+    particular input.&nbsp; In this MP you are required to watch for inputs
+    from&nbsp; the keyboard.</li>
+  <li>The subject of ISRs is discussed in lectures 13 through 16.&nbsp; Read the
+    lecture notes and Chapter 9 in the lab manual for more information.</li>
+</ul>
+<p><i>A word about the AI</i>:</p>
+<ul>
+  <li>One way to implement the AI is to use a variable, AIstatus. Each time a
+    paddle hits the ball, this variable is randomly generated. If the value is
+    satisfies a certain condition ( for example, if the 3rd and 4th bits are SET
+    ), the AI can be designed to move away from the ball, and towards the ball
+    in all other cases.</li>
+</ul>
+<p><i>A word about Bouncing off Edges</i>:</p>
+<ul>
+  <li>As far as the paddles go, it is sufficient to bounce off the paddle only
+    if the paddle is in front of it, but with the blocks in the center, make
+    sure that the ball does NOT go over it, but rather bounce off ( take care of
+    diagonals ), keeping in mind that incrementX is +/-6 and incrementY is +/-1</li>
+</ul>
+<p><i>A word about handling the Timer</i>:</p>
+<ul>
+  <li>The first step is to (in your TimerInstall function) set the timer chip to
+    interrupt 36 times in a second. (The default is 18 times). (refer the lab
+    manual on how to set this up).<br>
+  </li>
+  <li>Now that the timer fires once every 1/36th of a second... we have to
+    remember that other programs are running simultaneously in memory, who also
+    make use of the clock, which uses this timer chip. This is where timerTick
+    comes in handy. In your TimerHandler, increment timerTick every time... once
+    it equals 2, call the ORIGINAL timer handler ( so you don't have to reset
+    the PIC in this case ) and set timerTick back to ZERO. This way, of the 36
+    times that the TimerHandler is called, in one second... 18 times you reset
+    the PIC, and the other 18 times is done by the default handler ( be wary
+    when calling the ORIGINAL handler ).<br>
+  </li>
+  <li>This protects other applications that are running simultanously in memory.
+    Now to use the timer, we use timerFlag. In the handler we set it to 1, and
+    in our MP3Main, every time it sets to 1, ( which is 36 times a sec ), we
+    call the appropriate functions ( refer handout ) and set it back to 0.<br>
+  </li>
+  <li>So the Handler sets timerFlag to 1 and we set it back to 0 in our main
+    loop, so that our functions are called once every 1/36th of a second. Now
+    for updateFlag. We have to update the ball only 9 times a second. So, in our
+    TimerHandler, we increment updateFlag. and in our MP3Main loop, we check if
+    it equals 4 ( since 4 * 1/36 = 1/9 ) and if so, we call the appropriate
+    functions and set this flag back to 0.</li>
+</ul>
+<p><i>A word about the Timer Chip</i>:</p>
+<p>The computer has a number of timer chips ( for a variety of purposes ). One
+such timer chip is used by the system to update your clock. This chip fires an
+interrupt 18 times a second.<br>
+<br>
+We can change this frequency to any multiple of 18 as follows:</p>
+<div align="center">
+  <center>
+  <table border="1" cellpadding="3" cellspacing="0" width="81%" bgcolor="#00FFFF">
+    <tr>
+      <td width="50%"><b>Case 1</b>:<br>
+        <br>
+        MOV&nbsp;&nbsp;&nbsp; AX, 0000h<br>
+        OUT&nbsp;&nbsp;&nbsp;&nbsp; 40h, AL<br>
+        MOV&nbsp;&nbsp;&nbsp; AL, AH<br>
+        OUT&nbsp;&nbsp;&nbsp;&nbsp; 40h, AL<br>
+        <br>
+        This will set the timer to fire 18 * 1 times a second.</td>
+      <td width="50%"><b>Case 2</b>:<br>
+        <br>
+        MOV&nbsp;&nbsp;&nbsp; AX, 4000h<br>
+        OUT&nbsp;&nbsp;&nbsp;&nbsp; 40h, AL<br>
+        MOV&nbsp;&nbsp;&nbsp; AL, AH<br>
+        OUT&nbsp;&nbsp;&nbsp;&nbsp; 40h, AL<br>
+        <br>
+        This will set the timer to fire 18 * 4 times a second.</td>
+    </tr>
+    <tr>
+      <td width="50%"><b>Case 3</b>:<br>
+        <br>
+        MOV&nbsp;&nbsp;&nbsp; AX, 2000h<br>
+        OUT&nbsp;&nbsp;&nbsp;&nbsp; 40h, AL<br>
+        MOV&nbsp;&nbsp;&nbsp; AL, AH<br>
+        OUT&nbsp;&nbsp;&nbsp;&nbsp; 40h, AL<br>
+        <br>
+        This will set the timer to fire 18 * 8 times a second.</td>
+      <td width="50%"><b>Case 4</b>:<br>
+        <br>
+        MOV&nbsp;&nbsp;&nbsp; AX, 1000h<br>
+        OUT&nbsp;&nbsp;&nbsp;&nbsp; 40h, AL<br>
+        MOV&nbsp;&nbsp;&nbsp; AL, AH<br>
+        OUT&nbsp;&nbsp;&nbsp;&nbsp; 40h, AL<br>
+        <br>
+        This will set the timer to fire 18 * 16 times a second.</td>
+    </tr>
+  </table>
+  </center>
+</div>
+<p>Remember our I/O bus is only 8-bit, hence we have to send them in two parts.
+The pattern should be evident. We send via AX the bit mask for the appropriate
+speed. Don't forget to reset it in your TimerUninstall function !!<br>
+</p>
+<H3>Procedures</H3>
+<UL>
+  <LI>This assignment has twelve procedures. You will receive credit for this 
+  assignment by replacing each of the twelve procedures listed below with your 
+  own code. 
+  <LI>Experiment with the working code to gain a full understanding of how the 
+  program works. 
+  <LI>Use defined constants where appropriate. </LI> 
+  <LI>Comment ALL the functions and make sure that they preserve all register
+    values.<br>
+ </LI>
+  <LI><B>MP3Main<BR></B>This is the main routine for this program and you should 
+  implement it first. <BR>Before you start, read through the entire write-up and 
+  make sure you understand the other functions that you will need to 
+  call.<BR>The program body is as follows:<BR><BR>Your main program must 
+  initially 
+  <UL>
+    <LI>Install the keyboard interrupt handler. 
+    <LI>Install the timer interrupt handler.<BR></LI></UL>Main Loop 
+  <UL>
+    <LI>( for every clock tick - 1/36th of a second ) - [ <i>Wait for timerFlag
+      to turn 1 and then set it to 0</i> ] 
+    <UL>
+      <LI>Draw to the screen. 
+      <LI>Update the players' positions. 
+      <LI>( for every 4 clock ticks ) - [ <i>Wait for updateFlag to turn to 4 (
+        or greater ) and then subtract 4</i> ] 
+      <UL>
+        <LI>Update the wallpaper ( map ) 
+        <LI>Update the ball's position. 
+        <LI>( if someone missed ) - [ <i>Check the Carry Flag</i> ] 
+        <UL>
+          <LI>Generate a new game 
+          <LI>( if we have exhausted all our lives ) - [ <i>Check the Carry Flag</i>
+            ] 
+          <UL>
+            <LI>break out of the loop. </LI></UL></LI></UL></LI></UL>
+      <LI>Check if the Esc key was pressed. 
+      <UL>
+        <LI>break out of the loop. </LI></UL></LI></UL>
+    <LI>Loop back. </LI></UL>
+  <P>Finally, when your main program is ready to exit, it should 
+  <UL>
+    <LI>Return the keyboard and timer handlers to their original values. 
+    <LI>Reset the timer chip to tick once every 1/18th of a second. </LI></UL>
+  <P>A sample skeleton for the main loop is:</P>
+    <div align="center">
+      <center>
+      <table border="1" cellpadding="3" cellspacing="0" width="66%" bgcolor="#00FFFF">
+        <tr>
+          <td>Label1:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Check if timerFlag is 1<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If NOT, jump to Label2<br>
+            <br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -- inside main loop --<br>
+            <br>
+            Label2:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Check if Esc Key was
+            pressed<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If NOT, jump to Label1<br>
+            <br>
+            <br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -- outside the loop --<br>
+          </td>
+          <td>Label1:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Check if Esc Key was
+            pressed<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If SO, jump to Label2<br>
+            <br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Check if timerFlag is 1<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If NOT, jump to Label1<br>
+            <br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -- inside main loop --<br>
+            <br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Jump to Label1<br>
+            <br>
+            Label2:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; -- outside the loop --</td>
+        </tr>
+      </table>
+      </center>
+    </div>
+  <P>Points: <B>5<br>
+  </B></P>
+  <li>
+  <P> <B>GenerateGame</B></P>
+  <UL>
+    <LI>Purpose: Refresh variables for a new game. Also, decide whether the game 
+    has come to an end or not. 
+    <LI>Input: livesRemaining 
+    <LI>Output: 
+    <UL>
+      <LI>ballPosX 
+      <LI>ballPosY 
+      <LI>incrementX 
+      <LI>incrementY 
+      <LI>AIstatus </LI> 
+      <LI>CF - This is SET if the player's lives are over, CLEAR otherwise. </LI></UL>
+    <LI>Notes: 
+    <UL>
+      <LI>Use the random number generator algorithm to obtain the variables
+        ballPosY and AIstatus.&nbsp; 
+    </LI>
+      <LI>The variable ballPosX is always assigned 76 (for our convenience). 
+    </LI>
+      <LI>As incrementX and incrementY take only definite values ( +/- 6 and +/-
+        1 respectively ), we can use the above two random numbers to help assign
+        values for them. For example, if bit 0 of ballPosY is 1, then set
+        incrementX may be set to +6 and -6 otherwise. Similarly, incrementY may
+        be set based on bit 1 of ballPosY. 
+    </LI></UL>
+    <LI>Points: <B>5</B><BR><BR></LI></UL>
+  </li>
+  <LI><B>DrawScreen</B> 
+  <UL>
+    <LI>Purpose:&nbsp;To display the game on the screen.&nbsp; 
+    <LI>Input:&nbsp; 
+    <UL>
+      <LI>ballPosX 
+      <LI>ballPosY 
+      <LI>playerPos 
+      <LI>compPos 
+      <LI>livesRemaining 
+      <LI>lifePos 
+      <LI>score 
+      <LI>scoreBuf 
+      <LI>scorePos 
+      <LI>paddleLength 
+      <LI>wallpaper </LI></UL>
+    <LI>Output: 
+    <UL>
+      <LI>Write directly to video memory (B800:0000) </LI></UL>
+    <LI>Notes: 
+    <UL>
+      <LI>Draw the objects on to page 1 of the video memory one by one ( the
+        wallpaper, the ball, the paddles, the score and the lives remaining ) at
+        their respective locations. 
+      </LI>
+      <LI>Transfer the entire block of memory from page 1 to page 0 using string
+        commands. 
+      </LI></UL>
+    <LI>Points: <B>5</B><BR><BR></LI></UL>
+  <LI><B>UpdatePlayers</B> 
+  <UL>
+    <LI>Purpose:&nbsp;To perform AI and parse the keyboard inputs. 
+    <LI>Input:&nbsp; 
+    <UL>
+      <LI>keyCode 
+      <LI>keyStatus 
+      <LI>ballPosX 
+      <LI>ballPosY 
+      <LI>incrementX 
+      <LI>incrementY 
+      <LI>AIstatus </LI></UL>
+    <LI>Output: 
+    <UL>
+      <LI>playerPos (updated) 
+      <LI>compPos (updated) </LI></UL>
+    <LI>Notes: 
+    <UL>
+      <LI>First of all, if keyStatus is 1 update the player's paddle. Based on
+        the UPKEY or DNKEY, add +/- 160 to the playerPos. </LI>
+      <LI>AI is updated ONLY when the ball is moving towards it ( that is, when
+        incrementX is -6 ). </LI>
+      <LI>The AI should track the ball, when the ball is outside it's length (
+        above its top edge or below its bottom edge ).&nbsp; </LI>
+      <LI>Choose a number, say 20h. Based on whether AIstatus is above or below
+        it, guide the paddle away from or towards the ball also in increments of
+        +/- 160.&nbsp; </LI></UL>
+    <LI>Points: <B>5</B><BR><BR></LI></UL>
+  <LI><B>UpdateBall</B> 
+  <UL>
+    <LI>Purpose:&nbsp;To animate the ball on the screen and update the score. 
+    <LI>Input:&nbsp; 
+    <UL>
+      <LI>playerPos 
+      <LI>compPos </LI> 
+      <LI>incrementX ( to look ahead ) </LI> 
+      <LI>incrementY ( to look ahead ) </LI></UL>
+    <LI>Output: 
+    <UL>
+      <LI>incrementX (updated) 
+      <LI>incrementY (updated) 
+      <LI>ballPosX (updated) 
+      <LI>ballPosY (updated) 
+      <LI>AIstatus (updated) 
+      <LI>score (updated) 
+      <LI>livesRemaining (updated) 
+      <li>CF - This is SET if the somebody missed, CLEAR otherwise.</li>
+      </UL>
+    <LI>Notes: 
+    <UL>
+      <LI>Check if the ball is moving towards the player. If so, is it at the
+        last column ( 154 )? If so, check if the ball is along the length of the
+        paddle. If so, bounce it back ( modify incrementX ) and update score. If
+        not, update livesRemaining and SET the CF. </LI>
+      <LI>Check if the ball is moving towards the AI. If so, is it on the first
+        column ( 4 )? Follow the same routine as above. </LI>
+      <LI>Check if the ball is at row 1 or row 23. If so, check the direction (
+        incrementY ) and bounce it off ( modify incrementY ) accordingly. </LI>
+      <LI>A good idea would be to generate AIstatus every time the ball touches
+        a paddle ( for more random Ai behavior ). HINT: Using a macro would help
+        a lot. </LI>
+      <LI>Finally, update the variables ballPosX and ballPosY based on the new
+        values of incrementX and incrementY. </LI></UL>
+    <LI>Points: <B>5</B><BR><BR></LI></UL>
+  <LI><B>UpdateMap</B> 
+  <UL>
+    <LI>Purpose:&nbsp;Destroy the blocks on the screen as the ball bounces off 
+    it. 
+    <LI>Input:&nbsp; 
+    <UL>
+      <LI>ballPosX 
+      <LI>ballPosY 
+      <LI> incrementX ( to look ahead ) </LI> 
+      <LI> incrementY ( to look ahead ) </LI></UL>
+    <LI>Output: 
+    <UL>
+      <LI>incrementX (updated) 
+      <LI>incrementY (updated) 
+      <LI>wallpaper (modified) </LI></UL>
+    <LI>Notes: 
+    <UL>
+      <LI>Based on incrementX, look for blocks 6 spaces ahead/behind. If there
+        is one, bounce off ( modify incrementX ) and update the map ( erase the
+        block from the wallpaper ). </LI>
+      <LI>Based on incrementY, look for blocks above/below. If there is one,
+        bounce off ( modify incrementY ) and update the map. </LI>
+      <LI>Do not process if we are at extreme locations ( that is, row is 1 or
+        23 and column is 4 or 154 ) as these will be taken care off by the
+        UpdateBall function. </LI>
+      <LI>Next, based on the direction, check for a block along the path of
+        motion. For this, extrapolate to the ball's next position and check if
+        there is a block there. If so, the ball should go back in the direction
+        it was coming ( that is, negate both incrementX and incrementY ). </LI>
+      <LI>Once again, take care at extreme locations. </LI></UL>
+    <LI>Points: <B>5</B><BR><BR></LI></UL>
+  <LI><B>KbdInstall</B> 
+  <UL>
+    <LI>Purpose: 
+    <UL>
+      <LI>Installs Interrupt 9's (IRQ1's) Vector to the address of KbdHandler. 
+      <LI>Saves far pointer to default keyboard handler in oldKbdV </LI></UL>
+    <LI>Input: None 
+    <LI>Output: oldKbdV 
+    <LI>Notes: 
+    <UL>
+      <LI>Code this routine at the same time you code KbdUninstall </LI></UL>
+    <LI>Points: <B>3</B><BR><BR></LI></UL>
+  <LI><B>KbdUninstall</B> 
+  <UL>
+    <LI>Purpose: Restore Keyboard Interrupt Vector to the original value. 
+    <LI>Input: oldKbdV 
+    <LI>Output: None 
+    <LI>Points: <B>2</B> </LI></UL>&nbsp;<BR>
+  <LI><B>KdbHandler</B> 
+  <UL>
+    <LI>Purpose: Handle the keyboard interrupts. 
+    <LI>Input: None 
+    <LI>Output: 
+    <UL>
+      <LI>keyCode 
+      <UL>
+        <LI>Scan code of key pressed. </LI></UL>
+      <LI>keyStatus 
+      <UL>
+        <LI>0 if key is released. 
+        <LI>1 if key is pressed.</LI></UL></LI></UL>
+    <LI>Notes: 
+    <UL>
+      <LI>Do not call the DOS handler. Your code should reset the PIC. </LI></UL>
+    <LI>Points: <B>5</B> <BR><BR>&nbsp; </LI></UL>
+  <LI><B>TimerInstall</B> 
+  <UL>
+    <LI>Purpose:&nbsp; 
+    <UL>
+      <LI>Installs Interrupt 8's (IRQ0's) Vector to the address of TimerHandler. 
+
+      <LI>Saves far pointer to default timer handler in oldTimerV 
+      <LI>Set the timer chip to fire interrupts once every 1/36th of a second. 
+      <LI>Generate the initial random seed using the current time. </LI></UL>
+    <LI>Input: None 
+    <LI>Output: 
+    <UL>
+      <LI>oldTimerV 
+      <LI>ballPosY 
+      <LI>AIstatus</LI></UL>
+    <LI>Calls: 
+    <UL>
+      <LI>GenerateGame( )</LI></UL>
+    <LI>Notes: 
+    <UL>
+      <LI>Code this routine at the same time you code TimerUninstall. </LI>
+      <LI>Initialize the variables ballPosY and AIstatus from the clock (
+        Interrupt 0x21, Sub-Function 0x2C ). </LI>
+      <LI>Call GenerateGame( ) to get the other variables filled in. </LI></UL>
+    <LI>Points: <B>3</B><BR></LI></UL></LI></UL>
+<UL>
+  <LI><B>TimerUninstall</B> 
+  <UL>
+    <LI>Purpose: 
+    <UL>
+      <LI>Restore Timer Interrupt Vector to its original value. 
+      <LI>Reset the timer chip to fire interrupts once every 1/18th of a second. 
+      </LI></UL>Input: oldTimerV 
+    <LI>Output: None 
+    <LI>
+    <P>Points: <B>2</B><BR><BR>&nbsp;</P></LI></UL>
+  <LI><B>TimerHandler</B> 
+  <UL>
+    <LI>Purpose: Handle the timer interrupts. 
+    <LI>Input: None 
+    <LI>Output: 
+    <UL>
+      <LI>timerFlag (updated) 
+      <LI>updateFlag (updated) 
+      <LI>timerTick (updated)</LI></UL>
+    <LI>Calls: 
+    <UL>
+      <LI>oldTimerV( )</LI></UL>
+    <LI>Notes:&nbsp;
+      <ul>
+        <li>Set timerFlag to 1 ( to be used by MP3Main ).</li>
+        <li>Increment timerTick ( to be used by TimerHandler ) and updateFlag (
+          to be used by MP3Main ).</li>
+        <li>Call the oldTimerV once every 2 ticks. ( whenever timerTick turns 2
+          and then set it to 0 ).</li>
+        <li>HINT: You can simply say - CALL OldTimerV ( but be careful while
+          calling it ).</li>
+        <li>Reset the PIC every other time.</li>
+      </ul>
+    <LI>Points: <B>5</B></LI></UL></LI></UL>
+<H2><BR>Preliminary Procedure</H2>
+<UL>
+  <LI>Copy the given MP3 files from the network drive to your home directory 
+  with the following command: <BR><TT>xcopy /s V:\ece291\mp3 W:\mp3</TT> 
+  <BR>Alternatively, from home you can download the same files as <A 
+  href="http://www.ece.uiuc.edu/ece291/mp/mp3/mp3.zip">mp3.zip</A>. 
+  <LI>As with previous MP's, run <TT>NMake</TT> to build an executable program 
+  using the given ECE291 library functions. 
+  <LI>As with previous MP's, use a text editor to modify the program. As given, 
+  the program uses LIBMP3 routines to implement all functionality. To receive 
+  full credit for the assignment, you will need to implement each of the 
+  subroutines described above with your own code. 
+  <LI>By modifying a few comments, you can mix and match usage of your own code 
+  and Library routines. You may notice that the LIBMP3 routines contain 
+  extraneous and difficult-to-read code. They are not meant to be easily 
+  unassembled! </LI> 
+</UL>
+<P><I>Monitor the newsgroup and this on-line section for revisions to the MP or 
+to the </I><I>write-up</I><BR></P>
+<H2>Final Steps</H2>
+<OL>
+  <LI>Verify that your program meets all requirements for handin. 
+  <LI>Print a copy of the <A 
+  href="http://www.ece.uiuc.edu/~ece291/mp/mp3/mp3grade.html">MP3 grading 
+  sheet</A>. 
+  <LI>Demonstrate MP3.EXE to a TA or to the instructor. 
+  <LI>Be prepared to answer questions about any aspect of the operation of your 
+  program. The TAs will not accept an MP if you cannot fully explain all 
+  operations of your code. 
+  <LI>Handin in your program by running:<BR><TT>A:\Handin 
+  </TT><I>YourWindowsLogin</I> 
+  <LI>Print <SPAN style="BACKGROUND-COLOR: #ffffff"><FONT 
+  color=#0000ff>MP3.ASM</FONT></SPAN>. Make sure that you print out your code 4 
+  pages per page and double sided. If you don't know how to do this ask a TA for 
+  assistance. 
+  <LI>Staple the MP3 grading sheet to the front of your MP3.ASM file and give 
+  both to the same TA that approved your demonstration. </LI></OL>
+<HR>
+
+<H2>MP3.ASM</H2><PRE>TITLE ECE291	Your Name	Today's Date</PRE><PRE>COMMENT % Text Mode Pong</PRE><PRE>	  ECE291: Machine Problem 3
+	  Prof. Zbigniew Kalbarczyk
+	  Guest Author: Karan Mehra
+	  University of Illinois
+	  Dept. of Electrical &amp; Computer Engineering
+	  Fall 1999
+
+	  Ver. 1.0
+	%</PRE><PRE>;====== Constants =========================================================</PRE><PRE>; -- Scan Codes for Keyboard Characters --</PRE><PRE>ESCKEY EQU 01
+UPKEY  EQU 72
+DNKEY  EQU 80
+ENTER  EQU 28
+
+BEL EQU 07h
+CR  EQU 0Dh
+LF  EQU 0Ah</PRE><PRE>public BEL, CR, LF, ESCKEY, UPKEY, DNKEY, ENTER</PRE><PRE>;====== Externals =========================================================</PRE><PRE>; -- LIB291 Routines (Free) ---</PRE><PRE>extrn rsave:near, rrest:near, binasc:near, dspout:near, dspmsg:near, MP3XIT:near</PRE><PRE>; the following library procedures must be replaced with your own code</PRE><PRE>extrn LibKbdInstall:near, LibKbdUninstall:near, LibKbdHandler:near
+extrn LibTimerInstall:near, LibTimerUninstall:near, LibTimerHandler:near
+extrn LibDrawScreen:near, LibGenerateGame:near, LibMP3Main:near
+extrn LibUpdateBall:near, LibUpdatePlayers:near, LibUpdateMap:near</PRE><PRE>; these procedures need to be public so the library may call them</PRE><PRE>public KbdInstall
+public KbdUninstall
+public KbdHandler
+public TimerInstall
+public TimerUninstall
+public TimerHandler
+public DrawScreen
+public GenerateGame
+public UpdateBall
+public UpdatePlayers
+public UpdateMap</PRE><PRE>;====== Stack ========================================================</PRE><PRE>stkseg segment stack ; *** STACK SEGMENT ***
+	
+	db 64 dup ('STACK ') ; 64*8 = 512 Bytes of Stack</PRE><PRE>stkseg ends</PRE><PRE>;====== Begin Code/Data ==============================================</PRE><PRE>cseg segment public 'CODE' ; *** CODE SEGMENT ***</PRE><PRE>	assume cs:cseg, ds:cseg, ss:stkseg, es:nothing</PRE><PRE>;====== Variables ====================================================</PRE><PRE>keyCode 	db 0 		; scan Code of the key
+keyStatus 	db 0 		; status of the key
+				;   1 =&gt; Pressed
+				;   0 =&gt; Released</PRE><PRE>paddleLength 	db 5 		; length of the PONG paddle
+
+playerPos 	dw 480-2 	; position of the player's paddle
+
+compPos 	dw 480 		; position of the computer's paddle
+
+AIstatus 	db ? 		; to make our AI a li'l dumb
+
+ballPosX 	dw ? 		; X co-ordinate of the ball
+incrementX 	dw 6 		; X increment
+
+ballPosY 	dw ? 		; X co-ordinate of the ball
+incrementY 	dw 1 		; Y increment</PRE><PRE>livesRemaining 	db 9
+lifePos 	dw 160-2 	; screen offset where the score needs to be displayed
+score 		dw 0
+scoreBuffer 	db 7 DUP(' '),'$'
+scorePos 	dw 160*24+16 	; screen offset where the lives remaining
+				; needs to be displayed</PRE><PRE>oldKbdV 	dd ? 		; far pointer to default keyboard
+				; interrupt function
+oldTimerV 	dd ? 		; far pointer to default timer
+				; interrupt function
+timerTick 	db 0 		; synchronizing the clock and the timer
+timerFlag 	db 0 		; timer variable
+updateFlag 	db 0 		; another timer variable
+
+include bground.dat 		; 2000 byte character array to define our
+				; wallpaper
+
+; these variables need to be public so the library may use them</PRE><FONT 
+size=2></FONT><PRE>public keyCode, keyStatus, paddleLength
+public playerPos, compPos, AIstatus
+public ballPosX, incrementX, ballPosY, incrementY
+public livesRemaining, lifePos, score, scoreBuffer, scorePos
+public oldKbdV, oldTimerV, timerTick, timerFlag, updateFlag</PRE><PRE>;====== Procedures ========================================================</PRE><PRE>; -- remember to sufficiantly comment your functions --</PRE><PRE>KbdInstall PROC NEAR</PRE><PRE>	CALL LibKbdInstall ; comment this call out and replace it with your own code
+	RET</PRE><PRE>KbdInstall ENDP</PRE><PRE>;------------------------------------------------------------------------</PRE><PRE>KbdUninstall PROC NEAR</PRE><PRE>	CALL LibKbdUninstall ; comment this call out and replace it with your own code
+	RET</PRE><PRE>KbdUninstall ENDP</PRE><PRE>;------------------------------------------------------------------------</PRE><PRE>KbdHandler PROC NEAR</PRE><PRE>	; your code goes here</PRE><FONT size=2></FONT><PRE>KbdHandler ENDP</PRE><PRE>;------------------------------------------------------------------------</PRE><PRE>TimerInstall PROC NEAR</PRE><PRE>	CALL LibTimerInstall ; comment this call out and replace it with your own code
+	RET</PRE><PRE>TimerInstall ENDP</PRE><PRE>;------------------------------------------------------------------------</PRE><PRE>TimerUninstall PROC NEAR</PRE><PRE>	CALL LibTimerUninstall ; comment this call out and replace it with your own code
+	RET</PRE><FONT size=2></FONT><PRE>TimerUninstall ENDP</PRE><PRE>;------------------------------------------------------------------------</PRE><PRE>TimerHandler PROC NEAR</PRE><PRE>	; your code goes here</PRE><FONT size=2></FONT><PRE>TimerHandler ENDP</PRE><PRE>;------------------------------------------------------------------------</PRE><PRE>DrawScreen PROC NEAR</PRE><PRE>	CALL LibDrawScreen ; comment this call out and replace it with your own code
+	RET</PRE><FONT size=2></FONT><PRE>DrawScreen ENDP</PRE><PRE>;------------------------------------------------------------------------</PRE><PRE>UpdateMap PROC NEAR</PRE><PRE>	CALL LibUpdateMap ; comment this call out and replace it with your own code
+	RET</PRE><FONT size=2></FONT><PRE>UpdateMap ENDP</PRE><PRE>;------------------------------------------------------------------------</PRE><PRE>UpdateBall PROC NEAR</PRE><PRE>	CALL LibUpdateBall ; comment this call out and replace it with your own code
+	RET</PRE><FONT size=2></FONT><PRE>UpdateBall ENDP</PRE><PRE>;------------------------------------------------------------------------</PRE><PRE>UpdatePlayers PROC NEAR</PRE><PRE>	CALL LibUpdatePlayers ; comment this call out and replace it with your own code
+	RET</PRE><FONT size=2></FONT><PRE>UpdatePlayers ENDP</PRE><PRE>;------------------------------------------------------------------------</PRE><PRE>GenerateGame PROC NEAR</PRE><PRE>	CALL LibGenerateGame ; comment this call out and replace it with your own code
+	RET</PRE><FONT size=2></FONT><PRE>GenerateGame ENDP</PRE><PRE>;------------------------------------------------------------------------</PRE><PRE>MP3Main PROC NEAR</PRE><PRE>	CALL LibMP3Main ; comment this call out and replace it with your own code
+	RET
+
+MP3Main ENDP</PRE><PRE>;====== Main Procedure ====================================================</PRE><PRE>MAIN PROC FAR</PRE><PRE>	MOV AX, CSEG 	; Use common code and data segment
+	MOV DS, AX
+	
+	MOV AX, 0B800h 	; Use extra segment to access video screen
+	MOV ES, AX</PRE><PRE>	MOV AH, 01h 	; hide text cursor
+	MOV CX, 2000h
+	INT 10h</PRE><PRE>	CALL MP3Main
+	
+	MOV AX, 0700h 	;
+	MOV CX, 160*25 	; clearing
+	MOV DI, 0 	; the
+			; screen
+	REP STOSW 	;
+
+	CALL MP3XIT</PRE><PRE>MAIN ENDP</PRE><PRE>CSEG ENDS</PRE><PRE>	END MAIN</PRE></BODY></HTML>

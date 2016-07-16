@@ -1,0 +1,19 @@
+With Date=11/5/97 and lookahead=60
+
+Today is: 11/ 5
+
+-Date- ----------Event------------- -Days-
+ 1/ 1  New Years                     56
+ 12/25 XMAS                          50
+
+
+
+With Date=1/29/97 and lookahead=14
+
+Today is:  1/29
+
+-Date- ----------Event------------- -Days-
+ 1/31  MP0 Due                       2
+ 2/ 4  HW1 Due                       6
+ 2/11  MP1 Due                       13
+

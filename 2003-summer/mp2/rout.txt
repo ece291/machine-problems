@@ -1,0 +1,108 @@
+
+This is MP2LAB
+:Input this into the recieving side 
+
+Not a command
+
+:R
+
+Recieved encrypted message
+end this  
+Decrypted message
+end this
+
+:R
+
+Recieved encrypted message
+ 234567890abcdefghijklmnopABCXYZ  
+Decrypted message
+ 234567890abcdefghijklmnopABCXYZ
+
+:K 23 257
+
+The new inverse key is 190
+
+:Recieve - this should not cause an error
+
+Recieved encrypted message
+Qoes  Rour program does handle VWGPXBWGJ.  
+Decrypted message
+Does  Your program does handle BACKSPACE.
+
+:R
+
+Recieved encrypted message
+dollar XiFnX  
+Decrypted message
+dollar SiGnS
+
+:Error
+
+Not a command
+
+:K 23 7759
+
+The new inverse key is 6747
+
+:R
+
+Recieved encrypted message
+ WNDUTFG  
+Decrypted message
+ ABCDXYZ
+
+:K 254 6619
+
+The new inverse key is 6176
+
+:R
+
+Recieved encrypted message
+KVWIFPE  
+Decrypted message
+ABCDXYZ
+
+:K 12 8447
+
+The new inverse key is 704
+
+:R
+
+Recieved encrypted message
+LXHUYKN  
+Decrypted message
+ABCDXYZ
+
+:K 343 13063
+
+The new inverse key is 10359
+
+:R
+
+Recieved encrypted message
+   GNDUMYZ  
+Decrypted message
+   ABCDXYZ
+
+:K 23 5555
+
+Invalid keys
+
+:K NAN 23
+
+Invalid keys
+
+:K 23 NAN
+
+Invalid keys
+
+:X
+
+MP2: Exit to DOS
+LIBMP2 * ver 1.0 * calls:
+-libGetStr()
+-libPrime()
+-libKeys()
+-libEncDec()
+-libInitSerial()
+-libRecv()

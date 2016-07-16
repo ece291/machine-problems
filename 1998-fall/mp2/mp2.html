@@ -1,0 +1,1333 @@
+<hTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <TITLE>mp2</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+&nbsp;
+<TABLE BORDER=0 CELLPADDING=3 WIDTH="100%" >
+<TR>
+<TD ALIGN=LEFT WIDTH="33%">ECE291</TD>
+
+<TD ALIGN=CENTER WIDTH="34%">Computer Engineering II</TD>
+
+<TD ALIGN=RIGHT WIDTH="33%">Lockwood, Fall 1998</TD>
+</TR>
+</TABLE>
+
+<CENTER>
+<H1>
+Machine Problem 2: RSA Encryption</H1></CENTER>
+
+<CENTER><TABLE BORDER CELLPADDING=3 WIDTH="60%" >
+
+
+<TR>
+<TD ALIGN=RIGHT><B>Purpose</B></TD>
+
+<TD>Subroutines, User I/O, Encryption algorithms&nbsp;</TD>
+</TR>
+
+<TR>
+<TD ALIGN=RIGHT><B>Points</B></TD>
+
+<TD>50</TD>
+
+<TR><TD ALIGN=RIGHT><B>Due Date</B></TD>
+<TD>Wednesday 9/30/98 (30/50 points) - Checkpoint 1 <br>
+    Wednesday 10/7/98 (50/50 points) - Checkpoint 2 </TD> </TR>
+</TR>
+</TABLE></CENTER>
+<!-- <IMG SRC="../../icon/construct.gif" >This MP is under construction -->
+<H2>
+Introduction</H2>
+Encryption provides a way to encode the content of
+a message in a way that is only useful for a specific recipient.&nbsp;
+In a public key cryptosystem, each person has their own set of keys: a
+public key and a secret key.&nbsp; The public key can be thought of as
+a lock, for which the secret key is the key.&nbsp; Each person will send
+out their public key, with which anyone can encrypt data.&nbsp; Once a message
+has been encrypted using the public key, it can only be decrypted using
+the secret key.&nbsp; If an eavesdropper gets the public key, it could
+not be used to decrypt messages sent to the holder of the secret key.
+<p>
+The two keys describe a function and it's inverse.&nbsp;
+That is for a public key, with a function P() and a secret key with a function
+S().&nbsp; So, for a message M, P(S(M)) = M, and S(P(M)) = M.&nbsp; This
+is in contrast to private key cryptosystems in which there is only one
+function which is it's own inverse.&nbsp; Under private key encryption,
+for a private key with a function P() and a message M, P(P(M)) = M.&nbsp;
+Since it is possible to decrypt and encrypt a message with the same key,
+under private key encryption, it is necessary to keep the encryption key
+private.
+<p>
+RSA encryption, which stands for 
+RSA stands for Ron Rivest, Adi Shamir
+and Leonard Adelman, is one of the most common methods of
+encrypting data today.&nbsp; Many algorithms use RSA as a basis for their
+encryption.&nbsp; PGP for example uses RSA to encrypt an IDEA key which
+is sent with the IDEA-encrypted message.&nbsp; Only with the correct RSA
+private key can you decrypt the IDEA key to decrypt the message.
+<P>
+In this MP, we will write an interactive assembly
+program that encodes and decodes text messages using RSA.
+<H2>
+RSA Encryption</H2>
+The function RSA encryption is based on encrypts a
+block of text (T) into a block of cypher (C) as:
+<BR>&nbsp;
+<BR>&nbsp;&nbsp; C =&nbsp; T^e mod n
+
+<P>where (e, n) make up the public key.&nbsp; Decryption is accomplished
+by the inverse operation:
+<BR>&nbsp;
+<BR>&nbsp;&nbsp;&nbsp; T = C^d mod n
+
+<P>where (d, n) make up the secret key.
+
+<P>
+It should be noted that for a modulus n, you can
+only encode a block of text (T) that is less than n, which will produce
+a block of encrypted text (C) which is also less than n.&nbsp; For that
+reason, in this MP, we will be encoding 7-bit clean ASCII using a modulus
+> 127.&nbsp; The&nbsp;&nbsp; 8 bit codes can then be decrypted back into
+7-bit clean ASCII.
+
+<P>
+To determine an RSA key pair, the following steps
+need to be followed:
+
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1. Choose two prime numbers
+p and q.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2. Multiply p*q to obtain
+n.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 3. Choose an encryption
+key (e) which is less than {(p-1)(q-1)} and relatively prime* to {(p-1)(q-1)}.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4. Determine a decryption
+key (d) such that d*e % {(p-1)(q-1)} = 1.
+<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<FONT SIZE=-1>* Two numbers are relatively prime if they share no common
+factors.  In other words, the greatest common factor of two relatively
+prime numbers is 1. </FONT>
+
+<P>
+The public key (e, n) can now be given out freely,
+because it can only be used to encrypt a message.&nbsp; Determining the
+secret key from the public key (or breaking the code) is only as difficult
+as factoring n into it's two prime factors. For our version of RSA encryption,
+we are imposing the limit that n must be 8 bits long.&nbsp; However, RSA
+encryption typically uses keys that are 512, 768 or 1024 bits long.&nbsp;
+<H2>
+Our Implementation</H2>
+Our implementation of RSA is greatly simplified.&nbsp;
+We will force n to be exactly 8 bits long.&nbsp; As noted earlier, to use
+RSA, you can only encode values that are smaller than your modulus.&nbsp;
+This is sufficient to encode 7-bit clean ASCII.
+<p>
+Rather than generating random prime numbers for the key, the user
+can enter p, q and e.&nbsp; Then n and d will be calculated by the computer.
+This implementation is limited to encoding and decoding
+a single 20 byte buffer.&nbsp; Each byte will be encrypted and decrypted
+individually. The user can either enter hex values or ASCII text into the
+buffer to be encrypted or decrypted.
+<p>
+Some algorithms are described below to help you program your mp.
+<H4>
+Exponentials in a modulus</H4>
+&nbsp; For very large values of e and d, it could be very difficult to
+exponential a large number.&nbsp; In RSA 200+ bit exponents are often used,
+with a 500+ bit modulus.&nbsp; To perform this exponential, a 100,000 bit
+number would be produced. Fortunately, there is a simple modular exponentiation
+algorithm below which computes <I>R=y<SUP>x</SUP></I> <TT>mod</TT> <I>n</I>,
+where <I>x</I> is <I>w</I> bits long:
+<PRE><TT>&nbsp;&nbsp;&nbsp; Let</TT> <I>s</I> = 1.
+<TT>&nbsp;&nbsp;&nbsp; For</TT> <I>k</I> = w-1 to 0:
+<TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; If</TT> (<TT>bit</TT> <I>k</I> <TT>of</TT> <I>x</I>) <TT>is</TT> 1 <TT>then
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Let</TT> <I>R</I> = (<I>s</I> &middot; <I>y</I>) <TT>mod</TT> <I>n
+</I><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Else
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Let</TT> <I>R</I> = <I>s
+</I><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Let</TT> <I>s</I> = <I>R</I><SUP>2</SUP> <TT>mod</TT> <I>n
+</I><TT>&nbsp;&nbsp;&nbsp; Return</TT> (<I>R)</I></PRE>
+(From: <A HREF="http://www.cryptography.com/timingattack/">http://www.cryptography.com/timingattack/</A>
+)
+
+<P>Please note that this operation runs from the most significant bit of
+the exponent to the least significant bit of the exponent. This allows
+exponentiation to be done in a loop relative to the length of the exponent.&nbsp;
+So, for an 200 bit exponent, only 200 iterations need to be done, not 2^200.
+<H4>
+Calculating d*e mod n = 1</H4>
+&nbsp;&nbsp;&nbsp;
+Calculating d can be done recursively.&nbsp; In the
+general case, for calculating d where (d*a) <TT>mod </TT>b = c can be calculated
+using the following:
+
+<pre>
+     Let f(a, b, c) be a function such that
+        f(a, b, c)*a mod b = c. 
+     For simplicity, let f(a, b, c) = x0 where x0 is an integer 
+
+     Note that the definition of A mod B = C states that 
+          (x * B) + C = A 
+     where A, B, and C are constants and x is some integer.
+
+     The Original Equation. Note that c < a 
+     (1)  (x0 * a) mod b = c
+
+     By the defintion of the modulus:
+     (2)  (x1 * b) + c = (x0 * a) , Where x1 is some integer.
+
+     Subtract c from both sides
+     (3)  (x1 * b)  = (x0 * a) + (-c)
+
+     Taking both sides of the equation mod a:
+     (4a) (x1 * b) mod a = ((x0 * a) + (-c)) mod a   
+           Since a is a factor of (x0 * a)
+     (4b) (x1 * b) mod a = (-c) mod a               
+           Note that this step is the inverse of how 
+           (2) was derived from (1).  
+
+     By the property (A*B) mod C = (A*(B mod C)) mod C
+     (5)  (x1 * (b mod a)) mod a = (-c) mod a
+
+     Note that (b mod a) and ((-c) mod a) are both constants defined 
+     in terms of the inputs to the function a, b, and c. So, let:
+        b mod a = e
+        (-c) mod a = f
+     Performing this substitution gives:
+     (6) (x1 * e) mod a = f
+
+     Noting that this is exactly in the form of (1), we can solve for x1:
+     (7a) x1 = f(e, a, f)
+      Performing the back substitutions 
+     (7b) x1 = f(b mod a, a, -c mod a)
+ 
+     Combining (7b) with (2):
+     (8a) (x0 * a) = f(b mod a, a, -c mod a) * b + c 
+        and using the definition x0 = f(a,b,c)
+     (8b) (f(a,b,c) * a) = f(b mod a, a, -c mod a) * b + c
+ 
+     Dividing through by a we get:
+     (9) f(a, b, c) = (b*f(b mod a, a, -c mod a) + c)/a
+
+      Note that (b mod a) < a < b, and c < a.  
+      This suggests that the recursion will shrink down to 
+      some base case, or a set of base cases.  
+      It is also possible that f(a, b, c) is undefined 
+      if a = 0 (division by 0).  To see what it means if f(a,b,c) 
+      is undefined, we will work the recursion backwards. 
+
+        After the nth iteration
+          a(n) = 0
+        Therefore
+          b(n-1) mod a(n-1) = 0
+ 
+        This implies that a(n-1) is a factor of b(n-1), however
+          b(n-1) = a(n-2)
+        So, a(n-1) is also a factor of a(n-2)
+
+        Also,
+          a(n-1) = b(n-2) mod a(n-2)
+
+        Now, taking both sides mod a(n-1)
+          a(n-1) mod a(n-1) = (b(n-2) mod a(n-2)) mod a(n-1)
+
+        Since A mod A = 0:
+          0 = (b(n-2) mod a(n-2)) mod a(n-1)
+
+        Using the definition of the modulus twice:
+          x1 * a(n-1) = b(n-2) mod a(n-2) ,      Where x1 is an integer
+          (x1 * a(n-1)) = b(n-2) - x2 * a(n-2) , Where x2 is an integer
+
+        But, since a(n-1) is a factor of a(n-2)
+          (x1 * a(n-1)) = b(n-2) - x2 * x3 * a(n-1) , Where x3 is an integer
+
+        Letting x2 absorb x3 since both are arbitrary integers:
+          (x1 * a(n-1) = b(n-2) - x2 * a(n-1)
+
+        Adding x2 * a(n-1) and distributing the a(n-1)
+          a(n-1)(x1 + x2) = b(n-2)
+
+        Letting x1 absorb x2 since both are arbitrary integers:
+          a(n-1)*x1 = b(n-2)
+
+       Therefore, a(n-1) is a factor of b(n-2).  It was already shown
+       that a(n-1) is a factor of a(n-2).   By induction, a(n-1) is a
+       factor of a(k) and b(k) where k < n and a(n) = 0.  Actually, with a
+       slight modification to the proof, it could be shown that a(n-1) is the
+       greatest common factor of a(k) and b(k) for k < n.
+
+</pre>
+
+
+<H4>
+Prime numbers</H4>
+&nbsp;&nbsp;&nbsp; Since the security of RSA depends on the size of n,
+finding large prime numbers is very important to the RSA algorithm. In
+general, one would choose a vary large random number and then determine
+if it is prime.&nbsp; For our implementation, the user will enter a number,
+and the computer will determine if it is prime.&nbsp; There are a number
+of complex algorithms for determining if large&nbsp; numbers are prime,
+but this operation is simple for small numbers.&nbsp; You will be responsible
+for your own algorithm.&nbsp; It should be able to calculate if any number
+between 1 and 127 is prime.
+<H2>
+User Interface</H2>
+
+<UL>
+<LI>
+You are given the framework of a program which provides a menu driven interface.</LI>
+
+<LI>
+By selecting an option from the menu, the user can:</LI>
+
+<UL>
+<LI>
+Enter a message (either as text or hex data)</LI>
+
+<LI>
+Create new RSA keys</LI>
+
+<LI>
+Display the contents of the message (in ASCII text or hex)</LI>
+
+<LI>
+Encrypt or Decrypt a message </LI>
+
+<LI>
+Redisplay the help menu</LI>
+</UL>
+</UL>
+</UL>
+
+<H2>Sample Input and Output</H2>
+
+<UL>
+<LI>
+Results from sample runs of the program are shown below:</LI>
+<BR>(<B>Boldface</B> letters are were provided as input). 
+
+<p>
+<ul>
+<li>The first test case shows a short message being encoded and decoded
+using this program's default key values (p=5, q=29, n=p*q=145, e=3, d=75)
+<TABLE bgcolor=cyan BORDER>
+<TR><td><xmp>----------------------- MP2 Menu ---------------------
+ enter:    (T)ext message   (C)oded hex message
+ display:  (A)SCII message  (H)ex encoding
+ generate: (K)eys           (P)ublic key
+ coding:   (E)ncrypt        (D)ecrypt
+--------- [ESC] = (Q)uit -- redisplay (M)enu ---------</xmp>
+<b>T</b><br>
+<tt>Enter text for the buffer</tt><br>
+<b>ECE291 IS GREAT</b><Br>
+<b>H</b><br>
+<tt>>Here is the buffer in HEX</tt><Br>
+<tt>45 43 45 32 39 31 20 49 53 20 47 52 45 41 54 </tt><Br>
+<b>E</b><br>
+<tt>Encrypting the buffer...</tt><br>
+<b>H</b><Br>
+<tt>Here is the buffer in HEX</tt><br>
+<tt>54 21 54 0A 1C 36 8F 7F 34 8F 33 4E 54 8C 59 </tt><br>
+<b>D</b><Br>
+<tt>Decrypting the buffer...</tt><Br>
+<b>H</b><br>
+<tt>Here is the buffer in HEX</tt><br>
+<tt>45 43 45 32 39 31 20 49 53 20 47 52 45 41 54 </tt><br>
+<b>A</b><Br>
+<tt>Here is the buffer in ASCII</tt><br>
+<tt>ECE291 IS GREAT</tt><br>
+<b>Q</b><Br>
+<xmp>
+LIBMP2 Ver 1.1 Calls: 
+ -PrintBuffer     
+ -ReadBuffer      
+ -CodeBuffer      
+ -ExpModN         </xmp>
+</td></TR>
+</TABLE>
+<p>
+
+<li>The second test how new keys can be created. The public keys
+    (e,n) can then be distributed; while the original generating
+    factors (p,q) are kept private.
+<table bgcolor=cyan border>
+<tr><Td><xmp>----------------------- MP2 Menu ---------------------
+ enter:    (T)ext message   (C)oded hex message
+ display:  (A)SCII message  (H)ex encoding
+ generate: (K)eys           (P)ublic key
+ coding:   (E)ncrypt        (D)ecrypt
+--------- [ESC] = (Q)uit -- redisplay (M)enu ---------</xmp>
+<b>K</b><br>
+<tt>Generating new public keys...</tt><Br>
+<tt>Please enter a prime number (p): p <= 127: </tt><b>7</b><br>
+<tt>Please enter a prime number (q): 18 < q <= 36: </tt><b>19</b><br>
+<tt>Please enter a key (e) that is less than and </tt><br>
+<tt> relatively prime to 108: </tt><b>5</b><br>
+<tt>The public key (e, n) is (5, 133).</tt><Br>
+<tt>The private key (d, n) is (65, 133).</tt><br>
+<b>Q</b><Br>
+<xmp>
+LIBMP2 Ver 1.1 Calls: 
+ -ReadBuffer      
+ -CheckPrime      
+ -ReadKeys        
+ -GetD            </xmp>
+</td></tr></table><p>
+
+<li>The third example shows how someone else can
+    use the public key (e,n) to encode a message.
+
+<table bgcolor=cyan border>
+<tr><Td><xmp>----------------------- MP2 Menu ---------------------
+ enter:    (T)ext message   (C)oded hex message
+ display:  (A)SCII message  (H)ex encoding
+ generate: (K)eys           (P)ublic key
+ coding:   (E)ncrypt        (D)ecrypt
+--------- [ESC] = (Q)uit -- redisplay (M)enu ---------</xmp>
+<b>P</b><Br>
+<tt>Reading private key information...</tt><br>
+<tt>Please enter the modulus (n = p * q : n>128, n<255): </tt><Br>
+<B>133</b><br>
+<tt>Please enter a public key (e): </tt><br>
+<b>5</b><br>
+
+<tt>The public key (e, n) is (5, 133).</tt><br>
+<b>T</b><br>
+<tt>Enter text for the buffer</tt><br>
+<b>291</b><Br>
+<b>H</b><br>
+<tt>Here is the buffer in HEX</tt><br>
+<tt>32 39 31 </tt><Br>
+<b>E</b><Br>
+<tt>Encrypting the buffer...</tt><br>
+<b>H</b><Br>
+<tt>Here is the buffer in HEX</tt><br>
+<tt>08 39 07 </tt><br>
+<b>Q</b><Br>
+<xmp>
+LIBMP2 Ver 1.1 Calls: 
+ -PrintBuffer     
+ -ReadBuffer      
+ -CodeBuffer      
+ -ExpModN         
+ -ReadPublicKeys  </xmp> </td></tr></table><p>
+
+<li>The fourth example shows how the message 
+    can be decoded by regenerating the 
+    private key from (p,q,e).
+
+<table bgcolor=cyan border><tr><Td><xmp>
+----------------------- MP2 Menu ---------------------
+ enter:    (T)ext message   (C)oded hex message
+ display:  (A)SCII message  (H)ex encoding
+ generate: (K)eys           (P)ublic key
+ coding:   (E)ncrypt        (D)ecrypt
+--------- [ESC] = (Q)uit -- redisplay (M)enu ---------</xmp>
+<b>K</b><br>
+<tt>Generating new public keys...</tt><br>
+<tt>Please enter a prime number (p): p <= 127: </tt><b>7</b><br>
+<tt>Please enter a prime number (q): 18 < q <= 36: </tt><b>19</b><br>
+<tt>Please enter a key (e) that is less than and </tt><br>
+<tt>  relatively prime to 108: </tt><b>5</b><br>
+<tt>The public key (e, n) is (5, 133).</tt><br>
+<tt>The private key (d, n) is (65, 133).</tt><br>
+<b>C</b><br>
+<tt>Enter hex for the buffer</tt><Br>
+<b>08 39 07</b><br>
+<b>D</b><br>
+<tt>Decrypting the buffer...</tt><Br>
+<b>A</b><br>
+<tt>Here is the buffer in ASCII</tt><br>
+<tt>291</tt><br>
+<b>Q</b><br>
+<xmp>LIBMP2 Ver 1.1 Calls: 
+ -PrintBuffer     
+ -ReadBuffer      
+ -CodeBuffer      
+ -ExpModN         
+ -CheckPrime      
+ -ReadKeys        
+ -GetD            </xmp>
+</td></tr></table><p>
+
+
+</ul>
+
+<LI>The sample input files (<TT>test1.in .. test4.in</tt>)
+as well as their corresponding output data files
+(<tt>test1.out .. test4.out)</tt> are
+included with this MP.
+<BR>Your results should match the test cases.
+<p>
+
+<li>Experiment with the interactive, library-based MP2
+    to fully understand how the program operates. 
+    Try new keys and experiment with your own data buffers
+    by simply running <tt>mp2</tt> without arguments.
+<p>
+
+<LI>In addition to these test cases, 
+  your program should work for all types of data.</LI>
+
+<BR>TAs will provide you with different
+  test data when you demo your MP.
+</UL>
+
+<H2>
+Data Structures</H2>
+
+<UL>
+<LI>
+A few variables have already been defined for you in the program framework.</LI>
+
+<UL>
+<LI>
+<B>Buffer</B>: An array of bytes that contains the data.</LI>
+
+<LI>
+<B>BufferLength</B>: A byte which indicates how many bytes are stored in
+buffer.</LI>
+
+<LI>
+<B>PBuf</B>: A 7 byte temporary buffer.</LI>
+
+<BR>&nbsp;
+<LI>
+<B>p</B>: A byte sized, unsigned prime number</LI>
+
+<LI>
+<B>q</B>: Another byte sized, unsigned prime number</LI>
+
+<LI>
+<B>n</B>: Modulus = The byte sized product of p*q</LI>
+
+<LI>
+<B>e</B>: Encryption exponent ((e,n)=public key). A number, less
+than n, relatively prime to (p-1) and (q-1).&nbsp; (byte sized)</LI>
+
+<LI>
+<B>d</B>: Decryption exponent ((d,n)=private key). A number such that d*e
+% ((p-1)*(q-1)) = 1.&nbsp; (byte sized)</LI>
+
+<BR>&nbsp;</UL>
+
+<LI>
+A few constants have also been defined:</LI>
+
+<UL>
+<LI>
+<B>ASCII </B>== 0</LI>
+
+<LI>
+<B>HEX</B> == 1</LI>
+
+<LI>
+<B>DECIMAL</B> == 2</LI>
+
+<LI>
+<B>BufferMaxLength</B> == 20 <I>bytes.</I></LI>
+
+<BR>&nbsp;</UL>
+</UL>
+
+<H2>
+Procedures</H2>
+
+<UL>
+<LI>
+This assignment has eight procedures. You will receive credit for this
+assignment by replacing each of the eight procedures listed below with
+your own code.</LI>
+
+<li>For checkpoint 1, you must complete any combination of routines
+  that add to at least 30 points.  The penalty for a late checkpoint is
+  10 points/day.
+  
+<li>For checkpoint 2, you must complete the rest of the MP.  
+  Due to having Exam I on the following day, 
+   There will be NO late credit given after 5pm.
+  Bonus points will be given for the completed MP.
+
+<LI>
+Experiment with the working code to gain a full understanding of how the
+program works.</LI>
+
+<LI>
+Your program should exactly match the functionality of the library subroutines.</LI>
+
+<LI>
+All subroutines should be <I>modular</I>. They should use the stack to
+<I>preserve</I> the value of any registers they may modify.</LI>
+
+<LI>
+Use defined constants where appropriate.</LI>
+</UL>
+
+<UL>
+<LI>
+<B><FONT SIZE=+1>PrintBuffer</FONT></B></LI>
+
+<UL>
+<LI>
+<B>Purpose</B>: Prints the contents of the <TT>Buffer</TT>.</LI>
+
+<UL>
+<LI>
+Displays the buffer to the screen.</LI>
+
+<LI>
+Displays a carriage return (CR = ASCII 13) and line feed (LF = ASCII 10)
+after displaying the buffer.</LI>
+
+<LI>
+When displaying in hex, separates bytes with a space.</LI>
+
+<LI>
+<B>Inputs:</B></LI>
+
+<UL>
+<LI>
+AL: Length of buffer</LI>
+
+<LI>
+BX: Offset of buffer</LI>
+
+<LI>
+AH: Type of output: (0=ASCII, 1=HEX)</LI>
+</UL>
+
+<LI>
+<B>Outputs:</B> Writes to screen</LI>
+
+<LI>
+<B>Note: </B>The buffer is not necessarily terminated with a '$'.</LI>
+
+<LI>
+<B>Hints:</B> Use LIB291 Functions where appropriate. (especially consider
+the DSPOUT function!)</LI>
+
+<LI>
+<B>Points</B>: 5</LI>
+</UL>
+</UL>
+
+<p>
+<LI>
+<B><FONT SIZE=+1>ReadBuffer</FONT></B></LI>
+
+<UL>
+<LI>
+<B>Purpose</B>: Read from the keyboard.</LI>
+
+<UL>
+<LI>
+Allows backspacing (BS = ASCII 8)</LI>
+
+<LI>
+Ignores line feeds (LF = ASCII 10)</LI>
+
+<LI>
+Prevents Underflow and Overflow of variables</LI>
+
+<BR>(i.e., writing past the beginning or end of TextMsg)
+<LI>
+Terminates with a carriage return (CR = ASCII 13)</LI>
+
+<LI>
+Rejects any invalid input and beeps.</LI>
+
+<LI>
+ASCII input:</LI>
+
+<UL>
+<LI>
+Valid input range, all ASCII values between 0...127.</LI>
+
+<LI>
+Sets BufferLength</LI>
+</UL>
+
+
+<LI>
+Hex input:</LI>
+
+<UL>
+<LI>
+Valid input range: (0..9),(A..F),(a..f)</LI>
+
+<LI>
+Automatically inserts space every 3rd character on screen.</LI>
+
+<LI>
+Automatically deletes implicit spaces when backing up.</LI>
+
+<LI>
+Only accepts carriage return after a full byte has been read in.</LI>
+
+<LI>
+Automatically converts to binary as hex is read in.</LI>
+
+<LI>
+Sets BufferLength.</LI>
+</UL>
+
+
+<LI>
+Decimal input:</LI>
+
+<UL>
+<LI>
+Valid input range: (0..9)</LI>
+
+<LI>
+Allows only as many digits as specified by AL</LI>
+
+<LI>
+Converts to binary and stores the numeric value of the number at the offset
+pointed to by <TT>byte ptr [BX]</TT>.</LI>
+</UL>
+</UL>
+
+<LI>
+<B>Inputs:</B></LI>
+
+<UL>
+<LI>
+Data read from Keyboard</LI>
+
+<LI>
+AL: Maximum number of characters</LI>
+
+<LI>
+BX: Offset of buffer</LI>
+
+<LI>
+AH: Type of input: (0=All ASCII, 1=Base 16 HEX, 2=Base 10 numbers)</LI>
+</UL>
+
+<LI>
+<B>Outputs:</B> <TT>Buffer</TT> variable, <TT>BufferLength</TT> variable</LI>
+
+<LI>
+<B>Hints:</B></LI>
+
+<UL>
+<LI>
+To erase a character from the screen, print a backspace, then whitespace,
+then backspace.</LI>
+<li>The features of this function are somewhat similar to C's sscanf
+function.
+<li>Note the Hex and ASCII modes transfer an array of bytes starting at [BX];
+  but that decimal mode only transfers one byte to [BX].
+
+</UL>
+
+
+<LI><B>Points</B>: 10</LI>
+</UL>
+
+<p>
+<LI>
+<B><FONT SIZE=+1>CodeBuffer</FONT></B></LI>
+
+<UL>
+<LI>
+<B>Purpose</B>: Encodes/Decodes a Message.</LI>
+
+<LI>
+<B>Inputs</B>:</LI>
+
+<UL>
+<LI>
+DH = e (to encrypt) or d (to decrypt)</LI>
+
+<LI>
+Variables: Buffer, n</LI>
+</UL>
+
+<LI>
+<B>Output</B>: Re-writes <I>Buffer</I></LI>
+
+<LI>
+<B>Notes</B>: Calls ExpModN</LI>
+
+<LI>
+<B>Points</B>: 3</LI>
+</UL>
+
+<p>
+<LI>
+<B><FONT SIZE=+1>ExpModN</FONT></B></LI>
+
+<UL>
+<LI>
+<B>Purpose</B>: Calculates (y^x) % z</LI>
+
+<LI>
+<B>Inputs</B>:</LI>
+
+<UL>
+<LI>
+DL = y</LI>
+
+<LI>
+DH = x</LI>
+
+<LI>
+AL = z</LI>
+</UL>
+
+<LI>
+<B>Output</B>:</LI>
+
+<UL>
+<LI>
+DX = (y^x) % z</LI>
+</UL>
+
+<LI>
+<B>Notes</B>: 
+  <ul>
+  <li>See pseudocode above for efficient implementation in O(Log(Y)) operations.
+  <li>Use the debugger and sample data to test your own cases during development
+</ul>
+
+
+<LI>
+<B>Points</B>: 5</LI>
+</UL>
+
+<p>
+<LI>
+<B><FONT SIZE=+1>CheckPrime</FONT></B></LI>
+
+<UL>
+<LI>
+<B>Purpose</B>: Checks if a number is prime</LI>
+
+<LI>
+<B>Inputs</B>:</LI>
+
+<UL>
+<LI>
+DL = number</LI>
+</UL>
+
+<LI>
+<B>Output</B>:</LI>
+
+<UL>
+<LI>
+ZF = 1 : Not prime</LI>
+
+<LI>
+ZF = 0 : Prime</LI>
+</UL>
+
+<LI>
+<B>Notes</B>:</LI>
+
+<UL>
+<LI>
+A prime number is not divisible by any number except 1 and itself.</LI>
+
+<LI>
+The number 1 is not prime.</LI>
+</UL>
+
+<LI>
+<B>Points</B>: 5</LI>
+</UL>
+
+
+
+<p>
+<LI><B><FONT SIZE=+1>ReadPublicKeys</FONT></B></LI>
+
+<UL>
+<LI>
+<B>Purpose</B>: Inputs values for e and n.
+Rejects invalid data.</LI>
+
+<UL>
+<LI>
+Gives error messages and asks to reenter any invalid data.</LI>
+
+<UL>
+<LI>Verifies that n &gt; 128 </LI>
+<LI>Verifies that e &lt; n  </LI>
+</UL>
+
+<LI>
+Displays the key pair (e, n) after before returning.</LI>
+</UL>
+
+<LI>
+<B>Output</B>:</LI>
+
+<UL>
+<LI>
+Variables n and e</LI>
+</UL>
+
+<LI>
+<B>Notes</B>: Calls ReadBuffer </LI>
+
+<LI>
+<B>Hints</B>: Recall n and e are both unsigned, byte-sized variables</li>
+
+<LI>
+<B>Points</B>: 5</LI>
+</UL>
+
+
+<p>
+<LI><B><FONT SIZE=+1>ReadKeys</FONT></B></LI>
+
+<UL>
+<LI>
+<B>Purpose</B>: Inputs values for p,q,and e.&nbsp; Calculates d and n.
+Rejects invalid data.</LI>
+
+<UL>
+<LI>
+Gives error messages and asks to reenter any invalid data.</LI>
+
+<UL>
+<LI>
+Verifies&nbsp; p &lt;= 127, and that p is prime.</LI>
+
+<LI>
+Displays a valid range for q to be entered such that 127 &lt; p * q &lt;=
+255 , and verifies the number entered is within that range and is prime.</LI>
+
+<LI>
+Displays the valid range for e, and verifies the number entered is relatively
+prime to (p-1)(q-1).</LI>
+
+</UL>
+
+<LI>
+Calculate the smallest possible d for a given p, q and n.</LI>
+
+<LI>
+Displays the key pairs (e, n) and (d, n) after before returning.</LI>
+</UL>
+
+<LI>
+<B>Output</B>:</LI>
+
+<UL>
+<LI>
+Variables p,q, n, e and d</LI>
+</UL>
+
+<LI><B>Notes</B>: 
+  <ul>
+  <li>Calls CheckPrime, ReadBuffer, GetD</LI>
+  <li>The library function allow re-editing previous fields by entering 0.
+      Your code need not implement this feature.
+  </ul>
+<LI>
+<B>Points</B>: 10</LI>
+</UL>
+
+
+
+
+
+<p>
+<LI>
+<B><FONT SIZE=+1>GetD</FONT></B></LI>
+
+<UL>
+<LI>
+<B>Purpose</B>: Calculates the value of d that will satisfy the equation
+a*d mod b = c</LI>
+
+<UL>
+<LI>
+This function is recursive.</LI>
+
+<LI>
+Verifies e is relatively prime to (p-1)(q-1).</LI>
+
+<LI>
+Calculates the smallest possible d for a given p, q and n.</LI>
+</UL>
+
+<LI>
+Inputs:</LI>
+
+<UL>
+<LI>
+AX = a</LI>
+
+<LI>
+BX = b</LI>
+
+<LI>
+CX = c</LI>
+</UL>
+
+<LI>
+<B>Output</B>:</LI>
+
+<UL>
+<LI>
+DX = {d if e is relatively prime to (p-1)(q-1), 0 otherwise}</LI>
+</UL>
+
+<LI>
+<B>Notes</B>: See above for function definition.</LI>
+
+<LI>
+<B>Points</B>: 7</LI>
+</UL>
+</UL>
+
+<H2>
+Preliminary Procedure</H2>
+
+<UL>
+<LI>
+Copy the empty MP2 program (<TT>MP2.ASM</TT>), sample input file (<TT>test1.in</TT>),
+corresponding output files (<TT>test1.out</TT>), libraries (<TT>libmp2.lib</TT>,
+<TT>lib291.lib</TT>), and <TT>Makefile</TT> from the network drive to your
+home directory with the following command:</LI>
+
+<BR><TT>xcopy /S  V:\ece291\mp2 W:\mp2</TT>
+<BR>Alternatively, from home, you can download the same files as <A HREF="mp2.zip">mp2.zip</A>.
+<LI>
+As with MP0 and MP1, run <TT>NMake</TT> to build an executable program
+using the given ECE291 library functions.</LI>
+
+<LI>
+As with MP0 and MP1, use a text editor to modify the program. As given,
+the program uses LIBMP2 routines to implement all functionality. To receive
+full credit for the assignment, you will need to implement each of the
+subroutines described above with your own code.</LI>
+
+<LI>
+As with MP0 and MP1, use CodeView (<TT>CV</TT>) to debug and test your
+program. Because you only receive credit for procedures that function completely
+as specified, it is best to debug each routine individually.</LI>
+
+<LI>
+By modifying a few comments, you can mix and match usage of your own code
+and Library routines. You may notice that the LIBMP2 routines contain extraneous
+and difficult-to-read code. They are not meant to be unassembled!</LI>
+</UL>
+
+<h2>Revision History</h2>
+  <ul>
+  <li>Version 1.0: (9/18/98) - Beta pre-release 
+  <li>Version 1.1: (9/22/98) - Official code Release:
+    <ul>
+    <li>Enabled entry of public key
+    </ul>
+  
+   <p><i>Monitor the newsgroup and this on-line section for
+         revisions to the MP or to the writeup</i>
+  </ul>
+  <p>
+
+<H2>
+Final Steps</H2>
+
+<OL>
+<LI>Print a copy of the <A HREF="mp2grade.html">MP2
+grading sheet</A>.</LI>
+
+<LI>Demonstrate MP2.EXE to a TA or to the instructor.</LI>
+
+<UL>
+<LI>
+Be prepared to answer questions about any aspect of the operation of your
+program. The TAs will not accept an MP if you cannot fully explain all
+operations of your code.</LI>
+
+<LI>
+Your program must work for all possible data patterns. Additional test
+patterns will be listed on the grade sheet.</LI>
+
+<LI>
+The TA will determine performance points using a sample message</LI>
+</UL>
+
+<LI>
+Handin in your program by running:</LI>
+
+<UL>
+<LI>
+<TT>A:\Handin </TT><I>YourWindowsLogin</I></LI>
+
+<LI>
+Print <FONT COLOR="#FF0000">MP2.ASM</FONT></LI>
+</UL>
+
+<LI>
+&nbsp;&nbsp;&nbsp; Staple the MP2 grading sheet to the front of your MP2.ASM
+file and give both to the same TA that approved your demonstration.</LI>
+</OL>
+
+<hr>
+<h2>MP2.ASM</h2>
+<pre>
+TITLE ECE291:MP2-RSA - Your Name - Date
+
+COMMENT % RSA Data Encryption.
+
+          For this MP, you will write an interactive program which uses
+          RSA encryption to encrypt and decrypt textual data.
+
+          ECE291: Machine Problem 2
+          Prof. John W. Lockwood
+          Guest Author: Brandon Tipp
+          Unversity of Illinois
+          Dept. of Electrical & Computer Engineering
+          Fall 1998
+
+          Ver 1.1
+        %
+
+;====== Constants =========================================================
+
+BEEP    EQU 7
+BS      EQU 8
+CR      EQU 13
+LF      EQU 10
+
+ESCKEY  EQU 27
+SPACE   EQU 32
+
+BufferMaxLength     EQU 20 ; Bytes ; Limit text messages to one line 
+                                   ; when displaying message in HEX
+
+ASCII   EQU 0
+HEX     EQU 1
+DECIMAL EQU 2
+
+PUBLIC BEEP, BS, CR, LF, ESCKEY, SPACE, ASCII, HEX, DECIMAL, BufferMaxLength
+;====== Externals =========================================================
+
+; -- LIB291 Routines (Free) ---
+
+extrn kbdine:near, kbdin:near, dspout:near   ; LIB291 Routines
+extrn dspmsg:near, binasc:near, ascbin:near  ; (Always Free)
+
+extrn mp2xit:near ; Exit program with a call to this procedure
+
+; -- LIBMP2 Routines (Replace these with your own code) ---
+
+extrn PrintBuffer:near     ; Print contents of Buffer
+extrn ReadBuffer:near      ; Read Buffer from keyboard
+extrn CodeBuffer:near      ; Encode or decode the buffer
+extrn ExpModN:near         ; Calculate X^Y mod Z
+extrn CheckPrime:near      ; Determine if a number is prime
+extrn ReadKeys:near        ; Read and verify valid values for p, q, e, d   
+extrn ReadPublicKeys:near  ; Read in d, n
+
+;====== SECTION 3: Define stack segment ===================================
+stkseg  segment stack                   ; *** STACK SEGMENT ***
+        db      64 dup ('STACK   ')     ; 64*8 = 512 Bytes of Stack
+stkseg  ends
+
+;====== SECTION 4: Define code segment ====================================
+cseg    segment public  'CODE'    ; *** CODE SEGMENT ***
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== SECTION 5: Variables ==============================================
+
+Buffer  db BufferMaxLength    dup(0)   ; Data Buffer for message
+
+BufferLength db 0 ; Number of bytes in buffer
+
+crlf    db CR,LF,'$' ; DOS uses carriage return + Linefeed for new line
+PBuf    db 7 dup(?)
+
+Pmsg    db 'Plese enter a prime number (p): p <= 127: ','$'
+Perr1   db BEEP,'One is not prime!',CR,LF,'$'
+Perr2   db BEEP,'P must be less than or equal to 127!',CR,LF,'$' 
+Perr3   db BEEP,'P must be a prime number!',CR,LF,'$'
+Qmsg1   db 'Plese enter a prime number (q): ','$'
+Qmsg2   db ' < q <= ','$'
+Qerr1   db BEEP,'Q must be greater than ','$'
+Qerr2   db BEEP,'Q must be less than or equal to ','$'
+Qerr3   db BEEP,'Q must be a prime number!',CR,LF,'$'
+PUBmsg  db 'Please enter a public key (e): ',CR,LF,'$'
+Nmsg    db 'Please enter the modulus (n = p * q : n>128, n<255): ',CR,LF,'$'
+Emsg    db 'Please enter a key (e) that is less than and relatively prime to ','$'
+Eerr1   db BEEP,'E must be less than ','$'
+Eerr2   db BEEP,'E must be relatively prime to ','$'
+Derr    db BEEP,'It is insecure for D and E to be the same!',CR,LF,'$'
+PubKeyMsg db 'The public key (e, n) is (','$'
+PriKeyMsg db 'The private key (d, n) is (','$'
+Prompt  db ': ','$'
+
+TextMsg db 'Enter text for the buffer',CR,LF,'$'
+HexMsg  db 'Enter hex for the buffer',CR,LF,'$'
+KeyMsg  db 'Generating new public keys...',CR,LF,'$'
+PKeyMsg db 'Reading private key information...',CR,LF,'$'
+DAscMsg db 'Here is the buffer in ASCII',CR,LF,'$'
+DHexMsg db 'Here is the buffer in HEX',CR,LF,'$'
+EncMsg  db 'Encrypting the buffer...',CR,LF,'$'
+DecMsg  db 'Decrypting the buffer...',CR,LF,'$'
+
+PUBLIC Pmsg, Perr1, Perr2, Perr3, Qmsg1, Qmsg2, Qerr1, Qerr2, Qerr3
+PUBLIC Emsg, Eerr1, Eerr2, Derr, PubKeyMsg, PriKeyMsg, Prompt, crlf, PBuf
+PUBLIC PUBmsg, Nmsg
+
+
+p       db 5    ; a prime number
+q       db 29   ; another prime number
+n       db 145  ; modulus (p * q)
+e       db 3    ; default encryption key [relatively prime to (p-1)*(q-1)]
+d       db 75   ; default decryption key [relatively prime to (p-1)*(q-1)]
+
+   ; Note that keys are initialized with a valid encoding/decoding values.
+   ; They can be changed while running the program
+
+PUBLIC Buffer, BufferLength, e, d, p, q, n
+
+                                   
+;====== Procedures ========================================================
+
+
+; Your Subroutines go here !
+; ---- ----------- -- ----
+
+
+;====== Main procedure ====================================================
+
+MenuMessage db CR,LF
+  db '----------------------- MP2 Menu ---------------------',CR,LF
+  db ' enter:    (T)ext message   (C)oded hex message',CR,LF
+  db ' display:  (A)SCII message  (H)ex encoding',CR,LF
+  db ' generate: (K)eys           (P)ublic key',CR,LF
+  db ' coding:   (E)ncrypt        (D)ecrypt',CR,LF
+  db '--------- [ESC] = (Q)uit -- redisplay (M)enu ---------',CR,LF,'$'
+
+MPrompt db '>$'
+
+main    proc    far
+        mov     ax, cseg
+        mov     ds, ax
+
+          MOV DX, Offset MenuMessage
+          CALL DSPMSG                   ; Display Menu
+
+MainLoop: MOV DX, Offset CRLF
+          CALL DSPMSG
+
+          MOV DX, Offset MPrompt
+          CALL DSPMSG
+
+MainRead: CALL KBDIN                    ; Read Input
+
+          CMP AL,'a'
+          JB  MainOpt
+          CMP AL,'z'                    ; Convert Lowercase to Uppercase
+          JA  MainOpt
+          SUB AL,'a'-'A'
+
+MainOpt:  CMP AL,'K'
+          JNE MainNotK                   
+          MOV DX, offset KeyMsg
+          CALL DSPMSG          
+          CALL ReadKeys                 ; Generate a new key
+          JMP MainLoop
+
+MainNotK: CMP AL,'P'
+          JNE MainNotP                   
+          MOV DX, offset PKeyMsg
+          CALL DSPMSG          
+          CALL ReadPublicKeys           ; Read in a public key
+          JMP MainLoop
+
+MainNotP: CMP AL,'T'
+          JNE MainNotT
+          MOV DX, offset TextMsg
+          CALL DSPMSG
+          MOV AL, BufferMaxLength       ; Read in a text message
+          MOV AH, ASCII
+          MOV BX, Offset Buffer
+          CALL ReadBuffer               
+          MOV DX, Offset crlf
+          CALL DSPMSG
+          JMP MainLoop
+
+MainNotT: CMP AL,'C'
+          JNE MainNotC
+          MOV DX, offset HexMsg
+          CALL DSPMSG
+          MOV AL, BufferMaxLength       ; Read in a hex message
+          MOV AH, HEX
+          MOV BX, Offset Buffer
+          CALL ReadBuffer
+          JMP MainLoop
+
+MainNotC: CMP AL,'E'
+          JNE MainNotE
+          MOV DX, offset EncMsg
+          CALL DSPMSG
+          MOV DH, byte ptr e            ; Encode the message
+          MOV CL, BufferLength
+          MOV BX, offset Buffer
+          CALL CodeBuffer 
+          JMP MainLoop                  
+
+MainNotE: CMP AL,'D'
+          JNE MainNotD
+          MOV DX, offset DecMsg
+          CALL DSPMSG
+          MOV DH, byte ptr d            ; Decode the message
+          MOV CL, BufferLength
+          MOV BX, offset Buffer
+          CALL CodeBuffer             
+          JMP MainLoop
+
+MainNotD: CMP AL,'A'
+          JNE MainNotA
+          MOV DX, offset DAscMsg
+          CALL DSPMSG
+          MOV AL, BufferLength          ; Display the message in ASCII
+          MOV AH, ASCII
+          MOV BX, offset Buffer
+          CALL PrintBuffer
+          JMP MainLoop
+
+MainNotA: CMP AL,'H'
+          JNE MainNotH
+          MOV DX, offset DHexMsg
+          CALL DSPMSG
+          MOV AL, BufferLength          ; Display the message in Hex
+          MOV AH, HEX
+          MOV BX, Offset Buffer
+          CALL PrintBuffer
+          JMP MainLoop
+
+MainNotH: CMP AL,'M'
+          JNE MainNotM
+          MOV DX, offset MenuMessage
+          CALL DSPMSG
+          JMP MainLoop
+
+MainNotM: CMP AL,ESCKEY
+          JE  MainDone                  ; Quit program
+          CMP AL,'Q'
+          JE  MainDone
+
+          JMP MainRead                  ; Ignore any other character 
+
+MainDone: call MP2XIT ; Exit to DOS
+
+main    endp
+
+cseg    ends
+        end     main
+</PRE>
+
+</BODY>
+</HTML>

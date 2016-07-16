@@ -1,0 +1,219 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<meta name="GENERATOR" content="Microsoft FrontPage 4.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<title>NASM Proc and Invoke Macros</title>
+</head>
+
+<body>
+
+<h1 align="center"><font size="+2"><b><i>NASM Proc and Invoke Macros</i></b></font></h1>
+<p>NASM has very sparse, very clean, very simple syntax.  To make a procedure,
+you just give it a label, and <b><samp> call</samp></b> the label.  The
+<b><samp> call</samp></b> pushes the return address, and a
+<b><samp> ret</samp></b> pops it off and jumps to it.</p>
+<table border="1">
+  <tr>
+    <td width="100%"><samp>_main:<br>
+      &nbsp;&nbsp;&nbsp; mov&nbsp;&nbsp; eax,&nbsp;&nbsp; 3<br>
+      &nbsp;&nbsp;&nbsp; mov&nbsp;&nbsp; ebx,&nbsp;&nbsp; 5<br>
+      &nbsp;&nbsp;&nbsp; call&nbsp; </samp><samp>_Add_Two_Things</samp><samp><br>
+      &nbsp;&nbsp;&nbsp; <font color="#808080">; Result in eax</font><br>
+      &nbsp;&nbsp;&nbsp; ret<br>
+      <br>
+      </samp><samp>_Add_Two_Things</samp><samp>:&nbsp; <font color="#808080">; Into eax</font><br>
+      &nbsp;&nbsp;&nbsp; add&nbsp;&nbsp; eax,&nbsp;&nbsp; ebx<br>
+      &nbsp;&nbsp;&nbsp; ret</samp></td>
+  </tr>
+</table>
+<p>This is fine, but if you're going to do a lot of functions, it would be nice
+to have a standard way of passing around parameters and return values and
+stuff.  C has a standard way of doing this, so why don't we just use
+the C-style procedures you all learned about?  Not only does this make things
+consistent and standard, but you can call your assembly from C, and your C from
+assembly without a problem (or very many problems :).  C Dictates:</p>
+<ul>
+  <li>Parameters passed on stack in reverse order by the <i>caller</i> before the call is made</li>
+  <li>Names of parameters in the <i> invoked</i> procedure (or called procedure,
+    or callee) are replaced by [EBP + constant]
+    to access them on the stack.
+    <ul>
+      <li>The constant for a particular parameter is some offset from the base
+        pointer, whose value has to do with how many parameters were pushed before
+        that particular parameter.</li>
+      <li>This means you can't change EBP in your function if you want your parameters
+        to continue to work!</li>
+    </ul>
+  </li>
+  <li>Return Values go in EAX, AX, or AL depending on their size</li>
+  <li>Any of the general purpose registers (EAX, EBX, ECX, EDX) can be overwritten in a C-Function.
+    <ul>
+      <li>Don't bother preserving these general registers when you write your functions.</li>
+      <li>Don't expect them to be preserved when you invoke other people's
+	functions!</li>
+    </ul>
+  </li>
+  <li>All other registers <i> must</i> be preserved in a C-Function or bad things will
+    happen when you return and the function you return to expects them to have
+    their old values.
+    <ul>
+      <li>This includes ESI, EDI, EBP, DS, ES, FS, GS</li>
+    </ul>
+  </li>
+  <li>Parameters are removed from stack by the <i> caller</i> after the return.</li>
+</ul>
+<p>This is exactly the convention the protected mode library uses, and to
+enforce this consistency and make things simpler than doing all this pushing
+and poping and EBP offset calculation every time, we have a bunch of NASM
+macros so you can do stuff like this:</p>
+<table border="1">
+  <tr>
+    <td width="100%"><samp><font color="#FF0000">BITS</font> 32 <font color="#808080"> ; Tell NASM we're using 32-bit protected mode.<br>
+      </font>
+      <br>
+      <font color="#FF0000">
+      GLOBAL</font> _main <font color="#808080"> ; Tells the linker about the label called _main</font><br>
+      <br>
+      <b>%include "myC32.mac"&nbsp; <font color="#808080">; Include the proc /
+      invoke MACROs</font></b><br>
+      <br>
+      <font color="#FF0000">
+      SECTION</font> .text <font color="#808080"> ; Says that this is the start of the code section.</font><br>
+      <br>
+      _</samp><samp>main:<br>
+      &nbsp;&nbsp;&nbsp; mov&nbsp;&nbsp; eax,&nbsp;&nbsp; 3<br>
+      &nbsp;&nbsp;&nbsp; mov&nbsp;&nbsp; ebx,&nbsp;&nbsp; 5<br>
+      &nbsp;&nbsp;&nbsp; <b>invoke</b> _Add_Two_Things, dword eax, dword ebx<br>
+      </samp><samp>&nbsp;&nbsp;&nbsp; <font color="#808080">; Result in eax</font><br>
+      &nbsp;&nbsp;&nbsp; ret</samp><samp><br>
+      <br>
+      <b>proc</b> </samp><samp>_Add_Two_Things</samp><samp><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; .First_Thing&nbsp;&nbsp; <b>ar</b><b>g</b>&nbsp;&nbsp;&nbsp;
+      4&nbsp;&nbsp;&nbsp; <font color="#808080">; Both Double Word Arguments (4 bytes)</font><br>
+      &nbsp;&nbsp;&nbsp; .Second_Thing&nbsp; <b>a</b><b>rg</b>&nbsp;&nbsp;&nbsp;
+      4<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; mov&nbsp;&nbsp; eax, [ebp + .First_Thing]<br>
+      &nbsp;&nbsp;&nbsp; add&nbsp;&nbsp; eax, [ebp + .Second_Thing]<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; ret<br>
+      &nbsp;&nbsp;&nbsp;<font color="#808080"> ; The ret actually gets replaced with some code to<br>
+      &nbsp;&nbsp;&nbsp; ; do stack stuff before doing ret itself.</font><br>
+      <br>
+      <b>endproc</b><br>
+      </samp><samp> _Add_Two_Things_arglen&nbsp;&nbsp; equ&nbsp;&nbsp;
+      8&nbsp; <font color="#808080">; Total bytes of arg</font><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <font color="#808080">; VERY important to get right.</font><br></samp></td>
+  </tr>
+</table>
+<p><font size="+2">What the Macros Actually Do</a></font></p>
+<p>For future reference, here's what the MACROs are doing:&nbsp; (Because the
+NASM's MACRO's are hard to read)</p>
+<p><i><b>invoke</b></i></p>
+<ul>
+  <li><b>Push arguments</b> onto the stack (This decrements ESP by the total
+    length of the arguments.)</li>
+  <li><b>Call</b> the procedure.
+    <ul>
+      <li><b>Push return address</b> on the stack</li>
+      <li><b>Jump</b> to the procedure</li>
+    </ul>
+  </li>
+  <li><b>Add ESP,&nbsp; total length of arguments</b> to restore the stack to
+    where it was before.&nbsp; This is what the <samp> _Add_Two_Things_arglen </samp>constant is
+    used for, so if it's wrong, you <i>will</i> crash.</li>
+</ul>
+<p><i><b>proc</b></i></p>
+<ul>
+  <li><b>Push EBP</b> to save it's value</li>
+  <li><b>Mov EBP, ESP</b> so we have a reference to get the arguments</li>
+  <li>Redefines <b>ret</b> (and <b>retf</b>) to do the following:
+  <ul>
+    <li><b>Mov ESP, EBP</b> to restore the stack pointer to what it was when we
+      entered.</li>
+    <li><b>Pop EBP</b> to restore it's value to the value the previous procedure
+      was using for <i>its</i> arguments.</li>
+    <li><b>Ret</b> to return to the procedure that called us.</li>
+  </ul></li>
+</ul>
+<p><i><b>arg</b></i></p>
+<ul>
+  <li>Defines the <b><samp>.First_Thing </samp></b>as a constant representing
+    the offset from EBP that this argument was at.&nbsp; That is why they are
+    used by referencing <samp><b>[EBP + .First_Thing]</b></samp> in the code.</li>
+</ul>
+<p><i><b>endproc</b></i></p>
+<ul>
+  <li>Undoes the changes made by proc to <b>ret</b> and <b>retf</b>.</li>
+</ul>
+
+<p>Remember that these things are just MACROs.&nbsp; They're not magic.&nbsp;
+You have to understand how they work if you're going to use them.&nbsp; If
+nothing else, assembly programming is supposed to teach you that the &quot;Black
+Boxes&quot; they talk about&nbsp; in your CS classes don't exist.&nbsp;
+(Although making your procedures <i>modular</i> is still good practice.)&nbsp;</p>
+
+<p><font size="+2"><a name="C-Style Procedures">C-Style Procedures</a></font></p>
+<p>One of the reasons for defining the invoke MACROs the way they are defined is
+so they will be compatible with C and C++.&nbsp; Because of the way C pushes
+things onto the stack in order to call your function, when you declare a
+procedure using the <b>proc</b> MACRO, you will be able to read the arguments
+right off of the stack just like a compiled C program would.&nbsp; For this
+reason, from now on, I'll give function headers in the cleaner C-style syntax.</p>
+<p><b><samp>int Add_Two_Things(int First_Thing, int Second_Thing)</samp></b>&nbsp;
+means:</p>
+<table border="1" width="100%">
+  <tr>
+    <td width="100%"><samp>
+      <b>proc</b> </samp><samp>_Add_Two_Things</samp><samp><br>
+      <br>
+      &nbsp;&nbsp;&nbsp; .First_Thing&nbsp;&nbsp; <b>ar</b><b>g</b>&nbsp;&nbsp;&nbsp;
+      4&nbsp;&nbsp;&nbsp; <font color="#808080">; Both Double Word Arguments (4 bytes)</font><br>
+      &nbsp;&nbsp;&nbsp; .Second_Thing&nbsp; <b>a</b><b>rg</b>&nbsp;&nbsp;&nbsp;
+      4<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; mov&nbsp;&nbsp; eax, [ebp + .First_Thing]<br>
+      &nbsp;&nbsp;&nbsp; add&nbsp;&nbsp; eax, [ebp + .Second_Thing]<br>
+      <br>
+      &nbsp;&nbsp;&nbsp; ret<br>
+      &nbsp;&nbsp;&nbsp;<font color="#808080"> ; The ret actually gets replaced with some code to<br>
+      &nbsp;&nbsp;&nbsp; ; do stack stuff before doing ret itself.</font><br>
+      <br>
+      <b>endproc</b><br>
+      </samp><samp> _Add_Two_Things_arglen&nbsp;&nbsp; equ&nbsp;&nbsp;
+      8&nbsp; <font color="#808080">; Total bytes of arg</font><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <font color="#808080">; VERY important to get right.</font><br></samp></td>
+  </tr>
+</table>
+&nbsp;
+<ul>
+  <li>Note that in the C-Style declaration, there is no underscore, whereas the
+    ASM code has one.&nbsp; Again, this is because C would automatically add an
+    underscore to the function name.</li>
+  <li>What the types mean
+    <ul>
+      <li>C's <b><samp> char</samp></b> is NASM's <b><samp> byte</samp></b></li>
+      <li>C's <b><samp> short</samp></b> is NASM's <b><samp> word</samp></b></li>
+      <li>C's <b><samp> int</samp></b> is NASM's <b><samp> dword</samp></b></li>
+      <li>C's pointers (like <b><samp>char*)</samp></b> are addresses.&nbsp; (<b><samp>char*</samp></b>
+        means that what's <i>at</i> this address should be treated as a byte.)
+        In 32-bit
+	mode, these addresses are, of course, 32-bit <b><samp>dwords</samp></b>.</li>
+    </ul>
+  </li>
+  <li>Return values:
+    <ul>
+      <li>The return value for this <b><samp>Add_Two_Things</samp></b> was an <b><samp>int
+        (dword)</samp></b> so the result of the ASM code went into EAX.</li>
+    </ul>
+  </li>
+</ul>
+
+</body>
+
+</html>

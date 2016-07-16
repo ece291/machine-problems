@@ -1,0 +1,304 @@
+<html>
+
+<head>
+
+<title>ECE291 Machine Problem 2</title>
+
+<style>
+<!--
+
+body   {font-family: arial, helvetica, sans-serif;
+        font-size: 10pt;
+       }
+
+td     {font-family: arial, helvetica, sans-serif;
+        font-size: 10pt;
+       }
+
+th     {font-family: arial, helvetica, sans-serif;
+        font-size: 10pt;
+       }
+
+ul     {font-family: arial, helvetica, sans-serif;
+        font-size: 10pt;
+       }
+
+ol     {font-family: arial, helvetica, sans-serif;
+        font-size: 10pt;
+       }
+
+a      {font-family: arial, helvetica, sans-serif;
+        font-size: 10pt;
+        text-decoration: none;
+       }
+
+//-->
+</style>
+
+</head>
+
+<body bgcolor = #ffffff text = #000000>
+
+<table cellpadding = 0 cellspacing = 0 width = 100% border = 0>
+
+<tr>
+  <td align = left   width = 33%>ECE291</td>
+  <td align = center width = 34%>Computer Engineering II</td>
+  <td align = right  width = 33%>Potts, Summer 2000</td>
+</tr>
+
+</table>
+
+<h1 align = center>Machine Problem 2: Grading Report</h1>
+
+<div align = center>
+
+<p><i><font size = -1>Please print this page and provide it to the TA when you demonstrate your machine problem.<br>
+      This page should be stapled to the front of your MP2 assignment.
+</font></i></p>
+
+<p><form>
+
+<table cellpadding = 7 cellspacing = 0 border = 0>
+
+<tr>
+
+  <td>
+  <table cellpadding = 0 cellspacing = 0 border = 0>
+  <tr>
+    <td align = right>Name: </td>
+    <td><input name = "name" size = 30></td>
+  </tr>
+
+  <tr>
+    <td align = right>Date Submitted: </td>
+    <td><input name = "submitted" size = 20></td>
+  </tr>
+
+  <tr>
+    <td align = right>Demo To: </td>
+    <TD><input name = "demoto" size = 6>Graded By: <INPUT name = "gradedby" size = 6></td>
+  </tr>
+  </table></td>
+
+  <td>
+  <table border = 1>
+  <tr>
+    <td><INPUT type = checkbox name = "gradebook">Hand-in to Server</td>
+  </tr>
+
+  <tr>
+    <td><input type = checkbox name = "gradebook">Score recorded</td>
+  </tr>
+
+  <tr>
+    <td><input type = checkbox name = "gold_star">Gold Star<br><i>Programming Excellence&nbsp;</i></td>
+  </tr>
+  </table></td>
+
+</tr>
+</table>
+
+</form>
+</div>
+
+<table cellpadding = 3 border = 1 width = 100%>
+
+<tr>
+  <th width = 100%>Category</th>
+  <th>Points</th>
+  <th>Min</th>
+  <th>Max</th>
+</tr>
+
+<tr>
+  <td><b>ParseInput</b>
+  <ul>
+    <li>Handles whitespaces in the <b>beginning</b>, <b>between</b> and at the <b>END</b> of input parameters</li>
+    <li>Aborts gracefully on any character that is not a whitespace or a number</li>
+    <li>Aborts if command line input is longer than <tt>MAX</tt></li>
+  </ul>
+  </td>
+
+  <td><pre> </pre></td>
+
+  <td>0</td>
+
+  <td>8</td>
+</tr>
+
+<tr>
+  <td><b>FilterFields</b>
+  <ul>
+    <li>Aborts gracefully if the <tt>year</tt> field is not within the range of 1582 - 3000</li>
+    <li>Handles the special case for years between 00-99 by adding 1900 to them</li>
+    <li>Performs proper check for the <tt>day</tt> field depending on the <tt>month</tt> i.e. handles <tt>31 June</tt> correctly</li>
+    <li>Aborts if command line input has no or more than <b>3</b> parameters</li>
+  </ul>
+  </td>
+
+  <td><pre> </pre></td>
+
+  <td>0</td>
+
+  <td>7</td>
+</tr>
+
+<tr>
+  <td><b>GetDoomsDay</b>
+  <ul>
+    <li>Obtains the Doomsday for the given <tt>year</tt></li>
+  </ul>
+  </td>
+
+  <td><pre> </pre></td>
+
+  <td>0</td>
+
+  <td>4</td>
+</tr>
+
+<tr>
+  <td><b>IsLeapYear</b>
+  <ul>
+    <li>Handles dates that fall on leap years - <tt>29 Feb 2000 falls on a Tuesday</tt></li>
+    <li>Dates in January should work - <tt>1 Jan 2000 falls on a Saturday</tt></li>
+  </ul>
+  </td>
+
+  <td><pre> </pre></td>
+
+  <td>0</td>
+
+  <td>4</td>
+</tr>
+
+<tr>
+  <td><b>MakeCalendar</b>
+  <ul>
+    <li>Displays a calendar for the given <tt>year</tt></li>
+    <li>The last day of every month and the first day of the following month correlate</li>
+  </ul>
+  </td>
+
+  <td><pre> </pre></td>
+
+  <td>0</td>
+
+  <td>4</td>
+</tr>
+
+<tr>
+  <td><b>DisplayMonth</b>
+  <ul>
+    <li>Display of the given <tt>month</tt> conforms to the library format</li>
+    <li><tt>Sep 2000</tt> should NOT have an extra blank line at the end</li>
+  </ul>
+  </td>
+
+  <td><pre> </pre></td>
+
+  <td>0</td>
+
+  <td>15</td>
+</tr>
+
+<tr>
+  <td><b>GetDayofWeek</b>
+  <ul>
+    <li>Displays a formatted message if all 3 parameters are provided</li>
+    <li><tt>14 Sep 1752 falls on a Thursday</tt></li>
+  </ul>
+  </td>
+
+  <td><pre> </pre></td>
+
+  <td>0</td>
+
+  <td>8</td>
+</tr>
+
+<tr>
+  <td><b>Functionality Sub-Total</b></td>
+
+  <td><pre> </pre></td>
+
+  <td>0</td>
+
+  <td>50</td>
+</tr>
+
+<tr>
+  <td><b>Comments</b><br>
+  <ul>
+    <li>Clear and precise comments    : -0</li>
+    <li>Missing FUNCTION HEADERS      : -3</li>
+    <li>Excessive commenting          : -1</li>
+    <li>Sparse and/or unclear comments: -1</li>
+  </ul>
+  </td>
+
+  <td><pre> </pre></td>
+
+  <td>-5</td>
+
+  <td>0</td>
+</tr>
+
+<tr>
+  <td><b>Technique & Style</b><br>
+  <ul>
+    <li>Compact and Efficient code          : -0</li>
+    <li>Contains repeated code (lacks loops): -3</li>
+    <li>Does not use defined constants      : -2</li>
+  </ul>
+  </td>
+
+  <td><pre> </pre></td>
+
+  <td>-5</td>
+
+  <td>0</td>
+</tr>
+
+<tr>
+  <td><b>I/O Specs & Modularity</b><br>
+  <ul>
+    <li>Violates specifications for given subroutines: -3</li>
+    <li>Procedures do not preserve registers         : -2</li>
+  </ul>
+  </td>
+
+  <td><pre> </pre></td>
+
+  <td>-5</td>
+
+  <td>0</td>
+</tr>
+
+<tr>
+  <td><b>Penalty/Bonus</b><br>
+      <i>Before 5pm, Thu 07/06/2000 :  +1 pt/weekday</i><br>
+      <i>After  5pm, Thu 07/06/2000 : -10 pts/weekday</i>
+  </td>
+
+  <td><pre> </pre></td>
+
+  <td>-50</td>
+
+  <td>5</td></tr>
+
+<tr>
+  <td><b>Total</b></td>
+
+  <td><pre> </pre></td>
+
+  <td>0</td>
+
+  <td>55</td></tr>
+
+</table>
+
+</body>
+
+</html>

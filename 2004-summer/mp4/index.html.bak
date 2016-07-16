@@ -1,0 +1,13 @@
+<html>
+<head>
+<title>ECE 291 - MP4</title>
+</head>
+
+<frameset frameborder=no>
+ <frameset cols="20%,80%">
+  <frame name=nav src="mp4nav.html">
+  <frame name=content src="mp4.html">
+ </frameset>
+</frameset>
+
+</html>

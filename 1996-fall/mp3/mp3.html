@@ -1,0 +1,822 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 3</title>
+</head>
+
+<body>
+<xmp>
+</xmp>
+<table width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Lockwood, Fall 1996</td></tr></table>
+<center><h1>Machine Problem 3: The Maze (Part I)</h1></center>
+<xmp>
+
+
+</xmp>
+<p>
+<center><table border=1 width=60%>
+  <tr><td align=right><b>Assigned</b></td>  <td>Tuesday October 15 </td></tr>
+  <tr><td align=right><b>Due Date</b></td>  <td>Tuesday, October 29 </td></tr>
+   <tr><td align=right><b>Purpose: </b></td>
+    <td>Recursion, Linking to C, Video 
+</td></tr>
+   <tr><td align=right><b>Points</b></td><td>50</td></tr>
+</table></center>
+<p>
+<xmp>
+
+</xmp>
+<p>
+<h2>Introduction</h2>
+You are a mouse that has found itself in a maze.  In this machine problem,
+you will implement a program that allows the mouse to explore a
+two-dimensional maze.  The program allows manual movement though the maze
+and an 'Auto-Solve' function that automatically finds the
+solution the maze.
+<p>
+This machine problem highlights three important concepts.  First, this machine
+problem uses the I/O system of the computer.  In particular, the Video
+Graphics Adapter (VGA) will be used in color text-mode to graphically 
+see the top-down view of the maze.  Secondly, this machine problem will
+demonstrate one of the most important tree algorithms -- The Depth First Search
+(DFS).  
+Thirdly, the movement routines of this machine problem will
+demonstrate important concepts for computer animation.
+<p>
+This is the first part of a series of machine problems.  By the end
+of this project, we will build a three-dimensional multi-user appliation
+for exploring a maze.  In the next machine problem, you will implement
+a three-dimensional view of the maze which provides the "mouses' eye-view" 
+of the maze-- i.e., the view that the mouse would see inside the maze.
+
+<h2>Problem Description</h2>
+This machine problem represents the maze using three methods.
+The maze is defined by a standard text file called MAZE.DTA.  The maze
+has 80 columns and 23 rows.  Walls are indicated with the '#' character.  
+Hallways are indicated by the ' ' (space) character.  
+The starting location in the maze is indicated with the 'S' character.  
+The end of the maze is indicated with the 'E' character.  
+The MAZE.DTA file can be edited with any text editor.  
+The only restriction on the file is that the walls must surround the maze
+(i.e., all of row 0, row 22, column 0, and column 79 hold the '#' character).
+<p>
+Internally, our program will represent the maze as a byte array of 
+80 (columns) * 23 (rows) = 1840 (bytes) called <tt>_MAZE</tt>.  
+The size of the maze is defined as a constant called MAZESIZE.  
+The array is stored in left-to-right, top-to-bottom order -- i.e.,
+offset zero of <tt>_MAZE</tt> holds the top-left byte of the maze and
+offset MAZESIZE-1 holds the bottom-right element of <tt>_MAZE</tt>.
+Each byte defines a hallway, a wall, an endpoint, or a <i>decision point</i>.
+A decision point is a location in the maze where the mouse must decide which
+way to travel (i.e., the hallway branches).  The location of decisions 
+points are computed for you just after the maze is read from the file.
+<p>
+To view the maze, the VGA adapter is used in text mode.  
+In text mode, each character on the screen is represented by two bytes -- 
+an attribute byte
+and the ASCII character.  The attribute byte determines the background color,
+the foreground color, intensity, and a flag to determine if the character
+should be blinking.  Details of programming the VGA adapter were described
+in lecture, detailed in the ECE291 lab manual, and appear in the textbook. 
+<p>
+The following diagram is a screen-dump of the running program:
+<p>
+<center><img src="mp3screen.gif" width="643" height="339"></center>
+<p>
+The location of the mouse is determined by a variable called <tt>_POS</tt>.
+<tt>_POS</tt> is a word-sized (16-bit) integer defined as an
+offset into <tt>_MAZE</tt>.  For example, if the mouse is at row 5, column 7
+of the maze, <tt>_POS</tt> would equal 80*5+7.  The mouse can move NORTH,
+EAST, SOUTH, or WEST.  North is defined as the top of the screen.
+The mouse is represented on the screen as a green smiley character.  
+<p>
+
+<h2>Operation of MAZE</h2>
+The best way to understand the MAZE is to play the MAZE.  
+<p>
+There are four 
+modes of operation to this program: Manual, Turbo, AutoAdvance, and 
+AutoSolve.  Modes can be selected by pressing the 'M' key, followed
+by a number (0 to 3).  In manual mode (M0), pressing the arrows keys will
+advance you by one position.  In turbo mode (M1), the mouse will run down
+a hallway until hitting a wall.  In AutoAdvance mode (M2), the mouse will
+traverse down a hallway until hitting a decision point.  In AutoSolve mode
+(M3), the mouse will find the solution to the maze automatically.
+The mode of the program is displayed at the top-center of the screen.
+<p>
+In modes 1-3, the speed of the mouse can be adjusted.  The (+) and (-)
+keys determine the delay rate.  A larger rate slows the mouse, while a smaller
+makes the mouse move faster.  The delay rate is displayed at the top-right
+of the screen.
+<p>
+You can exit the program by pressing 'Q' to quit.
+
+<h2>Implementation</h2>
+<p>
+The program will be implemented as a combination of ASM and C routines.
+The C program <i>(mazec.c)</i> is used to start the program, read
+the maze data file <i>(maze.dta)</i>, and calculate the location of the 
+decision points. The ASM routines are used to provide high-speed graphic 
+update and maze movement routines.  
+Because this is a class on assembly; you are only 
+responsible for writing the ASM routines. 
+<p>
+The six ASM procedures that you will need to implement are described below.
+There are working library versions of each of these procedures in
+<i>libmp3.lib</i>.  Unless otherwise noted, it is expected that
+the routine will preserve the value of any register that is modified.
+
+<h3>ShowMaze</h3>
+<ul>
+<li><b>Purpose:</b> Draw the maze on the screen.  and indicate the 
+                    initial location of the mouse using the green smiley
+                    character.
+<li><b>Variables:</b> Both <tt>_MAZE</tt> and <tt>_POS</tt> are read
+                    but not modified
+<li><b>Inputs:</b> ES points to the segment address of 
+                  the video display memory.
+<li><b>Useful Constants</b>: <tt>MAZESIZE, HALL, WALL, DECPOS, ENDPOS,
+  HALLCH, WALLCH, DECCH, ENDCH,</tt> and <tt>SMILECH</tt>.
+<li><b>Called by:</b> <tt>_ShowMaze</tt> 
+<li><b>Registers</b>: All preserved <p>
+<li><b>Description</b>:<p>
+The maze can be drawn on the screen as follows:
+For each byte of the maze, this routine should write a word to the video
+buffer. <p>
+For your convienience, a number of constants have been defined
+in <i>maze.def</i>.  <tt>MAZESIZE</tt> defines the size of the 
+maze (in bytes).  This contant is equal to
+80 (columns) * 23 (rows) = 1840 (bytes).  
+For each element in the maze, this routine will draw an element on the screen.
+<p>
+Constants are also used to define the values of <tt>_MAZE</tt> elements
+and their Attribute:Character values used on the screen.
+A table lookup is an effecient method to map the byte-value of 
+<tt>_MAZE[index]</tt> to a Attribute:Character value used by
+the video buffer.  The mapping function is summarized below.<p>
+<center><table border=1>
+  <tr><th>_MAZE Value<br>(byte)</th>
+  <th>Attribute:Character<br>(word)</th>
+  <th>Description</th></tr>
+<tr><td>HALL  <td>HALLCH <td>Black background </tr>
+<tr><td>WALL  <td>WALLCH <td>Red, Solid Box   </tr>
+<tr><td>DECPOS<td>DECCH  <td>Decision Position - Blue crosshair (+) </tr>
+<tr><td>VISPOS<td>VISCH  <td>Visited Position - Green crosshair (+) </tr>
+<tr><td>FINPOS<td>FINSH  <td>Finished Position - Red crosshair (+) </tr>
+<tr><td>ENDPOS<td>ENDCH  <td>Yellow End-of-maze Marker (E) </tr>
+</table></center> 
+<p>
+After drawing the maze, the routine also needs to draw the location
+of the mouse (green smiley character).  The variable <tt>_POS</tt>
+holds the initial position (byte offset into the maze).  The constant
+<tt>SMILECH</tt> is the attribute:character value for the green smiley
+character.
+
+</ul>
+
+<h3>ShowMode</h3>
+<ul>
+<li><b>Purpose:</b> Display the current mode and rate at the top
+    of the screen.
+<li><b>Variables:</b> Both <tt>mazemode</tt> and <tt>mazedelay</tt>
+    are read but not modified
+<li><b>Inputs:</b> ES points to the segment address of 
+                  the video display memory.
+<li><b>Called by:</b> <tt>_ShowMaze</tt> when the program begins
+     and by <tt>_MazeManual</tt> when the user changes <tt>mazemode</tt>
+     or <tt>mazedelay</tt>.
+<li><b>Registers:</b> All preserved    
+<li><B>Description:</b><p>
+
+At the top of the screen, there are two boxes that display the mode
+of the game and the delay value. 
+<p>
+<tt>Mazemode</tt> indicates the mode of the game.  Its value ranges from 0 to 3.
+For each of these values, a text message should be printed to indicate the
+mode.  This message should be printed at the top, center of the screen
+using yellow text on a blue background.  The mappings between <tt>mazemode</tt>
+and output values are as follows: <p>
+
+<center><table border=1>
+  <tr><th>MazeMode</th><th>Text String</th><th>Description</th></tr>
+  <tr><td>0<td>'MANUAL'<td>Manual Mode </tr>
+  <tr><td>1<td>'TURBO' <td>Turbo Mode  </tr>
+  <tr><td>2<td>'AUTOADV' <td>Auto-Advance </tr>
+  <tr><td>3<td>'AUTOSLV' <td>Auto-Solve </tr>
+</table></center><p>
+
+<tt>Mazedelay</tt> indicates the delay between movements.  Its value ranges
+from 0 to 255.  At the top, right of the screen, the value should be printed
+using the same text attributes as used for the mode message.
+</ul>
+
+<h3>Adv</h3>
+<ul>
+<li><b>Purpose:</b> Advance position by one character (if possible)
+<li><b>Variables:</b> <tt>_MAZE</tt> read, <tt>_POS</tt> modified.
+<li><b>Inputs:</b> AL indicates direction (NORTH, EASH, SOUTH, WEST)
+<li><b>Outputs:</b>
+  <ul>
+  <li>AL: unchanged (still holds current direction)
+  <li>AH: AH=0 indicates a valid move, AH=1 indicates invalid move
+  <li>SI: Original position of mouse
+  <li>DI: New position of mouse (after advancing) 
+  </ul>
+<li><b>Description:</b><p>
+  This routine allows the mouse to move.  This procedure is called
+with AL holding the desired direction (NORTH, EAST, SOUTH, or WEST).
+A move is only possible as long as the new position in the maze is
+NOT inside a wall or at the endpoint.  
+<p>
+The current position of the mouse in the maze is determined by the
+variable <tt>_POS</tt>.  This value should always be returned in SI.
+<p>
+If a move is possible, the new position should be computed then stored 
+in <tt>_POS</tt> and returned in DI.  Further, AH should be set to zero
+to indicate a valid move. <p>
+ 
+If a move is not possible, 
+AH should be set to 1 and DI should return the original position.
+(i.e., DI=SI=_POS).
+</ul>
+
+<h3>UpdateTextScreen</h3>
+<ul>
+<li><b>Purpose</b>: Draw mouse at new position on the screen after an advance.
+<li><b>Inputs</b>:
+  <ul>
+  <li>SI: Original Position of Mouse
+  <li>DI: New position of Mouse
+  </ul>
+<li><b>Outputs:</b> Writes only to screen 
+<li><b>Description:</b><p>
+  After advancing by a position, it is necessary to update the screen.
+This routine provides an efficient alternative to redrawing the entire screen.
+The mouse should be drawn at the new position given by DI.   The mouse
+should be removed from the old position given by SI.  To remove the mouse,
+you will need to access <tt>_MAZE</tt> to determine what element
+should be drawn on the screen.  Possible values of maze include:
+<tt>WALL, ENDPOS, HALL, DECPOS, VISPOS,</tt> and <tt>FINPOS</tt>. 
+The mappings from characters in <tt>_MAZE</tt> to attribute:character 
+elements for the screen is the same as were used for <i>ShowMaze</i>.
+</ul>
+
+<h3>AutoAdv</h3>
+<ul>
+<li><b>Purpose:</b> Advance the mouse through the maze until hitting
+    a decision point. 
+<li><b>Inputs:</b> AL holds starting direction 
+<li><b>Outputs:</b> AL holds final direciton 
+<li><b>Useful Constants:</b> <tt>NORTH, EAST, SOUTH, WEST,
+  DECPOS, VISPOS, FINPOS, ENDPOS</tt>.
+<li><b>Description:</b><p> 
+
+This routine allows the mouse to move through hallways
+and turn at corners of the maze.  The mouse will continue to 
+explore the maze until it reaches an intersection (decision point) 
+or hits the end of the maze.  
+<p>
+This routine should use <tt>Adv</tt>, <tt>UpdateTextScreen</tt> 
+and <tt>Delay</tt> to move though straight hallways.  
+When the mouse runs into a wall, it will turn and walk down the hallway 
+further.  If the mouse reaches a dead-end, it turns around and returns 
+to the decision point where it started from. 
+<p>
+Decision points may be colored by the <tt>AutoSolve</tt> function.  
+This function should stop at ANY decision point 
+(<tt>DECPOS, VISPOS,</tt> and <tt>FINPOS</tt>), or at the end
+of the maze (<tt>ENDPOS</tt>).  Register AL should return with the 
+direction of the mouse when it stopped.
+</ul>
+
+<h3>AutoSolve</h3>
+<ul>
+<li><b>Purpose:</b> Automatically solve the maze
+<li><b>Inputs:</b> AL holds starting direction 
+<li><b>Description</b><p>
+
+This is a recursive procedure that calls itself, 
+<tt>AutoAdv</tt>, <tt>Adv</tt>, <tt>UpdateTextScreen</tt>,
+and <tt>Delay</tt> to automatically solve the maze.  
+<p>
+The mouse uses a depth-first-search to find it's way to the endpoint
+of the maze.  From a given starting point and direction, the mouse will
+begin by walking deeper and deeper into the maze.  When the mouse
+hits a dead-end, it backs up, and explores another direction.  In the
+library function, the stuck mouse next tries walking to the right.  
+After fully exploring that region it next tries walking to the left.  
+If, exploring all possible directions does not lead to the solution, the 
+the mouse backs up the the previous decision point.
+<p>
+The depth-first-search works by labeling decision points 
+as <i>unvisited, visited, or finished</i>.  
+Initially all decisions points are <i>unvisited</i>.
+When the algorithm reaches another <i>unvisited</i> decision point, 
+it marks it as <i>visited</i> and recursively walks deeper into the maze.
+If it is found that no further progress can be made by
+walking in any direction (i.e., all hallsways lead to a dead-end or to
+an already-explored region of the maze), the decision point is labeled 
+as <i>finished</i> and the algorithm back-tracks to the previous
+decision point.  To avoid infinite looping, previously-visited decision
+points (either <i>visited</i> or <i>finished</i>) are never re-explored.
+A node is only revisited if it was necessary to back-track.
+<p>
+For our problem, decision points are colored blue, green, or red.  
+Constants are defined in <i>maze.def</i> to define the values 
+in <i>_MAZE</i> and the attribute:character value for the video display.
+They three types of decision points are summarized below:
+<p>
+<center><table border=1>
+<tr><th>Decision-Point<br>Type</th>
+    <th>Color</th>
+    <th>_MAZE value</th>
+    <th>Attribute:<br>Character</th></tr>
+<tr><td>Unvisited<td><font color=blue>+ Blue</font><td>DECPOS<td>DECCH</tr>
+<tr><td>Visited<td><font color=green>+ Green</font><td>VISPOS<td>VISCH</tr>
+<tr><td>Finished<td><font color=red>+ Red</font><td>FINPOS<td>FINCH</tr>
+</table></center>
+</ul>
+
+<h2>Points</h2>
+You earn points by replacing each subroutine with your own code.
+Your score will be proportional to the percentage of the code that
+your write yourself.  The breakdown in points is given below.  Your
+routine MUST perform all functions of the subroutine to receive credit.
+
+<ul>
+<li>ShowMaze: 10 pts
+<li>ShowMode: 5 pts
+<li>Adv: 8 pts
+<li>UpdateTextScreen: 7 pts
+<li>AutoAdv: 10 pts
+<li>AutoSolve: 10 pts.
+</ul>
+
+<p>
+
+
+<h2>Starting Files</h2> 
+You will begin MP3 with the following files:
+<ul>
+<li><b>MAZEC.EXE</b>: A fully functional executable 
+  program using library routines 
+<li><b>MAZE.DTA</b>: The maze definition file.  
+<li><b><a href="#MAZEDEF">MAZE.DEF</a></b>: 
+  Useful constants defined for this program
+<li><b><a href="#MAZECC">MAZEC.C</a></b>: Complete source code the C program which reads
+    <tt>MAZE.DTA</tt>, determines the decision points, stores the
+    data in <tt>_MAZE</tt>, and initiates the program.
+    <i>(You shouldn't need to modify this program)</i>
+<li><b><a href="#MAZEASM">MAZE.ASM</a></b>: 
+  A starting point for the program.  You are given
+  the routines for reading and processing keyboard input, calling
+  the other functions, delaying movement, and interfacing with the
+  C program.
+    <i>(Add your routines here and comment out the EXTRN lines)</i>
+<li><b>MAKE.BAT</b>: A short batch program which compiles, assembles, and links
+  the programs.
+<li><b>LIB291.LIB</tt>: The standard ECE291 library routines.
+    (you can always use these routines freely)
+<li><b>LIBMP3.LIB</b>: Library versions of the six routines that you need 
+   to write. 
+</ul>
+
+You can copy all of these files to your directory with the following command:<p>
+<xmp>xcopy /s E:\ece291\mp3 F:\mp3</xmp>
+
+<hr>
+<h2><a name="MAZEDEF">MAZE.DEF</a></h2>
+<font size=-1><xmp>
+; Definition File for MAZE.ASM
+; John Lockwood; 10/96
+
+MAZESIZE EQU 1840
+
+; MAP Elements
+WALL     EQU 0
+ENDPOS   EQU 1
+HALL     EQU 2
+DECPOS   EQU 3
+VISPOS   EQU 4
+FINPOS   EQU 5
+
+; Direction Definitions
+NORTH    EQU 0
+EAST     EQU 1
+SOUTH    EQU 2
+WEST     EQU 3
+
+; Keyboard Input Codes
+NORTHKEY EQU 72
+SOUTHKEY EQU 80
+WESTKEY  EQU 75
+EASTKEY  EQU 77
+
+; Video Text Memory Segment (Store in ES)
+VIDSEG   EQU 0B800h
+
+; Screen Display values
+HALLCH  EQU 0000000000100000b
+WALLCH  EQU 0000110011011011b
+SMILECH EQU 0000101000000010b
+ENDCH   EQU 0000111001000101b
+DECCH   EQU 0000000100101011b
+VISCH   EQU 0000001000101011b
+FINCH   EQU 0000010000101011b  
+
+; Attribute Byte for Mode Display
+LB      EQU 00011110b ; Blue background; Bright yellow text
+
+MODEMAN       EQU 0
+MODEADV       EQU 1
+MODEAUTOADV   EQU 2
+MODEAUTOSOLVE EQU 3
+</xmp>
+</font>
+
+<hr>
+<h2><a name="MAZECC">MAZEC.C</a></h2>
+<font size=-1><xmp>
+
+// Main program for the MAZE
+// John Lockwood - 10/96
+
+#include <stdlib.h>
+#include <stdio.h>
+
+#define MAZEROWS 23
+#define MAZECOLS 80
+
+#define WALL   0x0
+#define ENDPOS 0x1
+#define HALL   0x2
+#define DECPOS 0x3
+
+#define NORTH 0
+#define EAST  1
+#define SOUTH 2
+#define WEST  3
+
+extern void  far FXIT();
+extern int   far ShowMaze();
+extern int   far MazeManual();
+
+extern unsigned char far MAZE;
+extern int           far POS;
+
+ReadMaze(char* fname) {
+  FILE* fp;
+  int x, y, ch;
+  int position=0;
+
+  fp = fopen(fname,"r"); // Open Maze File
+
+  for (y=0; y<MAZEROWS; y++) { 
+    for (x=0; ch!=EOF && x<MAZECOLS; x++) {
+      ch = getc(fp);
+      switch (ch) {
+        case '#': *(&MAZE+position) = WALL; // Wall
+                  break;
+        case ' ': *(&MAZE+position) = HALL; // Hallway
+                  break;
+        case 'S': *(&MAZE+position) = HALL; // Starting Position
+                  POS = position; 
+                  break;    
+        case 'E': *(&MAZE+position) = ENDPOS;
+                  break;
+        default:  *(&MAZE+position) = HALL; // Any other character (?)
+      }
+      position++;
+    }
+    while ((ch=getc(fp))!=10 && ch!=EOF);
+    // Ignore any junk characters after 80th col
+  }
+  fclose(fp);
+}
+
+
+ProcessMaze() {
+  int x, y, wallctr, position;
+
+  for (y=1; y<(MAZEROWS-1); y++)
+    for (x=1; x<(MAZECOLS-1); x++) {
+      
+      position=x+MAZECOLS*y;
+      if (*(&MAZE+position) == HALL) {
+
+        wallctr=0;
+
+        if (*(&MAZE+position+1)==WALL) 
+          wallctr++;
+        if (*(&MAZE+position-1)==WALL) 
+          wallctr++;
+        if (*(&MAZE+position+MAZECOLS)==WALL) 
+          wallctr++;
+        if (*(&MAZE+position-MAZECOLS)==WALL) 
+          wallctr++;
+        
+        if (wallctr<2) *(&MAZE+position) = DECPOS;
+      }
+    }
+}
+
+main() {
+
+  ReadMaze("MAZE.DTA");
+  ProcessMaze();
+  ShowMaze();
+  MazeManual();
+
+  FXIT();
+}
+</xmp>
+</font>
+
+<hr>
+<h2><a name="MAZEASM">MAZE.ASM</a></h2>
+<font size=-1><xmp>
+        PAGE 75, 132
+        TITLE   MP3:MAZE   Your Name   Date
+
+; ================ Constants / Definitions / MACROs =====================
+
+INCLUDE maze.def
+
+; ================== PUBLIC Variables & Procedures ======================
+
+; LIB291 Routines
+EXTRN   DOSXIT:near, KBDIN:near, BINASC:near, DSPMSG:near;
+
+; External Routines (called from C)
+PUBLIC _FXIT, _MazeManual, _ShowMaze
+
+; Public variables (used by C Program and libmp3)
+PUBLIC _POS, _MAZE
+
+; Public variables (used by libmp3)
+PUBLIC Movement, mazemode, mazedelay
+
+; =================== External Library Procedures =======================
+
+; LIBMP3 Routines (Comment these out as your write your own code)
+
+EXTRN ShowMaze:near
+EXTRN ShowMode:near
+EXTRN UpdateTextScreen:near
+EXTRN Adv:near
+EXTRN AutoAdv:near
+EXTRN AutoSolve:near
+
+EXTRN ShowLibUse:near ; (called at the end of the program)
+
+; ============================ Program Data =============================
+
+CSEG    segment public             
+        assume  cs:CSEG  ,ds:CSEG
+
+; ============================= Variables ===============================
+
+; The values of _MAZE and _POS are read in by the C program
+_MAZE db MAZESIZE dup ('M')
+_POS  dw 0
+
+; By default, Start in Manual Mode
+mazemode  db 0
+
+; Default Delay Period
+mazedelay db 16
+
+; Movement Offsets for fast table-lookup operation
+movement dw -80,+1,+80,-1
+
+; ================= Procedures (Your code goes here) ====================
+
+; ShowMaze PROC NEAR
+
+;    Purpose: (1) Draw initial Maze on screen,
+;             (2) Show initial Position of mouse (Smiley Character)
+;  Variables: _MAZE, _POS, mazemode, mazedelay (no variables modified)
+
+; ShowMaze ENDP
+
+; ------------------------------------------------------------------------
+; ShowMode PROC NEAR
+
+; ShowMode ENDP
+; ------------------------------------------------------------------------
+; Adv PROC NEAR
+
+; Adv ENDP
+; ------------------------------------------------------------------------
+; UpdateTextScreen PROC NEAR
+
+; UpdateTextScreen ENDP
+; ------------------------------------------------------------------------
+; AutoAdv PROC NEAR
+           
+; AutoAdv ENDP
+; ------------------------------------------------------------------------
+; AutoSolve PROC NEAR
+
+; AutoSolve ENDP
+
+; ============================== Free Code ==============================
+
+_ShowMaze PROC FAR
+;    Purpose: (1) Draw initial Maze on screen,
+;             (2) Show initial Position of mouse (Smiley Character)
+;             (3) Show initial Mode
+;  Variables: _MAZE, _POS, mazemode, mazedelay (no variables modified)
+
+           PUSH DS
+           PUSH ES
+
+           MOV AX,CS       ; Our DS=CS
+           MOV DS,AX
+
+           MOV AX,VIDSEG   ; Use ES=Video Segment
+           MOV ES,AX
+
+           Call ShowMaze   ; Display original maze and mouse on screen
+
+           Call ShowMode   ; Display mazemode and mazedelay values on screen
+
+           POP  ES
+           POP  DS
+           RET
+
+_ShowMaze ENDP
+
+; ------------------------------------------------------------------------
+
+_MazeManual PROC FAR
+
+;   Purpose: Main Program (Called from C and calls to all other routines)
+;            Interactively allows user to traverse maze and run AutoSolve
+; Variables: _MAZE, mazemode, mazedelay
+;     Input: From keyboard
+;    Output: None. Preserves ALL registers (else the C program WILL crash)
+
+
+           PUSH DS
+           PUSH ES
+           PUSH SI
+           PUSH DI
+           PUSH BX
+
+           MOV AX,CS       ; Our DS=CS
+           MOV DS,AX
+
+           MOV AX,VIDSEG   ; Use ES=Video Segment
+           MOV ES,AX
+
+MMLoop:    Call KBDIN
+
+           CMP AL,'Q'
+           JE MMDone
+           CMP AL,'q'
+           JE MMDone
+
+           CMP AL,NORTHKEY
+           JE MMNorth
+           CMP AL,SOUTHKEY
+           JE MMSouth
+           CMP AL,WESTKEY
+           JE MMWest
+           CMP AL,EASTKEY
+           JE MMEast
+           CMP AL,'M'
+           JE MMode
+           CMP AL,'m'
+           JE MMode
+           CMP AL,'+'
+           JE MMSlower
+           CMP AL,'-'
+           JE MMFaster
+
+           JMP MMLoop
+
+; Check for Keyboard Arrow Keys (up, down, left, right)
+
+MMNorth:   MOV AL,NORTH
+           JMP MMArrow
+
+MMSouth:   MOV AL,SOUTH
+           JMP MMArrow
+
+MMWest:    MOV AL,WEST
+           JMP MMArrow
+
+MMEast:    MOV AL,EAST
+           JMP MMArrow
+
+; Set Game Mode ('M0','M1','M2','M3')
+
+MMode:     Call KBDIN
+           CMP AL,'0'
+           JB MMLoop
+           CMP AL,'3'
+           JA MMLoop
+           SUB AL,'0'
+           MOV mazemode,AL
+           Call ShowMode
+           JMP MMLoop
+
+; Control Interactive Speed (Smaller Mazedelay==Faster)
+
+MMFaster:  DEC mazedelay
+           Call ShowMode
+           JMP MMLoop
+
+MMSlower:  INC mazedelay
+           Call Showmode
+           JMP MMLoop
+
+MMArrow:   CMP mazemode,3
+           JE MMASolve
+
+           CMP mazemode,2
+           JE MMAutoAdv
+
+MMAdv:     Call Adv
+           Call UpdateTextScreen
+
+           CMP mazemode,0
+           JE MMLoop
+
+           CMP _MAZE[DI],HALL
+           JNE MMLoop
+
+           CMP AH,1
+           JE  MMLoop 
+
+           Call delay
+           JMP MMAdv
+
+MMAutoAdv: Call AutoAdv
+           JMP MMLoop
+MMASolve:  Call AutoSolve
+           JMP MMLoop
+         
+MMDone:    Call ShowLibUse
+
+           MOV AX,0  ; Return value
+           POP  BX
+           POP  DI
+           POP  SI
+           POP  ES
+           POP  DS
+           RET
+_MazeManual ENDP
+
+; ------------------------------------------------------------------------
+
+Delay PROC NEAR
+
+; Purpose: Burn CPU cycles between movements
+;  Inputs: variable mazedelay (0..255) - Delay constant
+; Outputs: None - All Registers Preserved
+;   Notes: There is no need to modify this code (it is given for free)
+
+           CMP mazedelay,0
+           JE DLoopNone
+           PUSH CX
+           MOV CX,0FFFFh
+DLoop:     PUSH CX
+           MOV CH,0
+           MOV CL,mazedelay
+DLoop2:    NOP
+           LOOP DLoop2
+           POP CX
+           LOOP DLoop
+           POP CX
+DLoopNone: ret
+Delay ENDP
+
+; ------------------------------------------------------------------------
+
+_FXIT PROC FAR
+
+; Purpose: Terminate program and return to DOS.
+;          This should be the Last function called by the C program
+;   Notes: There is no need to modify this code (it is given for free)
+
+  CALL DOSXIT
+
+_FXIT ENDP
+
+
+; ===================== End of Proceures & Data ==========================
+
+CSEG    ends
+        end 
+</xmp>
+</font>
+
+
+
+</body>
+
+

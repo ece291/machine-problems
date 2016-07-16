@@ -1,0 +1,1032 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 3</title>
+</head>
+
+<body bgcolor=ffffff>
+<p>
+<table cellpadding=3 width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Moorman, Summer 1998</td></tr></table>
+<h2> </h2>
+
+
+<center><h1>Machine Problem 3: Black Jack </h1></center>
+<p>
+<center><table border=1 cellpadding=3 width=60%>
+  <tr><td align=right><b>Due Date</b></td><td>Wednesday 7/15/98</td></tr>
+  <tr><td align=right><b>Purpose</b></td><td>
+     Text Mode Graphics, Tables, Software Interrupts - Mouse Functions 
+     </td></tr>
+   <tr><td align=right><b>Points</b></td><td>50</td></tr>
+</table>
+</center>
+
+<!--
+<p><img src="../../icon/construct.gif">This MP is under construction <p>
+-->
+
+<p><center><img src="./mp3.gif" width="499" height="471"></center><p>
+
+
+<h2>Introduction</h2>
+  In this MP we will be developing the game of Black Jack.  This is a
+  simple card game that is very popular in casino's around the world.
+  Hopefully, this MP will not fuel anyones gambling addiction.
+<p>
+  The premise of the games is to be dealt cards that total up to 21 but do
+  not exceed that amount.  Normal play is against a dealer who gets to
+  draw cards after you.  For clarification lets call the two players the dealer
+  (computer) and the user (person playing the program.)
+  The dealer also only has one card showing during the user
+  card selection.  Both players (Dealer and User) are dealt two cards
+  initially.  Only one of the dealer cards is visible.  The user must then
+  make a decision to ask for another card (if they think they can get closer
+  to 21 without going over), or they may stay and let the dealer try
+  to get 21.
+<p>
+  Though Black Jack played in Las Vegas has additional rules and betting
+  possibilities (such as split, double, etc.), we will be playing by a very
+  simple set of rules.  Following is the ECE291 Black Jack Guidelines:
+<ul>
+<li>  Each bet is worth a fixed amount of money.
+<li>  The player with the card total closest to 21 without going over is
+      considered the winner of that deal.
+<li>  If the dealer wins the user loses the amount equal to the bet.
+<li>  If the user wins the user gains an amount equal to the bet.
+<li>  If the result is a draw (tie), then no amount of money is changed.
+<li>  The game continues until the user quits, loses an amount that exceeds
+      the declared minimum, or wins an amount that exceeds the declared
+      maximum.
+</ul>
+
+<h2>Implementation</h2>
+   Your implementation of this program should follow that of the library
+   code.  You will use text mode graphics to display the necessary GUI
+   (Graphical User Interface) to the screen.  All input will be through
+   the mouse.
+<p>
+   Your program should do the following:
+   <ul>
+   <li>Display the 5 buttons on the right with the game choices.
+   <li>Use Mouse input to determine which functions to perform.
+   <li>Randomly choose cards from a deck for dealing.
+   <li>Reinitialize to a new deck when all cards from the old deck are used.
+   <li>Graphically display all card values to the screen.
+   <li>Perform the computer AI for the dealer.
+   <li>Calculate the value of each players hand.
+   <li>Determine the winner based on the total in each hand.
+   <li>Keep track of the user score in dollars, and display to the screen.
+   </ul>
+   
+                        
+<h2>User Interface</h2>
+  <ul>
+  <li>You are given the framework of a program which provides
+      a menu-driven interface. Run the library version to get a feel for
+      how the program should operate, and what functions result from
+      each button press.<p>
+
+  <li>By selecting an option from the menu with the mouse, the user can:
+      <ul>
+      <li>[Restart] to begin the game with a new deck.
+      <li>[Deal] to have the dealer start a new hand (using the same deck).
+      <li>[Hit] to add another card to the user hand.
+      <li>[Stay] to finish the user hand and allow the dealer to finish.
+      <li>[Quit] to exit the game.
+      </ul><p>
+
+  </ul>
+
+<li>The key data structure in the game is called <tt>CardArray</tt>.  This is
+    an array of words that stores the current status of the deck being used.
+    Each word is used to store information regarding one card.  The deck is
+    initialized to <tt>DECKSIZE</tt> (52 cards in a deck).  Each time a new
+    card needs to be dealt a random value is chosen and that card removed from
+    the <tt>CardArray</tt>.  This hole is then replaced with the last card in
+    the deck, and the size of the deck decreased by 1.
+<p>
+    In other words, you might think of this as laying out all the cards in a
+    row.  Each time a card is chosen from the deck the last card in the row
+    replaces the missing card spot.  This keeps the cards stored together in
+    the array without any holes.
+<p>
+    The contents of each word in the array is two bytes of information.  The
+    second byte is a value (0-4) to specify with which suit the card is
+    associated.  The first byte is the actual number of the card (1-13).  When
+    you read a word of the array into a register the high byte = suit, and the
+    low byte = card number.
+<p>
+
+<li>You will also be using a number of tables in this MP for easier manipulation
+    of graphics.  The table values are given to you in the program framework.
+<p>
+
+<li>A sample screen shot is shown above.  Your program should match this very
+    closely though it does not have to be exact.  The location of certain
+    buttons are given as constants and are described below.
+<p>
+
+<li>Your program should work for all types of input.  It should be robust to
+    keypresses or mouse button presses on any area of the screen.
+
+</ul>
+
+<H2>80x50 Text Mode Video</H2>
+You will be using text-mode video graphics to display the game on the screen.&nbsp;
+You will be using direct video memory writes as described in the lecture
+notes.&nbsp; Using 80x50 text mode is a simple extension of what you know
+about 80x25 text mode.&nbsp; You simply double the size of the memory page
+to which you will write data.
+
+
+<h2>Data Structures</h2>
+  <ul>
+  <li>The following variables have already been defined for you in the program
+      framework.  <p>
+     <ul>
+     <li><b>CardLength</b>: The current size of the remaining deck. <br>
+           Initialized to <tt>DECKSIZE</tt> and decremented as cards are
+           randomly chosen.<p>
+     <li><b>CardArray</b>: The array of cards left in the deck.<br>
+        1st Byte = Card Suit (<tt>HEART,DIAMOND,CLUB,SPADE</tt>)<br>
+        2nd Byte = Card Number <br>
+        <ul>
+        <li>1 = Ace
+        <li>2-10 = Card of that number
+        <li>11 = Jack
+        <li>12 = Queen
+        <li>13 = King
+        </ul><p>
+     <li><b>HiddenCard</b>: This is a word that is used to store the dealer
+            card that is hidden initially.  This card can then be removed
+            from the card array for further deals.<p>
+     <li><b>Flags</b>: This is a variable that has specific bit positions
+            for various flags:<br>
+            <ul>
+            <li>Bit 0 = Deal only flag.  Set to restrict the user from
+                performing a button operation that is illegal.
+            <li>Bit 1 = Player bust flag.  Set when the user has a total
+                greater than 21.
+            <li>Bit 2 = Dealer bust flag.  Set when the dealer has a total
+                greater than 21.
+            <li>Bit 3 = GameOver flag.  Set when <tt>MIN_SCORE</tt> or
+                <tt>MAX_SCORE</tt> has been exceeded.
+            </ul><p>
+     <li><b>DealerTot</b>: The current total of the dealers hand.<p>
+     <li><b>PlayerTot</b>: The current total of the users hand.<p>
+     <li><b>Score</b>: Current amount of dollars that the user has.
+            Initialized to <tt>INIT_SCORE</tt>.<p>
+     <li><b>Suit_Pos</b>: Address table for drawing the cards.<br>
+            Each entry in the table is the address of another table
+            that holds the positions of where to draw the ASCII suit
+            characters.
+            Each of these respective tables has as many entries as the
+            number of the card (i.e. Card 6 = 6 entries, Card 10 = 10 entries),
+            except face cards (Jack, Queen, King) which only have 2 entries.
+            <p>
+     <li><b>Zero</b>-<b>Face</b>:  Individual tables for the positions of
+            the ASCII suit characters.  All values are offsets relative to
+            the upper left corner of where the card is drawn.
+     </ul> <p>
+  <li>These constants have also been defined:<p>
+     <ul>
+     <li><b>TEXTVIDSEG</b> == 0B800h<br>
+            This is page 0 of text video graphics.
+     <li><b>ROWWIDTH</b> == 160<br>
+            The respective width of a row in text mode. (80 columns * 2 bytes/col)
+     <p>
+     <li><b>INIT_SCORE</b> == 100<br>
+            The initial score of the user in dollars.
+     <li><b>BET</b> == 10<br>
+            The value of each user bet in dollars.
+     <li><b>MAX_SCORE</b> == 500<br>
+            The maximum amount the user is allowed to have before the game ends.
+            (User wins!)
+     <li><b>MIN_SCORE</b> == -500<br>
+            The minimum amount the user is allowed to have before the game ends.
+            (Dealer Wins!)
+     <p>
+     <li><b>DECKSIZE</b> == 52<br>
+            The initial size of a deck.
+     <li><b>CARDWIDTH</b> == 9<br>
+            The number of characters wide for each card drawn.
+     <li><b>CARDHEIGHT</b> == 11<br>
+            The number of characters high for each card drawn.
+     <p>
+     <li><b>SCORE_POS</b> == 48*ROWWIDTH + 60<br>
+            Beginning position of the score message. (60,48)
+     <li><b>DOLLAR_POS</b> == SCORE_POS + 18<br>
+            Beginning position of the dollar amount to be displayed. (78,48)
+     <p>
+     <li><b>RESTART_ROW</b> == 10<br>
+            The row position of the restart button. (10)
+     <li><b>DEAL_ROW</b> == RESTART_ROW + 4<br>
+            The row position of the deal button. (14)
+     <li><b>HIT_ROW</b> == DEAL_ROW + 4<br>
+            The row position of the hit button. (18)
+     <li><b>STAY_ROW</b> == HIT_ROW + 4<br>
+            The row position of the stay button. (22)
+     <li><b>QUIT_ROW</b> == STAY_ROW + 4<br>
+            The row position of the quit button. (26)
+     <p>
+     <li><b>BUTTON_COL</b> == 130<br>
+            The actual column position of each button.
+     <li><b>BUTTONSTART</b> == RESTART_ROW*ROWWIDTH + BUTTON_COL<br>
+            The starting position of the first button. (65,10)
+     <li><b>BUTTONWIDTH</b> == 13<br>
+            The width of each button.
+     <p>
+     <li><b>RESTART_POS</b> == RESTART_ROW*ROWWIDTH+BUTTON_COL<br>
+            The actual position of the restart button. (65,10)
+     <li><b>DEAL_POS</b> == DEAL_ROW*ROWWIDTH+BUTTON_COL<br>
+            The actual position of the deal button. (65,14)
+     <li><b>HIT_POS</b> == HIT_ROW*ROWWIDTH+BUTTON_COL<br>
+            The actual position of the hit button. (65,18)
+     <li><b>STAY_POS</b> == STAY_ROW*ROWWIDTH+BUTTON_COL<br>
+            The actual position of the stay button. (65,22)
+     <li><b>QUIT_POS</b> == QUIT_ROW*ROWWIDTH+BUTTON_COL<br>
+            The actual position of the quit button. (65,26)
+     <p>
+     <li><b>DEALER_POS</b> == 8*ROWWIDTH+ 2*8<br>
+            The position of the 'Dealer:' title. (8,8)
+     <li><b>PLAYER_POS</b> == 28*ROWWIDTH+ 2*8<br>
+            The position of the 'You:' title. (8,28)
+     <li><b>MSG_POS</b> == 1*ROWWIDTH+ 50<br>
+            The position of informational messages. (25,1)
+     <p>
+     <li><b>HEART</b> == 0<br>
+            Value for Heart suit.
+     <li><b>DIAMOND</b> == 1<br>
+            Value for Diamond suit.
+     <li><b>CLUB</b> == 2<br>
+            Value for Club suit.
+     <li><b>SPADE</b> == 3<br>
+            Value for Spade suit.
+     <p>
+     <li><b>DEALFLAG</b> == 00000001b<br>
+            Binary bit mask for the deal flag.
+     <li><b>PLAYBUST</b> == 00000010b<br>
+            Binary bit mask for the player bust flag.
+     <li><b>DEALBUST</b> == 00000100b<br>
+            Binary bit mask for the dealer bust flag.
+     <li><b>GAMEOVER</b> == 00001000b<br>
+            Binary bit mask for the game over flag.
+     </ul>
+  </ul>
+
+<h2>Procedures</h2>
+
+  <ul>
+  <li>This assignment has nine procedures.  
+      You will receive credit for this
+      assignment by replacing each of the nine
+      procedures listed below with your own code.
+  <li>The tenth procedure (<b>Random</b>) you are already given and
+      do not need to replace.
+  <li>Experiment with the working code 
+      to gain a full understanding of how the programs works.
+  <li>Your program should exactly match the functionality of the library 
+      subroutines.
+  <li>All subroutines should be <i>modular</i>.  They should use the stack to
+      <i>preserve</i> the value of any registers they may modify.  
+  <li><i>Library routines only call other Library Routines.</i>&nbsp;
+      Keep this in mind when testing your code with the given library code.
+  </ul>
+
+
+<ul>
+<li><font size=+1><b>MouseControl</b></font>
+  <ul>
+  <li><b>Purpose:</b> To get the user input via the mouse.
+  <li><b>Inputs:</b> none
+  <li><b>Outputs:</b> AX = Value of button that was hit.
+        <ul>
+        <li>AX = 0 (Nothing Valid pressed)
+        <li>AX = 1 (Reset button pressed)
+        <li>AX = 2 (Deal button pressed)
+        <li>AX = 3 (Hit button pressed)
+        <li>AX = 4 (Stay button pressed)
+        <li>AX = 5 (Quit button pressed)
+        </ul>
+  <li><b>Description:</b>  This function will use software interrupts to
+         determine when a mouse button has been hit and where on the screen
+         it is pointing to.  Valid numbers will be returned when a button
+         has been found to be pressed.  These buttons are the messages with
+         blue backgrounds along the right side of the screen.
+  <li><b>Notes:</b>
+         <ul>
+         <li>This program spends most of its time in this procedure
+         waiting for the user to press a button.  The routine loops until
+         the user has clicked a button (i.e. held and released the mouse
+         button).
+         <li>The mouse status is read via software interrupts.  Input registers
+         are loaded and <tt>INT 33h</tt> is executed.
+         <li>The mouse interrupt functions are documented in the lab manual.
+         <li>Notice the mouse is initialized and made visible in the main routine.
+         You do not need to repeat this code.
+         </ul>
+  <li><b>Hints:</b>
+         <ul>
+         <li>Think of performing functions on a button release and not a button
+             press.  Why is this do you think?
+         <li>Many comparisons will have to be performed in this procedure, use
+             the constants defined at the top of the program.
+         </ul>
+  <li><b>Points:</b> 5
+  </ul><p>
+
+<li><font size=+1><b>DrawCard</b></font>
+  <ul>
+  <li><b>Purpose:</b> Draws a card to the screen with the given attribute
+         at the given location.
+  <li><b>Inputs:</b>
+        <ul>
+        <li>ES = Video Segment.
+        <li>AH = Suit of card to draw (0-3).
+        <li>AL = Card Value (1-13).<br>
+                If AL=0, then the back of the card should be drawn.
+        <li>BH = Row of where to draw on the screen.
+        <li>BL = Column of where to draw on the screen.
+        </ul>
+  <li><b>Outputs:</b> Card drawn at proper location on the screen.
+  <li><b>Notes:</b>
+        <ul>
+        <li>This routine will take alot of code to get a card correctly drawn.
+        <li>The '10' card will take some extra work since the number has
+            2 digits and all other cards only have 1 digit.
+        <li>Face cards only have two suit ASCII characters drawn and do not
+            have pictures that have to be displayed.
+        <li>A special section of code will also be needed for the case of
+            an input AL = 0 for the back of the card.
+        </ul>
+  <li><b>Calls:</b> This function is called by <i>Hit</i>, <i>Deal</i> and 
+	       <i>Stay</i>.
+  <li><b>Hints:</b>
+        <ul>
+        <li>This is a convenient place to write a helper function that
+            writes a string to the screen at a given location. (<i>DrawString</i>)
+        <li>Use your tables defined above for location of suit ASCII characters.
+        <li>Try breaking this down into steps. Draw a blank card.  Then draw
+            the digits of the card, then draw the ASCII suit characters.
+        </ul>
+  <li><b>Points:</b> 8
+  </ul><p>
+
+<li><font size=+1><b>DrawBoard</b></font>
+  <ul>
+  <li><b>Purpose:</b> Draws out all the static elements of the display.
+  <li><b>Inputs:</b> ES = Video Segment
+  <li><b>Outputs:</b> Writes to screen
+  <li><b>Description:</b> This routine draws all the buttons and the static
+         messages to the screen.  This includes the title, the two player
+         messages, and the static section of the score message.
+  <li><b>Calls:</b> This function is called by <i>ResetBoard</i> and <i>Deal</i>.
+  <li><b>Hints:</b>
+        <ul>
+        <li>Again you might find a <i>DrawString</i> helper function convenient.
+        <li>Use the constants defined at the top for message and button
+         positions.
+         </ul>
+  <li><b>Points:</b> 5
+  </ul><p>
+
+
+<li><font size=+1><b>DrawScore</b></font>
+  <ul>
+  <li><b>Purpose:</b> Draws the current player score to the screen.  
+  <li><b>Inputs:</b> <tt>Score</tt> = Value to output.
+  <li><b>Outputs:</b> Draws to screen.
+  <li><b>Hints:</b>
+        <ul>
+        <li>This is a convenient place to use the helper function that
+            writes a string to the screen at a given location. (<i>DrawString</i>)
+        <li>The score part of the screen should be erased with spaces first.
+        <li>The score must be converted from binary to ASCII.
+        </ul>
+  <li><b>Calls:</b> This function is called by <i>ResetBoard</i> and <i>Deal</i>.
+  <li><b>Points:</b> 2
+  </ul><p>
+
+<li><font size=+1><b>ResetBoard</b></font>
+  <ul>
+  <li><b>Purpose:</b> Reinitializes the entire game. 
+  <li><b>Inputs:</b>
+        <ul>
+        <li>SI = Address of <tt>CardArray</tt>.
+        <li>DI = Address of <tt>CardLength</tt>.
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>Score = Reset to <tt>INIT_SCORE</tt>.
+        <li>[SI] = <tt>CardArray</tt> address is reinitialized with a new deck.
+        <li>[DI] = <tt>CardLength</tt> address is renitialized to <tt>DECKSIZE</tt>.
+        <li><tt>Flags</tt> = 00000001b (Deal only flag is set).
+        <li>Screen is refreshed.
+        </ul>
+  <li><b>Calls:</b>  <i>DrawBoard</i> and <i>DrawScore</i>.
+  <li><b>Hints:</b>
+        <ul>
+        <li>This might be a convenient place to use helper functions that
+            clear the screen (<i>ClearScreen</i>) and initialize the card
+            array back to the full deck state (<i>ArrayInit</i>).
+        <li>This function is called when the game initially runs and any
+            time the 'Reset' button is pressed.
+        </ul>
+  <li><b>Points:</b> 4
+  </ul><p>
+
+
+<li><font size=+1><b>Hit</b></font>
+  <ul>
+  <li><b>Purpose:</b> Hit the player with a new card.  
+  <li><b>Inputs:</b> 
+        <ul>
+        <li>SI = Address of <tt>CardArray</tt>.
+        <li>DI = Address of <tt>CardLength</tt>.
+        <li><tt>Flags</tt> 
+        <li><tt>PlayerTot</tt>
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>[SI] = (<tt>CardArray</tt>) has 1 card removed.
+        <li>[DI] = (<tt>CardLength</tt>) is decremented by 1.
+        <li><tt>PlayerTot</tt> = Is updated to reflect the current total value
+                        of the cards in the user's hand.
+        <li>If player busts ==>
+                <ul>
+                <li><tt>Flags</tt> = 00000010 (Player Bust flag set)<br>
+                    This blocks any 'Hit' or 'Stay' until 'Deal'
+                </ul>
+        <li>If last card is chosen from the deck then the deck is renitialized.
+        </ul>
+  <li><b>Notes:</b>
+        <ul>
+        <li>If upon entering this routine any flag is set
+        (DEALFLAG, PLAYBUST, DEALBUST, GAMEOVER) then the routine should exit.
+        </ul>
+  <li><b>Calls:</b> <i>Random</i> and <i>DrawCard</i>.
+  <li><b>Hints:</b>
+        <ul>
+        <li>A helper function <i>PickCard</i> that picks a card from the deck, updates the
+            array and length, and then returns the card would be helpful.
+        <li>When calculating the new <tt>PlayerTot</tt> all face cards are
+            worth 10.
+        <li>Aces can either be worth 1 or 11.  If the Ace can be worth 11
+            then count it as 11, if however this busts the player then
+            only count the Ace as 1.
+        <li>You can also use your <i>ArrayInit</i> helper function in this
+            procedure.
+        </ul>
+  <li><b>Points:</b> 7
+  </ul><p>
+
+
+<li><font size=+1><b>Deal</b></font>
+  <ul>
+  <li><b>Purpose:</b> Perform an initial Deal.  Two cards go to the dealer
+         (One face down), and two cards to the user/player.
+  <li><b>Inputs:</b>
+        <ul>        
+        <li>SI = Address of <tt>CardArray</tt>.
+        <li>DI = Address of <tt>CardLength</tt>.
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>Initial cards are displayed to the screen.
+        <li><tt>Flags</tt> are reset to 0. (All flags cleared).
+        <li>[SI] = (<tt>CardArray</tt>) reflects new status of deck. (4 less cards)<br>
+            Array is reinitialized if new deck is needed.
+        <li>[DI] = (<tt>CardLength</tt>) reflects new size of deck. (4 less)
+        <li><tt>PlayerTot</tt> = Cleared and recalculated.
+        <li><tt>DealerTot</tt> = Cleared and recalculated.
+        <li><tt>HiddenCard</tt> = Value of the face down card.
+        </ul>
+  <li><b>Calls:</b> Calls <i>DrawBoard</i>, <i>DrawScore</i> and <i>DrawCard</i>.<br>
+         Optionally may call <i>Hit</i>.
+  <li><b>Hints:</b>
+        <ul>
+        <li>Clear the screen before you draw the new board and score.
+        <li>Use your helper function <i>PickCard</i> and <i>ArrayInit</i>.
+        <li>Initial Aces will always be worth 11.
+        </ul>
+  <li><b>Points:</b> 7
+  </ul><p>
+
+<li><font size=+1><b>Stay</b></font>
+  <ul>
+  <li><b>Purpose:</b> Perform the dealer AI for blackjack.
+  <li><b>Inputs:</b> 
+        <ul>
+        <li>SI = Address of <tt>CardArray</tt>.
+        <li>DI = Address of <tt>CardLength</tt>.
+        <li><tt>Flags</tt> 
+        <li><tt>DealerTot</tt>
+        <li><tt>HiddenCard</tt>
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>[SI] = (<tt>CardArray</tt>) has cards removed that were drawn.
+        <li>[DI] = (<tt>CardLength</tt>) is decremented by the number of
+                   cards chosen.
+        <li><tt>DealerTot</tt> = Is updated to reflect the current total value
+                        of the cards in the dealer's hand.
+        <li>If dealer busts ==>
+                <ul>
+                <li><tt>Flags</tt> = 00000100 (Dealer Bust flag set)<br>
+                    This blocks any 'Hit' or 'Stay' until 'Deal'
+                </ul>
+        <li>If last card is chosen from the deck then the deck is renitialized.
+        </ul>
+  <li><b>Description:</b> The dealer AI for blackjack is a simple check of
+         the current total value of the dealer cards.  If <tt>DealerTot</tt>
+         &gt 16 then the dealer will stay, if however <tt>DealerTot</tt>
+         &lt 17 then the dealer will draw a new card.
+  <li><b>Notes:</b>
+        <ul>
+        <li>If upon entering this routine any flag is set
+        (DEALFLAG, PLAYBUST, DEALBUST, GAMEOVER) then the routine should exit.
+        <li>Again do the procedure in steps.  Expose the hidden card, then
+        continue to 'Hit' the dealer as required by the AI.
+        </ul>
+  <li><b>Calls:</b> <i>Random</i> and  <i>DrawCard</i>.
+  <li><b>Hints:</b>
+        <ul>
+        <li>The helper function <i>PickCard</i> would again be very useful.
+        <li>When calculating the new <tt>DealerTot</tt> all face cards are
+            worth 10.
+        <li>Aces can either be worth 1 or 11.  If the Ace can be worth 11
+            then count it as 11, if however this busts the dealer then
+            only count the Ace as 1.
+        <li>You can also use your <i>ArrayInit</i> helper function in this
+            procedure.
+        </ul>
+  <li><b>Points:</b> 7
+  </ul><p>
+
+<li><font size=+1><b>Winner</b></font>
+  <ul>
+  <li><b>Purpose:</b> Determines who has won this hand.
+  <li><b>Inputs:</b>
+        <ul>
+        <li><tt>Flags</tt>
+        <li><tt>PlayerTot</tt>
+        <li><tt>DealerTot</tt>
+        </ul>
+  <li><b>Outputs:</b>
+        <ul>
+        <li>Displays winner message to screen.
+        <li><tt>Score</tt> = new value from Win/Loss <tt>BET</tt>.
+        <li><tt>Flags</tt> = 00000001b (DEALFLAG set = allow 'Deal' only).
+        <li>If <tt>Score</tt> goes out of range then <br>
+                <tt>Flags</tt> = 00001000b (GAMEOVER flag set)<br>
+                Range: <tt>MIN_SCORE</tt> &lt <tt>Score</tt> &lt <tt>MAX_SCORE</tt>
+        </ul>
+  <li><b>Notes:</b> This procedure also takes care of determining if either
+                    player is bust (by looking at the flags).  If this is
+                    the case the proper message is output and the <tt>Score</tt>
+                    is updated to reflect the state.
+  <li><b>Points:</b> 5
+  </ul><p>
+
+
+<li><font size=+1><b>Random</b></font>
+  <ul>
+  <li><b>Purpose:</b> This routine generates and returns a pseudo-random
+         number by multiplication and addition of large prime constants to
+         a random number.
+  <li><b>Inputs:</b> <tt>Randval</tt> memory variable
+  <li><b>Outputs:</b> AX - Random number between 0 .. 2^16-1
+  <li><b>Notes:</b> The random function is defined below.<br>
+        R(1) = Randval<BR>
+        R(i+1) = Randval = (K1 *R(i) + K2) % MaxValue&nbsp;<BR>
+        Where
+        <ul>
+        <li><i>R(i)</i> is the random value generated in the
+            i-th call to the subroutine.
+        <li><i>Randval</i> is a variable that holds the initial random
+            value and is updated with the result after each call to Random.
+        <li><i>K1</i> and <i>K2</i> are two large, prime-valued constants.
+        <li><i>MaxValue</i> = 2^16-1 (0FFFFh)
+        </ul>
+
+  <li><b>Hints:</b>
+        <ul>
+        <li> The first call to Random returns the orginal random number seed.
+        <li> This is a library Functions that can be used where appropriate
+             with no point penalty.
+        </ul>
+  <li><b>Points:</b> 0
+  </ul><p>
+
+</ul>
+
+<h2>Preliminary Procedure</h2>
+<ul>
+<li>Copy the empty MP3 program (<tt>MP3.ASM</tt>), libraries
+    (<tt>libmp3.lib</tt>,<tt>lib291.lib</tt>), and <tt>Makefile</tt> from
+    the network drive to your home directory with the following command:
+    <br><tt>xcopy /s V:\ece291\mp3 W:\mp3</tt>
+    <br>Alternatively, from home, you can download the same files as <A HREF="mp3.zip">mp3.zip</A>.
+
+<li>As with previous MPs, run <tt>NMake</tt> to build an executable program
+    using the given ECE291 library functions.
+
+<li>As with previous MPs, use a text editor to modify the program. As given,
+    the program uses LIBMP3 routines to implement all functionality. To
+    receive full credit for the assignment, you will need to implement
+    each of the subroutines described above with your own code.
+
+<li>As with previous MPs, use CodeView (<tt>CV</tt>) to debug and test your
+    program. Because you only receive credit for procedures that function
+    completely as specified, it is best to debug each routine individually.
+</ul>
+
+
+
+<h2>Final Steps</h2>
+<ol>
+<li>Print a copy of the <a href="mp3grade.html">MP3 grading sheet</a>.
+<li>Demonstrate MP3.EXE to a TA or to the instructor.  
+  <ul>
+   <li>Be prepared to answer questions about any aspect of the operation 
+       of your program.  The TAs will not accept an MP if you cannot fully
+       explain all operations of your code.
+  </ul>
+<li>Handin in your program by running: <br>
+    <tt>A:\Handin </tt> <i>YourWindowsLogin</i>
+<li>Print <font color="red">MP3.ASM </font> using <i>
+   <font color="green">GreenPrint32</font></i>
+<li>Staple the MP3 grading sheet to the front of your MP3.ASM file
+    and give both to the same TA that approved your demonstration.
+</ol>
+
+<hr>
+
+<h2>MP3.ASM (Program framework)</h2>
+<font size=-1> <xmp>
+        TITLE Black Jack - Your Name - Current Date
+
+COMMENT %
+        Black Jack
+        --------------------
+        ECE291: MP3
+        Jay R. Moorman
+        University of Illinois, Dept. of Electrical & Computer Engineering
+        Summer 1998
+        Revision 1.0
+        %
+
+;====== Constants =========================================================
+
+; General Constants
+CR          EQU 13
+LF          EQU 10
+TEXTVIDSEG  EQU 0B800h
+ROWWIDTH    EQU 160
+
+
+; Score Constants
+INIT_SCORE  EQU 100
+BET         EQU 10
+MAX_SCORE   EQU 500
+MIN_SCORE   EQU -500
+
+PUBLIC INIT_SCORE,BET,MAX_SCORE,MIN_SCORE ; Declare these public for the library code
+
+; Card Constants
+DECKSIZE   EQU 13*4
+CARDWIDTH   EQU 9
+CARDHEIGHT  EQU 11
+
+; Button Constants
+SCORE_POS    EQU 48*ROWWIDTH+60
+DOLLAR_POS   EQU SCORE_POS+18
+RESTART_ROW  EQU 10
+DEAL_ROW     EQU RESTART_ROW+4
+HIT_ROW      EQU DEAL_ROW+4
+STAY_ROW     EQU HIT_ROW+4
+QUIT_ROW     EQU STAY_ROW+4
+BUTTON_COL   EQU 130
+BUTTONSTART  EQU RESTART_ROW*ROWWIDTH+BUTTON_COL
+BUTTONWIDTH  EQU 13
+RESTART_POS  EQU RESTART_ROW*ROWWIDTH+BUTTON_COL
+DEAL_POS     EQU DEAL_ROW*ROWWIDTH+BUTTON_COL
+HIT_POS      EQU HIT_ROW*ROWWIDTH+BUTTON_COL
+STAY_POS     EQU STAY_ROW*ROWWIDTH+BUTTON_COL
+QUIT_POS     EQU QUIT_ROW*ROWWIDTH+BUTTON_COL
+DEALER_POS   EQU 8*ROWWIDTH+2*8  ; (Row=8, Col=8)
+PLAYER_POS   EQU 28*ROWWIDTH+2*8 ; (Row=28,Col=8)
+MSG_POS      EQU 1*ROWWIDTH + 50
+
+
+; Suits for the deck
+HEART       EQU 0
+DIAMOND     EQU 1
+CLUB        EQU 2
+SPADE       EQU 3
+
+; Flag bits
+DEALFLAG    EQU 00000001b        ;Bit 0 = Deal Only flag
+PLAYBUST    EQU 00000010b        ;Bit 1 = Player bust flag
+DEALBUST    EQU 00000100b        ;Bit 2 = Dealer bust flag
+GAMEOVER    EQU 00001000b        ;Bit 3 = Game Over flag
+
+
+;====== Externals =========================================================
+
+; -- LIB291 Routines (free) --
+
+  extrn binasc:near   ; From lib291.lib (You can use these functions freely)
+  extrn dspout:near   ; See your lab manual for a full description
+  extrn dspmsg:near   ; of each function
+  extrn kbdin:near
+  extrn mp3xit:near   ; Terminates Program
+
+; -- LIBMP3 Routines (replace these with your own code) --
+
+  extrn Random:near   ; Use this routine freely
+
+  extrn MouseControl:near  ; Comment out each line as you
+  extrn DrawCard:near      ; write the routines      
+  extrn DrawBoard:near
+  extrn DrawScore:near
+  extrn ResetBoard:near       
+  extrn Hit:far
+  extrn Deal:far
+  extrn Stay:far
+  extrn Winner:near
+
+;====== Stack Segment =====================================================
+stkseg  segment stack
+        db 64 dup ('STACK   ')
+stkseg  ends
+
+;====== Code/Data segment =================================================
+cseg    segment public 'CODE' 
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== Variables =========================================================
+     
+; Messages
+LossOverMsg db ' You are out of money, GAME OVER! ','$'
+WinOverMsg  db ' You busted the bank, GAME OVER!  ','$'
+ContinueMsg db '     <Hit Any Key to Continue>    ','$'
+
+; Buffers
+PBuf       db 7  dup(?)
+
+; Variables
+PUBLIC Flags     
+PUBLIC HiddenCard
+PUBLIC DealerTot,PlayerTot
+PUBLIC Score
+
+CardLength dw  DECKSIZE
+CardArray  dw  DECKSIZE dup(0)
+HiddenCard dw  0
+Flags      db 0
+        ;Bit 0 = Deal Only flag
+        ;Bit 1 = Player bust flag
+        ;Bit 2 = Dealer bust flag
+        ;Bit 3 = Game Over flag
+DealerTot  db  0
+PlayerTot  db  0
+
+Score      dw INIT_SCORE 
+
+; Position of Suit icons relative to card position
+Suit_Pos dw offset Zero
+         dw offset Ace
+         dw offset Two
+         dw offset Three
+         dw offset Four
+         dw offset Five
+         dw offset Six
+         dw offset Seven
+         dw offset Eight
+         dw offset Nine
+         dw offset Ten
+         dw offset Face
+         dw offset Face
+         dw offset Face
+Zero     dw 0
+Ace      dw 808
+Two      dw 328,1288
+Three    dw 328,808 ,1288
+Four     dw 324,332 ,1284,1292
+Five     dw 324,332 ,808 ,1284,1292
+Six      dw 324,332 ,804 ,812 ,1284,1292
+Seven    dw 324,332 ,804 ,812 ,1128,1284,1292
+Eight    dw 324,332 ,488 ,804 ,812 ,1128,1284,1292
+Nine     dw 324,332 ,644 ,652 ,808 ,964 ,972 ,1284,1292
+Ten      dw 324,332 ,488 ,644 ,652 ,964 ,972 ,1128,1284,1292
+Face     dw 322,1294
+
+
+; ======== Your Code ======================================================
+
+; -- Write the code for your subroutines below --
+
+;MouseControl PROC NEAR
+
+;        ret
+;MouseControl ENDP
+
+
+
+;DrawBoard Proc NEAR
+
+;        ret
+;DrawBoard ENDP
+
+
+
+;DrawCard Proc NEAR
+
+;        ret
+;DrawCard ENDP
+
+
+
+;DrawScore Proc NEAR
+
+;        ret
+;DrawScore ENDP
+
+
+
+;ResetBoard Proc NEAR
+
+;        ret
+;ResetBoard ENDP
+
+
+
+;Hit Proc NEAR
+
+;        ret
+;Hit ENDP
+
+
+
+;Deal Proc NEAR
+
+;        ret
+;Deal ENDP
+
+
+
+;Stay Proc NEAR
+
+;        ret
+;Stay ENDP
+
+
+
+;Winner Proc NEAR
+
+;        ret
+;Winner ENDP
+
+
+
+; == Main ================================================================
+
+MAIN Proc NEAR
+
+; Initialize DS register
+          mov  ax, cseg
+          mov  ds, ax
+
+; Put display into 80x50 text mode
+          mov  ax, 1202h                ; Sets to 400 line scan mode
+          mov  bl, 30h
+          int  10h
+          mov  ax, 3                    ; Sets to 8x8 font
+          int  10h
+          mov  ax, 1112h                ; Enter text mode
+          mov  bl, 0
+          int  10h
+
+;  Initialize the mouse hardware, Function 0000h
+          mov  ax, 0000h
+          int  33h
+; Display the mouse cursor, Function 0001h
+          mov  AX, 0001h
+          int  33h
+
+; Fix Cursor Scan
+        mov  ah,1                       ; Change Scan position of cursor
+        mov  ch,0
+        mov  cl,0
+        int  10h
+; Hide the blinking cursor
+        mov   ah,02h                    ; Move the cursor off screen
+        mov   bh,00h                    ;  (Row=50, Col=0)
+        mov   dh,50
+        mov   dl,0
+        int   10h
+
+
+; The Main Program Code
+
+
+        mov  ax, TEXTVIDSEG             ; Setup the video segment
+        mov  es,ax
+
+        mov  si,offset CardArray        ; Setup offsets for
+        mov  di,offset CardLength       ; subroutine calls
+
+        call ResetBoard                 ; Draw the initial board
+MainLoop:
+
+        call MouseControl               ; Wait for button press
+
+        cmp  ax,1
+        jne  Check_Deal
+        call ResetBoard                 ; Reset the entire Game Board
+        jmp  MainLoop
+Check_Deal:
+        cmp  ax,2
+        jne  Check_Hit
+        call Deal                       ; Deal a new round
+        jmp  MainLoop
+
+Check_Hit:
+        cmp  ax,3
+        jne  Check_Stay
+
+        call Hit                        ; Hit Player
+        cmp  Flags,PLAYBUST             ; See if Player bust
+        jne  MainLoop
+        call Winner                     ; Update winner and score
+        call DrawScore                  ; Redisplay score
+        cmp  Flags,GAMEOVER             ; See if GameOver
+        jl   MainLoop
+        jmp  GameDone
+
+Check_Stay:
+        cmp  ax,4
+        jne  Check_Quit
+        call Stay                       ; Player Stays - Cards to Dealer
+
+        call Winner                     ; Update winner and score
+        call DrawScore                  ; Redisplay score
+        cmp  Flags,GAMEOVER             ; See if GameOver
+        jl   MainLoop
+        jmp  GameDone
+
+Check_Quit:
+        cmp  ax,5
+        jne  MainLoop                   ; Keep polling mouse
+        jmp  EndIt                      ; unless 'Quit' was hit
+
+GameDone:
+; Use BIOS routines to display string to screen
+; Your code must use direct writes to video
+        mov  ax,1300h           ; BIOS Write string
+        mov  bx,0005h           ; Page=0, Attribute=Magenta
+        mov  dx,0315h           ; Row=3, Col=15
+        mov  cx,34              ; String length
+        push ds                 ; Set es:bp -> String Start
+        pop  es
+        cmp  Score,MIN_SCORE    ; See if player lost or won game
+        jg   WinDone
+LossDone:                       ; Player lost all money
+        mov  bp,offset LossOverMsg
+        jmp  SkipWin
+WinDone:                        ; Player won all money
+        mov  bp,offset WinOverMsg
+SkipWin:
+        int  10h
+        mov  dx,0415h           ; Row=4, Col=15
+        mov  bp,offset ContinueMsg
+        int  10h
+        call kbdin              ; Wait for user to end
+
+; Put back into 80x50 text video mode
+EndIt:
+        mov  ax, 1202h          ; Scan lines
+        mov  bl, 30h
+        int  10h
+        mov  ax, 3              ; Font
+        int  10h
+        mov  ax, 1112h          ; Text Mode
+        mov  al, 0
+        int  10h
+        call mp3xit             ; Exit program
+main endp
+
+; ===================== End of Procedures & Data ==========================
+
+cseg    ends
+        end    main
+
+
+
+
+
+</xmp>
+</body>

@@ -1,0 +1,108 @@
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+5 < 2
+Verifying and parsing the string...
+5 < 2
+20
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+124 > 4
+Verifying and parsing the string...
+124 > 4
+7
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+-234 > 1
+Verifying and parsing the string...
+Ä234 > 1
+32651
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+42 < 3
+Verifying and parsing the string...
+42 < 3
+336
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+32767 < 256
+Verifying and parsing the string...
+32767 < 256
+0
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+1 > 512
+Verifying and parsing the string...
+1 > 512
+0
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+104 > -4
+Verifying and parsing the string...
+104 > Ä4
+1664
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+87 < -2
+Verifying and parsing the string...
+87 < Ä2
+21
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+1 + 2 < 3 * 4
+Verifying and parsing the string...
+1 + 2 < 3 * 4
+1 + 2 < 12
+3 < 12
+12288
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+< 8
+Verifying and parsing the string...
+Type 7 error: Encountered a binary operator while expecting a number.
+The equation was not fully simplified due to an error.
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+> 5
+Verifying and parsing the string...
+Type 7 error: Encountered a binary operator while expecting a number.
+The equation was not fully simplified due to an error.
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+8 >
+Verifying and parsing the string...
+Type 8 error: Encountered end of string while expecting a number.
+The equation was not fully simplified due to an error.
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+2 <
+Verifying and parsing the string...
+Type 8 error: Encountered end of string while expecting a number.
+The equation was not fully simplified due to an error.
+
+Please enter an equation.
+Hit <ESC>, or enter an empty equation to exit.
+
+
+LIBMP2 Ver 1.0 Calls
+-LibInput
+-LibCheckParens
+-LibParse
+-LibCheckDone
+-LibFindInner
+-LibFindOne
+-LibSolveOne
+-LibGetOp1
+-LibGetOp2

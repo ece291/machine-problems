@@ -1,0 +1,612 @@
+<HTML>
+	<HEAD>
+		<title></title>
+		<% title = "ECE291 Machine Problem 4"
+subtitle = "Machine Problem 4"
+
+ %>
+		<!--#include file="headvb.asp"-->
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+		<meta content="Microsoft FrontPage 5.0" name="GENERATOR">
+	</HEAD>
+	<body>
+		<h1 align="center">Machine Problem 5: Puzzle Bobble</h1>
+		<div align="center">
+			<center>
+				<table cellPadding="2" width="514" border="0">
+					<TBODY>
+						<tr>
+							<td align="right" width="75" bgColor="#efefef"><b>Assigned</b></td>
+							<td width="425" bgColor="#efefef">Thrusday, April 3, 2003</td>
+						</tr>
+						<tr>
+							<td align="right" width="75" bgColor="#efefef"><b>Due Date</b></td>
+							<td width="425" bgColor="#efefef">Friday, April 15, 2003, 5:00 pm</td>
+						</tr>
+						<tr>
+							<td align="right" width="75" bgColor="#efefef"><b>Purpose</b>
+							</td>
+							<td width="425" bgColor="#efefef">Make a fun puzzle game!</td>
+						</tr>
+						<tr>
+							<td align="right" width="75" bgColor="#efefef"><b>Points</b>
+							</td>
+							<td width="425" bgColor="#efefef">65</td>
+						</tr>
+					</TBODY></table>
+			</center>
+		</div>
+		<h2>Introduction</h2>
+        <p>Fun puzzle game, like puzzle bobble or bust-a-move.&nbsp;&nbsp; Goal
+        of the game is to clear all the bubbles from the screen.&nbsp; At the beginning
+        there are already bubbles on the attached to the top of the
+        screen.&nbsp;&nbsp; To clear out bubbles shoot your bubble to make
+        connect 4 or more bubbles of the same color.&nbsp;&nbsp; Any bubbles
+        that are not connected to the top of the screen or to other bubbles that
+        are connected to the top of the screen will &quot;fall&quot; off the
+        screen.&nbsp; Play the game a little so you know what is going on.
+		</p>
+        <p><span style="background-color: #FFFF00">For more information on High 
+        Resolution Graphic Library, look up </span>
+        <a href="http://courses.engr.illinois.edu/ece291/archive/fall2001/mp/mp4/hiresgraph.html">
+        <span style="background-color: #FFFF00">here</span></a><span style="background-color: #FFFF00">.</span></p>
+		<H2>Program Specification&nbsp;</H2>
+        <h4>The order of execution in the game</h4>
+        <P>The MP5main function is mainly a loop that checks for new keyboard 
+        input, update the objects in the game, and redraws the screen.&nbsp; 
+        Pseudo code for the main function is shown below</P>
+        <P>while (ESC key is not pressed)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (right arrow key is depressed) 
+        then<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {increase 
+        angle}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (left arrow key is depressed) then
+        <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {increase 
+        angle}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (space key is depressed) then <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {shoot 
+        bubble}<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; update positions of moving bubbles<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; check for collision between shooting 
+        bubble and all non-moving bubbles<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (there is a collision) then {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (there are 
+        four or more bubbles of the same color attached to the shooting bubble) 
+        then {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        delete bubbles that collided<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        mark all the bubbles that are some how connected to the top of the 
+        screen<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        delete all bubbles that have not been marked<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; copy background over screen<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; redraw non-moving bubbles<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; redraw moving bubbles<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; copy result to screen<br>
+&nbsp;}&nbsp; </P>
+        <P>&nbsp;</P>
+        <P>In the game the bubbles come in two forms -&nbsp; moving
+        bubble,&nbsp; and non-moving bubbles (sometime I call them grid
+        bubbles).&nbsp;&nbsp; Data for non-moving and moving bubbles are stored
+        in two different structures: <b>Bubble</b> and <b>MovingBubble</b>.&nbsp;
+        The <b>Bubble</b> structure is used for the non-moving bubbles, the <b>MovingBubble</b>
+        structure is used for the all the moving bubbles on the screen.</P>
+        <h4>The <b>Bubble</b> structure</h4>
+        <P>struc Bubble<br>
+        &nbsp;&nbsp;&nbsp; .type		resb	1<br>
+        &nbsp;&nbsp;&nbsp; .flags		resb	1<br>
+        endstruc</P>
+        <P>The Bubble structure contains two fields: <b>.type </b>and <b>.flags</b>
+        . The <b>.type</b> field is used to store the type/color of the
+        bubble.&nbsp; The <b>.flags</b> field is used to for do different
+        ?flags?: the <b>BUBBLE_EMPTY_FLAG</b> and the <b>BUBBLE_MARKER_FLAG</b>.&nbsp;
+        The <b>BUBBLE_EMPTY_FLAG</b> is used to denote whether a bubble actually
+        does exist.&nbsp; When the flag is set the bubble is set empty (does not
+        exist).&nbsp; Bubbles with the empty flags set are not drawn on the
+        screen and need to ignored by some of the functions you will
+        write.&nbsp; The <b>BUBBLE_MARKER_FLAG </b>is used as a temporary marker
+        by many of the functions you will use/code.</P>
+        <h4>The <b>MovingBubble </b>structure</h4>
+        <P>struc MovingBubble<br>
+        &nbsp;&nbsp;&nbsp; .type		resb	1<br>
+        &nbsp;&nbsp;&nbsp; .flags		resb	1<br>
+        &nbsp;&nbsp;&nbsp; .xPos		resd	1<br>
+        &nbsp;&nbsp;&nbsp; .yPos resd	1<br>
+        &nbsp;&nbsp;&nbsp; .xVel		resd	1<br>
+        &nbsp;&nbsp;&nbsp; .yVel		resd	1<br>
+        endstruc</P>
+        <P>The moving bubble structure has both the <b>.type </b>and the <b>.flags
+        </b>fields that the <b>Bubble</b> structure does, along with 4 more
+        fields: <b>.xVel</b> , <b>.yVel</b> , <b>.xPos</b> , <b>.yPos</b>
+        .&nbsp;&nbsp; The <b>.type</b> and the <b>.flags</b> fields are used in
+        exactly the same way as they are with the <b>Bubble</b>
+        structure.&nbsp;&nbsp; The <b>.xPos</b> is the number of pixels from the
+        left side of the screen to the center of the bubble, and the <b>.yPos</b>&nbsp;
+        is the number of pixels from the top of the screen to the center of the
+        bubble.&nbsp;&nbsp; The .<b>xVel</b> and <b>.yVel</b> velocity are used
+        to determine how the bubbles should move with each cycle of the
+        game.&nbsp; The .<b>xVel</b> field is the number of pixels the bubble
+        should move to the right each cycle of the game.&nbsp; The <b>.yVel</b>
+        field is the number of pixels the bubble should move down each cycle of
+        the down.&nbsp; With .<b>xVel</b> and <b>.yVel</b> determining the new
+        positions of the bubbles is as simple as calculating <b>.xPos</b>(new) =
+        <b>.xPos</b>(old) + .<b>xVel</b>&nbsp; and <b>.yPos</b> (new) = <b>.yPos</b>
+        (old) + .<b>yVel .</b></P>
+        <h4>The <b>Attached </b>structure and the _getAttached Function</h4>
+        <P>struc Attached<br>
+        &nbsp;&nbsp;&nbsp; .topRight	resd	1<br>
+        &nbsp;&nbsp;&nbsp; .topLeft	resd	1<br>
+        &nbsp;&nbsp;&nbsp; .left		resd	1<br>
+        &nbsp;&nbsp;&nbsp; .right		resd	1<br>
+        &nbsp;&nbsp;&nbsp; .botRight	resd	1<br>
+        &nbsp;&nbsp;&nbsp; .botLeft	resd	1<br>
+        endstruc</P>
+        <P>Both the <b>_countMatched</b>, <b>_markAttached</b>, and 
+        _check4collisions functions at some point all need to determine what 
+        bubbles are attached/neighbors a certain bubble.&nbsp; To do this you 
+        need to use the <b>_getAttached</b> function.&nbsp; The get attached 
+        function takes the index (into the <b>_bubbleDataArray</b>) of the 
+        bubble you want to find the neighbors for, and returns the indexes of 
+        the 6 neighboring bubbles.&nbsp; In cases where the bubble index you 
+        pass in is on the top, left, right, or bottom of the playing area the 
+        bubble may not have neighbors to a certain direction.&nbsp; To denote 
+        that there is no bubble in a certain direction, <b>_getAttached</b> will 
+        return (-1) for the index in that direction.&nbsp;&nbsp; Instead of 
+        returning its results in a register or a few registers, <b>_getAttached</b> 
+        needs to be passed a pointer to a Attached structure.&nbsp; <b>_getAttached</b> 
+        will store the results in to this structure.</P>
+        <h4>&nbsp;The <b>_bubbleGridData</b>&nbsp; array</h4>
+        <P>All the Bubble structures used in the game are stored in an array called
+        <b>_bubbleGridData</b>.&nbsp; There <b>BUBBLE_GRID_ROWS</b>*<b>BUBBLE_GRID_COLS</b>
+        elements in the array.&nbsp; There is an element in the <b>_bubbleGridData</b>
+        array for every position on the playing field that a non-moving bubble
+        can occupy.&nbsp; The first element in the array represents the bubble
+        at to top left or the playing field, the last element in the array
+        represents the bubble on the bottom right of the playing field.&nbsp;
+        There is a function called <b>index2position</b> that takes the index of
+        a bubble in the&nbsp; <b>_bubbleGridData</b> array and returns what (X,Y)
+        pixel coordinates that the center of the bubble should be at on the
+        screen.&nbsp;&nbsp;&nbsp;</P>
+        <h4>The <b>_movingBubbles</b>&nbsp; array</h4>
+        <p>All the <b>MovingBubble</b> structures used in the game are stored in an
+        array called the <b>_movingBubbles</b>.&nbsp; The array begin at the <b>_movingBubbles</b>
+        label and end before the <b>_movingBubblesEnd</b> label.&nbsp; There are
+        <b>MOVING_BUBBLES_MAX</b> elements in the <b>_movingBubbles </b>array.&nbsp;
+        The first element in the <b>_movingBubbles</b> array is used to display
+        the next bubble will be shot, element of the array can be accessed
+        directly by using the label <b>_nextBubble</b> .&nbsp; The second element in the <b>_movingBubbles</b> array
+        is the bubble that is currently being shot.&nbsp;&nbsp; The second
+        element of the <b>_movingBubbles</b> array can be accessed directly by using the label
+        <b>_shootingBubble</b> .&nbsp; The rest of the array is used for storing the data for any of
+        the falling bubbles in the game.&nbsp; The beginning of this part of the
+        rest of the array can be accessed directly by using the <b>_fallingBubbles</b> label.&nbsp;&nbsp;</p>
+        <h4>The <b>_sin</b> and <b>_cos</b> lookup table</h4>
+        <p>When a bubble is shot in the game, it needs a x velocity and y 
+        velocity based on the angle it was fired at.&nbsp; To convert the angle 
+        a two lookup tables: <b>_sin</b> and <b>_cos</b> are used.&nbsp; The 
+        current direction is for the game is stored in an integer called _angle 
+        that can range from 0 to <b>ANGLE_MAX</b>.&nbsp;&nbsp; To keeps things 
+        simple, <b>_angle</b> can be used directly with the <b>_cos</b> and <b>
+        _sin</b> tables.&nbsp; For example,&nbsp; if the value stored in [<b>_angle</b>] 
+        equaled 30,&nbsp; then you could use the 30th value from the <b>_cos</b> 
+        and <b>_sin</b> table and use it for the x velocity and y velocity 
+        respectively.
+        </p>
+        <h4>Popping bubbles.</h4>
+        <p>When a shooting bubble collides sticks a position where it is 
+        directly or indirectly (through bubble of the same color) connected to 3 
+        or more bubbles of the same color, all the bubbles should be removed 
+        from the game.&nbsp; To do this in the game a recursive function called
+        <b>_countMatched </b>counts and marks any same colored bubbles that are 
+        connected.&nbsp; The function takes the index of a bubble to look at as 
+        an input and returns a count of connected bubbles as an output.
+        </p>
+        <h4>Dropping bubbles</h4>
+        <p>If bubbles pop during any particular cycle of the game, it could 
+        leave bubbles that are not either attack to the top of the playing field 
+        themselves or indirectly attached to another bubble that is.&nbsp; If 
+        this happens the bubble should fall off the playing field.&nbsp; To do 
+        this the game uses a function called <b>_markAttached </b>that will mark 
+        any bubbles that are either attached to the top of the playing field 
+        directly, or indirectly though a series of other bubbles.&nbsp; Once <b>
+        _markAttached </b>is complete another function called <b>_dropUnmarkedBubbles</b> 
+        will moving any unmarked bubbles <b>_fallingBubbles</b> array&nbsp;
+        </p>
+        <h4>The keyboard</h4>
+        <p>The keyboard works a little differently for this MP than previous 
+        MP's.&nbsp;&nbsp; This MP only needs to keep track of whether a key is 
+        currently being pushed down or not.&nbsp; The MP keeps track of all the 
+        keys by using a 128 byte table named <b>_keyStatusTable</b> .&nbsp; Each 
+        entry in the table contain the state for one key, if the value of the 
+        entry is 0 then the key is not being pushed, if the entry if something 
+        other than zero then the key is currently being held down.&nbsp; The 
+        order of entries in the table is based on the scancode for that entry.&nbsp; 
+        For example,&nbsp; if you wanted&nbsp; to determine whether the 'a' key 
+        is pressed, you would lookup the scancode for 'a',&nbsp; which is 30,&nbsp; 
+        and then use the&nbsp; 30th entry in the table.</p>
+        <h4>Graphics, blitting, and alpha channels</h4>
+        <p>In the graphics mode used by MP5 each pixel is 4 bytes.&nbsp; There 
+        one byte per color (red, green, blue), leaving one byte unused space in 
+        every pixel.&nbsp; What this MP does is use that extra byte to store a 
+        alpha value (transparency/opacity value) for each each pixel.&nbsp; 
+        There is nothing magical about the extra byte that is used by the alpha, 
+        when screen displays the image it completely ignores the extra byte.&nbsp;&nbsp; 
+        To make pixel transparent extra steps need to be taken when blitting and 
+        image on top of another.&nbsp; For the alpha blending in this MP, you 
+        will need to use this formula when blitting a pixel:&nbsp;&nbsp; Color = 
+        Color( foreground) * Alpha( foreground) + Color( background) * (1 - 
+        Alpha( foreground)).<br>
+        Here is the complication,&nbsp; you have to use MMX instructions to do 
+        the alpha blending.&nbsp; You could use mul or imul instructions to do 
+        the multiplies for each pixel, but that is pretty slow.&nbsp; MMX 
+        instructions can be used to speed this up by doing two entire pixels 
+        almost entirely at once.&nbsp; Below are step-by-step instructions for 
+        using MMX for alpha blending.</p>
+<p>Each pixel on the screen is 4 byte We now introduce an optimized algorithm that uses MMX instructions to alpha
+compose all four channels of a pixel at once:</p>
+<ul>
+  <li>Load two source pixels (8 bytes) from memory into an MMX register (8 bytes)</li>
+  <li>Load two destination pixels (8 bytes) from memory into an MMX register (8 bytes)</li>
+  <li>For each pair of source/destination pixels:
+    <ol>
+      <li>Unpack (bytes to words) the source pixel into an MMX register</li>
+      <li>Copy out the source alpha byte into the four words of another MMX register</li>
+      <li>Multiply the two previously mentioned MMX registers together</li>
+      <li>Add the rounding factor to the previous result to round the upcoming
+        division</li>
+      <li>Shift each word right to divide by 256, thus fitting into a byte per
+    channel (this calculates &#945; * A)</li>
+      <li>Unpack (bytes to words) the destination pixel into an MMX register</li>
+      <li>Add the results of the previous two steps (this calculates &#945; * A
+        + B)</li>
+      <li>Multiply the destination pixel by the source alpha</li>
+      <li>Add the rounding factor to the previous result to round the upcoming
+        division</li>
+      <li>Shift each word right to divide by 256, thus fitting into a byte per
+    channel (this calculates &#945; * B)</li>
+      <li>Subtract the value of step 10 from the value of step 7, giving you (&#945; *
+        A) + B - (&#945; * B)</li>
+    </ol>
+  </li>
+  <li>Pack (words to bytes) the two alpha-composed pixels back together with proper
+    saturation in the correct order</li>
+  <li>Write the composed pixels back to memory</li>
+</ul>
+        <p>&nbsp;</p>
+		<h2>Functions</h2>
+		<p>&nbsp;&nbsp;&nbsp; The 6 functions you need to write for this MP are: 
+        _copyBuffer2BufferWithAlpha, _markAttached, _countMatched, _shootBubble, 
+        _updateMovingBubbles, and _clearBubbleMarkerFlag.&nbsp; _clearBubbleMarker 
+        is a very short function (less than 20 lines of code), and is probably a 
+        good function to start with.&nbsp; Most of remaining functions for the 
+        MP will </p>
+		<ol>
+			<LI>
+				<FONT size="2"><STRONG>void _MP5Main() -</STRONG> </FONT>
+			</LI>
+			<ul>
+				<li>
+					<font size="2">Calls all of your functions - given code</font></ul>
+			<LI>
+				<FONT size="2"><STRONG>void _copyBuffer2BufferWithAlpha(void* 
+                src, int srcPitch, int srcLeft, int srcTop, \ <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+                void* dst, int dstPitch, int dstLeft, in dsdTop, \ <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+                int width, int top)</STRONG></FONT><UL>
+					<li>
+						<font size="2">use MMX to alpha blend screen with image 
+                        you want to display</font></li>
+					<li>
+						<font size="2">MMX code should operate on two pixels per 
+                        every inner loop</font></li>
+					<li>
+						<font size="2">assume everything is an even width </font>
+					</li>
+				</UL>
+			</LI>
+			<LI>
+				<FONT size="2"><STRONG>void _markAttached(void)</STRONG> </FONT>
+			</LI>
+			<ul>
+				<li>
+					<font size="2">uses _getAttached</font><li>
+					<font size="2">uses queue functions (_enqueue, _dequeue, _clearQueue, 
+                    _queueCount)</font><li>
+					<font size="2">marks all bubble attached to top (see pseudo 
+                    code)</font></ul>
+			<LI>
+				<FONT size="2"><STRONG>int _countMatched(int index)</STRONG> </FONT>
+			</LI>
+			<ul>
+				<li>
+					<font size="2">recursive - calls itself</font><li>
+					<font size="2">uses _getAttached</font><li>
+					<font size="2">takes the index of the bubble it should look 
+                    at</font><li>
+					<font size="2">return count &quot;connected&quot; bubbles</font><li>
+					<font size="2">marks all bubbles it counts</font></ul>
+			<LI>
+				<strong><font size="2">void</font></strong><FONT size="2"><STRONG> _updateMovingBubbles(void)</STRONG> </FONT>
+			</LI>
+			<ul>
+				<li>
+					<font size="2">operates on every (non-empty) bubble in the _movingBubble 
+                    array</font><li>
+					<font size="2">updates position using velocity</font><li>
+					<font size="2">&quot;bounces&quot;&nbsp; any bubble that goes past the 
+                    sides/top of the play area</font><li>
+					<font size="2">deletes (sets the BUBBLE_EMPTY_FLAG) of any 
+                    bubble that goes past the bottom of the play area</font></ul>
+			<LI>
+				<strong><font size="2">void</font></strong><FONT size="2"><STRONG> _shootBubble(void)</STRONG> </FONT>
+			</LI>
+			<ul>
+				<li>
+					<font size="2">won't do anything if _shootBubble is not 
+                    empty</font><li>
+					<font size="2">sets the position and type of _shootBubble to 
+                    be the same as _nextBubble</font><li>
+					<font size="2">uses _angle and the _sin, _cos tables to set 
+                    the velocity of _shootBubble</font><li>
+					<font size="2">uses _random to set a new type for _nextBubble</font></ul>
+			<LI>
+				<strong><font size="2">void</font></strong><FONT size="2"><STRONG> _clearBubbleMarkerFlag(void)</STRONG> </FONT>
+			</LI>
+			<ul>
+				<li>
+					<font size="2">clears the BUBBLE_MAKER_FLAG on every bubble 
+                    in the _bubbleGridData array </font>
+				</ul>
+			<LI>
+				<strong><font size="2">void</font></strong><FONT size="2"><STRONG> _initMovingBubbles(void)</STRONG> </FONT>
+			</LI>
+			<ul>
+				<li>
+					<font size="2">deletes all moving bubbles (sets BUBBLE_ 
+                    EMPTY_FLAG)</font><li>
+					<font size="2">initializes values of _nextBubble</font></ul>
+			<LI>
+				<strong><font size="2">void</font></strong><FONT size="2"><STRONG> _dropUnmarkedBubbles(void)</STRONG> </FONT>
+			</LI>
+			<ul>
+				<li>
+					<font size="2">copies every non-empty non-marked bubble from 
+                    _bubbleGridData to _fallingBubbles </font>
+				<li>
+					<font size="2">delete every non-marked bubble from _bubbleGridData</font></ul>
+			<LI>
+				<strong><font size="2">void</font></strong><FONT size="2"><STRONG> _drawMovingBubbles(void)</STRONG> </FONT>
+			</LI>
+			<ul>
+				<li>
+					<font size="2">uses _drawBubble to draw every non-empty 
+                    bubble in the _movingBubble array</font></ul>
+			<LI>
+				<FONT size="2"><STRONG>int _check4collision(MovingBubble* 
+                bubble)</STRONG> </FONT>
+			</LI>
+			<ul>
+				<li><font size="2">uses _position2index, _getAttached, 
+                _index2position</font></li>
+                <li><font size="2">returns 0 if&nbsp; the moving bubble collided 
+                with any non-moving bubble in _bubbleDataGrid</font></li>
+				</ul>
+			<LI>
+				<strong><font size="2">void</font></strong><FONT size="2"><STRONG> _getAttached(int 
+                index, Attached* result)</STRONG> </FONT>
+			</LI>
+			<ul>
+				<li>
+					<font size="2">takes index to non-moving bubble in _bubbleGridData</font><li>
+					<font size="2">puts index of 6 neighbors to bubble in result 
+                    structure </font>
+				<li>
+					<font size="2">if a neighbor in a certain direction can not 
+                    exsist puts a -1 instead of index</font></ul>
+			<LI>
+				<strong><font size="2">void</font></strong><FONT size="2"><STRONG> _removeMarkedBubbles(void)</STRONG> </FONT>
+			</LI>
+			<ul>
+				<li>
+					<font size="2">deletes all non-marked bubbles&nbsp; from _bubbleGridData</font></ul>
+			<LI>
+				<strong><font size="2">void</font></strong><FONT size="2"><STRONG> _stickMovingBubble(MovingBubble*, 
+                bubble, int index)</STRONG> </FONT>
+			</LI>
+			<ul>
+				<li>
+					<font size="2">copy moving bubble information into _bubbleGridData 
+                    array at given index</font><li>
+					<font size="2">deletes moving bubble</font></ul>
+			<LI>
+				<strong><font size="2">void</font></strong><FONT size="2"><STRONG> _getAttached(int 
+                index, Attached* result)</STRONG> </FONT>
+			</LI>
+			<ul>
+				<li>
+					<font size="2">takes index to non-moving bubble in _bubbleGridData</font><li>
+					<font size="2">puts index of 6 neighbors to bubble in result 
+                    structure </font>
+				<li>
+					<font size="2">if a neighbor in a certain direction can not 
+                    exsist puts a -1 instead of index</font></ul>
+			<LI>
+				<strong><font size="2">void</font></strong><FONT size="2"><STRONG> 
+                _drawBubbleGrid(void)</STRONG> </FONT>
+			</LI>
+			<ul>
+				<li>
+					<font size="2">draws all the non-empty bubbles in _bubbleGridData</font></ul>
+			<LI>
+				<FONT size="2"><STRONG>int _position2index(int xPos, int yPos)</STRONG> </FONT>
+			</LI>
+			<ul>
+				<li>
+					<font size="2">converts pixel position on screen to nearest 
+                    corresponding index into _bubbleGridData</font><li>
+					<font size="2">returns index or&nbsp; -1 if it can't find an 
+                    index</font></ul>
+			<LI>
+				<strong><font size="2">void</font></strong><FONT size="2"><STRONG> 
+                _drawBorder(void)</STRONG> </FONT>
+			</LI>
+			<ul>
+				<li>
+					<font size="2">draws border around gaming area</font></ul>
+			<LI>
+				<strong><font size="2">void</font></strong><FONT size="2"><STRONG> 
+                _drawArrow(void)</STRONG> </FONT>
+			</LI>
+			<ul>
+				<li>
+					<font size="2">draws an arrow with the current direction to 
+                    where _nextBubble is located</font></ul>
+			<LI>
+				<strong><font size="2">void</font></strong><FONT size="2"><STRONG> 
+                _drawBubble(Bubble* bubble, int xPos, int yPos)</STRONG> </FONT>
+			</LI>
+			<ul>
+				<li>
+					<font size="2">draws a bubble at the given position</font></ul>
+			<LI>
+				<strong><font size="2">void</font></strong><FONT size="2"><STRONG>&nbsp; _copyBuffer2BufferWithAlpha(void* 
+                src, int srcPitch, int srcLeft, int srcTop, \ <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+                void* dst, int dstPitch, int dstLeft, in dsdTop, \ <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+                int width, int top)</STRONG></FONT><ul>
+				<li>
+					<font size="2">copy part of image directly from src to dst</font></ul>
+			</ol>
+		<h2>Pseudo Code</h2>
+        <p>Below is C-like psuedo code for the functions markAttached and 
+        countMatched</p>
+        <p>void <b>markAttached</b> (void)<br>
+        { <br>
+&nbsp;&nbsp;&nbsp; /* make a LOCAL variable for the Attach struct*/ <br>
+&nbsp;&nbsp;&nbsp; struct Attach buffer;<br>
+        <br>
+&nbsp;&nbsp;&nbsp; /*first clear queue*/&nbsp;&nbsp; <br>
+&nbsp;&nbsp;&nbsp; clearQueue( );<br>
+&nbsp;&nbsp;&nbsp; /*next enqueue and mark all non-empty bubble on top row of 
+        screen*/&nbsp; <br>
+&nbsp;&nbsp;&nbsp; for (index = 0; index &lt; BUBBLE_GRID_COLS; index++)<br>
+&nbsp;&nbsp;&nbsp; {&nbsp;&nbsp;&nbsp; <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* if the bubble is not empty (empty 
+        flag is not set) enqueue 
+        it and set its marker flag*/<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (bubbleGridData[index].flags 
+        &amp; (BUBBLE_EMPTY_FLAG)) { <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; enqueue(index);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        bubbleGridData[index].flags = bubbleGridData[index].flags | 
+        BUBBLE_MARKER_FLAG<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+&nbsp;&nbsp;&nbsp; }</p>
+        <p>&nbsp;&nbsp;&nbsp;&nbsp; /*while there are bubbles left on the queue, 
+        dequeue one index from queue and find its neighbors*/&nbsp;&nbsp;&nbsp;
+        <br>
+&nbsp;&nbsp;&nbsp;&nbsp; while (queueCount( ) != 0) <br>
+&nbsp;&nbsp;&nbsp;&nbsp; {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; index = dequeue( ); <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; getAttached(index, 
+        &amp;buffer); /* remember to pass in the ADDRESS of the Attach structure for 
+        getAttached*/&nbsp; <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /*mark and enqueue each 
+        neighbor (that exists), is non-empty, and not already marked*/<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; foreach tempIndex in buffer {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (tempIndex 
+        != -1)&nbsp; /*a -1 in Attach denotes that there is no neighbor in that 
+        direction, so  skip it*/<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        if ( ! (bubbleGridData[tempIndex].flags &amp; (BUBBLE_EMPTY_FLAG | 
+        BUBBLE_MARKED_FLAG)) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        enqueue(tempIndex);<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        bubbleGridData[tempIndex].flags = bubbleGridData[tempIndex].flags | 
+        BUBBLE_MARKER_FLAG;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        }<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+&nbsp;&nbsp;&nbsp;&nbsp; }&nbsp; <br>
+        }<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br>
+&nbsp;</p>
+        <p>int <b>countMatched</b> (int index) {<br>
+&nbsp;&nbsp;&nbsp; /* make a LOCAL variable for the Attach struct*/ <br>
+&nbsp;&nbsp;&nbsp; struct Attach buffer;<br>
+        &nbsp;&nbsp;&nbsp; char type; /*store the type of the bubble at the 
+        index that was passed in*/</p>
+        <p>
+        <br>
+&nbsp;&nbsp;&nbsp; /*FIRST mark bubble*/<br>
+&nbsp;&nbsp;&nbsp; bubbleGridData[index].flags = bubbleGridData[index].flags | 
+        BUBBLE_MARKER_FLAG;<br>
+        &nbsp;&nbsp;&nbsp; type = bubbleGridData[index].type;<br>
+        <br>
+&nbsp;&nbsp;&nbsp; /*then find neighbors of bubble*/<br>
+&nbsp;&nbsp;&nbsp; getAttached(index, &amp;buffer); </p>
+        <p>&nbsp;&nbsp;&nbsp; /*use a register to add return values of recursive 
+        calls*/&nbsp;&nbsp;&nbsp; <br>
+&nbsp;&nbsp;&nbsp; int sum = 0;<br>
+        <br>
+&nbsp;&nbsp;&nbsp; /*call this function on each non-empty non-marked neighbor*/<br>
+&nbsp;&nbsp;&nbsp; foreach (tempIndex in buffer) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if {tempIndex != -1) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /*if the marker flag is not set 
+        and the empty flag is not set*/<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if ( bubbleGridData[tempIndex].flags 
+        &amp; (BUBBLE_MARKER_FLAG | BUBBLE_EMPTY_FLAG)) 
+        {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if ( bubbleGridData[tempIndex].type 
+        = type) {<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+        sum = sum + countMatched (int tempIndex );<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }&nbsp; <br>
+&nbsp;&nbsp;&nbsp; }<br>
+        <br>
+&nbsp;&nbsp;&nbsp; /*return the result of the recursive calls plus one to take 
+        into account this node*/<br>
+&nbsp;&nbsp;&nbsp; return&nbsp; (sum + 1);<br>
+        }</p>
+		<h2>Procedures&nbsp;&nbsp;&nbsp;&nbsp;</h2>
+		<UL>
+			<li>
+				You may copy the mp4 files from the network drive to your home directory with 
+				the following command:
+				<br>
+				<tt>xcopy /s V:\ece291\mp4 W:\mp4</tt><br>
+				or download the files from this server as <A href="mp5.zip">mp5.zip</A>
+			<li>
+				Use <STRONG>cv32</STRONG>
+			to find and correct program errors.
+			<LI>
+				Keep a <STRONG>developement log</STRONG>
+			to facilitate writing a cover memo later.
+			<LI>
+				Make sure your program <STRONG>works</STRONG>
+			by&nbsp;zooming in and out many times.
+			<LI>
+				Write a&nbsp;<STRONG>cover memo</STRONG>
+			based on the developement log; it shouldn't be the developement log.
+			<li>
+				Demonstrate your mp4.exe to a TA or the instructor.
+			</li>
+		</UL>
+		<P><STRONG>References</STRONG></P>
+		<OL>
+			<P><BR>
+				<BR>
+			</P>
+		</OL>
+	</body>
+</HTML>

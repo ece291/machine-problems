@@ -1,0 +1,795 @@
+<%
+title = "ECE 291 - MP2"
+subtitle = "MP2"
+%>
+
+<!--#include file="headvb.asp"-->
+
+
+
+
+<h1 align="center">Machine Problem 2: Serial Communication and Sorting</h1>
+<div align="center"><center>
+
+<table border=1 width=545>
+  <tr>
+    <td align=right width="78">Assigned</td>
+    <td width="451">Thursday, 6/21/01</td>
+  </tr>
+  <tr>
+    <td align="right" width="78">Due Date</td>
+    <td width="451">Tuesday, 7/3/01</td>
+  </tr>
+  <tr>
+    <td align="right" width="78">Purpose</td>
+    <td Roman" width="451">Serial Port I/O, C-style Procedures, Sorting
+      Algorithms</td>
+  </tr>
+  <tr>
+    <td align="right" width="78">Points</font></td>
+    <td width="451">75</td>
+  </tr>
+</table>
+</center></div>
+
+
+<h2 align="left">Introduction
+</h2>
+
+
+<p align="left">I'm too tired to think of an introduction... sorry.
+</p>
+
+<h2>Problem Description</h2>
+
+<p align="center"><img border="0" src="mp2.gif" width="652" height="631"></p>
+
+<p>Your program will be:
+<ul>
+<li>Obtaining <a href="input.html"> user input</a> in the form of a string of numbers and transmitting it
+  on the serial port
+<li>Receiving the input and parsing the string of numbers into an array 
+<li>Analyzing two different <a href="sorting.html">sorting algorithms</a>
+
+</ul>
+
+
+
+<p>Click on the links above to learn more about each part of the MP.</p>
+
+<h2>Hints</h2>
+<ul>
+<li>The LIBMP2 file contains executable library functions for each of the
+routines that you need to implement.  
+This allows you to run the program and understand how it works before you implement it.  You can test your program with any combinations of your own
+code and library functions.  You will only receive credit, however, for
+the routines that you implement yourself.</li><p>
+
+<li>When debugging your code in TD, you will find it helpful to use
+the memory window to show you the memory location of the file and strings.
+You can also use the watch window to keep track of variables in your code.</li><p>
+
+<li>Do not assume that the file starts at memory location 0.</li><p>
+
+<li>You may define new variables as needed.</li><p>
+
+<li>Be very careful if you call another procedure not to destroy registers
+that the calling procedure uses.</li><p>
+
+<li>You need to preserve register values in all of the procedures you
+  write.&nbsp; To do this, push all the registers you use in the procedure at
+  the beginning of the procedure.&nbsp; Then, pop them all in reverse order at
+  the end of the procedure (right before you ret).</li><p>
+
+<li>You need to create function headers for each of the functions you
+  write.&nbsp; Function headers should include the name of the function, the
+  list of inputs to the function, the list of the outputs, and any functions
+  that the function calls.&nbsp; You will lose points if you do not do this!</li><p>
+
+<li>START EARLY!</li><p>
+
+
+<li>Monitor the <a href="news:uiuc.class.ece291">newsgroup</a> for clarifications and help.</li><p>
+
+</ul>
+
+<h2>Procedures</h2>
+
+<p>This assignment has seven procedures. You will receive credit by replacing
+each of these seven procedures listed below with your own code. </p>
+
+
+<p>Each of the procedures you will write in this MP are C-style.&nbsp; That
+means the inputs to the procedures, if there are any, are passed on the
+stack.&nbsp; If the procedure returns a value, the value will be in al or
+ax.&nbsp; Also, any general purpose register other than si and di may be
+overwritten (you do not have to preserve their values). </p>
+
+
+<p>The size of the inputs, as well as the size of the return value, are included
+in each procedure definition.&nbsp; If a procedure does not have any inputs, <b>void</b>
+will be present in the parentheses.&nbsp; Similarly, if the function does not
+return a value, it will be declared as <b>void</b> before the name of the
+function. </p>
+
+
+<h3><b>void TransmitInput(void)</b> </h3>
+
+
+<ul>
+<li>Transmits user input on COM2</li>
+<li>Inputs:&nbsp; None
+<li>Outputs:&nbsp; Data sent on COM2</li>
+<li>Returns: None</li>
+<li>Calls: kbdin, dspout</li>
+<li>Notes:
+  <ul>
+    <li>Terminate transmit loop when user presses the ESC key or Enter key.&nbsp; When
+      this happens, also send a '$' on COM2.</li>
+    <li>Transmit all pressed characters besides ESC and Enter and on COM2.&nbsp;
+      Also display them to the screen.</li>
+    <li>You should correctly handle backspacing.&nbsp; If the user hits
+      backspace, you should move the cursor back to the previous spot, and the
+      character at that spot should be cleared from the screen.</li>
+  </ul>
+<li>Points: 10</li>
+ </ul><h3><b>void ReceiveInput(word *BufferPtr)</b> </h3>
+
+
+<ul>
+<li>Receives input on COM1 and adds input to buffer</li>
+<li>Inputs:
+  <ul>
+    <li>BufferPtr - Pointer to buffer in memory</li>
+  </ul>
+<li>Outputs:&nbsp; Buffer filled with&nbsp;input data</li>
+<li>Returns: None</li>
+<li>Calls: dspout</li>
+<li>Notes:
+  <ul>
+    <li>This procedure should read in characters from COM1, add them to the
+      buffer, and also display them to the screen as done in TransmitInput().</li>
+    <li>Terminate receive loop when user a '$' is read from COM1.&nbsp; When this
+      happens, also add a '$' to the end of the buffer.</li>
+    <li>Remember to read from the port only when data is available.&nbsp; Do
+      this by checking COM1's status register.</li>
+    <li>The buffer has a maximum size of 75 bytes - make sure that you do not exceed the buffer
+      length</li>
+    <li>Again, you should correctly handle backspacing.&nbsp; If the user hits
+      backspace, you the cursor should move back to the previous spot, and the
+      character at that spot should be removed on the screen.&nbsp; The current
+      position in the buffer must also be updated.&nbsp; If you are at the
+      beginning of the buffer and a backspace key is received, you should not
+      process it.</li>
+  </ul>
+<li>Points: 10</li>
+ </ul><h3><b>word ParseInput(word *BufferPtr, word *ArrayPtr)</b> </h3>
+
+
+<ul>
+<li>Parses the buffer and stores&nbsp;numbers in buffer to an array in memory</li>
+<li>Inputs:
+  <ul>
+    <li>BufferPtr - Pointer to buffer in memory</li>
+    <li>ArrayPtr - Pointer to array in memory</li>
+  </ul>
+<li>Outputs:&nbsp; Array contains&nbsp;</li>
+<li>Returns:
+  <ul>
+    <li>Length of the array (number of integers parsed from the buffer); if
+      there is an error in parsing the buffer, return -1 instead</li>
+  </ul>
+</li>
+<li>Calls: ascbin</li>
+<li>Notes:
+  <ul>
+    <li>The buffer is terminated with a '$'</li>
+    <li>Read the lab manual on how ascbin works - it will make your life <b>much</b>
+      easier</li>
+    <li>The array can hold up to 25 integers - if you encounter more than 25 in
+      the buffer, do not add the extra ones to the array</li>
+  </ul>
+<li>Points: 10</li>
+ </ul><h3><b>void PrintArray(word *ArrayPtr, word ArrayLength)</b> </h3>
+
+
+<ul>
+<li>Displays an array in memory to the screen</li>
+<li>Inputs:&nbsp;&nbsp;
+  <ul>
+    <li>ArrayPtr - Pointer to an array in memory</li>
+    <li>ArrayLength - Length of the array</li>
+  </ul>
+<li>Outputs:&nbsp; Displays array to screen</li>
+<li>Returns: None</li>
+<li>Calls: binasc, dspmsg, dspout</li>
+<li>Notes:
+  <ul>
+    <li>Separate each number in the array by a space and move the cursor to the
+      next line when completed</li>
+    <li>Use binasc to obtain an ASCII representation of each number in the
+      array.&nbsp; Also use the binascBuf buffer when calling binasc and
+      displaying the number to the screen.</li>
+    <li>Each cell in the arrays you will be displaying is one word in size, <b>not</b>
+      one byte</li>
+  </ul>
+<li>Points: 10</li>
+ </ul><h3><b>word Partition(word *ArrayPtr, word First, word Last)</b> </h3>
+
+
+<ul>
+<li>Partitions an array in memory</li>
+<li>Inputs:
+  <ul>
+    <li>ArrayPtr - Pointer to an array in memory</li>
+    <li>First - Index number of the array where you want to start partitioning</li>
+    <li>Last - Index number of the array where you want to stop
+      partitioning&nbsp;</li>
+  </ul>
+<li>Outputs:&nbsp; Array is correctly partitioned</li>
+<li>Returns: The index number of the pivot element</li>
+<li>Calls: None</li>
+<li>Notes:
+  <ul>
+    <li>The Partition pseudocode has been provided to you</li>
+    <li>Each cell in the arrays you will be partitioning is one word in size, <b>not</b>
+      one byte</li>
+  </ul>
+<li>Points: 15</li>
+ </ul><h3><b>void QuickSort(word *ArrayPtr, word First, word Last)</b> </h3>
+
+
+<ul>
+<li>Sorts an array in memory with the QuickSort algorithm</li>
+<li>Inputs:&nbsp;&nbsp;
+  <ul>
+    <li>ArrayPtr - Pointer to an array in memory</li>
+    <li>First - Index number of the array where you want to start sorting</li>
+    <li>Last - Index number of the array where you want to stop sorting</li>
+  </ul>
+<li>Outputs:&nbsp; CompareCount, SwapCount</li>
+<li>Returns: None</li>
+<li>Calls: Partition, QuickSort</li>
+<li>Notes:
+  <ul>
+    <li>The QuickSort pseudocode has been provided to you</li>
+    <li>Each cell in the arrays you will be sorting is one word in size, <b>not</b>
+      one byte</li>
+    <li>Keep track of comparisons and swaps with CompareCount and SwapCount,
+      respectively</li>
+    <li>When you call Partition and QuickSort, remember to push the arguments
+      onto the stack in reverse order</li>
+  </ul>
+<li>Points: 10</li>
+ </ul><h3><b>void BubbleSort(word *ArrayPtr, word ArrayLength)</b> </h3>
+
+
+<ul>
+<li>Sorts an array in memory with the BubbleSort algorithm</li>
+<li>Inputs:&nbsp;&nbsp;
+  <ul>
+    <li>ArrayPtr - Pointer to an array in memory</li>
+    <li>ArrayLength - Length of the array</li>
+  </ul>
+<li>Outputs:&nbsp; CompareCount, SwapCount</li>
+<li>Returns: None</li>
+<li>Calls: None</li>
+<li>Notes:
+  <ul>
+    <li>The BubbleSort pseudocode has been provided to you</li>
+    <li>Keep track of comparisons and swaps with CompareCount and SwapCount,
+      respectively</li>
+    <li>Each cell in the arrays you will be sorting is one word in size, <b>not</b>
+      one byte</li>
+  </ul>
+<li>Points: 10</li>
+ </ul>
+
+<h2>Procedure</h2>
+<ul>
+<li>You will begin this MP with the following files:
+    <ul>
+    <li><tt>MP2.ASM</tt>: Program Framework
+    <li><tt>Makefile</tt>: Specifies how and when programs are assembled
+        and linked.</li>
+    <li><tt>LIBMP2.LIB</tt>: Library functions for MP2</li>
+    <li><tt>LIB291.LIB</tt>: General-purpose library functions</li>
+    </ul>
+<li>You may copy these files from the network drive to your home directory
+    with the following command: <br>
+    <tt>xcopy /s V:\ece291\mp2 W:\mp2</tt><br>
+    or download the files from this server as <a href="mp2.zip">mp2.zip</a> 
+</li>
+<li>Add your code to <tt>MP2.ASM</tt>.
+<li>Assemble and link your program by typing<tt> make.</tt>&nbsp; This command reads
+  the Makefile then invokes NASM and TLINK to build 
+    an executable program.  
+<li>Use TD debugger to find and correct program errors.
+</ul>
+
+<h2>Final Steps</h2>
+
+<ol>
+  <li>Demonstrate your MP2.EXE to a TA or to the instructor.&nbsp; The TA or
+    instructor will verify that your program produces the correct output. </li>
+  <li>Be prepared to answer questions about any aspect of the operation of
+   your program. The TAs will not accept an MP if you cannot fully explain
+   the operation of your code and details of your implementation. Delayed
+   MPs will be subject to late penalties as described in the course
+   syllabus (10pts/day).</li>
+  <li>The TA will handin your MP online.
+</ol>
+
+<hr>
+
+<h2>MP2.ASM (program framework)</h2>
+
+<font size=-1>
+<pre>; MP2 - Communication and Sorting
+;  Your Name
+;  Today's Date
+;
+; Josh Potts, Summer 2001
+; Guest Author: Ryan Chmiel
+; University of Illinois, Urbana-Champaign
+; Dept. of Electrical and Computer Engineering
+;
+; Version 1.0
+
+	BITS	16
+
+;====== SECTION 1: Define constants =======================================
+
+; Define general constants
+        CR      	EQU     0Dh
+        LF      	EQU     0Ah
+	ESC		EQU	1Bh
+	SPACE		EQU	20h
+	BACKSPACE	EQU	08h
+
+; Define COM port constants
+	COM1BASE	EQU	03F8h
+	COM2BASE	EQU	02F8h
+	BAUDRATE	EQU	12
+	PARAMS		EQU	03h
+	
+
+;====== SECTION 2: Declare external routines ==============================
+
+; Declare external library routines
+EXTERN kbdin, kbdine, dspmsg, ascbin, binasc, dosxit, dspout
+EXTERN libTransmitInput, libReceiveInput, libParseInput, libPrintArray
+EXTERN libPartition, libQuickSort, libBubbleSort, mp2xit
+
+; Make program functions and variables global
+GLOBAL TransmitInput, ReceiveInput, ParseInput, PrintArray
+GLOBAL Partition, QuickSort, BubbleSort
+GLOBAL EnterString, CompareCount, SwapCount, binascBuf, TestArrayBubble, TestArrayQuick
+GLOBAL DataString, Array, ArrayLen
+      
+;====== SECTION 3: Define stack segment ===================================
+
+SEGMENT stkseg STACK                    ; *** STACK SEGMENT ***
+        resb      64*8
+stacktop:
+        resb      0                     ; work around NASM bug
+
+;====== SECTION 4: Define code segment ====================================
+
+SEGMENT code                            ; *** CODE SEGMENT ***
+
+;====== SECTION 5: Declare variables for main procedure ===================
+
+IntroString	db	CR,LF
+		db	0DAh
+		times 27 db 0C4h
+		db	0BFh, CR, LF
+		db	0B3h, '  ', 228, 'C', 228, ' 291 Summer 2001 MP2  ', 0B3h, CR, LF
+		db	0B3h, ' Communication and Sorting ', 0B3h, CR, LF
+		db	0C0h
+		times 27 db 0C4h
+		db	0D9h, CR, LF, '$'
+
+SelectString	db	CR,LF
+		db	'This program can run in two modes:',CR,LF
+		db	'   1.  Transmit Mode',CR,LF
+		db	'   2.  Receive Mode',CR,LF
+		db	'   3.  Local Mode (No Serial Communication)',CR,LF
+		db	CR,LF
+		db	'Select the mode number for the version which you will run: ','$'
+
+AnalyzeString	db	0DAh
+		times 39 db 0C4h
+		db	0BFh, CR, LF
+		db	0B3h, ' Analyzing QuickSort versus BubbleSort ', 0B3h, CR, LF
+		db	0C0h    
+		times 39 db 0C4h
+		db	0D9h, CR, LF, CR, LF, '$'
+	
+TransmitString	db	'Transmit',CR,LF,CR,LF,'$'
+ReceiveString	db	'Receive',CR,LF,CR,LF,'$'
+LocalString	db	'Local',CR,LF,CR,LF,'$'
+InvalidString	db	'Invalid Choice!',CR,LF,'$'
+
+InputMsgString		db	'Enter a string of numbers, each separated by one space:',CR,LF,'$'
+ErrorString		db	'Error encountered in parsing input!',CR,LF,'$'
+InputDataString		db	'Input data string:',CR,LF,'$'
+InitialArrayString	db	'Initial array:',CR,LF,'$'
+SortQuickString		db	'Array sorted with QuickSort:',CR,LF,'$'
+SortBubbleString	db	'Array sorted with BubbleSort:',CR,LF,'$'
+CompareString		db	'Number of comparisons: ','$'
+SwapString		db	'Number of swaps: ','$'
+EnterString		db	CR,LF,'$'
+
+DataString	times 76 db 0	 
+Array		times 25 dw 0
+ArrayLen	dw	0
+
+TestArrayBubble	dw	23, 2, 18, 20, 14, 25, 19, 7, 4, 16, 15, 9, 13, 5, 17, 21, 12, 22, 3, 6, 11, 24, 8, 1, 10
+TestArrayQuick	dw	23, 2, 18, 20, 14, 25, 19, 7, 4, 16, 15, 9, 13, 5, 17, 21, 12, 22, 3, 6, 11, 24, 8, 1, 10
+
+CompareCount	dw	0
+SwapCount	dw	0
+			       
+binascBuf	times 7 db 0,'$'
+
+;====== SECTION 6: Program initialization =================================
+
+..start:
+        mov     ax, cs                  ; Initialize Default Segment register
+        mov     ds, ax  
+        mov     ax, stkseg              ; Initialize Stack Segment register
+        mov     ss, ax
+        mov     sp, stacktop            ; Initialize Stack Pointer register
+
+;====== SECTION 7: Main procedure =========================================
+
+MAIN:
+	mov	dx, IntroString
+	call	dspmsg
+
+.SelectLoop
+	mov	dx, SelectString
+	call	dspmsg
+	call	kbdin
+
+	cmp	al, ESC
+	je	near .Done
+	cmp	al, '1'
+	je	.TransmitMode
+	cmp	al, '2'
+	je	.ReceiveMode
+	cmp	al, '3'
+	je	near .LocalMode
+
+	mov	dx, InvalidString
+	call	dspmsg
+	jmp	.SelectLoop
+
+
+.TransmitMode
+	; Initialize COM2
+	call	InitCOM2
+
+	; Print Out Messages
+	mov	dx, TransmitString
+	call	dspmsg
+	mov	dx, InputMsgString
+	call	dspmsg
+
+	; Transmit input to receiving program
+	call	TransmitInput
+	jmp	.Done
+
+.ReceiveMode
+	; Initialize COM1
+	call	InitCOM1
+
+	; Print Out Messages
+	mov	dx, ReceiveString
+	call	dspmsg
+	mov	dx, InputDataString
+	call	dspmsg
+
+	; Receive input from transmitting program
+	push	word DataString
+	call	ReceiveInput
+	add	sp, 2
+
+	mov	dx, EnterString
+	call	dspmsg
+	call	dspmsg
+
+	; Parse the input string
+	mov	ax, Array
+	push	ax
+	mov	ax, DataString
+	push	ax
+	call	ParseInput
+	add	sp, 4
+	cmp	al, 0
+	js	near .Error
+	mov	[ArrayLen], ax
+
+	; Print out the initial array
+	mov	dx, InitialArrayString
+	call	dspmsg
+	push 	word [ArrayLen]
+	push	word Array
+	call	PrintArray
+	add	sp, 4
+
+	; Sort the array with QuickSort
+	mov	ax, [ArrayLen]
+	dec	ax
+	push	ax
+	push	word 0
+	push	word Array
+	call	QuickSort
+	add	sp, 6
+
+	; Print out the sorted array
+	mov	dx, SortQuickString
+	call	dspmsg
+	push	word [ArrayLen]
+	push	word Array
+	call	PrintArray
+	add	sp, 4
+
+	jmp	.Done
+
+.LocalMode
+	; Print Messages
+	mov	dx, LocalString
+	call	dspmsg
+	mov	dx, AnalyzeString
+	call	dspmsg
+
+	; Print out initial array
+	mov	dx, InitialArrayString
+	call	dspmsg       
+	push	word 25
+	push	word TestArrayQuick
+	call	PrintArray
+	add	sp, 4
+
+	; Sort array with QuickSort
+	mov	word [CompareCount], 0
+	mov	word [SwapCount], 0  
+	push	word 24
+	push	word 0
+	push	word TestArrayQuick
+	call	QuickSort
+	add	sp, 6
+
+	; Print out sorted array
+	mov	dx, SortQuickString
+	call	dspmsg  
+	push	word 25
+	push	word TestArrayQuick
+	call	PrintArray
+	add	sp, 4
+
+	; Print out comparison and swap info
+	mov	dx, CompareString
+	call	dspmsg
+	mov	ax, [CompareCount]
+	mov	bx, binascBuf
+	call	binasc
+	mov	dx, bx
+	call	dspmsg
+	mov	dx, EnterString
+	call	dspmsg	           
+	mov	dx, SwapString
+	call	dspmsg
+	mov	ax, [SwapCount]
+	mov	bx, binascBuf
+	call	binasc
+	mov	dx, bx
+	call	dspmsg
+	mov	dx, EnterString
+	call	dspmsg
+	call	dspmsg
+
+	; Print out initial array
+	mov	dx, InitialArrayString
+	call	dspmsg       
+	push	word 25
+	push	word TestArrayBubble
+	call	PrintArray
+	add	sp, 4
+
+	; Sort array using BubbleSort
+	mov	word [CompareCount], 0
+	mov	word [SwapCount], 0    
+	push	word 25
+	push	word TestArrayBubble
+	call	BubbleSort
+	add	sp, 4
+
+	; Print out sorted array
+	mov	dx, SortBubbleString
+	call	dspmsg  
+	push	word 25
+	push	word TestArrayBubble
+	call	PrintArray
+	add	sp, 4
+
+	; Print out comparison and swap info
+	mov	dx, CompareString
+	call	dspmsg
+	mov	ax, [CompareCount]
+	mov	bx, binascBuf
+	call	binasc
+	mov	dx, bx
+	call	dspmsg
+	mov	dx, EnterString
+	call	dspmsg	      
+	mov	dx, SwapString
+	call	dspmsg
+	mov	ax, [SwapCount]
+	mov	bx, binascBuf
+	call	binasc
+	mov	dx, bx
+	call	dspmsg
+	mov	dx, EnterString
+	call	dspmsg
+	call	dspmsg
+
+	jmp	.Done
+
+.Error
+	mov	dx, ErrorString
+	call	dspmsg
+
+.Done
+	call	mp2xit	
+
+;====== SECTION 8: Your subroutines =======================================
+
+;--------------------------------------------------------------
+;--          Replace library calls with your code!           --
+;--          [Save all reg values that you modify]           --
+;--          Do not forget to add function headers           --
+;--------------------------------------------------------------
+
+;--------------------------------------------------------------
+;--                     TransmitInput()                      --
+;--------------------------------------------------------------
+TransmitInput
+	call	libTransmitInput
+	ret
+
+;--------------------------------------------------------------
+;--                      ReceiveInput()                      --
+;--------------------------------------------------------------
+ReceiveInput
+	push	bp
+	mov	bp, sp
+
+	push	word [bp+4]
+	call	libReceiveInput
+	add	sp, 2
+
+	pop	bp
+	ret
+
+;--------------------------------------------------------------
+;--                       ParseInput()                       --
+;--------------------------------------------------------------
+ParseInput
+	push	bp
+	mov	bp, sp
+
+	push	word [bp+6]
+	push	word [bp+4]
+	call	libParseInput
+	add	sp, 4
+
+	pop	bp
+	ret
+
+;--------------------------------------------------------------
+;--                       PrintArray()                       --
+;--------------------------------------------------------------
+PrintArray
+	push	bp
+	mov	bp, sp
+
+	push	word [bp+6]
+	push	word [bp+4]
+	call	libPrintArray
+	add	sp, 4
+
+	pop	bp
+	ret
+
+;--------------------------------------------------------------
+;--                        Partition()                       --
+;--------------------------------------------------------------
+Partition
+	push	bp
+	mov	bp, sp
+
+	push	word [bp+8]
+	push	word [bp+6]
+	push	word [bp+4]
+	call	libPartition
+	add	sp, 6
+
+	pop	bp
+	ret
+
+;--------------------------------------------------------------
+;--                        QuickSort()                       --
+;--------------------------------------------------------------
+QuickSort
+	push	bp
+	mov	bp, sp
+
+	push	word [bp+8]
+	push	word [bp+6]
+	push	word [bp+4]
+	call	libQuickSort
+	add	sp, 6
+
+	pop	bp
+	ret
+
+;--------------------------------------------------------------
+;--                        BubbleSort()                      --
+;--------------------------------------------------------------
+BubbleSort
+	push	bp
+	mov	bp, sp
+
+	push	word [bp+6]
+	push	word [bp+4]
+	call	libBubbleSort
+	add	sp, 4
+
+	pop	bp
+	ret
+
+;--------------------------------------------------------------
+;--                         InitCOM1()                       --
+;--------------------------------------------------------------
+InitCOM1
+	push	ax
+	push	dx
+	mov 	dx, COM1BASE+3		; LCR
+	mov 	al, 80h
+	out	dx, al
+	mov	dx, COM1BASE		; divisor
+	mov	ax, BAUDRATE
+	out	dx, al
+	mov	dx, COM1BASE+3		; LCR
+	mov	al, PARAMS	  	; control params
+	out	dx, al
+	pop	dx
+	pop	ax
+	ret
+
+;--------------------------------------------------------------
+;--                         InitCOM2()                       --
+;--------------------------------------------------------------
+InitCOM2
+	push	ax
+	push	dx
+	mov 	dx, COM2BASE+3		; LCR
+	mov 	al, 80h
+	out	dx, al
+	mov	dx, COM2BASE		; divisor
+	mov	ax, BAUDRATE
+	out	dx, al
+	mov	dx, COM2BASE+3		; LCR
+	mov	al, PARAMS	  	; control params
+	out	dx, al
+	pop	dx
+	pop	ax
+	ret</pre>
+</font>
+<!--#include file="foot.asp"-->
+
+
+

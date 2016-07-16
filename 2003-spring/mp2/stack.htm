@@ -1,0 +1,401 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta name="GENERATOR" content="Microsoft FrontPage 5.0">
+<meta name="ProgId" content="FrontPage.Editor.Document">
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>Example Input</title>
+</head>
+
+<body>
+
+<p>Here's a little demo that might help you understand what is going on with the 
+OperandStack in mp2.</p>
+<p>Example Input:</p>
+<p>3 2 6 4 + / -</p>
+<p>First the value 3 gets pushed onto the OperandStack (using SinglePushing).&nbsp; 
+Remember that you need to have a denominator as well as a numerator.&nbsp; 
+***Note, I just made up the starting address of 0000 for the OperandStack -- it 
+probably won't start at address 0000</p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" bordercolor="#111111" width="34%" id="AutoNumber1">
+  <tr>
+    <td width="17%">Address</td>
+    <td width="18%">Data</td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">0000***</td>
+    <td width="18%">3</td>
+    <td width="65%">; Numerator &lt;- [StackTop]</td>
+  </tr>
+  <tr>
+    <td width="17%">0002</td>
+    <td width="18%">1</td>
+    <td width="65%">; Denomonator</td>
+  </tr>
+  <tr>
+    <td width="17%">0004</td>
+    <td width="18%">&nbsp;</td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">0006</td>
+    <td width="18%">&nbsp;</td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">0008</td>
+    <td width="18%">&nbsp;</td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">000A</td>
+    <td width="18%">&nbsp;</td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">000C</td>
+    <td width="18%">&nbsp;</td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">000E</td>
+    <td width="18%">&nbsp;</td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">0010</td>
+    <td width="18%">&nbsp;</td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+</table>
+<p>Then the value 2 gets pushed to the OperandStack.</p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" bordercolor="#111111" width="34%" id="AutoNumber1">
+  <tr>
+    <td width="17%">Address</td>
+    <td width="18%">Data</td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">0000</td>
+    <td width="18%">3</td>
+    <td width="65%">; Numerator</td>
+  </tr>
+  <tr>
+    <td width="17%">0002</td>
+    <td width="18%">1</td>
+    <td width="65%">; Denominator</td>
+  </tr>
+  <tr>
+    <td width="17%">0004</td>
+    <td width="18%">2</td>
+    <td width="65%">; Numerator &lt;- [StackTop]</td>
+  </tr>
+  <tr>
+    <td width="17%">0006</td>
+    <td width="18%">1</td>
+    <td width="65%">; Denominator</td>
+  </tr>
+  <tr>
+    <td width="17%">0008</td>
+    <td width="18%"><font color="#C0C0C0">?</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">000A</td>
+    <td width="18%"><font color="#C0C0C0">?</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">000C</td>
+    <td width="18%"><font color="#C0C0C0">?</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">000E</td>
+    <td width="18%"><font color="#C0C0C0">?</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">0010</td>
+    <td width="18%"><font color="#C0C0C0">?</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+</table>
+<p>This is what the OperandStack will look like after taking in all the values</p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" bordercolor="#111111" width="34%" id="AutoNumber1">
+  <tr>
+    <td width="17%">Address</td>
+    <td width="18%">Data</td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">0000</td>
+    <td width="18%">3</td>
+    <td width="65%">; Numerator</td>
+  </tr>
+  <tr>
+    <td width="17%">0002</td>
+    <td width="18%">1</td>
+    <td width="65%">; Denominator</td>
+  </tr>
+  <tr>
+    <td width="17%">0004</td>
+    <td width="18%">2</td>
+    <td width="65%">; Numerator</td>
+  </tr>
+  <tr>
+    <td width="17%">0006</td>
+    <td width="18%">1</td>
+    <td width="65%">; Denominator</td>
+  </tr>
+  <tr>
+    <td width="17%">0008</td>
+    <td width="18%">6</td>
+    <td width="65%">; Numerator</td>
+  </tr>
+  <tr>
+    <td width="17%">000A</td>
+    <td width="18%">1</td>
+    <td width="65%">; Denominator</td>
+  </tr>
+  <tr>
+    <td width="17%">000C</td>
+    <td width="18%">4</td>
+    <td width="65%">; Numerator &lt;- [StackTop]</td>
+  </tr>
+  <tr>
+    <td width="17%">000E</td>
+    <td width="18%">1</td>
+    <td width="65%">; Denominator</td>
+  </tr>
+  <tr>
+    <td width="17%">0010</td>
+    <td width="18%"><font color="#C0C0C0">?</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+</table>
+<p>Then, you hit the first operation,,&nbsp; &quot;+&quot; in this case.&nbsp; You need to 
+pop the two most recent values stack..... (and store them somewhere so you can 
+use them later)</p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" bordercolor="#111111" width="34%" id="AutoNumber1">
+  <tr>
+    <td width="17%">Address</td>
+    <td width="18%">Data</td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">0000</td>
+    <td width="18%">3</td>
+    <td width="65%">; Numerator</td>
+  </tr>
+  <tr>
+    <td width="17%">0002</td>
+    <td width="18%">1</td>
+    <td width="65%">; Denominator</td>
+  </tr>
+  <tr>
+    <td width="17%">0004</td>
+    <td width="18%">2</td>
+    <td width="65%">; Numerator &lt;- [StackTop]</td>
+  </tr>
+  <tr>
+    <td width="17%">0006</td>
+    <td width="18%">1</td>
+    <td width="65%">; Denominator</td>
+  </tr>
+  <tr>
+    <td width="17%">0008</td>
+    <td width="18%"><font color="#C0C0C0">?6</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">000A</td>
+    <td width="18%"><font color="#C0C0C0">?1</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">000C</td>
+    <td width="18%"><font color="#C0C0C0">?4</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">000E</td>
+    <td width="18%"><font color="#C0C0C0">?1</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">0010</td>
+    <td width="18%"><font color="#C0C0C0">?</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+</table>
+<p>Now you use the values you got off the stack and do an the addition 
+operation.&nbsp;&nbsp; The result you should get is (6/1)+(4/1)=10/1.&nbsp; Then 
+you push the result you get back onto the stack..</p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" bordercolor="#111111" width="34%" id="AutoNumber1">
+  <tr>
+    <td width="17%">Address</td>
+    <td width="18%">Data</td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">0000</td>
+    <td width="18%">3</td>
+    <td width="65%">; Numerator</td>
+  </tr>
+  <tr>
+    <td width="17%">0002</td>
+    <td width="18%">1</td>
+    <td width="65%">; Denominator</td>
+  </tr>
+  <tr>
+    <td width="17%">0004</td>
+    <td width="18%">2</td>
+    <td width="65%">; Numerator</td>
+  </tr>
+  <tr>
+    <td width="17%">0006</td>
+    <td width="18%">1</td>
+    <td width="65%">; Denominator</td>
+  </tr>
+  <tr>
+    <td width="17%">0008</td>
+    <td width="18%"><font color="#111111">10</font></td>
+    <td width="65%">; Numerator &lt;- [StackTop]</td>
+  </tr>
+  <tr>
+    <td width="17%">000A</td>
+    <td width="18%"><font color="#111111">1</font></td>
+    <td width="65%">; Denominator</td>
+  </tr>
+  <tr>
+    <td width="17%">000C</td>
+    <td width="18%"><font color="#C0C0C0">?4</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">000E</td>
+    <td width="18%"><font color="#C0C0C0">?1</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">0010</td>
+    <td width="18%"><font color="#C0C0C0">?</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+</table>
+<p>Now you get do the '/' operation, first getting two values off the stack, 
+doing a calculation and putting the result back onto the stack (2/1) / (10/1)&nbsp; 
+= (1/5)</p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" bordercolor="#111111" width="34%" id="AutoNumber1">
+  <tr>
+    <td width="17%">Address</td>
+    <td width="18%">Data</td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">0000</td>
+    <td width="18%">3</td>
+    <td width="65%">; Numerator</td>
+  </tr>
+  <tr>
+    <td width="17%">0002</td>
+    <td width="18%">1</td>
+    <td width="65%">; Denominator</td>
+  </tr>
+  <tr>
+    <td width="17%">0004</td>
+    <td width="18%">1</td>
+    <td width="65%">; Numerator &lt;- [StackTop]</td>
+  </tr>
+  <tr>
+    <td width="17%">0006</td>
+    <td width="18%">5</td>
+    <td width="65%">; Denominator</td>
+  </tr>
+  <tr>
+    <td width="17%">0008</td>
+    <td width="18%"><font color="#C0C0C0">?10</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">000A</td>
+    <td width="18%"><font color="#C0C0C0">?1</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">000C</td>
+    <td width="18%"><font color="#C0C0C0">?4</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">000E</td>
+    <td width="18%"><font color="#C0C0C0">?1</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">0010</td>
+    <td width="18%"><font color="#C0C0C0">?</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+</table>
+<p>Finally you hit the '-',,, (3/1) - (1/5) = 14/5</p>
+<table border="1" cellpadding="0" cellspacing="0" style="border-collapse: collapse" bordercolor="#111111" width="34%" id="AutoNumber1">
+  <tr>
+    <td width="17%">Address</td>
+    <td width="18%">Data</td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">0000</td>
+    <td width="18%">14</td>
+    <td width="65%">; Numerator &lt;- [StackTop]</td>
+  </tr>
+  <tr>
+    <td width="17%">0002</td>
+    <td width="18%">5</td>
+    <td width="65%">; Denominator</td>
+  </tr>
+  <tr>
+    <td width="17%">0004</td>
+    <td width="18%"><font color="#C0C0C0">?5</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">0006</td>
+    <td width="18%"><font color="#C0C0C0">?4</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">0008</td>
+    <td width="18%"><font color="#C0C0C0">?10</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">000A</td>
+    <td width="18%"><font color="#C0C0C0">?1</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">000C</td>
+    <td width="18%"><font color="#C0C0C0">?4</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">000E</td>
+    <td width="18%"><font color="#C0C0C0">?1</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+  <tr>
+    <td width="17%">0010</td>
+    <td width="18%"><font color="#C0C0C0">?</font></td>
+    <td width="65%">&nbsp;</td>
+  </tr>
+</table>
+<p>And here we are...&nbsp; Happy Coding!!!</p>
+
+</body>
+
+</html>

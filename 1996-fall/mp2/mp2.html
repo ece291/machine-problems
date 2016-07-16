@@ -1,0 +1,413 @@
+<html>
+<head>
+<title>ECE291 Machine Problem 2</title>
+</head>
+
+<body>
+<p>
+<table cellpadding=3 width=100% border=0>
+<tr><td align=left   width=33%>ECE291</td>
+    <td align=center width=34%>Computer Engineering II</td>
+    <td align=right  width=33%>Lockwood, Fall 1996</td></tr></table>
+<h2> </h2>
+<center><h1>Machine Problem 2</h1></center>
+<p>
+<center><table border=1 cellpadding=3 width=60%>
+  <tr><td align=right><b>Assigned</b></td>      <td>Tuesday 10/1/96</td></tr>
+  <tr><td align=right><b>Due Date</b></td>      <td>Friday 10/11/96</td></tr>
+  <tr><td align=right><b>Purpose</b></td><td>
+     Math, Stack, Subroutines.  
+     </td></tr>
+   <tr><td align=right><b>Points</b></td><td>50</td></tr>
+</table>
+</center>
+
+<h2>Introduction</h2>
+Calculators were one of the greatest gifts to the engineer this century.  
+They eliminated the tedious work of calculating numeric results.
+Hewlett-Packard (HP) innovated a method of calculation called
+RPN (Reverse Polish Notation).  
+<p>
+RPN employs a stack to hold numbers
+and intermediate results.  When a number is entered, it is PUSHed to the
+stack.  When an operation is entered, it POPs element(s) from the stack,
+performs the calculation, and PUSHes the result back to the stack.
+With RPN, there is no need for parenthese or equal buttons.
+<p>
+Using RPN, the equation <i>X+(Y*Z)</i> can be computed by entering 
+the following keystrokes:<p>
+<table border=1 cellpadding=3><tr><Td>
+ X <i>[enter]</i>
+ Y <i>[enter]</i>
+ Z <i>[enter]</i>
+ * <i>[enter]</i>
+ + <i>[enter]</i>
+</table><p>
+For this example, X, Y, and Z were pushed to the stack.  When the
+multiplication command was entered (*); the values Y and Z were POPed
+from the stack, Y*Z was computed, and this product (YZ) was PUSHed back
+to the stack.  When the addition command was entered (+), X and
+YZ were POPed from the stack, X+YZ was computed, and this sum was pushed
+back to the stack.  The final result is stored at the top of the stack.
+
+<h2>Problem Description</h2>
+For this machine problem, you will implement the core functionality
+of a RPN calculator.  Your calculator will compute results
+on 16-bit integer values.  It will read and print results 
+in binary, decimal, or hex.  It will support
+all standard logical and mathematical operations, including the
+computation of factorials.  
+
+<ul>
+<li><b>Internal Storage</b> <br>
+  All Numbers are internally stored as 16-bit signed integers
+  using 2's complement notation. 
+  16-bit words are PUSHed and POPed to and from the stack.
+  For this machine problem, you may assume that the user will never
+  POP more words from the stack than were PUSHed.  
+  <p><i>Note that
+  we are also using the stack when we call procedures.   A 16-bit
+  Instruction Pointer (IP) is pushed to the stack whenever a 
+  NEAR procedure is called. </i>
+  <p>
+<li><b>ModeDisp</b><br>
+  The <i>ModeDisp</i> variable determines 
+  how numbers are entered and displayed.  
+  For binary and hex mode, negative 
+  numbers are displayed in their 2's complement representation.
+  <p>
+  In decimal mode, negative numbers are displayed in the more
+  traditional format.  Negative numbers are preceded by the '-' sign.
+  You may find the BINASC routine in LIB291 useful for displaying
+  numbers in the decimal mode.
+  <p>
+  Negative numbers will not entered directly.  Instead,
+  you may assume that the user will enter a positive number then use
+  the negation command.
+  <p>
+  Modes can be changed while the calculator is running by entering
+  the commands MB, MD, MH (ModeBin, ModeDecimal, ModeHex).  The
+  <i>ModeDisp</i> variable stores the current mode of the calculator.
+  By default, the calculator should operate in decimal mode.
+  <p>
+  The value of the <i>ModeDisp</i> variable and the commands
+  to switch modes are summarized below. <p>
+  <table border=1 cellpadding=3>
+  <tr><th>ModeDisp</th><th>CMD</th><th>Description</th></tr>
+  <tr><td>2 <td>MB <td>Binary Mode: (0,1): 2's complement </tr>
+  <tr><td>10<td>MD <td>Decimal Mode: (0..9): 
+         Negative numbers indicated with '-' </tr>
+  <tr><td>16<td>MH <td>Hex Mode: (0..9..A..F): 2's complement </tr>
+  </table><p>
+<li><b>Operations</b><br>
+  Operations may take either one or two operands from the stack,
+  perform the operation, then push the result back to the stack.
+  Let S0 refer to the element at the top of the stack, and
+  S1 refer to the next element on the stack.
+  <p>
+  Single-operand instruction (such as negation) POPs the first element from
+  the stack (S0), performs the operation, then PUSHes the result back to
+  the stack as S0. 
+  Two-operand instructions (such as addition) POPs the first two elements
+  from the stack (S1 and S0), performs the operation, then PUSHes the
+  result back to the stack as S0.   <p>
+  <ul>
+  <li><b>Math Operations<br> </b><br>
+    <table border=1 cellpadding=3>
+    <tr><th>Cmd</th><th>Description</th></tr>
+    <tr><td><tt>+</tt> <td>Addition: S0=S1+S0 </tr>
+    <tr><td><tt>-</tt> <td>Subtraction: S0=S1-S0 </tr>
+    <tr><td><tt>*</tt> <td>Multiplication: S0=S1*S0 </tr>
+    <tr><td><tt>/</tt> <td>Division: S0=S1/S0 </tr>
+    <tr><td><tt>%</tt> <td>Modulus (remainder): S0=S1%S0 </tr>
+    <tr><td><tt>!</tt> <td>Factorial: S0=(S0)*(S0-1)*(S0-2) .. (2)(1)</tr>
+    <tr><td><tt>N</tt> <td>Negation: S0=-S0</tr>
+    </table> 
+    <p>
+  <li><b>Logical Operations<br> </b><br>
+    <table border=1 cellpadding=3>
+    <tr><th>Cmd</th><th>Description</th></tr>
+    <tr><td><tt>&</tt> <td>Logical AND: S0=S1&S0 </tr>
+    <tr><td><tt>|</tt> <td>Logical OR: S0=S1|S0 </tr>
+    <tr><td><tt>^</tt> <td>Exclusive OR (XOR): S0=S1^S0 </tr>
+    <tr><td><tt>~</tt> <td>Logical NOT (Invert bits): S0=~S0</tr>
+    </table> 
+  </ul>
+</ul>
+<h2>Implementation</h2>
+For this program, you will write three modular procedures.  
+<ul>
+<li><b>ReadInput</b><br>
+  <ul>
+  <li>Inputs: Register DI points to the 2-byte variable <i>ModeDisp</i>
+  <li>Outputs: Register BH indicates which command (if any) was entered.
+  <li>Notes: All other registers are undefined.  Register DI should
+      not be modified (only the value pointed to by DI should
+      be modified).
+  </ul> <p>
+  This subroutine reads the input from the keyboard.  You may
+  use the KBDINE routine from LIB291 to read in the ASCII
+  characters.  
+  Input can be numbers, operation commands, or mode commands. 
+  Input may include a comments, which is indicated by a semicolon.
+  Your program should ignore all spaces (' '), LineFeeds (LF), as well
+  as ALL characters following the ';' (comments). 
+  <p> 
+  <ul>
+  <li>If a number is
+  entered, the value should be converted from Binary, Decimal, or hex
+  (depending on the value of <i>DispMode</i>) and pushed to the stack.
+  An example input (in hex) is "5FF".  You should ignore any extra
+  spaces entered from the keyboard and zero-pad numbers if necessary.
+  The register BH should be set to one.  Hint: You will need 
+  to manipulate the stack to insert the number <i>before</i> the
+  return address of the subroutine.
+  <li>If a mode command is entered ("MB", "MD", or "MH"), you should 
+  update the variable <i>DispMode</i> to (2, 10, or 16).  
+  The register BH should be set to zero.
+  <li>If an operation is entered, the ASCII code for the command should
+  be return in BH.  The special commands: ESC (the escape key) and
+  'Q' are used to quit the program.  Values of BH include:
+  ('+','-','*','/','%','!','&','|','^','~','Q', and ESC) 
+</ul> <p>
+<li><b>DispOutput</b><br>
+  <ul>
+  <li>Inputs: Register DI points to the 2-byte variable <i>ModeDisp</i>
+  <li>Outputs: None 
+  <li>Notes: All other registers are undefined.  Register DI should
+      not be modified 
+  </ul> <p>
+  This routine is called to print the value at the top of the stack
+  in the appropriate MODE (as selected by <i>ModeByte</i>).  You may use
+  the BINASC and DSPMSG routines from LIB291.  You will need to 
+  write your own code to display binary or hex values.
+  <p> 
+<li><b>Calculate</b><br>
+  <ul>
+  <li>Input: Register BH indicates which command (if any) was entered.
+       If BH does not contain a valid math or logical command, 
+       this routine should not perform any function.
+  <li>Output: None
+  <li>Notes: All other registers are undefined.  Register DI should
+      not be modified.
+  </ul> <p>
+  This routine POPs one or two elements from the stack, performs 
+  the operation given by the ASCII command in BH 
+  and PUSHes the result back to the stack.  You will need to
+  manipulate the stack in order to retrive and push elements
+  without affecting the IP that was pushed when the subroutine
+  was called
+</ul>
+
+<h2>Program Assignment</h2>
+  You will begin this machine problem with a fully functional 
+  program.  The main program is given below.  I have provided the
+  library routines for each of the three procedures above.  You will
+  score points by replacing the library procedures with your own code.
+  Your score will be proportional to the percentage of the code
+  that you write yourself.  The breakdown in points is given below:
+  Your routine MUST perform all functions of the subroutine to 
+  obtain credit.
+  <ul>
+  <li>ReadInput: 20 points
+  <li>DispOutput: 15 points
+  <li>Calculate: 15 points
+  </ul>  
+<h2>Sample Input <tt>(MP2.IN)</tt></h2>
+<table border=1 cellpadding=3><tr><Td>
+<pre>
+150     ; First Number [base 10 by default] pushed to stack
+50      ; Second Number pushed to stack
+-       ; Calculate: 150-50=100 , Leave Result on stack
+8
+2
+5
+*       
++       ; Calculate: (2*5)+8=18 , Leave Result on stack
+/       ; Calculate: 100/18=5 (Integer Arithmetic)
+N       ; Calculate: Negate(5)=-5
+12      ; Enter 12
++       ; Calculate: -5+12=7
+!       ; Calculate: Factorial(7)=7*6*5*4*3*2*1=5040
+MH      ; Switch to Hex Mode (Enter/Display format): 5040d = 13B0h
+FFF     ; Enter FFF (hex)
++       ; Calculate: 13B0h+0FFFh=23AFh
+2300    ; Enter 2300 (hex)
+-       ; Calculate: 23AFh-2300h=00AFh (hex)
+MB      ; Switch to Binary Mode: 00AFh=0000000010101111b
+111111  ; Enter 111111 (binary)
+&       ; Calculate: Logical AND = 0000000000101111
+000111  ; Enter 000111 (binary) (note that preceding zeros ignored)
+^       ; Calculate: Logical XOR = 0000000000101000
+11      ; Enter 11 (binary)
+|       : Calculate: Logical  OR = 0000000000101011
+~       ; Calculate: Logical NOT = 1111111111010100
+MH      ; Switch to Hex Mode: Final Result == FFD4h
+Q       ; Escape to exit
+
+</pre>
+</table> 
+ 
+
+<h2>Sample Output <tt>(MP2.OUT)</tt></h2>
+<table border=1 cellpadding=3><tr><Td>
+<pre>
+150     ; First Number [base 10 by default] pushed to stack
+Result: 150
+50      ; Second Number pushed to stack
+Result: 50
+-       ; Calculate: 150-50=100 , Leave Result on stack
+Result: 100
+8
+Result: 8
+2
+Result: 2
+5
+Result: 5
+*       
+Result: 10
++       ; Calculate: (2*5)+8=18 , Leave Result on stack
+Result: 18
+/       ; Calculate: 100/18=5 (Integer Arithmetic)
+Result: 5
+N       ; Calculate: Negate(5)=-5
+Result: -5
+12      ; Enter 12
+Result: 12
++       ; Calculate: -5+12=7
+Result: 7
+!       ; Calculate: Factorial(7)=7*6*5*4*3*2*1=5040
+Result: 5040
+MH      ; Switch to Hex Mode (Enter/Display format): 5040d = 13B0h
+Result: 13B0
+FFF     ; Enter FFF (hex)
+Result: 0FFF
++       ; Calculate: 13B0h+0FFFh=23AFh
+Result: 23AF
+2300    ; Enter 2300 (hex)
+Result: 2300
+-       ; Calculate: 23AFh-2300h=00AFh (hex)
+Result: 00AF
+MB      ; Switch to Binary Mode: 00AFh=0000000010101111b
+Result: 0000000010101111
+111111  ; Enter 111111 (binary)
+Result: 0000000000111111
+&       ; Calculate: Logical AND = 0000000000101111
+Result: 0000000000101111
+000111  ; Enter 000111 (binary) (note that preceding zeros ignored)
+Result: 0000000000000111
+^       ; Calculate: Locical XOR = 0000000000101000
+Result: 0000000000101000
+11      ; Enter 11 (binary)
+Result: 0000000000000011
+|       : Calculate: Logical  OR = 0000000000101011
+Result: 0000000000101011
+~       ; Calculate: Logical NOT = 1111111111010100
+Result: 1111111111010100
+MH      ; Switch to Hex Mode: Final Result == FFD4h
+Result: FFD4
+Q       ; Escape to exit
+
+DOSXIT: Exit to DOS
+</pre>
+</table>
+
+
+
+<h2>Preliminary Procedure</h2>
+<ul>
+<li>You may copy the empty MP2.ASM assignment, sample input,
+    sample output, and library files from the network drive 
+    to your home directory
+    with the following command: <br>
+    <tt>xcopy /s E:\ece291\mp2 F:\mp2</tt>
+<li>You can link the program (with my libraries) with the following
+    command: <Br>
+    <tt>link mp2,,,LIB291/MAP+LIBMP2/MAP;</tt>
+<li>Once you have written all library functions on your own,
+    you can link your program as follows:
+    <tt>link mp2,,,LIB291/MAP;</tt>
+</ul>
+
+
+<h2>Final Steps</h2>
+<ol>
+<li>Demonstrate MP2.EXE to a TA or to the instructor.  
+    You will be asked to recompile and demonstrate 
+    MP2 with a set of inputs that exercises all functions of
+    the calculator.  
+<li>You will need to show which of the three
+    functions you implemented, and which of the three functions
+    you used from MP2LIB.  
+<li>You will be asked to run your calculator with
+    the input file MP2.IN by executing the following command.<Br>
+    <xmp>MP2 < MP2.IN </xmp><tr>
+    The output should match MP2.OUT.
+<li>You will be asked to run your calculator with
+    another input file to verify that no numbers or
+    results are hardcoded into your program.
+<li>Have the TA execute the handin program from your machine.
+<li>Print MP2.ASM and give it to  
+    to the same TA which approved your 
+    demonstration.  Be sure that your name is the printout.  
+</ol>
+
+<hr>
+<h2>MP2.ASM</h2>
+<pre>
+        PAGE 75, 132
+        TITLE   MP2     your name       current date
+
+CR      EQU 13
+LF      EQU 10
+ESCKEY  EQU 27
+SPACE   EQU 32
+SEMI    EQU 59
+
+extrn dosxit:near, kbdine:near, dspmsg:near, binasc:near
+extrn ReadInput:near  ; Remove this line to add your own procedure
+extrn Calculate:near  ; Remove this line to add your own procedure
+extrn DispOutput:near ; Remove this line to add your own procedure
+
+;====== SECTION 3: Define stack segment ===================================
+stkseg  segment stack                   ; *** STACK SEGMENT ***
+        db      64 dup ('STACK   ')     ; 64*8 = 512 Bytes of Stack
+stkseg  ends
+
+;====== SECTION 4: Define code segment ====================================
+cseg    segment public                  ; *** CODE SEGMENT ***
+        assume  cs:cseg, ds:cseg, ss:stkseg, es:nothing
+
+;====== SECTION 5: Declare variables ======================================
+
+DispMode DW     10      ; Operate in decimal mode by default
+crlf DB CR,LF,'$'       ; New Line
+
+;====== SECTION 6: Main procedure =========================================
+
+main    proc    far
+        mov     ax, cseg   ; Initialize DS register
+        mov     ds, ax
+
+        MOV     DI, offset DispMode
+
+Calc:   Call    ReadInput      ; Read Input from Keyboard
+        MOV     DX,offset crlf
+        call    dspmsg         ; New Line
+        CMP     BH, ESCKEY     ; Quit When ESC is entered
+        JE      Done
+        CMP     BH, 'Q'        ; Also quit if Q is entered
+        JE      Done
+        Call    Calculate      ; Perform Math/Logical Calculation
+        Call    DispOutput     ; Display number at top of stack
+        JMP     Calc
+
+Done:   call    dosxit                  ; Exit to DOS
+main    endp
+ 
+cseg    ends
+        end     main
+
+</pre>
+
+</body>

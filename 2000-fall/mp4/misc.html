@@ -1,0 +1,147 @@
+<html>
+<head>
+<title>Miscellany</title>
+<style type="text/css"><!--
+body{ background:white; color:black; }
+P{ text-indent: -0.5em; margin-left: 3em; }
+H1{ margin-left: 0em; clear: right; }
+H2{ margin-left: 1em; clear: right; }
+H3{ margin-left: 2em; clear: right; }
+pre{ margin-left: 3em; clear: all }
+ol,ul{ margin-left: 5em; }
+sub{ font-style: italic; }
+.eqn { margin-left: 5em; font-family: times; }
+.decl{ font-weight: bold; }
+.int{ color: maroon; }
+.intv{ color: blue; }
+.func{ color: red; }
+.float{ color: maroon; }
+.floatv{ color: purple; }
+.keyw{ color: green; font-weight: bold; }
+.comment{ color: green; font-style: italic; }
+.innerul{ margin-left: 1em; }
+@media print {
+ //.noprint{ display:none; }
+}
+@media screen {
+ //.print{ display: none;}
+}
+--></style>
+</head>
+<body>
+<!--
+<h1 class="print">Muhahaha...</h1>
+<big class="print" style="font-size:xx-large; font-style: italic;">
+This document has been rendered <strong>unprintable</strong>.</big>
+-->
+<h1>Miscellany</h1>
+<p>On this page we talk about all functions that seemed small enough to
+not even deserve their own page.</p>
+
+<h2><a name="grfx">Graphics</a></h2>
+<h3>void ClearImage(void)</h3>
+
+<p>ClearImage performs a 640x450 copy of the current color, replacing
+all but the bottom thirty rows of the buffer in selector _ImageBlock.
+This, oddly enough, clears any picture you may have previously had.  Use
+a string instruction for this.  It's really short.</p>
+
+<h2><a name="mouse">Mouse</a></h2>
+ <p>For handling the mouse you need procedures for <a
+ href='index.html#installmouse'>installation</a>, <a
+ href='index.html#removemouse'>removal</a>, and <a
+ href='index.html#mousecallback'>handling</a> the mouse data.
+
+ <p><strong>But!</strong></p>
+
+ <p>The mouse handler isn't truly a handler at all.  It's a callback.  A
+ callback is the best of both worlds: it gets called like a normal
+ procedure, getting all data in standard places instead of having to
+ perform odd I/O to get it; yet it is also called in interrupt fashion -
+ only, and immediately, when data is available.</p>
+
+ <p>Or to look at it slightly less positive way, it's still called from
+ an interrupt, so you have to be careful about what you
+ call--particularly no DOS interrupts.</p>
+
+ <p>Luckily for you, the library does have a function available that gets
+ a real-mode callback address for your protected mode callback:
+ <a href="library.html#Get_RMCB">Get_RMCB</a>.  However, you will still need
+ to tell the mouse driver to call the callback, and where the callback is.</p>
+
+ <ul>
+  <li>Use Get_RMCB to get a real-mode callback address for MouseCallback.
+  Save the segment and offset in MouseSeg and MouseOff</li>
+  <li>Call the Mouse interrupt (33h), function 0Ch to have the mouse
+  driver call your callback on left mouse button press/release and mouse
+  movement</li>
+ </ul>
+
+ <p>Removing the mouse callback is a matter of reversing your steps.
+ <ul>
+  <li>Again use the mouse interrupt, this time to tell the mouse not to
+  call your callback - use segment:offset of 0000:0000 for "no callback"</li>
+  <li>Then, use <a href='library.html#Free_RMCB'>Free_RMCB</a> to
+  release the real-mode callback</li>
+ </ul>
+
+ <p>Now that you've got the callback installing, and removing, what does
+ your actual callback have to do?  Again, very little - we're doing the
+ actual processing of the data in the main loop.  So all the handler
+ does is toss the data into the event queue.  Read about the queue next!</p>
+</ul>
+
+<h2>The Event Queue</h2>
+
+<p>The event queue is used to ensure no mouse movements get lost while you
+are handling the previous ones.  You will need to understand this to
+construct your mouse handler so it can talk to Main. To implement the
+queue we need a structure which contains all information for each event,
+and we need to keep track of the locations currently filled by the
+queue.  For this queue, we will use a circular array representation;
+just remember these rules:</P>
+<UL>
+ <LI><TT>Queue</TT> is the queue
+ <LI><TT>QueueFirst</TT> holds the offset of the first entry in the
+ queue.
+ <LI><TT>QueueNumEvents</TT> holds the number of Events in the queue.
+ <LI>Use <TT>QUEUE_ELEMENTS</TT> (number of events that fit into the
+ queue) and <TT>QUEUE_SIZE</TT> (total number of bytes allocated for the
+ queue) to calculate the positions of the elements, and to not write
+ outside of the queue.
+ <LI>If <TT>QueueNumEvents</TT> is equal to <TT>QUEUE_ELEMENTS</TT>,
+ then no elements may be added to the queue.
+ <LI>If <TT>QueueNumEvents</TT> is zero, it implies the Queue is empty.
+</UL>
+
+<P>The Event structure is as follows:</p>
+
+<PRE>STRUC Event
+.Condition resw 1       ; Condition bitmask (in mouse handler format)
+.X         resw 1       ; X coordinate in screen pixels from left
+.Y         resw 1       ; Y coordinate in screen pixels from top
+.Buttons   resw 1       ; Button status (in mouse handler format)
+ENDSTRUC</PRE>
+
+<p>This allows us to pass information around carefully, and efficiently.
+When you add an event to the queue, increase the <TT>QueueNumEvents</TT>
+counter appropriately.  Don't forget to wrap around the tail end of the
+queue when placing the event in memory.  Follow the rule that if
+increasing it causes you to run into the front of the
+<TT>QueueFirst</TT> you should not add it.  Instead, you would normally
+set some error flag, but we will not bother to handle this.
+</P>
+<CENTER><IMG SRC="queue.gif" WIDTH=382 HEIGHT=203 ALIGN="center"></CENTER>
+<P>
+Use <TT>Event_size</TT> to refer to the number of bytes in an event,
+and <TT>word [ebx+Event.X]</TT> to refer to the X data for an event at
+the offset stored in ebx (esi and edi work as well), etc.  If you really
+want to take advantage of the full instruction set, you can put the
+event index in eax (for example) and then use word
+[_Queue+eax*Event_size+Event.Y] to access the Y data for that element.  This
+only works because Event_size is 8, one of the multiplication constants
+allowed for memory addressing (yes, we did this on purpose: you might consider
+using nicely sized structures like this for your final projects!).
+</P>
+
+</body>

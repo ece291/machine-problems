@@ -1,0 +1,973 @@
+<%
+title = "ECE 291 - MP4"
+subtitle = "MP4"
+%>
+<!--#include file="headvb.asp"-->
+<h1 align="center">Machine Problem 4: A Particle Engine</h1>
+<div align="center">
+	<center>
+		<table width="513" border="1">
+			<tr>
+				<td align="right" width="64">Assigned</td>
+				<td width="433">Thursday, 7/17/03</td>
+			</tr>
+			<tr>
+				<td align="right" width="64">Due Date</td>
+				<td width="433">Thursday, 7/28/03</td>
+			</tr>
+			<tr>
+				<td align="right" width="64">Purpose</td>
+				<td width="433" Roman>Learn 32 bit protected mode. Install and write mouse and 
+					keyboard interrupts.&nbsp; Blit and alpha blend with MMX instructions</td>
+			</tr>
+			<tr>
+				<td align="right" width="64">Points</FONT></td>
+				<td width="433"><span style="BACKGROUND-COLOR: #ffff00">??</span></td>
+			</tr>
+		</table>
+	</center>
+	<CENTER>&nbsp;</CENTER>
+	<CENTER>
+		<DT><FONT size="4"><STRONG>"Y2K, we're not familiar with that. However in regard to the 
+					"Millennium Bug"---not to worry my friend, we are prepared to spray 
+					everywhere."</STRONG></FONT>
+			<DD>One of the comments made at 
+		<!-- A HREF="http://www.duh-2000.com/" --> http://www.duh-2000.com/<!-- /A -->
+	</CENTER>
+	</DD></div>
+<h2>Updates - Oopps our bad...</h2>
+<P><span style="background-color: #FF00FF">The_mouseCallback</span><span style="background-color: #FF00FF"> 
+function does call </span><span style="background-color: #FF00FF">Free_RMCB</span><span style="background-color: #FF00FF"> 
+or </span><span style="background-color: #FF00FF">DPMI_Int</span></P>
+<h2><span style="BACKGROUND-COLOR: #ff00ff"><font size="3">
+			<span style="FONT-WEIGHT: 400">
+				<SPAN style="BACKGROUND-COLOR: #ff00ff">
+					<FONT size="3" color="#330000">
+						<SPAN style="FONT-WEIGHT: 400">
+							Helpful Hints : _mouseY and _mouseX variables list the X 
+and Y coordinates of the mouse pointer in pixels</SPAN></FONT></SPAN>
+			</span></font></span></h2>
+<H2><SPAN style="BACKGROUND-COLOR: #ff00ff"><FONT size="3"><SPAN style="FONT-WEIGHT: 400">
+<FONT color="#FFFFFF">******For 
+								assistance on how to install the mouse interrupt, refer to ECE291-Resources 
+								Ralf Brown's Interrupt List - CTyme ******* </FONT>
+			</SPAN></FONT></SPAN></H2>
+<H2><SPAN style="BACKGROUND-COLOR: #ff00ff"><FONT size="3"><SPAN style="FONT-WEIGHT: 400"><SPAN style="BACKGROUND-COLOR: #ff00ff"><FONT size="3"><SPAN style="FONT-WEIGHT: 400"></SPAN></FONT></SPAN>*** AN IMPORTANT PROBLEM WITH THE LIBMP4.A HAS 
+BEEN CORRECTED, PLEASE COPY THE NEW <a href="LIBMP4.A">LIBMP4.A</a> INTO 
+YOUR WORKING DIRECTORY AND DELETE THE OLD LIBMP4.A ***</SPAN></FONT></SPAN></H2>
+<H2><SPAN style="BACKGROUND-COLOR: #ff00ff"><FONT size="3"><SPAN style="FONT-WEIGHT: 400"><FONT color="#9900ff"></FONT></SPAN></FONT></SPAN>&nbsp;</H2>
+<h2>Introduction</h2>
+<P>&nbsp;Um, look at all the perty colors&gt;&gt;</P>
+<P></P>
+<h2>Problem Description</h2>
+<p>Your program is required to:
+	<UL>
+		<li>
+		Use protected mode addressing and instructions<li>
+		Code a keyboard and mouse ISR<li>
+		Install and mouse and keyboard ISR<li>
+		Use C calling convention for procedures<li>
+			Use MMX instruction to blit and alpha blend images</li>
+	</UL>
+<P>Reading :
+</P>
+<H2>Program Specification</H2>
+<p><b>Program Input</b></p>
+<P>The program accepts some keyboard key presses and also can be controlled by the 
+	mouse</P>
+<P>
+	<TABLE id="Table2">
+		<TR>
+			<TD>&lt;space&gt;</TD>
+			<TD>Add particles at the current mouse position</TD>
+		</TR>
+		<TR>
+			<TD>&lt;left mouse button press&gt;</TD>
+			<TD>Add particles at the current mouse position</TD>
+		</TR>
+		<TR>
+			<TD>&lt;ESC&gt;</TD>
+			<TD>Exit and return to DOS</TD>
+		</TR>
+	</TABLE>
+</P>
+<p><br>
+	<b>Particle Array</b></p>
+<p></p>
+<p>The particles used by the program are keep in a large array of structures.&nbsp; 
+	Each structure has 5 dword-sized fields.</p>
+<p></p>
+<TABLE id="Table2">
+	<TR>
+		<TD>DWORD</TD>
+		<TD>.xPos</TD>
+		<TD>horizontal coordinate of center of particle</TD>
+	</TR>
+	<TR>
+		<TD>DWORD</TD>
+		<TD>.yPos</TD>
+		<TD>vertical coordinate of center of particle</TD>
+	</TR>
+	<TR>
+		<TD>DWORD</TD>
+		<TD>.xVel</TD>
+		<TD>horizontal velocity of particle</TD>
+	</TR>
+	<TR>
+		<TD>DWORD</TD>
+		<TD>.yVel</TD>
+		<TD>vertical velocity of particle</TD>
+	</TR>
+	<TR>
+		<TD>DWORD</TD>
+		<TD>.life</TD>
+		<TD>remaining lifetime of particle (0 = particle is dead)</TD>
+	</TR>
+</TABLE>
+<p>The fields in the structure are consecutive in memory, so if you had the address 
+	the beginning of one particle structure you could access a particular field as 
+	follows..</p>
+<p>;;suppose ESI is the address of the beginning of the structure<br>
+	&nbsp;&nbsp;&nbsp; mov EBX, [ESI + Particle.xPos]&nbsp;&nbsp;&nbsp;&nbsp; ;put 
+	the x- coordinate of the particle into EBX<br>
+	&nbsp;&nbsp;&nbsp; mov EAX, [ESI + Particle.yPos]&nbsp;&nbsp;&nbsp;&nbsp; ;put 
+	the y- coordinate of the particle into EAX</p>
+<p></p>
+<p>or by</p>
+<p>&nbsp;&nbsp;&nbsp; mov EBX, [ESI + 0]&nbsp;&nbsp;&nbsp;&nbsp; ;put the y- 
+	coordinate of the particle into EBX<br>
+	&nbsp;&nbsp;&nbsp; mov EAX, [ESI + 4]&nbsp;&nbsp;&nbsp;&nbsp; ;put the y- 
+	coordinate of the particle into EAX<br>
+	&nbsp;</p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p><b>Fixed Point Integers</b></p>
+<p>For this MP the positions and velocities of the particles may be fractional 
+	numbers, to achieve this without using evil floating point instructions, the MP 
+	uses a fixed point decimal representation.&nbsp; Specifically the decimal point 
+	is shift 8 bits to the left, giving 8 bits of binary decimal places.&nbsp; The 
+	idea behind using fixed using fixed point integers is that not much has to 
+	change,&nbsp; you add and subtract two fixed point decimals that same way you 
+	would with normal integers.&nbsp;&nbsp; The difference come in when you want to 
+	use fixed point decimals as normal integers.&nbsp; To convert fixed point 
+	decimals to normal integers, just shift of the 8 binary digits from the end of 
+	the fixed point decimal.&nbsp; For the MP you will need to convert from the 
+	fixed point values used to represent the position of a particle to normal 
+	integers when trying to draw the image for the particle.
+</p>
+<TABLE id="Table2" height="78">
+	<TR>
+		<TD height="5">Normal integer</TD>
+		<TD height="5">Fixed point integer equivalent</TD>
+		<TD height="5">Decimal value</TD>
+	</TR>
+	<TR>
+		<TD height="19"><font face="Courier">0x0000000C</font></TD>
+		<TD height="19"><font face="Courier">0x00000C.00</font></TD>
+		<TD height="19"><font face="Courier">12</font></TD>
+	</TR>
+	<TR>
+		<TD height="19"><font face="Courier">0xFFFFFFFF</font></TD>
+		<TD height="19"><font face="Courier">0xFFFFFF.00</font></TD>
+		<TD height="19"><font face="Courier">-1</font></TD>
+	</TR>
+</TABLE>
+<p>
+	<br>
+	<b>C-style calling convention</b></p>
+<p></p>
+<p>With C-style calling convention the arguments to functions are passed in reverse 
+	order on the stack, and the result of the the function are returned in AL, AX, 
+	or EAX (depending on the size of the return value).&nbsp;&nbsp; C-style 
+	functions need to conserve the values in ESI, EDI, EBP, and ESP, but do not 
+	need to conserve the values in EAX, EBX, ECX, or EDX.&nbsp; This means that if 
+	you call a C-style function that the values in any of these registers may be 
+	overwritten, and if you need to save the values in the one of the register you 
+	should push the value before calling the function and pop after return from the 
+	function.&nbsp; C uses different primitive types than assembly.&nbsp;&nbsp; The 
+	size of some of the common types in 32 bit x86 C are listed below</p>
+<TABLE id="Table2">
+	<TR>
+		<TD>integer</TD>
+		<TD>.int</TD>
+		<TD>4 bytes</TD>
+	</TR>
+	<TR>
+		<TD>short integer</TD>
+		<TD>.short</TD>
+		<TD>2 bytes</TD>
+	</TR>
+	<TR>
+		<TD>character</TD>
+		<TD>.char</TD>
+		<TD>1 byte</TD>
+	</TR>
+	<TR>
+		<TD>any type of pointer</TD>
+		<TD>.void*&nbsp; int*&nbsp; char*&nbsp;&nbsp;&nbsp;
+		</TD>
+		<TD>4 bytes</TD>
+	</TR>
+</TABLE>
+<p>To make it easier to write and call C-style functions in assembly, we provided 
+	the <b>proc</b> and <b>invoke</b> macros look in the lab manual in section 18.1 
+	(p161) for more information on how to use them.&nbsp;<br>
+	&nbsp;</p>
+<p></p>
+<p><b>Blitting and Alpha Blending</b></p>
+<p>Suppose we had these two images buffers from the program.</p>
+<TABLE id="Table2" width="213">
+	<TR>
+		<TD width="74">Image 1<img border="0" src="im1.jpg" width="300" height="300"></TD>
+		<TD width="60">&nbsp;</TD>
+		<TD width="65">Image 2<img border="0" src="im2.jpg" width="300" height="300"></TD>
+	</TR>
+</TABLE>
+<p>If we blit part of Image1 starting at coordinates x=50 and y=50, with a height 
+	and width of 100 pixels to Image2 at coordinates x=100 and y=100, the result 
+	would be Image 3 (without alpha blending) and Image 4 (with alpha blending)</p>
+<TABLE id="Table2" width="213">
+	<TR>
+		<TD width="74">Image 3<img border="0" src="im4.jpg" width="300" height="300"></TD>
+		<TD width="60">&nbsp;</TD>
+		<TD width="65">Image 4<img border="0" src="im3.jpg" width="300" height="300"></TD>
+	</TR>
+</TABLE>
+<p>For the MP you need to alpha-blend the pixels together,&nbsp; The both the 
+	source and the destination pixels are 4-bytes in size.&nbsp; Each pixel has a 
+	RED, BLUE, GREEN. and ALPHA component each one byte in length.&nbsp; The 
+	formula to use when alpha blending is</p>
+<p>dst_RED = src_ALPHA * src_RED + (1- src_ALPHA) * dst_RED<br>
+	dst_BLUE = src_ALPHA * src_BLUE + (1- src_ALPHA) * dst_BLUE
+	<br>
+	dst_GREEN = src_ALPHA * src_GREEN + (1- src_ALPHA) * dst_GREEN
+</p>
+<ul>
+	<li>
+	Load one source pixels (4 bytes) from memory into an MMX register
+	<li>
+	Load one destination pixels (4 bytes) from memory into an MMX register
+	<li>
+		For each source/destination pixels:
+		<ol>
+	<li>
+	Unpack (bytes to words) the source pixel into an MMX register
+	<li>
+	Copy out the source alpha byte into the four words of another MMX register
+	<li>
+	Multiply the two previously mentioned MMX registers together
+	<li>
+	Add the rounding factor to the previous result to round the upcoming division
+	<li>
+	Shift each word right to divide by 256, thus fitting into a byte per channel 
+	(this calculates a * A)
+	<li>
+	Unpack (bytes to words) the destination pixel into an MMX register
+	<li>
+	Add the results of the previous two steps (this calculates a * A + B)
+	<li>
+	Multiply the destination pixel by the source alpha
+	<li>
+	Add the rounding factor to the previous result to round the upcoming division
+	<li>
+	Shift each word right to divide by 256, thus fitting into a byte per channel 
+	(this calculates a * B)
+	<li>
+		Subtract the value of step 10 from the value of step 7, giving you (a * A) + B 
+		- (a * B)
+	</li>
+	</ol>
+	<li>
+	Pack (words to bytes) the alpha-composed pixels back together with proper 
+	saturation in the correct order
+	<li>
+		Write the composed pixel back to memory</li>
+</ul>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<p></p>
+<H2>MP4 Program Assignment</H2>
+<p>In this machine problem, the main procedure is provided for you; however, you 
+	must write the code to replace the library procedures. You will replace these 
+	procedures from the LIBMP4 library by commenting out the statements calling the 
+	library procedure and adding your code. Each procedure that you write should 
+	match the output of the library code exactly. Each of the function calls and 
+	their functionality is described below in the <b>Procedures</b> section. The 
+	best way to get a feel for the program is to run it to see how it is supposed 
+	to operate. You can also edit the test file to see how various changes will 
+	affect the program execution.</p>
+<p>The program can be run by typing <tt>mp3</tt> at the command prompt.
+</p>
+<h2>Hints&nbsp;
+</h2>
+<UL>
+	<li>
+		The LIBMP4 file contains executable library functions for each of the routines 
+		that you need to implement. This allows you to run the program and understand 
+		how it works before you implement it. You can test your program with any 
+		combinations of your own code and library functions. You will only receive 
+		credit, however, for the routines that you implement yourself.
+		<p></p>
+	<li>
+	CV32 now needs to be used to debug your 32 bit program.&nbsp; CV32 is 
+	definitely more difficult to use that TD, but its all we have at the moment.
+	<li>
+		<span style="BACKGROUND-COLOR: #ffff00">START EARLY!</span>
+	There are a total of&nbsp;17 functions you have to write, including the main 
+	function.&nbsp;You will be writing the main function in this MP, points will be 
+	awarded accordingly as to how you separate your functions.
+	<li>
+	You need to preserve ESI, EDI, ES, DS, CS in you functions.&nbsp;&nbsp; For 
+	C-style functions you don't need to worry about preserving EAX, EBX, ECX, and 
+	EDX.
+	<li>
+		You need to create function headers for each of the functions you write.&nbsp; 
+		Function headers should include the name of the function, the list of inputs to 
+		the function, the list of the outputs, and any functions that the function 
+		calls.&nbsp; You will lose points if you do not do this!</li></UL>
+<h2>Procedures</h2>
+<p>This assignment has twenty procedures. Three procedures are provided, you need 
+	to fill the skeletons for the rest.</p>
+<table id="Table1" border="1">
+	<tr>
+		<td vAlign="center"><font size="+1"><b>_MP4Main</b></font><b><font size="+1">&nbsp;</font></b></td>
+		<td>
+			<ul>
+				<li>
+				void MP4Main(void)<li>
+				Inputs: NONE<li>
+				Outputs: NONE<li>
+				Calls: clearParticles, addParticle, clearScreen, updateParticles, 
+				drawParticles, drawRect, drawString, countFPS, CopyToScreen<li>
+					Notes:
+					<ul>
+						<li>
+						Before updating or displaying you must empty the particle array<li>
+							In a loop<ul>
+								<li>
+								Check for spacebar or mouse button press, if so add particles to screen (you 
+								may want to add multiple particles at once)
+								<li>
+								The flag for the left mouse button is in bit 0,, if the bit is set (bit0=1) 
+								then the button is pressed, otherwise the button is not pressed
+								<li>
+								Clear the screen buffer, update the particles, and draw the particles
+								<li>
+								Draw the inner and outer rectangles to the screen buffer
+								<li>
+								Display the _MP4Msg (or any other message you want to the screen)
+								<li>
+								Call countFPS to display timing and the number of particles to the screen 
+								buffer
+								<li>
+								Copy the screen buffer to the actually screen
+								<li>
+								If ESC is pressed, quit, otherwise loop again
+								<li>
+									See Appendix A in the lab manual for information on _CopyToScreen</li>
+							</ul>
+						</li>
+					</ul>
+				<li>
+					Points: 10</li>
+			</ul>
+		</td>
+	</tr>
+	<TR>
+		<td vAlign="center"><b><font size="4">&nbsp;_drawRect</font></b></td>
+		<td>
+			<ul>
+				<li>
+				void drawRect(int color, int left, int top, int width, int width, int height, 
+				void* dstOff, int dstPitch)<li>
+				draws rectangle on image<li>
+					Inputs:
+					<ul>
+						<li>
+						color = color to draw with
+						<li>
+						left = left x-coordinate of rectangle
+						<li>
+						top = top y-coordinate of rectangle
+						<li>
+						width = width of rectangle
+						<li>
+						height = height of rectangle
+						<li>
+						dstOff = address of destination image
+						<li>
+							dstPitch = width of entire destination image in <b>BYTES</b></li>
+					</ul>
+				<li>
+				Outputs: NONE<li>
+				Calls: NONE<li>
+					Notes:
+					<ul>
+						<li>
+						All the coordinates except pitch are given in pixels
+						<li>
+						Assume that both width and height will never be negative
+						<li>
+							Use dstPitch and dstOff, DO NOT hard code the addresses of the screen buffer 
+							and its pitch</li>
+					</ul>
+				<li>
+					Points: 5</li>
+			</ul>
+		</td>
+	<tr>
+		<td vAlign="center"><font size="+1"><b>_updateParticles</b></font></td>
+		<td>
+			<UL>
+				<li>
+				void updateParticles(void)<li>
+				Moves particles according to their velocity, decrement lifetime of particles, 
+				checks to see whether particles are within there boundaries<li>
+				Inputs: NONE<LI>
+				Outputs: NONE<LI>
+				Calls: pointInRect<LI>
+					Notes:
+					<UL>
+						<li>
+						Loop through all the particles, skipping the dead particles (dead particles 
+						have a life = 0)<li>
+						Update the position of the particles by adding the particles velocity to the 
+						particles position<li>
+						Decrement particles life, if particles dies (life = 0) decrement the 
+						particleCount<LI>
+						If the particle is within the inner rectangle, kill the the particle by setting 
+						its life to 0
+						<LI>
+						If the particle is not within the outer rectangle, kill the particle<LI>
+							Remember to decrement the the particleCount everytime a particles dies</LI></UL>
+				<li>
+					Points: 10</li>
+			</UL>
+		</td>
+	</tr>
+	<tr>
+		<td vAlign="center"><font size="+1"><b>_drawParticles</b></font></td>
+		<td>
+			<ul>
+				<li>
+				&nbsp;void drawParticles(void)<li>
+				Draw all the living particles to the screen buffer<li>
+				Inputs: NONE<li>
+				Outputs: NONE<li>
+				Calls: alphaBlit<li>
+					Notes:
+					<ul>
+						<li>
+						Loop through all the particles drawing all the non-dead particles (dead 
+						particles have a life = 0)<li>
+							Remember the positions of the particles are in fixed decimal precision, this 
+							means to convert the position of the particles
+							<br>
+						to integer pixel screen coordinates you will need to shift right by 8.<li>
+							The position of the particles represents the center of the particle 
+							image,&nbsp; use SPRITE_WIDTH/2 and
+							<br>
+							SPRITE_HEIGHT/2 to center the image of the particle around its position</li></ul>
+				<li>
+					Points: 10
+				</li>
+			</ul>
+		</td>
+	</tr>
+	<TR>
+		<TD vAlign="center"><font size="+1"><b>_addParticle</b></font></TD>
+		<TD>
+			<UL>
+				<LI>
+				void addParticle(void)<LI>
+				Add particle to the particle array at the current mouse position, and a random 
+				velocity and lifetime<LI>
+				Inputs: NONE<LI>
+				Outputs: NONE<LI>
+				Calls: random<LI>
+					Notes:
+					<UL>
+						<LI>
+						First find an dead particle in the particle array to replace, (just loop 
+						through the array from the beggining)<LI>
+						If there is no room in the particle array, give up and return
+						<LI>
+							If there is an empty position in the array<UL>
+								<li>
+								Set the position of the new particle to be the current mouse position
+								<li>
+								Give the particle a random X and Y velocity (make sure some of the velocities 
+								you give can be negative)
+								<li>
+								Give the particle a random lifetime (positive of course)
+								<li>
+									Don't worry about matching the MP exactly, feel free to play around with 
+									different parameters.</li>
+							</UL>
+						<li>
+							Remember that the position and velocities of the particles are in fixed point 
+							precision, you will need to convert the mouse coordinates to fixed point 
+							precision
+						</li>
+					</UL>
+				<LI>
+					Points: 10</LI></UL>
+		</TD>
+	</TR>
+	<TR>
+		<TD vAlign="center"><strong><font size="4">_clearParticles</font></strong></TD>
+		<TD>
+			<UL>
+				<LI>
+				void clearParticles(void)<LI>
+				Deletes all the particles in the particle array<LI>
+					Notes:
+					<UL>
+						<LI>
+						Set the life of all the particles in the particle array to zero<LI>
+							Set the particleCount to zero</LI></UL>
+				<LI>
+					Points: 5</LI></UL>
+		</TD>
+	</TR>
+	<tr>
+		<td vAlign="center"><strong><font size="+1">_drawString</font></strong></td>
+		<td>
+			<ul>
+				<li>
+				void drawString(char* string, void* dstOff, int dstPitch, int xPos, int yPos)<li>
+				Draw string to specified position of image<li>
+					Inputs:
+					<ul>
+						<li>
+						string = address to '$'-terminated string to draw to the screen<li>dstOff = 
+						address of destination image
+						<li>
+							dstPitch = width of entire destination image in <b>BYTES</b>
+						<li>
+						xPos = left x-coordinate string (in pixels)
+						<li>
+							yPos = top y-coordinate of string (in pixels)</li></ul>
+				<li>
+				Outputs: NONE<li>
+				Calls: alphaBlit<li>
+					Notes:
+					<ul>
+						<li>
+						Use CHAR_WIDTH and CHAR_HEIGHT for the size of one character from the font 
+						image<li>
+						Move over by CHAR_WIDTH for each character that is displayed<li>
+							The font image has 128 character in it.&nbsp; All the character are side by 
+							side, and in ASCII order, this means the image for the ASCII 'a' is at 
+							61h*CHAR_WIDTH pixels from the right of the font image</li></ul>
+				<li>
+					Points: 10
+				</li>
+			</ul>
+		</td>
+	</tr>
+	<tr>
+		<td vAlign="center"><b><font size="+1">_</font></b><font size="+1"><b>pointInRect</b></font></td>
+		<td>
+			<ul>
+				<li>
+				boolean pointInRect(int pointX, int pointY, int left, int top, int width, int 
+				height)<li>
+				determine if point is within rectangle
+				<li>
+					Inputs:<ul>
+						<li>
+						pointX = x-coordinate of point
+						<li>
+						pointY = y-coordinate of point
+						<li>
+						left = left x-coordinate of rectangle
+						<li>
+						top = top y-coordinate of rectangle
+						<li>
+						width = width of rectangle
+						<li>
+							height = height of rectangle</li>
+					</ul>
+				<li>
+				Outputs: eax = 0 if point is not with in rectangle, non-zero otherwise<li>
+				Calls: NONE<li>
+					Notes:
+					<ul>
+						<li>
+						Treat all coordinates (except for width and height) as signed coordinates and 
+						may be negative
+						<li>
+							Assume width and height will never be negative values</li>
+					</ul>
+				<li>
+					Points: 10</li>
+			</ul>
+		</td>
+	</tr>
+	<tr vAlign="top">
+		<td vAlign="center"><b><font size="+1">_</font></b><font size="+1"><b>clearScreen</b></font></td>
+		<td>
+			<UL>
+				<li>
+				void clearScreen(int color)<li>
+				Clears screen buffer by drawing specified color to the entire buffer<li>
+				Inputs: color = RGB color to use when clearing the buffer<li>
+				Outputs: NONE<li>
+				Calls: NONE<LI>
+					Notes:<UL>
+						<li>
+						Use SCREEN_WIDTH and SCREEN_HEIGHT constants
+						<li>
+							Use [screenOff] for address of screen buffer</li>
+					</UL>
+				<LI>
+					Points: 10</LI>
+			</UL>
+		</td>
+	</tr>
+	<tr vAlign="top">
+		<td vAlign="center"><b><font size="+1">_loadImages</font></b></td>
+		<td>
+			<UL>
+				<li>
+				boolean loadImages(void)<li>
+				Allocates buffer for and loads images for sprite and font<li>
+				Inputs: NONE<li>
+				Outputs: eax = 0 if the function is successful, non-zero otherwise<li>
+				Calls: AllocMem, LoadPNG<LI>
+					Notes:<UL>
+						<li>
+						Use the 0-terminated strings fontFN and spritesFN as the filenames of the 
+						images to load
+						<li>
+						Allocate a FONT_WIDTH * FONT_HEIGHT * 4 size buffer for the font image and 
+						store its offset to fontOff
+						<li>
+						Allocate a SPRITE_WIDTH* SPRITE_HEIGHT * 4 size buffer for the font image and 
+						store its offset to spritesOff
+						<li>
+							See Appendix A in the lab manual for information on AllocMem, and LoadPNG</li>
+					</UL>
+				<LI>
+					Points: 10</LI>
+			</UL>
+		</td>
+	</tr>
+	<tr>
+		<td vAlign="center"><b><font size="+1">_alphaBlit</font></b></td>
+		<td>
+			<ul>
+				<li>
+				void _alphaBlit(void* srcOff, int srcPitch, int srcLeft, int srcTop, void* 
+				dstOff, int destPitch int dstLeft, int dstTop, int width, int height)<li>
+				alpha blend part of source image onto part of destination image<li>
+					Inputs<ul>
+						<li>
+						srcOff = address of source image
+						<li>
+							srcPitch = width of entire source image in <b>BYTES</b>
+						<li>
+						srcLeft = left x-coordinate (in pixels) of part of source image to copy
+						<li>
+						srcTop = top y-coordinate (in pixels) of part of source image to copy
+						<li>
+						dstOff = address of destination image
+						<li>
+							dstPitch = width of entire destination image in <b>BYTES</b>
+						<li>
+						dstLeft = left x-coordinate (in pixels) of part of destination image to copy to
+						<li>
+						dstTop = top y-coordinate (in pixels) of part of destination image to copy to
+						<li>
+						width = width (in pixels) of part of image to copy
+						<li>
+							height = height (in pixels) of of part of image to copy
+						</li>
+					</ul>
+				<li>
+				Outputs: NONE<li>
+				Calls: NONE<li>
+					Notes:
+					<ul>
+						<li>
+						Use MMX instructions to do the alpha blending.&nbsp; See notes on alpha 
+						blending<li>
+						Try testing with image file "test.png" instead of the "sprite1.png" to see if 
+						your are coping
+						<li>
+						Remember color values for pixels are unsigned bytes (values 0-255)<li>
+							Use dstPitch and dstOff, DO NOT hard code the addresses of the screen buffer 
+							and its pitch</li></ul>
+				<li>
+					Points: 10</li>
+			</ul>
+		</td>
+	</tr>
+	<tr vAlign="top">
+		<td vAlign="center"><font size="+1"><b>_installMouse</b></font></td>
+		<td>
+			<ul>
+				<li>
+				boolean installMouse(void)<li>
+				Uses DPMI, RMCB, and INT33h to install a mouse handler<li>
+				Inputs: NONE<li>
+				Outputs: EAX = 0 if successful, non-zero otherwise
+				<li>
+				Calls: LockArea, Get_RMCB, DPMI_Int<li>
+					Notes:
+					<ul>
+						<li>
+						INT33h function 0Ch allows you to set a REAL mode ISR for specific mouse 
+						events.&nbsp; The MP is in protected mouse, so a real-mode callback (RMCB) 
+						needs to be setup to call your protected mode function that handles mouse 
+						event.<li>
+						Use LockArea to prevent the code and data used by mouseCallback from swapped 
+						out of memory, use (_mouseCallback_end - _mouseCallback) as the length of the 
+						mouse callback code<li>
+						Use Get_RMCB to get real mode callback, set RMCB to use retf&nbsp; return.<li>
+							Use DPMI_Int to access INT33h interrupt <FONT color="#9900ff">(Refer to 
+								ECE291-Resources Ralf Brown's Interrupt List - CTyme on how to set this)</FONT>
+						<li>
+						Set the ISR to be invoked when the mouse moves or when the left mouse button is 
+						pressed or released.<li>
+						See section 17.3 in the lab manual for information about DPMI<li>
+							See appendix A in the lab manual for more information about the LockMem, 
+							Get_RMCB, and DPMI_Int function calls.</li></ul>
+				<li>
+					Points: 10</li>
+			</ul>
+		</td>
+	</tr>
+	<tr vAlign="top">
+		<td vAlign="center"><font size="+1"><b>_removeMouse</b></font></td>
+		<td>
+			<ul>
+				<li>
+				boolean installMouse(void)<li>
+				Uses DPMI, RMCB, and INT33h to install a mouse handler<li>
+				Inputs: NONE<li>
+				Outputs: NONE<li>
+				Calls: Free_RMCB, DPMI_Int<li>
+					Notes:
+					<ul>
+						<li>
+						By calling INT33h function 0Ch, and set 0 for all the parameters you can 
+						disable the ISR.<li>
+						Use DPMI_Int to access INT33h interrupt<li>
+						Use Free_RMCB to free the real-mode callback that was setup<li>
+						See section 17.3 in the lab manual for information about DPMI<li>
+							See appendix A in the lab manual for more information about the Free_RMCB, and 
+							DPMI_Int function calls.</li></ul>
+				<li>
+					Points: 10</li>
+			</ul>
+			&nbsp;</td>
+	</tr>
+	<tr vAlign="top">
+		<td vAlign="center"><font size="+1"><b>_mouseCallback</b></font></td>
+		<td>
+			<ul>
+				<li>
+				void mouseCallback (DPMI_Regs *regs)<li>
+				Handles mouse interupts events<li>
+				Inputs: NONE<li>
+				Outputs: NONE<li>
+				Calls: <span style="background-color: #FF00FF">NONE</span><li>
+					Notes:
+					<ul>
+						<li>
+						You are passed a pointer to a DPMI_REGS structure, the structure represents the 
+						values in all the register when the RMCB was invoked.<li>
+						To access the value of a certain DPMI register use the the constant 
+						DPMI_XXX_off as the offset from the register pointer the the value for that 
+						register.&nbsp; For example use DPMI_EBX_off to access the values for the EBX 
+						register, see section A.1 and A.2 in the lab manual for more information on the 
+						layout of a DPMI_Regs structure<li>
+						Copy the cursor column into mouseX and the cursor row into mouseY, and the 
+						button state into mouseButton<li>
+							See section 17.3 in the lab manual for information about DPMI</li></ul>
+				<li>
+					Points: 10</li>
+			</ul>
+			&nbsp;</td>
+	</tr>
+	<tr vAlign="top">
+		<td vAlign="center"><font size="+1"><b>_installKeyboardISR</b></font></td>
+		<td>
+			<ul>
+				<li>
+				boolean installKeboardISR(void)<li>
+				Installs keyboard interrupt handler.<li>
+				Inputs: NONE<li>
+				Outputs: EAX = 0 if successful, non-zero otherwise
+				<li>
+				Calls: LockArea, Install_Int<li>
+					Notes:
+					<ul>
+						<li>
+						Use keyBoardINT as the interrupt number to install to for Install_Int<li>
+						Use LockArea to prevent the code and data used by mouseCallback from swapped 
+						out of memory, use (_keyboardISR- _keyboardISR_end) as the length of the 
+						keyboardISR code<li>
+						See section 18.7 in the lab manual for information about protected mode 
+						interrupt handling<li>
+							See appendix A in the lab manual for more information about the LockMem, 
+							Get_RMCB, and DPMI_Int function calls.</li></ul>
+				<li>
+					Points: 10</li>
+			</ul>
+		</td>
+	</tr>
+	<tr vAlign="top">
+		<td vAlign="center"><font size="+1"><b>_removeKeyboardISR</b></font></td>
+		<td>
+			<ul>
+				<li>
+				void removeKeyboardISR(void)<li>
+				Removes keyboard interrupt handler.<li>
+				Inputs: NONE<li>
+				Outputs: NONE<li>
+				Calls: Remove_Int<li>
+					Notes:
+					<ul>
+						<li>
+							See appendix A in the lab manual for more information about Remove_Int</li></ul>
+				<li>
+					Points: 10</li>
+			</ul>
+		</td>
+	</tr>
+	<tr vAlign="top">
+		<td vAlign="center"><font size="+1"><b>_keyboardISR</b></font></td>
+		<td>
+			<ul>
+				<li>
+				int keyboardISR (void)
+				<li>
+				The keyboard interrupt handler<li>
+				Inputs: NONE<li>
+				Outputs: EAX = 0 to prevent handler from being chained to old handler<li>
+				Calls: NONE<li>
+					Notes:
+					<ul>
+						<li>
+						use keyboardPort as the port to read from to read the scan-code from the 
+						keyboard<li>
+						Set keyboardESC to non-zero if escape key is pressed.<li>
+						Set keyboardSPC to 0 if space key is released or to non-zero is space key is 
+						pressed<li>
+						Acknowledge PIC at port 20h<li>
+							If keyboardIRQ is greater than 7 you must acknowledge both PICs (second PIC at 
+							port A0h)</li></ul>
+				<li>
+					Points: 10</li>
+			</ul>
+		</td>
+	</tr>
+	<tr vAlign="top">
+		<td vAlign="center"><font size="+1"><b>_main</b></font></td>
+		<td>
+			<ul>
+				<li>
+				void main(void)<li>
+				Execution starts and ends here, calls functions needed to set up the program<li>
+				Inputs: NONE<li>
+				Outputs: NONE<li>
+				Calls: NONE<li>
+				Notes: YOU DON'T NEED TO WRITE THIS FUNCTION (IT IS PROVIDED)<li>
+					Points: NONE</li>
+			</ul>
+		</td>
+	</tr>
+	<tr vAlign="top">
+		<td vAlign="center"><b><font size="+1">_</font></b><font size="+1"><b>random</b></font></td>
+		<td>
+			<ul>
+				<li>
+				short random(short maxNum)<li>
+				Returns an interger between 0 and maxNum-1 (inclusive)<li>
+					Inputs:<ul>
+						<li>
+							maxNum = max number to return
+						</li>
+					</ul>
+				<li>
+				Outputs: psuedo-random number<li>
+				Calls: NONE<li>
+				Notes: YOU DON'T NEED TO WRITE THIS FUNCTION (IT IS PROVIDED)<li>
+					Points: NONE</li>
+			</ul>
+		</td>
+	</tr>
+	<tr vAlign="top">
+		<td vAlign="center"><b><font size="+1">_countFPS</font></b></td>
+		<td>
+			<ul>
+				<li>
+				void countFPS(void)<li>
+				Displays a timing of the program and the number of particles to the screen<li>
+				Inputs: NONE<li>
+				Outputs: NONE<li>
+				Calls: NONE<li>
+				Notes: YOU DON'T NEED TO WRITE THIS FUNCTION (IT IS PROVIDED)<li>
+					Points: NONE</li>
+			</ul>
+		</td>
+	</tr>
+</table>
+<h2>Procedure</h2>
+<ul>
+	<li>
+		You will begin this MP with the following files:
+		<ul>
+			<li>
+				<tt>MP4.ASM</tt>: Program Framework
+			<li>
+				<tt>Makefile</tt>: Specifies how and when programs are assembled and 
+			linked.
+			<li>
+				<tt>LIBMP4.LIB</tt>: Library functions for MP4<li>
+				<tt>LIB291.INC</tt>: General-purpose library functions
+			</li>
+		</ul>
+	<li>
+		You may copy these files from the network drive to your home directory with the 
+		following command:
+		<br>
+		<tt>xcopy /s V:\ece291\mp3 W:\mp4</tt><br>
+		or download the files from this server as <a href="mp3.zip">mp4.zip</a>
+	<li>
+		Add your code to <tt>MP3.ASM</tt>.
+	<li>
+		Assemble and link your program by typing<tt> make.</tt>&nbsp; This command 
+	reads the Makefile then invokes NASM and GCC to build an executable program.
+	<li>
+		Use CV32 debugger to find and correct program errors.
+	</li>
+</ul>
+<h2>Final Steps</h2>
+<ol>
+	<li>
+	Demonstrate your MP4.EXE to a TA or to the instructor.&nbsp; The TA or 
+	instructor will verify that your program produces the correct output.
+	<li>
+	Be prepared to answer questions about any aspect of the operation of your 
+	program. The TAs will not accept an MP if you cannot fully explain the 
+	operation of your code and details of your implementation. Delayed MPs will be 
+	subject to late penalties as described in the course syllabus (10pts/day).
+	<li>
+		The TA will handin your MP online.
+	</li>
+</ol>
+<hr>
+<h2><span style="BACKGROUND-COLOR: #ffff00">MP4.ASM (program framework)</span></h2>
